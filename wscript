@@ -1,10 +1,15 @@
 
+from waflib import Logs
 
 def configure(ctx):
     ctx.load("g++")
-    
-    ctx.setenv("mpi", ctx.env.derive())
-    ctx.env.CXX = [ "mpic++" ]
+
+    ctx.find_program("mpic++", var="MPICXX", mandatory=False)
+    if ctx.env.MPICXX:
+        ctx.setenv("mpi", ctx.env.derive())
+        ctx.env.CXX = list(ctx.env.MPICXX)
+    else:
+        Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
 def build(ctx):
     ctx.objects(
@@ -18,6 +23,9 @@ def build(ctx):
         use          = "basis",
         install_path = "lib"
     )
+
+    if not ctx.env.MPICXX:
+        return
 
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
