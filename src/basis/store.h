@@ -11,7 +11,7 @@
 #include <fstream>
 #include <ctime>
 
-#include "../wrapper/hdeem.h"
+#include "../wrapper/hdeemwrapper.h"
 
 namespace meric {
 

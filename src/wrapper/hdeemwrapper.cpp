@@ -1,9 +1,9 @@
 
-#include "hdeem.h"
 #include <cstdlib>
 #include <iostream>
 #include "time.h"
 #include <ctime>
+#include "hdeemwrapper.h"
 
 using namespace meric;
 

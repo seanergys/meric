@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPER_HDEEM_H_
-#define SRC_WRAPPER_HDEEM_H_
+#ifndef SRC_WRAPPER_HDEEMWRAPPER_H_
+#define SRC_WRAPPER_HDEEMWRAPPER_H_
 
 #include "hdeem.h"
 
@@ -24,4 +24,4 @@ private:
 
 
 
-#endif /* SRC_WRAPPER_HDEEM_H_ */
+#endif /* SRC_WRAPPER_HDEEMWRAPPER_H_ */
