@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include "../basis/utils.h"
+#include "../basis/detailedstore.h"
+#include "../basis/energystore.h"
+#include "../basis/timestore.h"
 
 namespace meric {
 
@@ -11,17 +14,19 @@ class Meric {
 
 public:
 	static bool CONTINUAL;
+	static bool DETAILED;
 	static std::string OUTPUT_DIR;
 
-	virtual void start(const std::string &region) = 0;
-	virtual void stop() = 0;
+	virtual void start(const std::string &region);
+	virtual void stop();
 
 	Meric() {};
 	virtual ~Meric() {};
 
 protected:
-
-
+	TimeStore _timeStore;
+	EnergyStore _energyStore;
+	DetailedStore _detailedStore;
 };
 
 }

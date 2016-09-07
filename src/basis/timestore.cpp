@@ -13,6 +13,15 @@ void TimeStore::addStart(const std::string &region)
 
 void TimeStore::addEnd()
 {
-	_stack.pop_back();
+	if (_stack.size()) {
+		_records.push_back(TimeRecord(_stack.back(), 1));
+		_stack.pop_back();
+	} else {
+		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+	}
 }
 
+TimeStore::~TimeStore()
+{
+
+}

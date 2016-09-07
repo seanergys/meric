@@ -4,6 +4,8 @@ from waflib import Logs
 def configure(ctx):
     ctx.load("g++")
 
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-g", "-O0" ])
+
     ctx.find_program("mpic++", var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())

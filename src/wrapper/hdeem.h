@@ -9,7 +9,6 @@ class HDEEM {
 public:
 	static void start();
 	static void end();
-
 };
 
 }

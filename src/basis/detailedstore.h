@@ -22,6 +22,8 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
+	~DetailedStore();
+
 private:
 	std::vector<DetailedRecord> _records;
 };

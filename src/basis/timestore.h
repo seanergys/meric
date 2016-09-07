@@ -21,6 +21,8 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
+	~TimeStore();
+
 private:
 	std::vector<TimeRecord> _records;
 };

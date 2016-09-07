@@ -8,12 +8,7 @@ SharedMeric::SharedMeric()
 
 }
 
-void SharedMeric::start(const std::string &region)
-{
-
-}
-
-void SharedMeric::stop()
+SharedMeric::~SharedMeric()
 {
 
 }

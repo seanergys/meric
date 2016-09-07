@@ -10,9 +10,7 @@ class SharedMeric: public Meric {
 
 public:
 	SharedMeric();
-
-	void start(const std::string &region);
-	void stop();
+	~SharedMeric();
 };
 
 }

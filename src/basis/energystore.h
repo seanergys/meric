@@ -22,6 +22,8 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
+	~EnergyStore();
+
 private:
 	std::vector<EnergyRecord> _records;
 };

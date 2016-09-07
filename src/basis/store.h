@@ -6,6 +6,10 @@
 #include <map>
 #include <string>
 
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
 namespace meric {
 
 class Store
