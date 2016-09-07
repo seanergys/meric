@@ -7,14 +7,19 @@ void EnergyStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
 
-	_records.push_back(EnergyRecord(_regions[region], 0.0, 0.0));
+	size_t energy, time;
+	HDEEM::fillEnergy(energy, time);
+
+	_records.push_back(EnergyRecord(_regions[region], energy, time));
 	_stack.push_back(_regions[region]);
 }
 
 void EnergyStore::addEnd()
 {
 	if (_stack.size()) {
-		_records.push_back(EnergyRecord(_stack.back(), 1, 1));
+		size_t energy, time;
+		HDEEM::fillEnergy(energy, time);
+		_records.push_back(EnergyRecord(_stack.back(), energy, time));
 		_stack.pop_back();
 	} else {
 		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";

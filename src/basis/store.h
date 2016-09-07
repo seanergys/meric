@@ -10,6 +10,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "../wrapper/hdeem.h"
+
 namespace meric {
 
 class Store
