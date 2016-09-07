@@ -4,6 +4,7 @@
 #include "../../../include/meric.h"
 #include "meric.h"
 
+
 meric::SharedMeric *holder = NULL;
 
 void MERIC_Init()
@@ -13,6 +14,8 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
+	meric::HDEEM::init();
+	meric::HDEEM::start();
 	holder = new meric::SharedMeric();
 }
 
@@ -22,8 +25,10 @@ void MERIC_Close()
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
+	meric::HDEEM::stop();
 	delete holder;
 	holder = NULL;
+	meric::HDEEM::close();
 }
 
 void MERIC_MeasureStart(const char* name)
