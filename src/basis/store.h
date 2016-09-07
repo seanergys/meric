@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <ctime>
 
 #include "../wrapper/hdeem.h"
 

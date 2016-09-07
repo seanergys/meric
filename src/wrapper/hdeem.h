@@ -2,7 +2,7 @@
 #ifndef SRC_WRAPPER_HDEEM_H_
 #define SRC_WRAPPER_HDEEM_H_
 
-#include "../../hdeem/hdeem.h"
+#include "hdeem.h"
 
 namespace meric {
 

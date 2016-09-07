@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "time.h"
+#include <ctime>
 
 using namespace meric;
 
