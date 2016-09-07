@@ -36,15 +36,12 @@ void HDEEM::stop()
 	checkHDEEM(hdeem_stop(&bmc));
 }
 
-void HDEEM::fillEnergy(double &energy, time_t &time)
+void HDEEM::fillEnergy(double &energy, timespec &time)
 {
-	timespec tspec;
-	clock_gettime(CLOCK_REALTIME, &tspec);
-	time = tspec.tv_sec;
-
 	hdeem_stats_reading_t stats;
 	checkHDEEM(hdeem_get_stats(&bmc, &stats));
 	energy = stats.energy_blade_values.value[0];
+	time = stats.read_time_blade;
 }
 
 

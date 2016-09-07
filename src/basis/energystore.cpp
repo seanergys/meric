@@ -8,7 +8,7 @@ void EnergyStore::addStart(const std::string &region)
 	int regionID = getRegionID(region);
 
 	double energy;
-	time_t time;
+	timespec time;
 	HDEEM::fillEnergy(energy, time);
 
 	_records.push_back(EnergyRecord(_regions[region], time, energy));
@@ -19,7 +19,7 @@ void EnergyStore::addEnd()
 {
 	if (_stack.size()) {
 		double energy;
-		time_t time;
+		timespec time;
 		HDEEM::fillEnergy(energy, time);
 		_records.push_back(EnergyRecord(_stack.back(), time, energy));
 		_stack.pop_back();

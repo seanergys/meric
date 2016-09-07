@@ -14,7 +14,7 @@ public:
 	static void start();
 	static void stop();
 
-	static void fillEnergy(double &energy, time_t &time);
+	static void fillEnergy(double &energy, timespec &time);
 
 private:
 	static hdeem_bmc_data_t bmc;
