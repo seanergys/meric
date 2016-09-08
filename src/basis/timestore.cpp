@@ -7,14 +7,18 @@ void TimeStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
 
-	_records.push_back(TimeRecord(regionID, 0.0));
+	timespec time;
+	HDEEM::fillTime(time);
+	_records.push_back(TimeRecord(regionID, time));
 	_stack.push_back(regionID);
 }
 
 void TimeStore::addEnd()
 {
 	if (_stack.size()) {
-		_records.push_back(TimeRecord(_stack.back(), 1));
+		timespec time;
+		HDEEM::fillTime(time);
+		_records.push_back(TimeRecord(_stack.back(), time));
 		_stack.pop_back();
 	} else {
 		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
@@ -23,5 +27,25 @@ void TimeStore::addEnd()
 
 TimeStore::~TimeStore()
 {
+	std::vector<std::ofstream> ss(_regions.size());
+	std::vector<std::string> name(_regions.size());
+	for (auto it = _regions.begin(); it != _regions.end(); ++it) {
+		ss[it->second].open(it->first.c_str());
+		name[it->second] = it->first;
+	}
 
+	std::vector<size_t> starts;
+	for (size_t i = 0; i < _records.size(); i++) {
+		if (!starts.size() || _records[starts.back()].region != _records[i].region) {
+			starts.push_back(i);
+			continue;
+		}
+		ss[_records[i].region] << "time ";
+		for (size_t j = 0; j < starts.size(); j++) {
+			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
+		}
+		ss[_records[i].region]
+		   << subTimes(_records[i].time, _records[starts.back()].time) << "\n";
+		starts.pop_back();
+	}
 }

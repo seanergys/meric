@@ -7,10 +7,10 @@
 namespace meric {
 
 struct TimeRecord {
-	TimeRecord(int region, size_t time)
+	TimeRecord(int region, timespec &time)
 	: time(time), region(region) {};
 
-	size_t time;
+	timespec time;
 	int region;
 };
 
@@ -23,7 +23,7 @@ public:
 
 	~TimeStore();
 
-private:
+protected:
 	std::vector<TimeRecord> _records;
 };
 

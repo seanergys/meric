@@ -3,10 +3,12 @@
 #define SRC_MERIC_MERIC_H_
 
 #include <iostream>
+
+#include "../basis/detailedenergystore.h"
 #include "../basis/utils.h"
-#include "../basis/detailedstore.h"
 #include "../basis/energystore.h"
 #include "../basis/timestore.h"
+#include "../basis/detailedtimestore.h"
 
 namespace meric {
 
@@ -17,16 +19,14 @@ public:
 	static bool DETAILED;
 	static std::string OUTPUT_DIR;
 
-	virtual void start(const std::string &region);
-	virtual void stop();
+	virtual void start(const std::string &region) { _store->addStart(region); }
+	virtual void stop() { _store->addEnd(); }
 
-	Meric() {};
-	virtual ~Meric() {};
+	Meric();
+	virtual ~Meric() { delete _store; }
 
 protected:
-	TimeStore _timeStore;
-	EnergyStore _energyStore;
-	DetailedStore _detailedStore;
+	Store * _store;
 };
 
 }

@@ -8,28 +8,19 @@ bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED", false);
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPU_DIR", "log");
 
 
-void Meric::start(const std::string &region)
+Meric::Meric()
 {
 	if (Meric::CONTINUAL) {
-		_timeStore.addStart(region);
-	} else {
 		if (Meric::DETAILED) {
-			_detailedStore.addStart(region);
+			_store = new DetailedTimeStore();
 		} else {
-			_energyStore.addStart(region);
+			_store = new TimeStore();
 		}
-	}
-}
-
-void Meric::stop()
-{
-	if (Meric::CONTINUAL) {
-		_timeStore.addEnd();
 	} else {
 		if (Meric::DETAILED) {
-			_detailedStore.addEnd();
+			_store = new DetailedEnergyStore();
 		} else {
-			_energyStore.addEnd();
+			_store = new EnergyStore();
 		}
 	}
 }

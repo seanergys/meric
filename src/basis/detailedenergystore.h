@@ -1,0 +1,34 @@
+
+#ifndef SRC_BASIS_DETAILEDENERGYSTORE_H_
+#define SRC_BASIS_DETAILEDENERGYSTORE_H_
+
+#include "store.h"
+
+namespace meric {
+
+struct DetailedEnergyRecord {
+	DetailedEnergyRecord(int region, std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	: time(time), energy(energy), region(region) {};
+
+	std::array<double, PROBE_NUMBER> energy;
+	timespec time;
+	int region;
+};
+
+
+class DetailedEnergyStore: public Store {
+
+public:
+	void addStart(const std::string &region);
+	void addEnd();
+
+	~DetailedEnergyStore();
+
+private:
+	std::vector<DetailedEnergyRecord> _records;
+};
+
+}
+
+
+#endif /* SRC_BASIS_DETAILEDENERGYSTORE_H_ */

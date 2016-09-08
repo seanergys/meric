@@ -7,6 +7,9 @@
 #include <iostream>
 #include <time.h>
 #include <ctime>
+#include <array>
+
+#define PROBE_NUMBER 7
 
 namespace meric {
 
@@ -24,6 +27,14 @@ public:
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats));
 		energy = stats.energy_blade_values.value[0];
+		time = stats.read_time_blade;
+	}
+	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	{
+		hdeem_stats_reading_t stats;
+		checkHDEEM(hdeem_get_stats(&bmc, &stats));
+		energy[0] = stats.energy_blade_values.value[0];
+		memcpy(energy.data() + 1, stats.energy_vr_values.value, (PROBE_NUMBER - 1) * sizeof(double));
 		time = stats.read_time_blade;
 	}
 
