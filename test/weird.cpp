@@ -1,6 +1,7 @@
 
 #include "hdeem.h"
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char **argv)
 {
@@ -19,10 +20,7 @@ int main(int argc, char **argv)
 
 	hdeem_stats_free(&stats);
 
-	long sum = 0;
-	for (long i = 0; i < 1e10; i++) {
-		sum += i;
-	}
+	sleep(2);
 
 	hdeem_stop(&bmc);
 
