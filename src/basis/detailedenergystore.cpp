@@ -47,8 +47,8 @@ DetailedEnergyStore::~DetailedEnergyStore()
 			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
 		}
 		ss[_records[i].region] << "= ";
-		for (size_t i = 0; i < PROBE_NUMBER; i++) {
-			ss[_records[i].region] << _records[i].energy[i] - _records[starts.back()].energy[i] << " ";
+		for (size_t p = 0; p < PROBE_NUMBER; p++) {
+			ss[_records[i].region] << _records[i].energy[p] - _records[starts.back()].energy[p] << " ";
 		}
 		ss[_records[i].region] << "(" << subTimes(_records[i].time, _records[starts.back()].time) << ")\n";
 		starts.pop_back();

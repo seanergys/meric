@@ -32,9 +32,10 @@ protected:
 	std::vector<int> _stack;
 };
 
-inline std::ostream operator<<(std::ostream& os, const timespec &time)
+inline std::ostream& operator<<(std::ostream& os, const timespec &time)
 {
 	os << time.tv_sec << "." << std::setfill('0') << std::setw(9) << time.tv_nsec;
+	return os;
 }
 
 }
