@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <ctime>
+#include <iomanip>
 
 #include "../wrapper/hdeemwrapper.h"
 
@@ -25,11 +26,16 @@ public:
 
 protected:
 	int getRegionID(const std::string &region);
+	timespec subTimes(const timespec &a, const timespec &b);
 
 	std::map<std::string, int> _regions;
 	std::vector<int> _stack;
 };
 
+inline std::ostream operator<<(std::ostream& os, const timespec &time)
+{
+	os << time.tv_sec << "." << std::setfill('0') << std::setw(9) << time.tv_nsec;
+}
 
 }
 

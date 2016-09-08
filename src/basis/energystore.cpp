@@ -1,5 +1,6 @@
 
 #include "energystore.h"
+#include <sys/time.h>
 
 using namespace meric;
 
@@ -48,7 +49,9 @@ EnergyStore::~EnergyStore()
 		for (size_t j = 0; j < starts.size(); j++) {
 			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
 		}
-		ss[_records[i].region] << "= " << _records[i].energy - _records[starts.back()].energy << "\n";
+		ss[_records[i].region]
+		   << "= " << _records[i].energy - _records[starts.back()].energy
+		   << " (" << subTimes(_records[i].time, _records[starts.back()].time) << ")\n";
 		starts.pop_back();
 	}
 }
