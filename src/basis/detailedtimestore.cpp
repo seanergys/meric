@@ -20,11 +20,10 @@ DetailedTimeStore::~DetailedTimeStore()
 	HDEEM::getSamples(samples);
 
 	timespec hdeem_period = status.stop_time_blade - status.start_time_blade;
-	timespec meric_perion = _end - _start;
-	std::cout << "measurement delay: " << hdeem_period - meric_perion << "\n";
-
-	std::cout << "blade samples: " << samples.nb_blade_values << "\n";
-	std::cout << "VR samples: " << samples.nb_vr_values << "\n";
+	timespec meric_period = _end - _start;
+	double hdeem_duration = hdeem_period.tv_sec + (double)hdeem_period.tv_nsec / 1e9;
+	double meric_duration = meric_period.tv_sec + (double)meric_period.tv_nsec / 1e9;
+	std::cout << "measurement delay: " << hdeem_duration - meric_duration << "\n";
 
 	std::vector<size_t> starts;
 	for (size_t i = 0; i < _records.size(); i++) {
@@ -36,28 +35,26 @@ DetailedTimeStore::~DetailedTimeStore()
 		for (size_t j = 0; j < starts.size(); j++) {
 			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
 		}
-		double start = (_records[starts.back()].time / meric_perion);
-		double end = (_records[i].time / meric_perion);
+		double start = (_records[starts.back()].time - _start) / meric_period;
+		double end = (_records[i].time - _start) / meric_period;
 		size_t firstBlade = std::ceil(start * samples.nb_blade_values);
-		size_t lastBlade = std::ceil(end * samples.nb_blade_values);
+		size_t lastBlade = std::floor(end * samples.nb_blade_values);
 		size_t firstVR = std::ceil(start * samples.nb_vr_values);
-		size_t lastVR = std::ceil(end * samples.nb_vr_values);
+		size_t lastVR = std::floor(end * samples.nb_vr_values);
 		std::vector<double> energy(PROBE_NUMBER, 0);
 		for (size_t it = firstBlade; it < lastBlade; it++) {
-			energy[0] += samples.blade_power->value[it];
+			energy[0] += samples.blade_power[it].value[0];
 		}
 		for (size_t it = firstVR; it < lastVR; it++) {
 			for (size_t vr = 0; vr < PROBE_NUMBER - 1; vr++) {
-				energy[vr + 1] += samples.vr_power[vr].value[it];
+				energy[vr + 1] += samples.vr_power[it].value[vr];
 			}
 		}
-		std::cout << "(" << start << " :: " << end << ") -> " << firstBlade << " :: " << lastBlade << "\n";
-		std::cout << "(" << start << " :: " << end << ") -> " << firstVR << " :: " << lastVR << "\n";
-		ss[_records[i].region] << energy[0] / (lastBlade - firstBlade);
+		ss[_records[i].region] << meric_duration * energy[0] / (lastBlade - firstBlade);
 		for (size_t it = 1; it < PROBE_NUMBER; it++) {
-			ss[_records[i].region] << energy[it] / (lastVR - firstVR) << " ";
+			ss[_records[i].region] << meric_duration * energy[it] / (lastVR - firstVR) << " ";
 		}
-		ss[_records[i].region] << _records[i].time - _records[starts.back()].time << "\n";
+		ss[_records[i].region] << "(" << _records[i].time - _records[starts.back()].time << "s)\n";
 		starts.pop_back();
 	}
 

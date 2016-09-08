@@ -42,10 +42,10 @@ TimeStore::~TimeStore()
 	HDEEM::getSamples(samples);
 
 	timespec hdeem_period = status.stop_time_blade - status.start_time_blade;
-	timespec meric_perion = _end - _start;
-    std::cout << "measurement delay: " << hdeem_period - meric_perion << "\n";
-
-    std::cout << "samples: " << samples.nb_blade_values << "\n";
+	timespec meric_period = _end - _start;
+	double hdeem_duration = hdeem_period.tv_sec + (double)hdeem_period.tv_nsec / 1e9;
+	double meric_duration = meric_period.tv_sec + (double)meric_period.tv_nsec / 1e9;
+	std::cout << "measurement delay: " << hdeem_duration - meric_duration << "\n";
 
 	std::vector<size_t> starts;
 	for (size_t i = 0; i < _records.size(); i++) {
@@ -57,16 +57,17 @@ TimeStore::~TimeStore()
 		for (size_t j = 0; j < starts.size(); j++) {
 			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
 		}
-		double start = (_records[starts.back()].time / meric_perion);
-		double end = (_records[i].time / meric_perion);
+		double start = (_records[starts.back()].time - _start) / meric_period;
+		double end = (_records[i].time - _start) / meric_period;
 		size_t first = std::ceil(start * samples.nb_blade_values);
-		size_t last = std::ceil(end * samples.nb_blade_values);
+		size_t last = std::floor(end * samples.nb_blade_values);
 		double energy = 0;
 		for (size_t it = first; it < last; it++) {
-			energy += samples.blade_power->value[it];
+			energy += samples.blade_power[it].value[0];
 		}
-		std::cout << "(" << start << " :: " << end << ") -> " << first << " :: " << last << "\n";
-		ss[_records[i].region] << energy / (last - first) << " " << _records[i].time - _records[starts.back()].time << "\n";
+		ss[_records[i].region]
+		   << meric_duration * energy / (last - first)
+		   << " ("<< _records[i].time - _records[starts.back()].time << "s)\n";
 		starts.pop_back();
 	}
 
