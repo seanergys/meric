@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>
 
 int main(int argc, char **argv)
 {
@@ -15,10 +16,7 @@ int main(int argc, char **argv)
 
 	MERIC_MeasureStart("B");
 
-	size_t sum = 0;
-	for (size_t i = 0; i < 1e10; i++) {
-		sum += i;
-	}
+	sleep(2);
 
 	MERIC_MeasureStop();
 	MERIC_MeasureStop();
