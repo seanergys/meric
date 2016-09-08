@@ -25,6 +25,8 @@ DetailedTimeStore::~DetailedTimeStore()
 		ss[_records[i].region] << subTimes(_records[i].time, _records[starts.back()].time) << "\n";
 		starts.pop_back();
 	}
+	_regions.clear();
+	_records.clear();
 }
 
 
