@@ -1,7 +1,6 @@
 
 #include "hdeem.h"
-#include <cstdlib>
-#include <iostream>
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
@@ -14,25 +13,24 @@ int main(int argc, char **argv)
 	hdeem_stats_reading_t stats;
 	hdeem_get_stats(&bmc, &stats);
 
-	std::cout << "hdeem start: " << stats.read_time_blade.tv_sec << "\n";
+	printf("hdeem start: %ld\n", stats.read_time_blade.tv_sec);
 	clock_gettime(CLOCK_REALTIME, &time);
-	std::cout << "clock start: " << time.tv_sec << "\n";
+	printf("clock start: %ld\n", time.tv_sec);
 
 	hdeem_stats_free(&stats);
 
-	size_t sum = 0;
-	for (size_t i = 0; i < 1e10; i++) {
+	long sum = 0;
+	for (long i = 0; i < 1e10; i++) {
 		sum += i;
 	}
 
 	hdeem_stop(&bmc);
 
-
 	hdeem_get_stats(&bmc, &stats);
 
-	std::cout << "hdeem end: " << stats.read_time_blade.tv_sec << "\n";
+	printf("hdeem end: %ld\n", stats.read_time_blade.tv_sec);
 	clock_gettime(CLOCK_REALTIME, &time);
-	std::cout << "clock end: " << time.tv_sec << "\n";
+	printf("clock end: %ld\n", time.tv_sec);
 
 	hdeem_close(&bmc);
 
