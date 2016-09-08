@@ -27,7 +27,6 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 	meric::HDEEM::stop();
-	sleep(1);
 	delete holder;
 	holder = NULL;
 	meric::HDEEM::close();

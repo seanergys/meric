@@ -34,6 +34,13 @@ TimeStore::~TimeStore()
 		name[it->second] = it->first;
 	}
 
+	hdeem_global_reading_t samples;
+	hdeem_status_t status;
+	HDEEM::getStatus(status);
+	HDEEM::getSamples(samples);
+
+	std::cout << "measurement: " << status.start_time_blade << " to " << status.stop_time_blade << "\n";
+
 	std::vector<size_t> starts;
 	for (size_t i = 0; i < _records.size(); i++) {
 		if (!starts.size() || _records[starts.back()].region != _records[i].region) {
@@ -48,4 +55,6 @@ TimeStore::~TimeStore()
 		   << subTimes(_records[i].time, _records[starts.back()].time) << "\n";
 		starts.pop_back();
 	}
+
+	HDEEM::deleteSamples(samples);
 }
