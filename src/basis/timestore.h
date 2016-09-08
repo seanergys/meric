@@ -21,9 +21,11 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
+	TimeStore() { clock_gettime(CLOCK_REALTIME, &_start); }
 	~TimeStore();
 
 protected:
+	timespec _start, _end;
 	std::vector<TimeRecord> _records;
 };
 

@@ -27,6 +27,7 @@ void TimeStore::addEnd()
 
 TimeStore::~TimeStore()
 {
+	clock_gettime(CLOCK_REALTIME, &_end);
 	std::vector<std::ofstream> ss(_regions.size());
 	std::vector<std::string> name(_regions.size());
 	for (auto it = _regions.begin(); it != _regions.end(); ++it) {
@@ -39,7 +40,8 @@ TimeStore::~TimeStore()
 	HDEEM::getStatus(status);
 	HDEEM::getSamples(samples);
 
-	std::cout << "measurement: " << status.start_time_blade << " to " << status.stop_time_blade << "\n";
+	std::cout << "hdeem: " << status.start_time_blade << " to " << status.stop_time_blade << "\n";
+	std::cout << "store: " << _start << " to " << _end << "\n";
 
 	std::vector<size_t> starts;
 	for (size_t i = 0; i < _records.size(); i++) {
