@@ -51,7 +51,7 @@ EnergyStore::~EnergyStore()
 		}
 		ss[_records[i].region]
 		   << "= " << _records[i].energy - _records[starts.back()].energy
-		   << " (" << subTimes(_records[i].time, _records[starts.back()].time) << ")\n";
+		   << " (" << _records[i].time - _records[starts.back()].time << ")\n";
 		starts.pop_back();
 	}
 }

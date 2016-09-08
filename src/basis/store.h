@@ -13,6 +13,7 @@
 #include <iomanip>
 
 #include "../wrapper/hdeemwrapper.h"
+#include "utils.h"
 
 namespace meric {
 
@@ -23,20 +24,19 @@ public:
 	virtual void addEnd() = 0;
 
 	virtual ~Store() {};
-
 protected:
-	int getRegionID(const std::string &region);
-	timespec subTimes(const timespec &a, const timespec &b);
+	int getRegionID(const std::string &region)
+	{
+		if (_regions.find(region) == _regions.end()) {
+			size_t size = _regions.size();
+			_regions[region] = size;
+		}
+		return _regions[region];
+	}
 
 	std::map<std::string, int> _regions;
 	std::vector<int> _stack;
 };
-
-inline std::ostream& operator<<(std::ostream& os, const timespec &time)
-{
-	os << time.tv_sec << "." << std::setfill('0') << std::setw(9) << time.tv_nsec;
-	return os;
-}
 
 }
 

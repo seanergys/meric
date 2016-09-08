@@ -50,7 +50,7 @@ DetailedEnergyStore::~DetailedEnergyStore()
 		for (size_t p = 0; p < PROBE_NUMBER; p++) {
 			ss[_records[i].region] << _records[i].energy[p] - _records[starts.back()].energy[p] << " ";
 		}
-		ss[_records[i].region] << "(" << subTimes(_records[i].time, _records[starts.back()].time) << ")\n";
+		ss[_records[i].region] << "(" << _records[i].time - _records[starts.back()].time << ")\n";
 		starts.pop_back();
 	}
 }
