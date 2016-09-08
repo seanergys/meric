@@ -3,6 +3,8 @@
 #define SRC_BASIS_UTILS_H_
 
 #include <string>
+#include <cstdlib>
+#include <sstream>
 
 namespace meric {
 
