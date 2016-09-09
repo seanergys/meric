@@ -30,11 +30,11 @@ void TimeStore::computePeriods()
 {
 	hdeem_status_t status;
 	HDEEM::getStatus(status);
-	timespec hdeem_period = status.stop_time_blade - status.start_time_blade;
-	timespec meric_period = _end - _start;
-	double hdeem_duration = hdeem_period.tv_sec + (double)hdeem_period.tv_nsec / 1e9;
-	double meric_duration = meric_period.tv_sec + (double)meric_period.tv_nsec / 1e9;
-	std::cout << "measurement error: " << hdeem_duration - meric_duration << "\n";
+	_hdeem_period = status.stop_time_blade - status.start_time_blade;
+	_meric_period = _end - _start;
+	_hdeem_duration = _hdeem_period.tv_sec + (double)_hdeem_period.tv_nsec / 1e9;
+	_meric_duration = _meric_period.tv_sec + (double)_meric_period.tv_nsec / 1e9;
+	std::cout << "measurement error: " << _hdeem_duration - _meric_duration << "\n";
 }
 
 void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -54,5 +54,5 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 		energy += _samples.blade_power[it].value[0];
 	}
 
-	ss << _meric_duration * energy / (last - first) << " ("<< _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
+	ss << _meric_duration * energy / (last - first) << " (" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
 }
