@@ -13,7 +13,7 @@
 #include <iomanip>
 
 #include "../wrapper/hdeemwrapper.h"
-#include "utils.h"
+#include "../basis/utils.h"
 
 namespace meric {
 

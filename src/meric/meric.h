@@ -4,11 +4,12 @@
 
 #include <iostream>
 
-#include "../basis/detailedenergystore.h"
 #include "../basis/utils.h"
-#include "../basis/energystore.h"
-#include "../basis/timestore.h"
-#include "../basis/detailedtimestore.h"
+
+#include "../store/detailedenergystore.h"
+#include "../store/energystore.h"
+#include "../store/timestore.h"
+#include "../store/detailedtimestore.h"
 
 namespace meric {
 
