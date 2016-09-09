@@ -22,9 +22,11 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
-	~DetailedEnergyStore();
+	void save() { iterate(_records); }
 
-private:
+protected:
+	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
+
 	std::vector<DetailedEnergyRecord> _records;
 };
 

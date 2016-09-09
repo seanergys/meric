@@ -8,8 +8,8 @@ namespace meric {
 
 class DetailedTimeStore: public TimeStore {
 
-public:
-	~DetailedTimeStore();
+protected:
+	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 };
 
 }

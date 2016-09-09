@@ -21,6 +21,7 @@ public:
 
 	virtual void start(const std::string &region) { _store->addStart(region); }
 	virtual void stop() { _store->addEnd(); }
+	virtual void save() { _store->save(); }
 
 	Meric();
 	virtual ~Meric() { delete _store; }

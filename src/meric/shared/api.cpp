@@ -27,9 +27,11 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 	meric::HDEEM::stop();
+	holder->save();
+	meric::HDEEM::close();
+
 	delete holder;
 	holder = NULL;
-	meric::HDEEM::close();
 }
 
 void MERIC_MeasureStart(const char* name)

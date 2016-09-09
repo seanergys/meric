@@ -26,50 +26,33 @@ void TimeStore::addEnd()
 	}
 }
 
-TimeStore::~TimeStore()
+void TimeStore::computePeriods()
 {
-	clock_gettime(CLOCK_REALTIME, &_end);
-	std::vector<std::ofstream> ss(_regions.size());
-	std::vector<std::string> name(_regions.size());
-	for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-		ss[it->second].open(it->first.c_str());
-		name[it->second] = it->first;
-	}
-
-	hdeem_global_reading_t samples;
 	hdeem_status_t status;
 	HDEEM::getStatus(status);
-	HDEEM::getSamples(samples);
-
 	timespec hdeem_period = status.stop_time_blade - status.start_time_blade;
 	timespec meric_period = _end - _start;
 	double hdeem_duration = hdeem_period.tv_sec + (double)hdeem_period.tv_nsec / 1e9;
 	double meric_duration = meric_period.tv_sec + (double)meric_period.tv_nsec / 1e9;
-	std::cout << "measurement delay: " << hdeem_duration - meric_duration << "\n";
+	std::cout << "measurement error: " << hdeem_duration - meric_duration << "\n";
+}
 
-	std::vector<size_t> starts;
-	for (size_t i = 0; i < _records.size(); i++) {
-		if (!starts.size() || _records[starts.back()].region != _records[i].region) {
-			starts.push_back(i);
-			continue;
-		}
-		ss[_records[i].region] << "time ";
-		for (size_t j = 0; j < starts.size(); j++) {
-			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
-		}
-		double start = (_records[starts.back()].time - _start) / meric_period;
-		double end = (_records[i].time - _start) / meric_period;
-		size_t first = std::ceil(start * samples.nb_blade_values);
-		size_t last = std::floor(end * samples.nb_blade_values);
-		double energy = 0;
-		for (size_t it = first; it < last; it++) {
-			energy += samples.blade_power[it].value[0];
-		}
-		ss[_records[i].region]
-		   << meric_duration * energy / (last - first)
-		   << " ("<< _records[i].time - _records[starts.back()].time << "s)\n";
-		starts.pop_back();
+void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+{
+	ss << "time ";
+	for (size_t j = 0; j < iStarts.size(); j++) {
+		ss << _name[_records[iStarts[j]].region] << " ";
 	}
 
-	HDEEM::deleteSamples(samples);
+	double start = (_records[iStarts.back()].time - _start) / _meric_period;
+	double end = (_records[iEnd].time - _start) / _meric_period;
+	size_t first = std::ceil(start * _samples.nb_blade_values);
+	size_t last = std::floor(end * _samples.nb_blade_values);
+
+	double energy = 0;
+	for (size_t it = first; it < last; it++) {
+		energy += _samples.blade_power[it].value[0];
+	}
+
+	ss << _meric_duration * energy / (last - first) << " ("<< _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
 }

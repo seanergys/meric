@@ -27,32 +27,17 @@ void DetailedEnergyStore::addEnd()
 	}
 }
 
-DetailedEnergyStore::~DetailedEnergyStore()
+void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	std::vector<std::ofstream> ss(_regions.size());
-	std::vector<std::string> name(_regions.size());
-	for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-		ss[it->second].open(it->first.c_str());
-		name[it->second] = it->first;
+	ss << "energy ";
+	for (size_t j = 0; j < iStarts.size(); j++) {
+		ss << _name[_records[iStarts[j]].region] << " ";
 	}
 
-	std::vector<size_t> starts;
-	for (size_t i = 0; i < _records.size(); i++) {
-		if (!starts.size() || _records[starts.back()].region != _records[i].region) {
-			starts.push_back(i);
-			continue;
-		}
-		ss[_records[i].region] << "energy ";
-		for (size_t j = 0; j < starts.size(); j++) {
-			ss[_records[i].region] << name[_records[starts[j]].region] << " ";
-		}
-		ss[_records[i].region] << "= ";
-		for (size_t p = 0; p < PROBE_NUMBER; p++) {
-			ss[_records[i].region] << _records[i].energy[p] - _records[starts.back()].energy[p] << " ";
-		}
-		ss[_records[i].region] << "(" << _records[i].time - _records[starts.back()].time << ")\n";
-		starts.pop_back();
+	for (size_t p = 0; p < PROBE_NUMBER; p++) {
+		ss << _records[iEnd].energy[p] - _records[iStarts.back()].energy[p] << " ";
 	}
+	ss << "(" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
 }
 
 
