@@ -3,6 +3,7 @@
 #define SRC_BASIS_TIMESTORE_H_
 
 #include "store.h"
+#include <unistd.h>
 
 namespace meric {
 
@@ -24,6 +25,7 @@ public:
 	void save()
 	{
 		clock_gettime(CLOCK_REALTIME, &_end);
+		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
 		iterate(_records);
