@@ -3,9 +3,10 @@
 #define SRC_MERIC_MERIC_H_
 
 #include <iostream>
+#include <map>
 
+#include "../basis/tokenizer.h"
 #include "../basis/utils.h"
-
 #include "../store/detailedenergystore.h"
 #include "../store/energystore.h"
 #include "../store/timestore.h"
@@ -13,9 +14,15 @@
 
 namespace meric {
 
+struct RegionParameters {
+	double frequency;
+};
+
 class Meric {
 
 public:
+	static void readRegionParameters();
+
 	static bool CONTINUAL;
 	static bool DETAILED;
 	static std::string OUTPUT_DIR;
@@ -29,6 +36,7 @@ public:
 
 protected:
 	Store * _store;
+	static std::map<std::string, RegionParameters> parameter;
 };
 
 }

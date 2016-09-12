@@ -15,6 +15,7 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
+	meric::Meric::readRegionParameters();
 	meric::HDEEM::init();
 	meric::HDEEM::start();
 	holder = new meric::SharedMeric();

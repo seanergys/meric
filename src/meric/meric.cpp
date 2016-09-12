@@ -7,6 +7,39 @@ bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL", false);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED", false);
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPU_DIR", "log");
 
+std::map<std::string, RegionParameters> Meric::parameter;
+
+void Meric::readRegionParameters()
+{
+	std::vector<std::string> values;
+	Tokenizer tokenizer("region.options");
+	while (tokenizer.next() != Tokenizer::Token::END) {
+		switch (tokenizer.token()) {
+		case Tokenizer::Token::STRING:
+			values.push_back(tokenizer.value());
+			break;
+		case Tokenizer::Token::OBJECT_OPEN:
+			if (values.size() != 1) {
+				std::cerr << "MERIC ERROR: invalid options format! Use: 'region' { 'parameter' = 'value', ... }\n";
+			}
+			break;
+		case Tokenizer::Token::OBJECT_CLOSE:
+			if (values.size() % 2 != 1) {
+				std::cerr << "MERIC ERROR: invalid options format! Use: 'region' { 'parameter' = 'value', ... }\n";
+			} else {
+				RegionParameters &region = Meric::parameter[values[0]];
+				for (size_t i = 1; i < values.size(); i += 2) {
+					if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY")) {
+						std::stringstream ss(values[i + 1]);
+						ss >> region.frequency;
+					}
+				}
+			}
+			values.clear();
+			break;
+		}
+	}
+}
 
 Meric::Meric()
 {
