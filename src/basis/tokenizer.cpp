@@ -5,7 +5,7 @@ using namespace meric;
 
 static bool isWhiteSpace(int c)
 {
-	return !(('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || c == '{' || c == '}' || c == '_');
+	return !(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || c == '{' || c == '}' || c == '_');
 }
 
 static void skipWhiteSpaces(std::ifstream &is)
