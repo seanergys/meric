@@ -14,6 +14,8 @@
 
 namespace meric {
 
+#ifndef USE_DUMMY
+
 class HDEEM {
 
 public:
@@ -55,6 +57,42 @@ private:
 		}
 	}
 };
+
+#else
+
+class HDEEM {
+
+public:
+	static void init() {};
+	static void close() {};
+	static void start() {};
+	static void stop() {};
+
+	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
+	static void fillEnergy(double &energy, timespec &time)
+	{
+		energy = HDEEM::energy++;
+		clock_gettime(CLOCK_REALTIME, &time);
+	}
+	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	{
+		for (size_t i = 0; i < PROBE_NUMBER; i++) {
+			energy[i] = HDEEM::energy;
+		}
+		HDEEM::energy++;
+		clock_gettime(CLOCK_REALTIME, &time);
+	}
+
+	static void getStatus(hdeem_status_t &status) {};
+	static void getSamples(hdeem_global_reading_t &samples) { samples.nb_blade_values = samples.nb_vr_values = 0; }
+	static void deleteSamples(hdeem_global_reading_t &samples) {};
+
+private:
+	static size_t energy;
+};
+
+
+#endif
 
 }
 
