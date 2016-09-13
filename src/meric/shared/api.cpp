@@ -1,6 +1,5 @@
 
 #include <cstdlib>
-#include <unistd.h>
 
 #include "../../../include/meric.h"
 #include "meric.h"

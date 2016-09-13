@@ -13,12 +13,23 @@ class DistributedMeric: public Meric {
 public:
 	DistributedMeric();
 
-	void start(const std::string &region);
-	void stop();
+	void start(const std::string &region)
+	{
+		MPI_Barrier(_currentNode);
+		Meric::start(region);
+	}
+	void stop()
+	{
+		MPI_Barrier(_currentNode);
+		Meric::stop();
+	}
 
 protected:
-	int _MPIrank;
-	int _MPIsize;
+	int _MPIglobalRank;
+	int _MPIglobalSize;
+	int _MPInodeRank;
+	int _MPInodeSize;
+	MPI_Comm _currentNode;
 
 };
 

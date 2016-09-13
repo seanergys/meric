@@ -1,7 +1,6 @@
 
 #include "mpi.h"
 #include <cstdlib>
-#include <iostream>
 
 #include "../../../include/meric.h"
 #include "meric.h"
@@ -25,15 +24,30 @@ void MERIC_Init()
 		std::cerr << "MERIC ERROR: call MERIC_Init() before MERIC_Close()\n";
 		exit(EXIT_FAILURE);
 	}
+
+	meric::Meric::readRegionParameters();
+	meric::HDEEM::init();
+	meric::HDEEM::start();
 	holder = new meric::DistributedMeric();
 }
 
 void MERIC_Close()
 {
+	int finalized;
+	MPI_Finalized(&finalized);
+	if (finalized) {
+		std::cerr << "MERIC ERROR: call MERIC_Close() after MPI_Finalize()\n";
+		exit(EXIT_FAILURE);
+	}
 	if (holder == NULL) {
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
+
+	meric::HDEEM::stop();
+	holder->save();
+	meric::HDEEM::close();
+
 	delete holder;
 	holder = NULL;
 }

@@ -35,8 +35,9 @@ public:
 	virtual ~Meric() { delete _store; }
 
 protected:
-	Store * _store;
 	static std::map<std::string, RegionParameters> parameter;
+
+	Store * _store;
 };
 
 }
