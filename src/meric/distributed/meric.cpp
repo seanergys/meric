@@ -13,6 +13,7 @@ DistributedMeric::DistributedMeric()
 	int length;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
 	MPI_Get_processor_name(name.data(), &length);
+	_nodeName = std::string(name.begin(), name.begin() + length);
 
 	std::vector<int> rCounts(_MPIglobalSize);
 	std::vector<int> rDispl(_MPIglobalSize);
@@ -39,10 +40,50 @@ DistributedMeric::DistributedMeric()
 	}
 
 	MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-	MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
 
+	MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
 	MPI_Comm_rank(_currentNode, &_MPInodeRank);
 	MPI_Comm_size(_currentNode, &_MPInodeSize);
+
+	MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+
+	if (Meric::CONTINUAL) {
+		if (Meric::DETAILED) {
+			if (Meric::AGGREGATE) {
+				_store = new DetailedTimeStore();
+			} else {
+				_store = new DetailedTimeStore();
+			}
+		} else {
+			if (Meric::AGGREGATE) {
+				_store = new TimeStore();
+			} else {
+				_store = new TimeStore();
+			}
+		}
+	} else {
+		if (Meric::DETAILED) {
+			if (Meric::AGGREGATE) {
+				_store = new DetailedEnergyStore();
+			} else {
+				_store = new DetailedEnergyStore();
+			}
+		} else {
+			if (Meric::AGGREGATE) {
+				_store = new EnergyStore();
+			} else {
+				_store = new EnergyStore();
+			}
+		}
+	}
+}
+
+DistributedMeric::~DistributedMeric()
+{
+	MPI_Comm_free(&_currentNode);
+	MPI_Comm_free(&_storingProcs);
+
+	delete _store;
 }
 
 

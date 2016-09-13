@@ -25,14 +25,14 @@ public:
 
 	static bool CONTINUAL;
 	static bool DETAILED;
+	static bool AGGREGATE;
 	static std::string OUTPUT_DIR;
 
 	virtual void start(const std::string &region) { _store->addStart(region); }
 	virtual void stop() { _store->addEnd(); }
 	virtual void save() { _store->save(); }
 
-	Meric();
-	virtual ~Meric() { delete _store; }
+	virtual ~Meric() {};
 
 protected:
 	static std::map<std::string, RegionParameters> parameter;

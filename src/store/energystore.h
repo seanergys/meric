@@ -22,7 +22,18 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
-	void save() { iterate(_records); }
+	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
+	{
+		stats.energy = _records[iEnd].energy - _records[iStarts].energy;
+		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	}
+	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
+	{
+		stats.energy[0] = _records[iEnd].energy - _records[iStarts].energy;
+		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	}
+
+	void save(const std::string prefix = "") { iterate(_records, prefix); }
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

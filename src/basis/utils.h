@@ -13,6 +13,11 @@ struct mutils {
 
 	template <typename Ttype>
 	static Ttype getenv(const std::string &param, Ttype defaultValue);
+
+	static double timeToDouble(const timespec &time)
+	{
+		return time.tv_sec + time.tv_nsec / 1e9;
+	}
 };
 
 inline timespec operator-(const timespec &a, const timespec &b)

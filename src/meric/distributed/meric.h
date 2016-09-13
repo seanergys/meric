@@ -12,16 +12,31 @@ class DistributedMeric: public Meric {
 
 public:
 	DistributedMeric();
+	~DistributedMeric();
 
 	void start(const std::string &region)
 	{
 		MPI_Barrier(_currentNode);
-		Meric::start(region);
+		if (!_MPInodeRank) {
+			Meric::start(region);
+		}
 	}
 	void stop()
 	{
 		MPI_Barrier(_currentNode);
-		Meric::stop();
+		if (!_MPInodeRank) {
+			Meric::stop();
+		}
+	}
+	void save()
+	{
+		if (!_MPInodeRank) {
+			if (Meric::AGGREGATE) {
+				_store->save(_nodeName);
+			} else {
+				_store->save(_nodeName);
+			}
+		}
 	}
 
 protected:
@@ -29,8 +44,9 @@ protected:
 	int _MPIglobalSize;
 	int _MPInodeRank;
 	int _MPInodeSize;
+	std::string _nodeName;
 	MPI_Comm _currentNode;
-
+	MPI_Comm _storingProcs;
 };
 
 }

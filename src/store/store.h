@@ -17,24 +17,34 @@
 
 namespace meric {
 
-class Store
+struct RegionStats {
+	double energy;
+	double duration;
+};
+
+struct DetailedRegionStats {
+	double energy[PROBE_NUMBER];
+	double duration;
+};
+
+class StoreBase
 {
 public:
 	virtual void addStart(const std::string &region) = 0;
 	virtual void addEnd() = 0;
 
-	virtual void save() = 0;
+	virtual void save(const std::string prefix = "") = 0;
 
-	virtual ~Store() {};
+	virtual ~StoreBase() {};
 protected:
-	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t end) = 0;
+	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
 
-	template <class TRecord> void iterate(std::vector<TRecord> &records)
+	template <class TRecord> void iterate(std::vector<TRecord> &records, const std::string &prefix)
 	{
 		std::vector<std::ofstream> ss(_regions.size());
 		std::vector<std::string> name(_regions.size());
 		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-			ss[it->second].open(it->first.c_str());
+			ss[it->second].open((prefix.size() ? prefix + "." : "" ) + it->first.c_str());
 			name[it->second] = it->first;
 		}
 
@@ -64,6 +74,15 @@ protected:
 	std::map<std::string, int> _regions;
 	std::vector<std::string> _name;
 	std::vector<int> _stack;
+};
+
+class Store: public StoreBase {
+
+public:
+	virtual void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd) = 0;
+	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
+
+	virtual ~Store() {};
 };
 
 }

@@ -22,13 +22,16 @@ public:
 	void addStart(const std::string &region);
 	void addEnd();
 
-	void save()
+	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
+	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
+
+	void save(const std::string prefix = "")
 	{
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
-		iterate(_records);
+		iterate(_records, prefix);
 		HDEEM::deleteSamples(_samples);
 	}
 
