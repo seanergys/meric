@@ -14,6 +14,7 @@ void Meric::readRegionParameters()
 	std::vector<std::string> values;
 	Tokenizer tokenizer("region.options");
 	while (tokenizer.next() != Tokenizer::Token::END) {
+		std::cout << tokenizer.value() << "\n";
 		switch (tokenizer.token()) {
 		case Tokenizer::Token::STRING:
 			values.push_back(tokenizer.value());
@@ -27,6 +28,10 @@ void Meric::readRegionParameters()
 			if (values.size() % 2 != 1) {
 				std::cerr << "MERIC ERROR: invalid options format! Use: 'region' { 'parameter' = 'value', ... }\n";
 			} else {
+				for (size_t i = 0; i < values.size(); i++) {
+					std::cout << values[i] << " ";
+				}
+				std::cout << "\n";
 				RegionParameters &region = Meric::parameter[values[0]];
 				for (size_t i = 1; i < values.size(); i += 2) {
 					if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY")) {
@@ -36,6 +41,10 @@ void Meric::readRegionParameters()
 				}
 			}
 			values.clear();
+			break;
+		case Tokenizer::Token::ASSIGN:
+		case Tokenizer::Token::DELIMITER:
+		case Tokenizer::Token::LINE_END:
 			break;
 		}
 	}

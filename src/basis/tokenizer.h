@@ -52,17 +52,16 @@ class Tokenizer {
 public:
 	enum class Token {
 		STRING,
+		DELIMITER,
+		ASSIGN,
 		OBJECT_OPEN,
 		OBJECT_CLOSE,
+		LINE_END,
 		END
 	};
 
 	Tokenizer(const std::string &file): _file(file), _token(Token::END)
 	{
-		if (!_file.is_open()) {
-			std::cerr << "Meric: cannot open file '" << file << "'\n";
-			exit(EXIT_FAILURE);
-		}
 		_buffer.reserve(50);
 	}
 
