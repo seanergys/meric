@@ -27,11 +27,18 @@ public:
 
 	void save(const std::string prefix = "")
 	{
+		save(prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+			saveInterval(ss, iStarts, iEnd);
+		});
+	}
+
+	void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
-		iterate(_records, prefix);
+		iterate(_records, prefix, processInterval);
 		HDEEM::deleteSamples(_samples);
 	}
 

@@ -36,6 +36,10 @@ public:
 	}
 
 	void save(const std::string prefix = "") { iterate(_records, prefix); }
+	void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
+		iterate(_records, prefix, processInterval);
+	}
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

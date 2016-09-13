@@ -50,13 +50,13 @@ DistributedMeric::DistributedMeric()
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			if (Meric::AGGREGATE) {
-				_store = new DetailedTimeStore();
+				_store = new DetailedAggregateStore<DetailedTimeStore>();
 			} else {
 				_store = new DetailedTimeStore();
 			}
 		} else {
 			if (Meric::AGGREGATE) {
-				_store = new TimeStore();
+				_store = new AggregateStore<TimeStore>();
 			} else {
 				_store = new TimeStore();
 			}
@@ -64,13 +64,13 @@ DistributedMeric::DistributedMeric()
 	} else {
 		if (Meric::DETAILED) {
 			if (Meric::AGGREGATE) {
-				_store = new DetailedEnergyStore();
+				_store = new DetailedAggregateStore<DetailedEnergyStore>();
 			} else {
 				_store = new DetailedEnergyStore();
 			}
 		} else {
 			if (Meric::AGGREGATE) {
-				_store = new EnergyStore();
+				_store = new AggregateStore<EnergyStore>();
 			} else {
 				_store = new EnergyStore();
 			}

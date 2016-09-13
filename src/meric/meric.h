@@ -37,7 +37,8 @@ public:
 protected:
 	static std::map<std::string, RegionParameters> parameter;
 
-	Store * _store;
+
+	StoreBase * _store;
 };
 
 }

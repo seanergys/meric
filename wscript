@@ -18,7 +18,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx.objects(
-        source = 
+        source =
             ctx.path.ant_glob('src/basis/*.cpp') +
             ctx.path.ant_glob('src/store/*.cpp') +
             ctx.path.ant_glob('src/meric/*.cpp') +

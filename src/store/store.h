@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <functional>
 
 #include <iostream>
 #include <sstream>
@@ -41,6 +42,16 @@ protected:
 
 	template <class TRecord> void iterate(std::vector<TRecord> &records, const std::string &prefix)
 	{
+		iterate(records, prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+			saveInterval(ss, iStarts, iEnd);
+		});
+	}
+
+	template <class TRecord> void iterate(
+			std::vector<TRecord> &records,
+			const std::string &prefix,
+			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
 		std::vector<std::ofstream> ss(_regions.size());
 		std::vector<std::string> name(_regions.size());
 		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
@@ -55,7 +66,7 @@ protected:
 				continue;
 			}
 
-			saveInterval(ss[records[i].region], starts, i);
+			processInterval(ss[records[i].region], starts, i);
 
 			starts.pop_back();
 		}
@@ -81,6 +92,8 @@ class Store: public StoreBase {
 public:
 	virtual void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd) = 0;
 	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
+
+	virtual void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 
 	virtual ~Store() {};
 };
