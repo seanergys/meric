@@ -2,13 +2,13 @@
 from waflib import Logs
 
 def configure(ctx):
-    ctx.load("g++")
+    ctx.load(ctx.options.cpp)
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-g", "-O0" ])
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
 
-    ctx.find_program("mpic++", var="MPICXX", mandatory=False)
+    ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
         ctx.env.CXX = list(ctx.env.MPICXX)
@@ -52,4 +52,17 @@ def options(opt):
         default=False,
         help="use dummy HDEEM wrapper"
     )
-    
+
+    opt.add_option(
+        "--cpp",
+        action="store",
+        default="g++",
+        help="C++ compiler"
+    )
+
+    opt.add_option(
+        "--mpi",
+        action="store",
+        default="mpic++",
+        help="MPI C++ compiler"
+    )

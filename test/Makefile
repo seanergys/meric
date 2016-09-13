@@ -5,3 +5,6 @@ all:
 
 mpi:
 	mpic++ -O2 distributed.cpp -L../lib -lmericmpi -L../hdeem -lhdeem -lrt -o test_mpi
+
+mpiicpc:
+	mpiicpc -O2 distributed.cpp -L../lib -lmericmpi -L../hdeem -lhdeem -lrt -o test_mpi
