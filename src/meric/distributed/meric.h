@@ -32,6 +32,7 @@ public:
 	}
 	void save()
 	{
+		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
 			HDEEM::stop();
 		}
@@ -42,6 +43,8 @@ public:
 				_store->save(_nodeName);
 			}
 		}
+		sleep(1);
+		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
 			HDEEM::start();
 		}
