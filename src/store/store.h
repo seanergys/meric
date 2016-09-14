@@ -72,6 +72,23 @@ protected:
 		}
 	}
 
+	template <class TRecord> void iterate(
+			std::vector<TRecord> &records,
+			std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
+		std::vector<size_t> starts;
+		for (size_t i = 0; i < records.size(); i++) {
+			if (!starts.size() || records[starts.back()].region != records[i].region) {
+				starts.push_back(i);
+				continue;
+			}
+
+			processInterval(starts, i);
+
+			starts.pop_back();
+		}
+	}
+
 	int getRegionID(const std::string &region)
 	{
 		if (_regions.find(region) == _regions.end()) {
@@ -94,6 +111,7 @@ public:
 	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
 
 	virtual void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
+	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 
 	virtual ~Store() {};
 };

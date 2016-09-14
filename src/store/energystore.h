@@ -38,6 +38,10 @@ public:
 	{
 		iterate(_records, prefix, processInterval);
 	}
+	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
+		iterate(_records, processInterval);
+	}
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

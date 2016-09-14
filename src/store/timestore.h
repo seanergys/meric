@@ -41,6 +41,15 @@ public:
 		iterate(_records, prefix, processInterval);
 		HDEEM::deleteSamples(_samples);
 	}
+	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	{
+		clock_gettime(CLOCK_REALTIME, &_end);
+		sleep(1); // wait for HDEEM to load all samples
+		computePeriods();
+		HDEEM::getSamples(_samples);
+		iterate(_records, processInterval);
+		HDEEM::deleteSamples(_samples);
+	}
 
 	TimeStore(): _hdeem_duration(0), _meric_duration(0) { clock_gettime(CLOCK_REALTIME, &_start); }
 
