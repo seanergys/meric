@@ -5,6 +5,8 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
+	HDEEM::init();
+	HDEEM::start();
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();
@@ -22,6 +24,8 @@ SharedMeric::SharedMeric()
 
 SharedMeric::~SharedMeric()
 {
+	HDEEM::stop();
+	HDEEM::close();
 	delete _store;
 }
 

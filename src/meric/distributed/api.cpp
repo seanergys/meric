@@ -26,8 +26,6 @@ void MERIC_Init()
 	}
 
 	meric::Meric::readRegionParameters();
-	meric::HDEEM::init();
-	meric::HDEEM::start();
 	holder = new meric::DistributedMeric();
 }
 
@@ -44,9 +42,7 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 
-	meric::HDEEM::stop();
 	holder->save();
-	meric::HDEEM::close();
 
 	delete holder;
 	holder = NULL;

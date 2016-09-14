@@ -15,8 +15,6 @@ void MERIC_Init()
 	}
 
 	meric::Meric::readRegionParameters();
-	meric::HDEEM::init();
-	meric::HDEEM::start();
 	holder = new meric::SharedMeric();
 }
 
@@ -26,9 +24,8 @@ void MERIC_Close()
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
-	meric::HDEEM::stop();
 	holder->save();
-	meric::HDEEM::close();
+
 
 	delete holder;
 	holder = NULL;

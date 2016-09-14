@@ -33,11 +33,17 @@ public:
 	void save()
 	{
 		if (!_MPInodeRank) {
+			HDEEM::stop();
+		}
+		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
 				_store->save(_nodeName);
 			} else {
 				_store->save(_nodeName);
 			}
+		}
+		if (!_MPInodeRank) {
+			HDEEM::start();
 		}
 	}
 

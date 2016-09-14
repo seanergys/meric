@@ -47,6 +47,11 @@ DistributedMeric::DistributedMeric()
 
 	MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 
+	if (!_MPInodeRank) {
+		HDEEM::init();
+		HDEEM::start();
+	}
+
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			if (Meric::AGGREGATE) {
@@ -80,6 +85,10 @@ DistributedMeric::DistributedMeric()
 
 DistributedMeric::~DistributedMeric()
 {
+	if (!_MPInodeRank) {
+		HDEEM::stop();
+		HDEEM::close();
+	}
 	MPI_Comm_free(&_currentNode);
 	MPI_Comm_free(&_storingProcs);
 

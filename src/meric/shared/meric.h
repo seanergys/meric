@@ -9,6 +9,13 @@ namespace meric {
 class SharedMeric: public Meric {
 
 public:
+	void save()
+	{
+		HDEEM::stop();
+		_store->save();
+		HDEEM::start();
+	}
+
 	SharedMeric();
 	~SharedMeric();
 };
