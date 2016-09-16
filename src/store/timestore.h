@@ -19,20 +19,20 @@ struct TimeRecord {
 class TimeStore: public Store {
 
 public:
-	void addStart(const std::string &region);
-	void addEnd();
+	virtual void addStart(const std::string &region);
+	virtual void addEnd();
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
 
-	void save(const std::string prefix = "")
+	virtual void save(const std::string prefix = "")
 	{
 		save(prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
 	}
 
-	void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	virtual void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
@@ -41,7 +41,7 @@ public:
 		iterate(_records, prefix, processInterval);
 		HDEEM::deleteSamples(_samples);
 	}
-	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
@@ -57,12 +57,12 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void computePeriods();
 
-	std::vector<TimeRecord> _records;
-
 	timespec _start, _end;
 	timespec _hdeem_period, _meric_period;
 	double _hdeem_duration, _meric_duration;
 	hdeem_global_reading_t _samples;
+
+	std::vector<TimeRecord> _records;
 };
 
 }

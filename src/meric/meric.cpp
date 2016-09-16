@@ -3,10 +3,11 @@
 
 using namespace meric;
 
-bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL", false);
-bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED",  false);
-bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE", false);
-std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPU_DIR", "log");
+bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , false);
+bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
+bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , false);
+bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
+std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", "log");
 
 std::map<std::string, RegionParameters> Meric::parameter;
 

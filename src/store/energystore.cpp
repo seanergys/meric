@@ -1,6 +1,7 @@
 
 #include "energystore.h"
 #include <sys/time.h>
+#include <cmath>
 
 using namespace meric;
 
@@ -10,10 +11,11 @@ void EnergyStore::addStart(const std::string &region)
 
 	double energy;
 	timespec time;
-	HDEEM::fillEnergy(energy, time);
 
+	HDEEM::fillEnergy(energy, time);
 	_records.push_back(EnergyRecord(_regions[region], time, energy));
 	_stack.push_back(_regions[region]);
+
 }
 
 void EnergyStore::addEnd()
@@ -21,6 +23,7 @@ void EnergyStore::addEnd()
 	if (_stack.size()) {
 		double energy;
 		timespec time;
+
 		HDEEM::fillEnergy(energy, time);
 		_records.push_back(EnergyRecord(_stack.back(), time, energy));
 		_stack.pop_back();

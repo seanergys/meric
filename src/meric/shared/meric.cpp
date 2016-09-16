@@ -7,6 +7,12 @@ SharedMeric::SharedMeric()
 {
 	HDEEM::init();
 	HDEEM::start();
+
+	if (Meric::DEBUG) {
+		_store = new TimeEnergyStore();
+		return;
+	}
+
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();

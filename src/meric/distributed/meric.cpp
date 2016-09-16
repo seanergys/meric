@@ -52,6 +52,11 @@ DistributedMeric::DistributedMeric()
 		HDEEM::start();
 	}
 
+	if (Meric::DEBUG) {
+		_store = new AggregateStore<TimeEnergyStore>(_storingProcs);
+		return;
+	}
+
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			if (Meric::AGGREGATE) {

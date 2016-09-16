@@ -11,6 +11,7 @@
 #include "../store/energystore.h"
 #include "../store/timestore.h"
 #include "../store/detailedtimestore.h"
+#include "../store/timeenergystore.h"
 
 namespace meric {
 
@@ -26,6 +27,7 @@ public:
 	static bool CONTINUAL;
 	static bool DETAILED;
 	static bool AGGREGATE;
+	static bool DEBUG;
 	static std::string OUTPUT_DIR;
 
 	virtual void start(const std::string &region) { _store->addStart(region); }
