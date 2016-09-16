@@ -1,7 +1,7 @@
 
 #include "detailedaggregatestore.h"
 
-using namespace meric;
+namespace meric {
 
 template <class TStore>
 void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -31,3 +31,4 @@ void DetailedAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, 
 }
 
 
+}

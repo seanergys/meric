@@ -1,7 +1,7 @@
 
 #include "aggregatedstore.h"
 
-using namespace meric;
+namespace meric {
 
 template <class TStore>
 void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -27,6 +27,6 @@ void AggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t i
 	MPI_Gather(&stats, sizeof(RegionStats), MPI_BYTE, _buffer.data(), sizeof(RegionStats), MPI_BYTE, 0, _comm);
 }
 
-
+}
 
 

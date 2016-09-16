@@ -86,19 +86,10 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 		ss << _name[_records[iStarts[j]].region] << " ";
 	}
 
-	double start = (_records[iStarts.back()].time - _start) / _meric_period;
-	double end = (_records[iEnd].time - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
+	RegionStats stats;
+	fillRegionStats(stats, iStarts.back(), iEnd);
 
 	ss << "# Blade samples" << std::endl;
 
-	double energy = 0;
-	for (size_t it = first; it < last; it++) {
-		double valTmp = _samples.blade_power[it].value[0];
-		energy += valTmp;
-		ss << it << "," << valTmp << std::endl;
-	}
-
-	ss << _meric_duration * energy / (last - first) << " (" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
+	ss << stats.energy << " (" << stats.duration << "s)\n";
 }
