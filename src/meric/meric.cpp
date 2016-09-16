@@ -3,14 +3,18 @@
 
 using namespace meric;
 
-bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL", false);
-bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED", false);
-std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPU_DIR", "log");
+bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , false);
+bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
+bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
+std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", "log");
 
 
 Meric::Meric()
 {
-    std::cout << "CONTINUAL: " << Meric::CONTINUAL << std::endl;
+	if (Meric::DEBUG) {
+		_store = new TimeEnergyStore();
+		return;
+	}
 
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {

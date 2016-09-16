@@ -36,44 +36,12 @@ void EnergyStore::addEnd()
 
 void EnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-    ss << "# CALLTREE;init_" << _init;
+	ss << "energy ";
 	for (size_t j = 0; j < iStarts.size(); j++) {
-		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
+		ss << _name[_records[iStarts[j]].region] << " ";
 	}
-    ss << std::endl;
-
-    ss << "# Job info" << std::endl
-       << "JOB ID," << _jobID << "." << _stepID  << std::endl
-       << "Nodelist," << _nodelist << std::endl
-       << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
-
-    double start = (_records[iStarts.back()].time - _start) / _meric_period;
-    double end = (_records[iEnd].time - _start) / _meric_period;
-    size_t first = std::ceil(start * _samples.nb_blade_values);
-    size_t last = std::floor(end * _samples.nb_blade_values);
-
-    ss << "# Blade samples" << std::endl;
-
-    double energy = 0;
-    double maxWatts = 0;
-    double minWatts = 0;
-    for (size_t it = first; it < last; it++) {
-        double valTmp = _samples.blade_power[it].value[0];
-        if (valTmp > maxWatts) {
-            maxWatts = valTmp;
-        } else if (valTmp < minWatts) {
-            minWatts = valTmp;
-        }
-
-        energy += valTmp;
-        ss << it << "," << valTmp << std::endl;
-    }
-    double avgWatts = energy/(last-first);
-    
-
-    ss << "# Blade summary" << std::endl
-       << "Energy consumption [J] (Stats structure)" << ", " << _records[iEnd].energy - _records[iStarts.back()].energy << std::endl
-       << "Energy consumption [J] (Samples)" << "," << _meric_duration * energy / (last - first) << std::endl;
+	ss << "= " << _records[iEnd].energy - _records[iStarts.back()].energy
+	   << " (" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
 }
 
 

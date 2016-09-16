@@ -13,6 +13,8 @@ struct mutils {
 
 	template <typename Ttype>
 	static Ttype getenv(const std::string &param, Ttype defaultValue);
+
+	static void createDir(const std::string &dir) { system(dir.c_str()); }
 };
 
 inline timespec operator-(const timespec &a, const timespec &b)
