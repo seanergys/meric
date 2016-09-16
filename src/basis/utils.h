@@ -18,7 +18,11 @@ struct mutils {
 	{
 		return time.tv_sec + time.tv_nsec / 1e9;
 	}
-	static void createDir(const std::string &dir) { system(dir.c_str()); }
+	static void createDir(const std::string &dir) {
+		std::stringstream ss;
+		ss << "mkdir -p " + dir;
+		system(ss.str().c_str());
+	}
 };
 
 inline timespec operator-(const timespec &a, const timespec &b)
