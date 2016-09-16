@@ -27,7 +27,10 @@ public:
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
+        std::cout << "TEST 3" << std::endl;
 		HDEEM::getSamples(_samples);
+        std::cout << "TEST 4" << std::endl;
+
 		iterate(_records);
 		HDEEM::deleteSamples(_samples);
 	}

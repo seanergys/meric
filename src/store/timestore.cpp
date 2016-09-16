@@ -39,6 +39,8 @@ void TimeStore::computePeriods()
 
 void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
+    std::cout << "TESTS 2" << std::endl;
+
 	ss << "time ";
 	for (size_t j = 0; j < iStarts.size(); j++) {
 		ss << _name[_records[iStarts[j]].region] << " ";
@@ -49,10 +51,22 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	size_t first = std::ceil(start * _samples.nb_blade_values);
 	size_t last = std::floor(end * _samples.nb_blade_values);
 
+    ss << "# Blade samples" << std::endl;
+
 	double energy = 0;
 	for (size_t it = first; it < last; it++) {
-		energy += _samples.blade_power[it].value[0];
+        double valTmp = _samples.blade_power[it].value[0]; 
+		energy += valTmp;
+        ss << it << "," << valTmp << std::endl;
 	}
+
+    ss.seekp(0, std::ios::beg);
+
+    std::cout << "TEST" << std::endl
+              << start << " " << end << std::endl
+              << first << " " << last << std::endl
+              << _samples.blade_power[0].value[0]
+              << std::endl;
 
 	ss << _meric_duration * energy / (last - first) << " (" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
 }

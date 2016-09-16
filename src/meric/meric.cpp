@@ -10,6 +10,8 @@ std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPU_DIR", "log");
 
 Meric::Meric()
 {
+    std::cout << "CONTINUAL: " << Meric::CONTINUAL << std::endl;
+
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();
