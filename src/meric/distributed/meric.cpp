@@ -53,8 +53,12 @@ DistributedMeric::DistributedMeric()
 	}
 
 	if (Meric::DEBUG) {
-		_store = new AggregateStore<TimeEnergyStore>(_storingProcs);
-		return;
+        if(Meric::AGGREGATE) {
+            _store = new AggregateStore<TimeEnergyStore>(_storingProcs);
+        } else {
+            _store = new TimeEnergyStore();
+        }
+        return;
 	}
 
 	if (Meric::CONTINUAL) {

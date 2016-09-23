@@ -34,7 +34,6 @@ void TimeStore::computePeriods()
 	_meric_period = _end - _start;
 	_hdeem_duration = _hdeem_period.tv_sec + (double)_hdeem_period.tv_nsec / 1e9;
 	_meric_duration = _meric_period.tv_sec + (double)_meric_period.tv_nsec / 1e9;
-	std::cout << "measurement error: " << _hdeem_duration - _meric_duration << "\n";
 }
 
 void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)

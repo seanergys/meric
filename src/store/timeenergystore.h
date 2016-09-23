@@ -48,7 +48,6 @@ public:
 	}
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-        std::cout << "save 3" << std::endl;
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();

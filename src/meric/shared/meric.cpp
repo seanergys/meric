@@ -10,8 +10,6 @@ SharedMeric::SharedMeric()
 	HDEEM::init();
 	HDEEM::start();
 
-    std::cout << "sharedmeric(): " << Meric::OUTPUT_FILENAME << std::endl;
-
 	if (Meric::DEBUG) {
 		_store = new TimeEnergyStore();
 		return;
