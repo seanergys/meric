@@ -83,7 +83,18 @@ public:
 		clock_gettime(CLOCK_REALTIME, &time);
 	}
 
-	static void getStatus(hdeem_status_t &status) {};
+	static void getStatus(hdeem_status_t &status)
+	{
+		status.status = 0;
+		status.total_blade_values = 0;
+		status.total_vr_values = 0;
+		status.pending_blade_values = 0;
+		status.pending_vr_values = 0;
+		clock_gettime(CLOCK_REALTIME, &status.start_time_blade);
+		clock_gettime(CLOCK_REALTIME, &status.start_time_vr);
+		clock_gettime(CLOCK_REALTIME, &status.stop_time_blade);
+		clock_gettime(CLOCK_REALTIME, &status.stop_time_vr);
+	}
 	static void getSamples(hdeem_global_reading_t &samples) { samples.nb_blade_values = samples.nb_vr_values = 0; }
 	static void deleteSamples(hdeem_global_reading_t &samples) {};
 

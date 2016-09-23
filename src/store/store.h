@@ -110,6 +110,7 @@ protected:
 			std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		std::vector<size_t> starts;
+		_counters.resize(_regions.size());
 		for (size_t i = 0; i < records.size(); i++) {
 			if (!starts.size() || records[starts.back()].region != records[i].region) {
 				starts.push_back(i);
