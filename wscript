@@ -4,7 +4,7 @@ from waflib import Logs
 def configure(ctx):
     ctx.load(ctx.options.cpp)
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-g", "-O0" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-g", "-O0", "-fPIC" ])
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
 

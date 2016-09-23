@@ -9,6 +9,8 @@ meric::SharedMeric *holder = NULL;
 
 void MERIC_Init()
 {
+    std::cout << "INIT" << std::endl;
+
 	if (holder != NULL) {
 		std::cerr << "MERIC ERROR: call MERIC_Init() before MERIC_Close()\n";
 		exit(EXIT_FAILURE);
@@ -20,6 +22,8 @@ void MERIC_Init()
 
 void MERIC_Close()
 {
+    std::cout << "CLOSE" << std::endl;
+
 	if (holder == NULL) {
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
@@ -33,11 +37,13 @@ void MERIC_Close()
 
 void MERIC_MeasureStart(const char* name)
 {
+    std::cout << "START" << std::endl;
 	holder->start(name);
 }
 
 void MERIC_MeasureStop()
 {
+    std::cout << "STOP" << std::endl;
 	holder->stop();
 }
 

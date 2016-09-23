@@ -29,15 +29,37 @@ void DetailedEnergyStore::addEnd()
 
 void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	ss << "energy ";
+    ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size(); j++) {
-		ss << _name[_records[iStarts[j]].region] << " ";
+		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
+	ss << std::endl;
 
-	for (size_t p = 0; p < PROBE_NUMBER; p++) {
-		ss << _records[iEnd].energy[p] - _records[iStarts.back()].energy[p] << " ";
-	}
-	ss << "(" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
+	ss << "# Job info" << std::endl
+	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
+	   << "Nodelist," << _nodelist << std::endl
+       //<< "Start of function," << _records[iStarts.back()].time << std::endl
+	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+
+    //////////////////
+    // Blade values //
+    //////////////////
+	ss << "# Blade summary" << std::endl
+	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;
+
+    ///////////////////////
+    // VR sensors values //
+    ///////////////////////
+
+    std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
+    unsigned int vrSensorNum = vrSensor.size();
+    
+    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
+        ss << "# Voltage regulator (" << vrSensor[sensorID] << ") summary" << std::endl
+           << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl;
+    }
+
+
 }
 
 

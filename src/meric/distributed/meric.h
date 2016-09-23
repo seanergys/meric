@@ -38,9 +38,9 @@ public:
 		}
 		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
-				_store->save(_nodeName);
+				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
 			} else {
-				_store->save(_nodeName);
+				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
 			}
 		}
 		sleep(1);

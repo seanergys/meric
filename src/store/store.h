@@ -34,16 +34,17 @@ public:
 	virtual void addStart(const std::string &region) = 0;
 	virtual void addEnd() = 0;
 
-	virtual void save(const std::string prefix = "") = 0;
+	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 
 	virtual ~StoreBase() {};
 
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
 
-	template <class TRecord> void iterate(std::vector<TRecord> &records, const std::string &prefix)
+	template <class TRecord> void iterate(std::vector<TRecord> &records, const std::string &prefix, 
+                                          const std::string &outputDir,const std::string &outputFilename)
 	{
-		iterate(records, prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+		iterate(records, prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
 	}
@@ -51,11 +52,14 @@ protected:
 	template <class TRecord> void iterate(
 			std::vector<TRecord> &records,
 			const std::string &prefix,
+            const std::string &outputDir,
+            const std::string &outputFilename,
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
+
 		_jobID = mutils::getenv("SLURM_JOBID", -1);
 		_stepID = mutils::getenv("SLURM_STEPID", -1);
-		_nodelist = mutils::getenv("SLURM_NODELIST", "");
+		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
 
 		std::ifstream iFile("startCounter.tmp");
 		if(iFile.is_open()) {
@@ -77,7 +81,11 @@ protected:
 		std::vector<std::ofstream> ss(_regions.size());
 		std::vector<std::string> name(_regions.size());
 		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-			ss[it->second].open((prefix.size() ? prefix + "." : "" ) + it->first.c_str());
+            std::string folderName = it->first.c_str(); 
+            mutils::createDir(outputDir + "/" + folderName);
+
+			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", 
+                                std::ios::app);
 			name[it->second] = it->first;
 		}
 
@@ -144,7 +152,8 @@ public:
 	virtual void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd) = 0;
 	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
 
-	virtual void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
+	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
+                      std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 
 	virtual ~Store() {};

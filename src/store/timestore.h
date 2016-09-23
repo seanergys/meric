@@ -25,20 +25,21 @@ public:
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
 
-	virtual void save(const std::string prefix = "")
+	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{
-		save(prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
 	}
 
-	virtual void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFilename, 
+                      std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
-		iterate(_records, prefix, processInterval);
+		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 		HDEEM::deleteSamples(_samples);
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)

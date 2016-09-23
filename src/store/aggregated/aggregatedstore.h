@@ -20,7 +20,7 @@ public:
 	void addStart(const std::string &region) { _store.addStart(region); }
 	void addEnd() { _store.addEnd(); };
 
-	void save(const std::string prefix = "")
+	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{
 		if (_rank) {
 			_store.save([&] (std::vector<size_t> &iStarts, size_t iEnd) {
@@ -28,7 +28,7 @@ public:
 			});
 		} else {
 			_buffer.resize(_size);
-			_store.save(prefix, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+			_store.save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 				saveInterval(ss, iStarts, iEnd);
 			});
 		}

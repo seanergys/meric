@@ -33,10 +33,13 @@ public:
 		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	}
 
-	void save(const std::string prefix = "") { iterate(_records, prefix); }
-	void save(const std::string prefix, std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
+        iterate(_records, prefix, outputDir, outputFilename); 
+    }
+	void save(const std::string prefix, const std::string outputDir, const std::string outputFilename,
+              std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		iterate(_records, prefix, processInterval);
+		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 	}
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{

@@ -29,10 +29,13 @@ public:
 	static bool AGGREGATE;
 	static bool DEBUG;
 	static std::string OUTPUT_DIR;
+    static std::string OUTPUT_FILENAME;
 
 	virtual void start(const std::string &region) { _store->addStart(region); }
 	virtual void stop() { _store->addEnd(); }
-	virtual void save() { _store->save(); }
+
+	virtual void save() {
+       _store->save( Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME  ); }
 
 	virtual ~Meric() {};
 
@@ -44,7 +47,5 @@ protected:
 };
 
 }
-
-
 
 #endif /* SRC_MERIC_MERIC_H_ */

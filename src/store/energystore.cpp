@@ -34,12 +34,21 @@ void EnergyStore::addEnd()
 
 void EnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	ss << "energy ";
+	ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size(); j++) {
-		ss << _name[_records[iStarts[j]].region] << " ";
+		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
-	ss << "= " << _records[iEnd].energy - _records[iStarts.back()].energy
-	   << " (" << _records[iEnd].time - _records[iStarts.back()].time << "s)\n";
+	ss << std::endl;
+
+	ss << "# Job info" << std::endl
+	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
+	   << "Nodelist," << _nodelist << std::endl
+       //<< "Start of function," << _records[iStarts.back()].time << std::endl
+	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+
+	ss << "# Blade summary" << std::endl
+	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy - _records[iStarts.back()].energy << std::endl;
+
 }
 
 
