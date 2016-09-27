@@ -6,8 +6,16 @@
 
 namespace meric {
 
+template <class TStore>
+class AggregateStore;
+
+template <class TStore>
+class DetailedAggregateStore;
+
 class DetailedTimeStore: public TimeStore {
 
+	friend class AggregateStore<DetailedTimeStore>;
+	friend class DetailedAggregateStore<DetailedTimeStore>;
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 };

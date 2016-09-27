@@ -15,9 +15,16 @@ struct DetailedEnergyRecord {
 	int region;
 };
 
+template <class TStore>
+class AggregateStore;
+
+template <class TStore>
+class DetailedAggregateStore;
 
 class DetailedEnergyStore: public Store {
 
+	friend class AggregateStore<DetailedEnergyStore>;
+	friend class DetailedAggregateStore<DetailedEnergyStore>;
 public:
 	void addStart(const std::string &region);
 	void addEnd();

@@ -56,7 +56,6 @@ protected:
             const std::string &outputFilename,
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-
 		_jobID = mutils::getenv("SLURM_JOBID", -1);
 		_stepID = mutils::getenv("SLURM_STEPID", -1);
 		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
@@ -81,11 +80,10 @@ protected:
 		std::vector<std::ofstream> ss(_regions.size());
 		std::vector<std::string> name(_regions.size());
 		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-            std::string folderName = it->first.c_str(); 
-            mutils::createDir(outputDir + "/" + folderName);
+			std::string folderName = it->first.c_str();
+			mutils::createDir(outputDir + "/" + folderName);
 
-			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", 
-                                std::ios::app);
+			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
 			name[it->second] = it->first;
 		}
 
