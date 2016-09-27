@@ -5,7 +5,8 @@
 #include "mpi.h"
 
 #include "../meric.h"
-#include "../../store/aggregated/aggregatedstore.h"
+
+#include "../../store/aggregated/aggregatestore.h"
 #include "../../store/aggregated/detailedaggregatestore.h"
 
 namespace meric {

@@ -1,5 +1,5 @@
 
-#include "aggregatedstore.h"
+#include "aggregatestore.h"
 
 namespace meric {
 

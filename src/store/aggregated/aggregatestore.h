@@ -1,6 +1,6 @@
 
-#ifndef SRC_STORE_AGGREGATED_AGGREGATEDSTORE_H_
-#define SRC_STORE_AGGREGATED_AGGREGATEDSTORE_H_
+#ifndef SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
+#define SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
 
 #include "mpi.h"
 #include "../store.h"
@@ -50,4 +50,4 @@ protected:
 #include "aggregatestore.hpp"
 
 
-#endif /* SRC_STORE_AGGREGATED_AGGREGATEDSTORE_H_ */
+#endif /* SRC_STORE_AGGREGATED_AGGREGATESTORE_H_ */
