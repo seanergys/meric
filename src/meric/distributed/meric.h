@@ -8,6 +8,7 @@
 
 #include "../../store/aggregated/aggregatestore.h"
 #include "../../store/aggregated/detailedaggregatestore.h"
+#include "../../store/aggregated/debugaggregatestore.h"
 
 namespace meric {
 

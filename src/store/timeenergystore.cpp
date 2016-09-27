@@ -34,23 +34,8 @@ void TimeEnergyStore::addEnd()
 	}
 }
 
-void TimeEnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
-{
-	double start = (_records[iStarts].clockTime - _start) / _meric_period;
-	double end = (_records[iEnd].clockTime - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
 
-	double energy = 0;
-	for (size_t it = first; it < last; it++) {
-		energy += _samples.blade_power[it].value[0];
-	}
-
-	stats.energy = _meric_duration * energy / (last - first);
-	stats.duration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
-}
-
-void TimeEnergyStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
+void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	double start = (_records[iStarts].clockTime - _start) / _meric_period;
 	double end = (_records[iEnd].clockTime - _start) / _meric_period;
@@ -73,7 +58,8 @@ void TimeEnergyStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts
 	for (size_t it = 1; it < PROBE_NUMBER; it++) {
 		stats.energy[it] = _meric_duration * energy[it] / (lastVR - firstVR);
 	}
-	stats.duration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
+	stats.mericDuration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
+	stats.hdeemDuration = mutils::timeToDouble(_records[iEnd].hdeemTime - _records[iStarts].hdeemTime);
 }
 
 void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)

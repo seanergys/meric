@@ -34,11 +34,6 @@ public:
 		stats.energy = _records[iEnd].energy - _records[iStarts].energy;
 		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	}
-	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
-	{
-		stats.energy[0] = _records[iEnd].energy - _records[iStarts].energy;
-		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	}
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
         iterate(_records, prefix, outputDir, outputFilename); 

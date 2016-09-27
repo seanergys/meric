@@ -28,6 +28,12 @@ struct DetailedRegionStats {
 	double duration;
 };
 
+struct DebugRegionStats {
+	double energy[PROBE_NUMBER];
+	double mericDuration;
+	double hdeemDuration;
+};
+
 class StoreBase
 {
 public:
@@ -148,9 +154,6 @@ protected:
 class Store: public StoreBase {
 
 public:
-	virtual void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd) = 0;
-	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
-
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
