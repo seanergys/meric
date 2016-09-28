@@ -21,7 +21,7 @@ struct mutils {
 	static void createDir(const std::string &dir) {
 		std::stringstream ss;
 		ss << "mkdir -p " + dir;
-		system(ss.str().c_str());
+		int status = std::system(ss.str().c_str());
 	}
 };
 
