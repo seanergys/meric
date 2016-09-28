@@ -15,9 +15,16 @@ struct EnergyRecord {
 	int region;
 };
 
+template <class TStore>
+class AggregateStore;
+
+template <class TStore>
+class DetailedAggregateStore;
 
 class EnergyStore: public Store {
 
+	friend class AggregateStore<EnergyStore>;
+	friend class DetailedAggregateStore<EnergyStore>;
 public:
 	void addStart(const std::string &region);
 	void addEnd();
@@ -25,11 +32,6 @@ public:
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 	{
 		stats.energy = _records[iEnd].energy - _records[iStarts].energy;
-		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	}
-	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
-	{
-		stats.energy[0] = _records[iEnd].energy - _records[iStarts].energy;
 		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	}
 

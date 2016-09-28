@@ -17,15 +17,17 @@ struct TimeEnergyRecord {
 	int region;
 };
 
+template <class TStore>
+class DebugAggregateStore;
 
 class TimeEnergyStore: public TimeStore {
 
+	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
 	void addStart(const std::string &region);
 	void addEnd();
 
-	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
-	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
+	void fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{

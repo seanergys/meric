@@ -28,6 +28,12 @@ struct DetailedRegionStats {
 	double duration;
 };
 
+struct DebugRegionStats {
+	double energy[PROBE_NUMBER];
+	double mericDuration;
+	double hdeemDuration;
+};
+
 class StoreBase
 {
 public:
@@ -56,7 +62,6 @@ protected:
             const std::string &outputFilename,
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-
 		_jobID = mutils::getenv("SLURM_JOBID", -1);
 		_stepID = mutils::getenv("SLURM_STEPID", -1);
 		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
@@ -81,11 +86,10 @@ protected:
 		std::vector<std::ofstream> ss(_regions.size());
 		std::vector<std::string> name(_regions.size());
 		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-            std::string folderName = it->first.c_str(); 
-            mutils::createDir(outputDir + "/" + folderName);
+			std::string folderName = it->first.c_str();
+			mutils::createDir(outputDir + "/" + folderName);
 
-			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", 
-                                std::ios::app);
+			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
 			name[it->second] = it->first;
 		}
 
@@ -150,9 +154,6 @@ protected:
 class Store: public StoreBase {
 
 public:
-	virtual void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd) = 0;
-	virtual void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd) = 0;
-
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
