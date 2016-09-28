@@ -4,7 +4,10 @@ from waflib import Logs
 def configure(ctx):
     ctx.load(ctx.options.cpp)
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-g", "-O0", "-fPIC" ])
+    if ctx.options.flags:
+        ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC" ])
+
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
 
@@ -12,7 +15,10 @@ def configure(ctx):
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
         ctx.env.CXX = list(ctx.env.MPICXX)
-    else:
+
+    ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
+
+    if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
 def build(ctx):
@@ -33,10 +39,25 @@ def build(ctx):
         install_path = "lib"
     )
 
+    ctx.shlib(
+        source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
+        target       = "meric",
+        use          = "basis",
+        install_path = "lib"
+    )
+
     if not ctx.env.MPICXX:
         return
 
     ctx.stlib(
+        source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
+        target       = "mericmpi",
+        use          = "basis",
+        install_path = "lib",
+        env          = ctx.all_envs["mpi"]
+    )
+
+    ctx.shlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
         target       = "mericmpi",
         use          = "basis",
@@ -65,4 +86,11 @@ def options(opt):
         action="store",
         default="mpic++",
         help="MPI C++ compiler"
+    )
+
+    opt.add_option(
+        "--flags",
+        action="store",
+        default="-O2",
+        help="Compiler flags (-std=c++11 and -fPIC are default)"
     )
