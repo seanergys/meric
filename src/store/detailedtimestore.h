@@ -16,6 +16,12 @@ class DetailedTimeStore: public TimeStore {
 
 	friend class AggregateStore<DetailedTimeStore>;
 	friend class DetailedAggregateStore<DetailedTimeStore>;
+public:
+	DetailedTimeStore()
+	{
+		MERIC_INFO << "Create DetailedTimeStore\n";
+	}
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 };

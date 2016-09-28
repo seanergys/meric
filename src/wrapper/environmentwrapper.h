@@ -19,6 +19,7 @@ class Environment {
 public:
 	static void frequency(double value)
 	{
+		MERIC_INFO << "change frequency to " << value << "\n";
 #ifdef USE_DUMMY
 		std::cout << "set frequency to: " << value << "\n";
 #elif HAVE_CPUFREQ_H

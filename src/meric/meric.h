@@ -35,19 +35,25 @@ public:
 
 	virtual void start(const std::string &region)
 	{
+		MERIC_INFO << "region '" << region << "' starting\n";
 		Environment::frequency(regionValue(region).frequency);
 		_store->addStart(region);
+		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual void stop()
 	{
+		MERIC_INFO << "region '" << _store->region() << "' stopping\n";
 		_store->addEnd();
 		Environment::frequency(regionValue(_store->region()).frequency);
+		MERIC_INFO << "region '" << _store->region() << "' stopped\n";
 	}
 
 	virtual void save()
 	{
+		MERIC_INFO << "save stored data\n";
 		_store->save( Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME  );
+		MERIC_INFO << "store data saved\n";
 	}
 
 	virtual ~Meric() {};

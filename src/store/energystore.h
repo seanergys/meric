@@ -48,6 +48,11 @@ public:
 		iterate(_records, processInterval);
 	}
 
+	EnergyStore()
+	{
+		MERIC_INFO << "Create EnergyStore\n";
+	}
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

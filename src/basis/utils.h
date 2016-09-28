@@ -7,6 +7,13 @@
 #include <sstream>
 #include <iomanip>
 
+
+#ifdef __MERIC_DEBUG__
+#define MERIC_INFO std::cout
+#else
+#define MERIC_INFO if (true); else std::cout
+#endif
+
 namespace meric {
 
 struct mutils {

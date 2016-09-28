@@ -59,7 +59,11 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeStore(): _hdeem_duration(0), _meric_duration(0) { clock_gettime(CLOCK_REALTIME, &_start); }
+	TimeStore(): _hdeem_duration(0), _meric_duration(0)
+	{
+		MERIC_INFO << "Create TimeStore\n";
+		clock_gettime(CLOCK_REALTIME, &_start);
+	}
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

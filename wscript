@@ -8,6 +8,8 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC" ])
 
+    if ctx.options.debug:
+        ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
     else:
@@ -74,6 +76,13 @@ def options(opt):
         action="store_true",
         default=False,
         help="use dummy HDEEM wrapper"
+    )
+
+    opt.add_option(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="active debug output"
     )
 
     opt.add_option(
