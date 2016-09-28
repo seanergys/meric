@@ -13,6 +13,8 @@
 #include "../store/detailedtimestore.h"
 #include "../store/timeenergystore.h"
 
+#include "../wrapper/environmentwrapper.h"
+
 namespace meric {
 
 struct RegionParameters {
@@ -31,16 +33,37 @@ public:
 	static std::string OUTPUT_DIR;
     static std::string OUTPUT_FILENAME;
 
-	virtual void start(const std::string &region) { _store->addStart(region); }
-	virtual void stop() { _store->addEnd(); }
+	virtual void start(const std::string &region)
+	{
+		Environment::frequency(regionValue(region).frequency);
+		_store->addStart(region);
+	}
 
-	virtual void save() {
-       _store->save( Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME  ); }
+	virtual void stop()
+	{
+		_store->addEnd();
+		Environment::frequency(regionValue(_store->region()).frequency);
+	}
+
+	virtual void save()
+	{
+		_store->save( Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME  );
+	}
 
 	virtual ~Meric() {};
 
 protected:
+	const RegionParameters& regionValue(const std::string &region)
+	{
+		if (parameter.find(region) != parameter.end()) {
+			return parameter[region];
+		} else {
+			return defaultParameter;
+		}
+	}
+
 	static std::map<std::string, RegionParameters> parameter;
+	static RegionParameters defaultParameter;
 
 
 	StoreBase * _store;

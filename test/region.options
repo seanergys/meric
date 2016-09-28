@@ -1,0 +1,5 @@
+A {
+  FREQUENCY = 1000
+}
+
+B { FREQUENCY = 500 }

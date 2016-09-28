@@ -11,9 +11,12 @@ std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 
 std::map<std::string, RegionParameters> Meric::parameter;
+RegionParameters Meric::defaultParameter;
 
 void Meric::readRegionParameters()
 {
+	defaultParameter.frequency = mutils::getenv("MERIC_FREQUENCY", 0);
+
 	std::vector<std::string> values;
 	Tokenizer tokenizer("region.options");
 	while (tokenizer.next() != Tokenizer::Token::END) {

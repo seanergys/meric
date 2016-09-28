@@ -40,6 +40,10 @@ class StoreBase
 public:
 	virtual void addStart(const std::string &region) = 0;
 	virtual void addEnd() = 0;
+	const std::string& region()
+	{
+		return _stack.size() ? _name[_stack.back()] : _mainRegion;
+	}
 
 	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 
@@ -146,6 +150,7 @@ protected:
 	std::map<std::string, int> _regions;
 	std::vector<std::string> _name;
 	std::vector<int> _stack;
+	std::string _mainRegion;
 	std::vector<size_t> _counters;
 
 	size_t _initCounter;
