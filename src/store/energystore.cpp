@@ -43,7 +43,6 @@ void EnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, 
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
-       //<< "Start of function," << _records[iStarts.back()].time << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 	ss << "# Blade summary" << std::endl

@@ -54,12 +54,27 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
 		}
 	}
 
-	stats.energy[0] = _meric_duration * energy[0] / (lastBlade - firstBlade);
-	for (size_t it = 1; it < PROBE_NUMBER; it++) {
-		stats.energy[it] = _meric_duration * energy[it] / (lastVR - firstVR);
-	}
 	stats.mericDuration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
 	stats.hdeemDuration = mutils::timeToDouble(_records[iEnd].hdeemTime - _records[iStarts].hdeemTime);
+
+    // Init energy with 0
+    for(size_t it = 0; it < PROBE_NUMBER; it++) {
+        stats.energy[it] = 0;
+    }
+
+    if(lastBlade > 0 && lastBlade > firstBlade) {
+        stats.energy[0] = stats.mericDuration * energy[0] / (lastBlade - firstBlade);
+    }
+
+    if(lastVR > 0 && lastVR > firstVR) {
+        for (size_t it = 1; it < PROBE_NUMBER; it++) {
+            stats.energy[it] = stats.mericDuration * energy[it] / (lastVR - firstVR);
+        }
+    }
+ 
+    for(size_t it = 0; it < PROBE_NUMBER; it++) {
+        stats.energyStatsStructure[it] = _records[iEnd].energy[it] - _records[iStarts].energy[it];
+    }
 }
 
 void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -70,20 +85,9 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	ss << std::endl;
 
-    /*
-    struct tm t;
-    if (localtime_r(&(_records[iStarts.back()].clockTime.tv_sec), &t) == NULL) {
-        std::cerr << "localtime_r" << std::endl;
-    }
-    char buf[20];
-    strftime(buf, 20, "%I:%M",&t);
-    std::cout << buf << std::endl;
-    */
-
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
-       //<< "Start of function," << _records[iStarts.back()].clockTime << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;
 
 	double start = (_records[iStarts.back()].clockTime - _start) / _meric_period;

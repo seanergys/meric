@@ -29,6 +29,7 @@ struct DetailedRegionStats {
 };
 
 struct DebugRegionStats {
+    double energyStatsStructure[PROBE_NUMBER];
 	double energy[PROBE_NUMBER];
 	double mericDuration;
 	double hdeemDuration;

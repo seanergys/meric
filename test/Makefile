@@ -4,7 +4,7 @@ FOLDERS=A B
 CC=icpc
 MPICC=mpiicpc
 
-default: basicTest weirdTest
+default: all
 
 all: mpiTest basicTest weirdTest 
 
