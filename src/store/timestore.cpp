@@ -42,14 +42,17 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 	double end = (_records[iEnd].time - _start) / _meric_period;
 	size_t first = std::ceil(start * _samples.nb_blade_values);
 	size_t last = std::floor(end * _samples.nb_blade_values);
+	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 
 	double energy = 0;
 	for (size_t it = first; it < last; it++) {
 		energy += _samples.blade_power[it].value[0];
 	}
 
-	stats.energy = _meric_duration * energy / (last - first);
-	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+    stats.energy = 0;
+    if(last > 0 && last > first) {
+    	stats.energy = stats.duration * energy / (last - first);
+    }
 }
 
 void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
@@ -60,6 +63,7 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	size_t lastBlade = std::floor(end * _samples.nb_blade_values);
 	size_t firstVR = std::ceil(start * _samples.nb_vr_values);
 	size_t lastVR = std::floor(end * _samples.nb_vr_values);
+	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 
 	std::vector<double> energy(PROBE_NUMBER, 0);
 	for (size_t it = firstBlade; it < lastBlade; it++) {
@@ -71,17 +75,25 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 		}
 	}
 
-	stats.energy[0] = _meric_duration * energy[0] / (lastBlade - firstBlade);
-	for (size_t it = 1; it < PROBE_NUMBER; it++) {
-		stats.energy[it] = _meric_duration * energy[it] / (lastVR - firstVR);
-	}
-	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+
+    for(size_t i=0; i < PROBE_NUMBER; i++) {
+        stats.energy[i] = 0;
+    }
+    if(lastBlade > 0 && lastBlade > firstBlade) {
+        stats.energy[0] = stats.duration * energy[0] / (lastBlade - firstBlade);
+    }
+    if(lastVR > 0 && lastVR > firstVR) {
+        for (size_t it = 1; it < PROBE_NUMBER; it++) {
+            stats.energy[it] = stats.duration * energy[it] / (lastVR - firstVR);
+        }
+    }
+
 }
 
 void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
     ss << "# CALLTREE;init_" << _initCounter;
-	for (size_t j = 0; j < iStarts.size(); j++) {
+	for (size_t j = 0; j < iStarts.size()-1; j++) {
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
 	ss << std::endl;
@@ -89,7 +101,6 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
-       //<< "Start of function," << _records[iStarts.back()].time << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 	double start = (_records[iStarts.back()].time - _start) / _meric_period;

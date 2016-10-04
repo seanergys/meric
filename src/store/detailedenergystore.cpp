@@ -30,7 +30,7 @@ void DetailedEnergyStore::addEnd()
 void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
     ss << "# CALLTREE;init_" << _initCounter;
-	for (size_t j = 0; j < iStarts.size(); j++) {
+	for (size_t j = 0; j < iStarts.size()-1; j++) {
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
 	ss << std::endl;

@@ -13,7 +13,7 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
 
 
     ss << "# CALLTREE;init_" << this->_store._initCounter;
-    for (size_t j = 0; j < iStarts.size(); j++) {
+    for (size_t j = 0; j < iStarts.size()-1; j++) {
         ss << ";" <<  this->_store._name[this->_store._records[iStarts[j]].region] << "_" << this->_store._counters[this->_store._records[iStarts[j]].region];
     }
     ss << '\n';
