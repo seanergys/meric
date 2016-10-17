@@ -14,6 +14,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
     else:
         ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
+        ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
 
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
