@@ -9,6 +9,24 @@ namespace meric {
 class SharedMeric: public Meric {
 
 public:
+	
+	void start(const std::string &region)
+	{
+		Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
+		Environment::frequency(regionValue(region).frequency);
+		Meric::start(region);
+		PERFEVENT::start();
+	}
+	
+	void stop()
+	{
+		PERFEVENT::stop();
+		Environment::uncoreFrequency(defaultParameter.uncoreFrequency);
+		//Environment::frequency(regionValue(_store->region()).frequency); //TODO default freq
+		Environment::frequency(defaultParameter.frequency);
+		Meric::stop();
+	}
+	
 	void save()
 	{
 		HDEEM::stop();

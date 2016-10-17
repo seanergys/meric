@@ -16,7 +16,9 @@ RegionParameters Meric::defaultParameter;
 void Meric::readRegionParameters()
 {
 	defaultParameter.frequency = mutils::getenv("MERIC_FREQUENCY", 0);
+	defaultParameter.uncoreFrequency = mutils::getenv("MERIC_UNCORE_FREQUENCY", 0);
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
+	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 
 	std::vector<std::string> values;
 	Tokenizer tokenizer("region.options");
@@ -40,6 +42,11 @@ void Meric::readRegionParameters()
 						std::stringstream ss(values[i + 1]);
 						ss >> region.frequency;
 						MERIC_INFO << "Region '" << values[0] << "' frequency: " << region.frequency << "\n";
+					}
+					else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY")) {
+						std::stringstream ss(values[i + 1]);
+						ss >> region.uncoreFrequency;
+						MERIC_INFO << "Region '" << values[0] << "' uncore frequency: " << region.uncoreFrequency << "\n";
 					}
 				}
 			}

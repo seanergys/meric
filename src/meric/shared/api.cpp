@@ -16,6 +16,9 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
+	meric::PERFEVENT::init();
+	meric::Environment::init();
+
 	meric::Meric::readRegionParameters();
 	holder = new meric::SharedMeric();
 }
@@ -28,6 +31,10 @@ void MERIC_Close()
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
+
+	meric::PERFEVENT::close();
+	meric::Environment::close();
+
 	holder->save();
 
 

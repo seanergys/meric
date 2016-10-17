@@ -14,11 +14,13 @@
 #include "../store/timeenergystore.h"
 
 #include "../wrapper/environmentwrapper.h"
+#include "../wrapper/perfeventwrapper.h"
 
 namespace meric {
 
 struct RegionParameters {
 	double frequency;
+	uint64_t uncoreFrequency;
 };
 
 class Meric {
@@ -36,7 +38,6 @@ public:
 	virtual void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-		Environment::frequency(regionValue(region).frequency);
 		_store->addStart(region);
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
@@ -45,7 +46,6 @@ public:
 	{
 		MERIC_INFO << "region '" << _store->region() << "' stopping\n";
 		_store->addEnd();
-		Environment::frequency(regionValue(_store->region()).frequency);
 		MERIC_INFO << "region '" << _store->region() << "' stopped\n";
 	}
 

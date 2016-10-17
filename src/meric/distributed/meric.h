@@ -21,17 +21,30 @@ public:
 	void start(const std::string &region)
 	{
 		MPI_Barrier(_currentNode);
+		if (!_MPIglobalRank) {
+			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
+		}
 		if (!_MPInodeRank) {
+			Environment::frequency(regionValue(region).frequency);
 			Meric::start(region);
 		}
+		PERFEVENT::start();
 	}
+	
 	void stop()
 	{
 		MPI_Barrier(_currentNode);
+		PERFEVENT::stop();
+		if (!_MPIglobalRank) {
+			Environment::uncoreFrequency(defaultParameter.uncoreFrequency);
+		}
 		if (!_MPInodeRank) {
+			//Environment::frequency(regionValue(_store->region()).frequency); //TODO default freq
+			Environment::frequency(defaultParameter.frequency);
 			Meric::stop();
 		}
 	}
+	
 	void save()
 	{
 		MPI_Barrier(_currentNode);
