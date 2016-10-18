@@ -36,11 +36,10 @@ public:
 		MPI_Barrier(_currentNode);
 		PERFEVENT::stop();
 		if (!_MPIglobalRank) {
-			Environment::uncoreFrequency(defaultParameter.uncoreFrequency);
+			Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		}
 		if (!_MPInodeRank) {
-			//Environment::frequency(regionValue(_store->region()).frequency); //TODO default freq
-			Environment::frequency(defaultParameter.frequency);
+			Environment::frequency(regionValue(_store->region()).frequency);
 			Meric::stop();
 		}
 	}

@@ -21,9 +21,8 @@ public:
 	void stop()
 	{
 		PERFEVENT::stop();
-		Environment::uncoreFrequency(defaultParameter.uncoreFrequency);
-		//Environment::frequency(regionValue(_store->region()).frequency); //TODO default freq
-		Environment::frequency(defaultParameter.frequency);
+		Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
+		Environment::frequency(regionValue(_store->region()).frequency);
 		Meric::stop();
 	}
 	
