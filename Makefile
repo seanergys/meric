@@ -8,6 +8,14 @@ all:
 install:
 	./waf install #-v
 
+i:
+	make install
+
+ddt:
+	make love
+	./waf configure --cpp=icpc --flag="-L$(LIBPATH) -I$(INCLUDES) -O0"
+	make install
+
 love:
 	./waf clean
 
