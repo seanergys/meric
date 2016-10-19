@@ -2,6 +2,8 @@
 #include "countersstore.h"
 #include <map>
 
+#include "../wrapper/perfeventwrapper.h"
+
 // #include <sys/time.h>
 // #include <cmath>
 
@@ -31,11 +33,13 @@ std::map <std::string, long> CountersStore::getValeuesSum()
 	std::map <std::string, long> result;
 	PERFEVENT::initMap(result);
 
+	//iterate for each counter type
 	for(std::map<std::string, long>::iterator counterIt = result.begin(); counterIt != result.end(); ++counterIt)
 	{
+		//for each record
 		for(std::vector<CountersRecord>::iterator recordIt = _records.begin(); recordIt != _records.end(); ++recordIt)
 		{	
-			result[counterIt->first] += recordIt->second;
+			result[counterIt->first] += recordIt->record[counterIt->first];
 		}
 	}
 	

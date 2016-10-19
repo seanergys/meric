@@ -12,6 +12,7 @@
 #include "../store/timestore.h"
 #include "../store/detailedtimestore.h"
 #include "../store/timeenergystore.h"
+#include "../store/countersstore.h"
 
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/perfeventwrapper.h"
