@@ -33,7 +33,7 @@ std::map <std::string, long> CountersStore::getValeuesSum()
 
 	for(std::map<std::string, long>::iterator counterIt = result.begin(); counterIt != result.end(); ++counterIt)
 	{
-		for(std::vector<CountersRecord>::iterator recordIt = _records.begin(); recordIt != _record.end(); ++recordIt)
+		for(std::vector<CountersRecord>::iterator recordIt = _records.begin(); recordIt != _records.end(); ++recordIt)
 		{	
 			result[counterIt->first] += recordIt->second;
 		}
@@ -56,7 +56,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	for(std::map<std::string, long>::iterator counterIt = result.begin(); counterIt != result.end(); ++counterIt)
 	{
-		ss << result[counterIt->first] << ", " << recordIt->second << std::endl;
+		ss << result[counterIt->first] << ", " << counterIt->second << std::endl;
 	}
 	
 

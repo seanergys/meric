@@ -60,7 +60,7 @@ public:
 protected:
 
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
-	std::map <std::string, long> CountersStore::getValeuesSum();
+	std::map <std::string, long> getValeuesSum();
 
 	std::vector<CountersRecord> _records;
 };
