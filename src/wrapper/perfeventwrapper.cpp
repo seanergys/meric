@@ -114,21 +114,19 @@ void PERFEVENT::stop()
 }
 
 
-void PERFEVENT::getValues() 
+void PERFEVENT::getValues(std::map<std::string, long> record) 
 {
-
-std::cerr << "PERFEVENT::getValues() TODO\n"; 
-
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		long long result = 0;
 		if ((read(iterator->second, &result, sizeof(long long))) != sizeof(long long))
 		{
 			//int errn = errno;
-			std::cerr << "PREFEVENT error. Failed to read counter.\n";
+			std::cerr << "PREFEVENT error. Failed to read counter "<< iterator->first << std::endl;		//TODO ? 0
+			record[iterator->first] = 0;
 		}
 		else
-			std::cerr << "CPU executed "<< result <<" instructions\n";
+			record[iterator->first] = result;
 	}
 }
 
@@ -136,6 +134,12 @@ std::cerr << "PERFEVENT::getValues() TODO\n";
 #else
 #endif
 
+void PERFEVENT::initMap(std::map<std::string, long> dict)
+{
+	dict[COUNTER_AVX] = 0;
+	dict[COUNTER_CAHE_MISSES] = 0;
+	dict[COUNTER_HW_INSTRUCTIONS] = 0;
+}
 
 
 

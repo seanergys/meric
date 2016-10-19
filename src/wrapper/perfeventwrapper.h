@@ -25,8 +25,8 @@ public:
 	static void start();
 	static void stop();
 	
-	static void getValues();
-
+	static void getValues(std::ofstream &ss);
+	static void initMap(std::map<std::string, long> dict);
 
 private:
 	static long openCounter(perf_event_attr attr);
@@ -45,6 +45,7 @@ public:
 	static void start() {};
 	static void stop() {};
 	static void getValues() {std::cerr << "PERFEVENT::getValues() TODO\n"; };
+	static void initMap(std::map<std::string, long> dict);
 };
 
 

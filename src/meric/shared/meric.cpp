@@ -14,6 +14,11 @@ SharedMeric::SharedMeric()
 		_store = new TimeEnergyStore();
 		return;
 	}
+	
+	if (Meric::COUNTERS) {
+		_store = new CountersStore();
+		return;
+	}
 
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
