@@ -6,35 +6,26 @@
 
 namespace meric {
 
-/*
-struct EnergyRecord {
-	EnergyRecord(int region, timespec &time, double energy)
-	: time(time), energy(energy), region(region) {};
-
-	double energy;
-	timespec time;
-	int region;
-};
-*/
-
 struct CountersRecord {
-	EnergyRecord(int region, std::map <std::string, long> record)
+	CountersRecord(int region, std::map <std::string, long> record)
 	: region(region), record(record){};
 	
 	int region;
 	std::map <std::string, long> record;
 };
 
+/*
 template <class TStore>
 class AggregateStore;
 
 template <class TStore>
 class DetailedAggregateStore;
+*/
 
 class CountersStore: public Store {
 
-	friend class AggregateStore<EnergyStore>;
-	friend class DetailedAggregateStore<EnergyStore>;
+//	friend class AggregateStore<EnergyStore>;
+//	friend class DetailedAggregateStore<EnergyStore>;
 public:
 	void addStart(const std::string &region);
 	void addEnd();
@@ -69,6 +60,7 @@ public:
 protected:
 
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
+	std::map <std::string, long> CountersStore::getValeuesSum();
 
 	std::vector<CountersRecord> _records;
 };
