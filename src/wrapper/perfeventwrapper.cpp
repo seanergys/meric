@@ -114,7 +114,7 @@ void PERFEVENT::stop()
 }
 
 
-void PERFEVENT::getValues(std::map<std::string, long> record) 
+void PERFEVENT::getValues(std::map<std::string, long> & record) 
 {
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
@@ -134,7 +134,7 @@ void PERFEVENT::getValues(std::map<std::string, long> record)
 #else
 #endif
 
-void PERFEVENT::initMap(std::map<std::string, long> dict)
+void PERFEVENT::initMap(std::map<std::string, long> & dict)
 {
 	dict[COUNTER_AVX] = 0;
 	dict[COUNTER_CAHE_MISSES] = 0;
