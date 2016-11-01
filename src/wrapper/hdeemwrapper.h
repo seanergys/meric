@@ -21,7 +21,25 @@ class HDEEM {
 public:
 	static void init() { checkHDEEM(hdeem_init(&bmc), "init"); }
 	static void close() { hdeem_close(&bmc); }
-	static void start() { checkHDEEM(hdeem_start(&bmc), "start"); }
+	static void start() 
+	{
+		int status = hdeem_start(&bmc);
+		if (status)
+		{
+			checkHDEEM(status, "start");
+		}
+		else	//second start according to hdeem reference guide
+		{
+			checkHDEEM(hdeem_clear(&bmc), "clear");
+			status = hdeem_start(&bmc);
+			if (status)
+			{
+				checkHDEEM(status, "start");
+				exit(99);
+			}
+		}
+	}
+	
 	static void stop() { checkHDEEM(hdeem_stop(&bmc), "stop"); }
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
