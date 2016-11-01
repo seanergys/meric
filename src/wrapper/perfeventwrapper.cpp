@@ -26,6 +26,7 @@
 #include <map>
 
 #include "perfeventwrapper.h"
+#include "counters.h"
 
 using namespace meric;
 
@@ -77,6 +78,7 @@ void PERFEVENT::init()
 	};
 	
 	counters[COUNTER_AVX] = setCounter(PERF_TYPE_RAW, 0x04C6); //0x04C6 == AVX_INSTS.CALC
+	counters[COUNTER_AVX_ALL] = setCounter(PERF_TYPE_RAW, 0x07C6); //0x07C6 == AVX_INSTS.ALL
 	counters[COUNTER_CAHE_MISSES] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
 	counters[COUNTER_HW_INSTRUCTIONS] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
 }
@@ -137,6 +139,7 @@ void PERFEVENT::getValues(std::map<std::string, long> & record)
 void PERFEVENT::initMap(std::map<std::string, long> & dict)
 {
 	dict[COUNTER_AVX] = 0;
+	dict[COUNTER_AVX_ALL] = 0;
 	dict[COUNTER_CAHE_MISSES] = 0;
 	dict[COUNTER_HW_INSTRUCTIONS] = 0;
 }

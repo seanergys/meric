@@ -6,11 +6,6 @@
 #include <map>
 #include <iostream>
 
-//counters descriptions	TODO presunout jinam
-const std::string COUNTER_AVX = "COUNTER_AVX";
-const std::string COUNTER_CAHE_MISSES = "COUNTER_CACHE_MISSES";
-const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
-
 
 namespace meric {
 
