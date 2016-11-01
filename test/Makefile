@@ -4,9 +4,8 @@ FOLDERS=A B
 CC=icpc
 MPICC=mpiicpc
 
-
 HDEEM=-L../hdeem -lhdeem
-X86ADAPT=-L/usr/local/lib /usr/local/lib/libx86_adapt_static.a
+X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
 
 
@@ -21,7 +20,7 @@ mpiicpc: distributed.cpp
 	mpiicpc -O2 -g distributed.cpp -L../lib -lmericmpi $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o test_mpi
 
 basicTest: shared.cpp
-	${CC}    -O2 -g shared.cpp      -L../lib -lmeric   $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o basic_test
+	${CC}    -O0 -g shared.cpp      -L../lib -lmeric   $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o basic_test
 
 weirdTest: weird.cpp
 	${CC}    -O2 -g weird.cpp       -L../lib -lmeric   $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o weird_test
@@ -34,7 +33,7 @@ cleanFolders:
 
 run:
 	. /home/vysocky/meric+/test/environment
-	mpirun -n 10 ./basic_test
+	mpirun -n 10 -genv I_MPI_DEBUG=5 ./test_mpi
 
 srun:
-	srun -N 2 -c 24 --tasks-per-node=1 --exclusive -p haswell --pty bash
+	srun -N 1 -c 24 --tasks-per-node=1 --exclusive -p haswell --x11 --pty bash

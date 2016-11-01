@@ -13,7 +13,7 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --flag="-L$(LIBPATH) -I$(INCLUDES) -O0"
+	./waf configure --cpp=icpc --flag="-L$(LIBPATH) -I$(INCLUDES) -O0 -g"
 	make install
 
 love:
