@@ -82,13 +82,7 @@ void PERFEVENT::init()
 	counters[PERFEVENT_COUNTERS::COUNTER_CAHE_MISSES] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
 	counters[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
 
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-	{
-		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
-			std::cerr << "PREFEVENT error when reseting counter\n";
-		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
-			std::cerr << "PREFEVENT error when starting counting\n";
-	}
+	start();
 }
 
 void PERFEVENT::close()
@@ -110,14 +104,15 @@ void PERFEVENT::close()
 
 void PERFEVENT::start()
 {
-	;
+	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	{
+		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
+			std::cerr << "PREFEVENT error when reseting counter\n";
+		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
+			std::cerr << "PREFEVENT error when starting counting\n";
+	}
 }
 
-
-void PERFEVENT::stop()
-{
-	;
-}
 
 
 void PERFEVENT::getValues(std::map<std::string, long> & record) 

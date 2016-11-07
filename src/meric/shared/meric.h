@@ -15,12 +15,10 @@ public:
 		Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		Environment::frequency(regionValue(region).frequency);
 		Meric::start(region);
-		PERFEVENT::start();
 	}
 	
 	void stop()
 	{
-		PERFEVENT::stop();
 		Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		Environment::frequency(regionValue(_store->region()).frequency);
 		Meric::stop();

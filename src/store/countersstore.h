@@ -61,7 +61,6 @@ public:
 protected:
 
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
-	void getValeuesSum(std::map <std::string, long> & result, size_t iStart, size_t iEnd);
 
 	std::vector<CountersRecord> _records;
 };

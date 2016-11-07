@@ -28,13 +28,11 @@ public:
 			Environment::frequency(regionValue(region).frequency);
 			Meric::start(region);
 		}
-		PERFEVENT::start();
 	}
 	
 	void stop()
 	{
 		MPI_Barrier(_currentNode);
-		PERFEVENT::stop();
 		if (!_MPIglobalRank) {
 			Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		}

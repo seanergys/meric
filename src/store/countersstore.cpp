@@ -36,22 +36,6 @@ void CountersStore::addEnd()
 }
 
 
-void CountersStore::getValeuesSum(std::map <std::string, long> & result, size_t iStart, size_t iEnd)
-{
-	PERFEVENT::initMap(result);
-
-	//iterate for each counter type
-	for(std::map<std::string, long>::iterator counterIt = result.begin(); counterIt != result.end(); ++counterIt)
-	{
-		//for each record
-		for (size_t i=iStart; i<iEnd; i++)
-		{
-			result[counterIt->first] += _records[i].record[counterIt->first];
-		}
-	}
-}
-
-
 void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 //	std::cout << "<"<<iStarts.back() <<" - " <<iEnd << ">\n";
@@ -68,15 +52,6 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 
 	ss << "# COUNTERS: \n";
-/*	std::map <std::string, long> result;
-	getValeuesSum(result, iStarts.back(), iEnd);
-
-	for(std::map<std::string, long>::iterator counterIt = result.begin(); counterIt != result.end(); ++counterIt)
-	{
-		ss << counterIt->first << ", " << counterIt->second << std::endl;
-	}
-*/
-
 	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
 		ss << counterIt->first << "," << counterIt->second - _records[iStarts.back()].record[counterIt->first] << std::endl;
