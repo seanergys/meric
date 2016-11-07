@@ -7,11 +7,12 @@
 namespace meric {
 
 struct CountersRecord {
-	CountersRecord(int region, std::map <std::string, long> record)
-	: region(region), record(record){};
+	CountersRecord(int region, std::map <std::string, long> record, timespec time)
+	: region(region), record(record), time(time){};
 	
 	int region;
 	std::map <std::string, long> record;
+	timespec time;
 };
 
 /*
