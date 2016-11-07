@@ -21,7 +21,7 @@ const std::string COUNTER_HW_INSTRUCTIONS = "PAPI_TOT_INS";
 namespace PERFEVENT_COUNTERS {
 
 const std::string COUNTER_AVX = "COUNTER_AVX";
-const std::string COUNTER_AVX_ALL = "COUNTER_AVX";
+const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
 const std::string COUNTER_CAHE_MISSES = "COUNTER_CACHE_MISSES";
 const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 
