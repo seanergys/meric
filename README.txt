@@ -18,7 +18,7 @@
 		= hardware counters provided by perf_event 
 		  (http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
 		- to add a counter it is necessary to
-			1) add counter description to perfeventwrapper.h
+			1) add counter description to wrapper/counters.h
 			2) in void PERFEVENT::init() call setCounter with corresponding 
 			   counter type and configuration
 			3) in void PERFEVENT::initMap(std::map<std::string, long> & dict) 
