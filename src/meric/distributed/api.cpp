@@ -30,9 +30,9 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
-	if (meric::COUNTERS == "perfevent")
+	if (Meric::COUNTERS == "perfevent")
 		meric::PERFEVENT::init();
-	if (meric::COUNTERS == "papi")
+	if (Meric::COUNTERS == "papi")
 		meric::PAPI::init();
 	meric::Environment::init();
 
@@ -53,9 +53,9 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 
-	if (meric::COUNTERS == "perfevent")
+	if (Meric::COUNTERS == "perfevent")
 		meric::PERFEVENT::close();
-	if (meric::COUNTERS == "papi")
+	if (Meric::COUNTERS == "papi")
 		meric::PAPI::close();
 	meric::Environment::close();
 

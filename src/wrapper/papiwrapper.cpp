@@ -28,6 +28,7 @@ using namespace meric;
 #ifndef USE_DUMMY
 std::map<std::string, long> PAPI::counters;
 int eventSet = PAPI_NULL;
+long long countersValues [] = NULL;
 
 void PAPI::init()
 {
@@ -50,7 +51,7 @@ void PAPI::init()
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		int eventCode;
-		if (PAPI_event_name_to_code(iterator->first, &eventCode) != PAPI_OK)
+		if (PAPI_event_name_to_code(iterator->first.c_str(), &eventCode) != PAPI_OK)
 		{
 				std::cerr << "PAPI error - requested event "<< iterator->first <<" not available\n"; 
 				exit(6);
@@ -113,10 +114,10 @@ void PAPI::getValues(std::map<std::string, long> & record)
 
 void PAPI::initMap(std::map<std::string, long> & dict)
 {
-	dict[COUNTER_AVX] = 0;
-	dict[COUNTER_CACHE_MISSES] = 0;
-	dict[COUNTER_CACHE_ACCESS] = 0;
-	dict[COUNTER_HW_INSTRUCTIONS] = 0;
+	dict[PAPI_COUNTERS::COUNTER_AVX] = 0;
+	dict[PAPI_COUNTERS::COUNTER_CACHE_MISSES] = 0;
+	dict[PAPI_COUNTERS::COUNTER_CACHE_ACCESS] = 0;
+	dict[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] = 0;
 }
 
 
