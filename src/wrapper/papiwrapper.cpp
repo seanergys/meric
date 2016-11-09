@@ -19,6 +19,7 @@
 #include <errno.h>
 /******************************************************************************/
 #include <map>
+#include <vector>
 
 #include "papiwrapper.h"
 #include "counters.h"
@@ -28,7 +29,7 @@ using namespace meric;
 #ifndef USE_DUMMY
 std::map<std::string, long> PAPI::counters;
 int eventSet = PAPI_NULL;
-long long countersValues [] = NULL;
+long long * countersValues = NULL;
 
 void PAPI::init()
 {
@@ -51,7 +52,7 @@ void PAPI::init()
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		int eventCode;
-		if (PAPI_event_name_to_code(iterator->first.c_str(), &eventCode) != PAPI_OK)
+		if (PAPI_event_name_to_code((char *)iterator->first.c_str(), &eventCode) != PAPI_OK)
 		{
 				std::cerr << "PAPI error - requested event "<< iterator->first <<" not available\n"; 
 				exit(6);
@@ -71,7 +72,7 @@ void PAPI::init()
 		exit(6);
 	}
 	
-	countersValues = malloc (sizeof(long long) * counters.size());
+	countersValues = (long long *) malloc (sizeof(long long) * counters.size());
 	if (countersValues == NULL)
 	{
 		std::cerr << "MALLOC error\n";
@@ -84,7 +85,7 @@ void PAPI::close()
 {
 	free(countersValues);
 	
-	if (PAPI_stop(eventSet, val) != PAPI_OK)
+	if (PAPI_stop(eventSet, NULL) != PAPI_OK)
 	{
 		std::cerr << "PAPI error - can not stop counting\n";
 		exit(6);

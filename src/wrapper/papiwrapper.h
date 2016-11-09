@@ -25,7 +25,7 @@ private:
 		//list of counters
 	static std::map<std::string, long> counters;
 	static int eventSet;
-	static long long countersValues [];
+	static long long * countersValues;
 
 };
 

@@ -15,6 +15,7 @@ def configure(ctx):
     else:
         ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
+        ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
 
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
