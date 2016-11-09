@@ -7,6 +7,7 @@
 
 #include "../../wrapper/environmentwrapper.h"
 #include "../../wrapper/perfeventwrapper.h"
+#include "../../wrapper/papiwrapper.h"
 
 
 meric::DistributedMeric *holder = NULL;
@@ -29,7 +30,10 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
-	meric::PERFEVENT::init();
+	if (meric::COUNTERS == "perfevent")
+		meric::PERFEVENT::init();
+	if (meric::COUNTERS == "papi")
+		meric::PAPI::init();
 	meric::Environment::init();
 
 	meric::Meric::readRegionParameters();
@@ -49,7 +53,10 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 
-	meric::PERFEVENT::close();
+	if (meric::COUNTERS == "perfevent")
+		meric::PERFEVENT::close();
+	if (meric::COUNTERS == "papi")
+		meric::PAPI::close();
 	meric::Environment::close();
 
 	holder->save();

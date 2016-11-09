@@ -15,9 +15,13 @@ SharedMeric::SharedMeric()
 		return;
 	}
 	
-	if (Meric::COUNTERS) {
-		_store = new CountersStore();
-		return;
+	if (Meric::COUNTERS != "none")
+	{
+		if (Meric::COUNTERS == "papi" || Meric::COUNTERS == "perfevent")
+		{
+			_store = new CountersStore(Meric::COUNTERS);
+			return;
+		}
 	}
 
 	if (Meric::CONTINUAL) {

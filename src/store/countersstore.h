@@ -15,29 +15,16 @@ struct CountersRecord {
 	timespec time;
 };
 
-/*
-template <class TStore>
-class AggregateStore;
+enum WRAPPERS {PERFEVENT, PAPI};
 
-template <class TStore>
-class DetailedAggregateStore;
-*/
 
 class CountersStore: public Store {
 
-//	friend class AggregateStore<EnergyStore>;
-//	friend class DetailedAggregateStore<EnergyStore>;
+
 public:
 	void addStart(const std::string &region);
 	void addEnd();
 
-/*
-	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
-	{
-		stats.energy = _records[iEnd].energy - _records[iStarts].energy;
-		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	}
-*/
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
         iterate(_records, prefix, outputDir, outputFilename); 
     }
@@ -53,12 +40,18 @@ public:
 		iterate(_records, processInterval);
 	}
 
-	CountersStore()
+	CountersStore(const std::string wrapper)
 	{
-		MERIC_INFO << "Create CountersStore\n";
+		if (wrapper == "perfevent")
+			wrapperType = PERFEVENT;
+		else if (wrapper == "papi")
+			wrapperType = PAPI;
+
+		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
 	}
 
 protected:
+	int wrapperType;
 
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
@@ -68,4 +61,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_ENERGYSTORE_H_ */
+#endif /* SRC_BASIS_COUNTERSSTORE_H_ */

@@ -1,9 +1,11 @@
-
-#include "countersstore.h"
 #include <map>
 #include <time.h>
 
+#include "countersstore.h"
+#include "countersrates.h"
+
 #include "../wrapper/perfeventwrapper.h"
+#include "../wrapper/papiwrapper.h"
 
 // #include <sys/time.h>
 // #include <cmath>
@@ -14,7 +16,10 @@ void CountersStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
 	std::map<std::string, long> record;
-	PERFEVENT::getValues(record);
+	if (wrapperType == PERFEVENT)
+		PERFEVENT::getValues(record);
+	else if (wrapperType == PAPI)
+		PAPI::getValues(record);
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(CountersRecord(_regions[region], record, time));
@@ -25,7 +30,10 @@ void CountersStore::addEnd()
 {
 	if (_stack.size()) {
 		std::map<std::string, long> record;
-		PERFEVENT::getValues(record);
+		if (wrapperType == PERFEVENT)
+			PERFEVENT::getValues(record);
+		else if (wrapperType == PAPI)
+			PAPI::getValues(record);
 		struct timespec time;
 		clock_gettime(CLOCK_REALTIME, &time);
 		_records.push_back(CountersRecord(_stack.back(), record, time));
@@ -38,7 +46,6 @@ void CountersStore::addEnd()
 
 void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-//	std::cout << "<"<<iStarts.back() <<" - " <<iEnd << ">\n";
 	ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
@@ -59,9 +66,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	
 /*
-Packed SP MFLOP/s = 1.0E-06*(AVX_INSTS_CALC*8)/runtime;
-Packed DP MFLOP/s = 1.0E-06*(AVX_INSTS_CALC*4)/runtime;
-1.0E-06*(result[COUNTER_AVX]*8)/(_records[iEnd].time - _records[iStarts.back()].time)
+	ss << "FLOPs," << FLOPS(result[COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
 */
 	
 }

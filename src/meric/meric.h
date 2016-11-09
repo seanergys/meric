@@ -33,7 +33,7 @@ public:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
-	static bool COUNTERS;
+	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
     static std::string OUTPUT_FILENAME;
 
