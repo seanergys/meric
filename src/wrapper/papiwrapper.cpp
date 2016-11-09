@@ -28,8 +28,8 @@ using namespace meric;
 
 #ifndef USE_DUMMY
 std::map<std::string, long> PAPI::counters;
-int eventSet = PAPI_NULL;
-long long * countersValues = NULL;
+int PAPI::eventSet = PAPI_NULL;
+long long * PAPI::countersValues = NULL;
 
 void PAPI::init()
 {
