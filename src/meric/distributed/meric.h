@@ -10,6 +10,8 @@
 #include "../../store/aggregated/detailedaggregatestore.h"
 #include "../../store/aggregated/debugaggregatestore.h"
 
+#include "../../wrapper/environmentwrapper.h"
+
 namespace meric {
 
 class DistributedMeric: public Meric {

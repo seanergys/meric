@@ -4,6 +4,8 @@
 
 #include "../meric.h"
 
+#include "../../wrapper/environmentwrapper.h"
+
 namespace meric {
 
 class SharedMeric: public Meric {

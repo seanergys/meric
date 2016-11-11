@@ -9,7 +9,7 @@ SharedMeric::SharedMeric()
 {
 	HDEEM::init();
 	HDEEM::start();
-	Environment::init();
+	Environment::init(defaultParameter);
 
 	if (Meric::DEBUG) {
 		_store = new TimeEnergyStore();

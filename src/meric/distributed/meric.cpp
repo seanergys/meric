@@ -52,7 +52,7 @@ DistributedMeric::DistributedMeric()
 		HDEEM::start();
 	}
 	
-	Environment::init();
+	Environment::init(defaultParameter);
 
 	if (Meric::DEBUG) {
         /*

@@ -104,13 +104,16 @@ public:
 #endif
 	}
 	
-	static void init()
+	static void init(RegionParameters defaultParameter)
 	{
 		if (x86_adapt_init())
 		{
 			std::cerr << "X86ADAPT init error\n";
 //			exit(1);
 		}
+		frequency(defaultParameter.frequency);
+		uncoreFrequency(defaultParameter.uncoreFrequency);
+		threadNumber(defaultParameter.nthreads);
 	}
 	
 	static void close()
