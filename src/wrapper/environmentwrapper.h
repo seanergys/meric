@@ -13,6 +13,9 @@
 #include "x86_adapt.h"
 #endif
 
+#include <cilk/cilk_api.h> 
+#include <omp.h>
+
 const int NODE_SIZE = 24; //TODO
 
 #endif
@@ -77,6 +80,20 @@ public:
 		}
 #else
 #endif
+	}
+	
+	static void threadNumber(int nthreads)
+	{
+		if (nthreads != omp_get_num_threads())
+		{
+			if (omp_in_parallel())
+				std::cerr << "WARRNING: MERIC changes number of threads inside a parallel region\n";
+			omp_set_num_threads(nthreads);
+		}
+
+		//using cilk
+		__cilkrts_end_cilk();  
+		__cilkrts_set_param("nworkers", nthreads);
 	}
 	
 	static void init()
