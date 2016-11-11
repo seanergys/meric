@@ -22,6 +22,7 @@ namespace meric {
 struct RegionParameters {
 	double frequency;
 	uint64_t uncoreFrequency;
+	int nthreads;
 };
 
 class Meric {

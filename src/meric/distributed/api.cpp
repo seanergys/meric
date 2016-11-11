@@ -34,7 +34,6 @@ void MERIC_Init()
 		meric::PERFEVENT::init();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::init();
-	meric::Environment::init();
 
 	meric::Meric::readRegionParameters();
 	holder = new meric::DistributedMeric();
@@ -57,7 +56,6 @@ void MERIC_Close()
 		meric::PERFEVENT::close();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::close();
-	meric::Environment::close();
 
 	holder->save();
 

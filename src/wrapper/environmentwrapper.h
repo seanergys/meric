@@ -2,6 +2,7 @@
 #define SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 
 #ifndef USE_DUMMY
+#include "../meric/meric.h"
 
 #ifdef HAVE_CPUFREQ_H
 #include "cpufreq.h"
@@ -13,7 +14,10 @@
 #include "x86_adapt.h"
 #endif
 
+#ifdef HAVE_CILK_CILK_API_H
 #include <cilk/cilk_api.h> 
+#endif
+
 #include <omp.h>
 
 const int NODE_SIZE = 24; //TODO
@@ -84,16 +88,20 @@ public:
 	
 	static void threadNumber(int nthreads)
 	{
+		if (nthreads <= 0)
+			return;
+		std::cout << "set num treads to: " << nthreads << std::endl;
 		if (nthreads != omp_get_num_threads())
 		{
 			if (omp_in_parallel())
 				std::cerr << "WARRNING: MERIC changes number of threads inside a parallel region\n";
 			omp_set_num_threads(nthreads);
 		}
-
+#ifdef HAVE_CILK_CILK_API_H
 		//using cilk
 		__cilkrts_end_cilk();  
-		__cilkrts_set_param("nworkers", nthreads);
+		__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
+#endif
 	}
 	
 	static void init()

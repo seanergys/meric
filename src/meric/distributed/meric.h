@@ -28,18 +28,20 @@ public:
 			Environment::frequency(regionValue(region).frequency);
 			Meric::start(region);
 		}
+		Environment::threadNumber(regionValue(region).nthreads);
 	}
 	
 	void stop()
 	{
 		MPI_Barrier(_currentNode);
+		if (!_MPInodeRank) {
+			Meric::stop();
+			Environment::frequency(regionValue(_store->region()).frequency);
+		}
 		if (!_MPIglobalRank) {
 			Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		}
-		if (!_MPInodeRank) {
-			Environment::frequency(regionValue(_store->region()).frequency);
-			Meric::stop();
-		}
+		Environment::threadNumber(regionValue(_store->region()).nthreads);
 	}
 	
 	void save()

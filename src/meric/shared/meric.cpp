@@ -9,6 +9,7 @@ SharedMeric::SharedMeric()
 {
 	HDEEM::init();
 	HDEEM::start();
+	Environment::init();
 
 	if (Meric::DEBUG) {
 		_store = new TimeEnergyStore();
@@ -43,6 +44,7 @@ SharedMeric::~SharedMeric()
 {
 	HDEEM::stop();
 	HDEEM::close();
+	Environment::close();
 	delete _store;
 }
 

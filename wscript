@@ -6,7 +6,7 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC" , "-openmp"])
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
@@ -16,6 +16,7 @@ def configure(ctx):
         ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
+        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:

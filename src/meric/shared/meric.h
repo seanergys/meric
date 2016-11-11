@@ -14,14 +14,16 @@ public:
 	{
 		Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		Environment::frequency(regionValue(region).frequency);
+		Environment::threadNumber(regionValue(region).nthreads);
 		Meric::start(region);
 	}
 	
 	void stop()
 	{
+		Meric::stop();
 		Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		Environment::frequency(regionValue(_store->region()).frequency);
-		Meric::stop();
+		Environment::threadNumber(regionValue(_store->region()).nthreads);
 	}
 	
 	void save()

@@ -51,6 +51,8 @@ DistributedMeric::DistributedMeric()
 		HDEEM::init();
 		HDEEM::start();
 	}
+	
+	Environment::init();
 
 	if (Meric::DEBUG) {
         /*
@@ -115,6 +117,7 @@ DistributedMeric::~DistributedMeric()
 		HDEEM::stop();
 		HDEEM::close();
 	}
+	Environment::close();
 	MPI_Comm_free(&_currentNode);
 	MPI_Comm_free(&_storingProcs);
 

@@ -16,7 +16,8 @@ RegionParameters Meric::defaultParameter;
 
 void Meric::readRegionParameters()
 {
-	defaultParameter.frequency = mutils::getenv("MERIC_FREQUENCY", 0);
+	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", 0);
+	defaultParameter.frequency       = mutils::getenv("MERIC_FREQUENCY", 0);
 	defaultParameter.uncoreFrequency = mutils::getenv("MERIC_UNCORE_FREQUENCY", 0);
 	if (defaultParameter.frequency == 0 || defaultParameter.uncoreFrequency == 0)
 	{
@@ -24,6 +25,7 @@ void Meric::readRegionParameters()
 		exit(1);
 	}
 
+	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 	
@@ -55,6 +57,10 @@ void Meric::readRegionParameters()
 						std::stringstream ss(values[i + 1]);
 						ss >> region.uncoreFrequency;
 						MERIC_INFO << "Region '" << values[0] << "' uncore frequency: " << region.uncoreFrequency << "\n";
+					}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) {
+						std::stringstream ss(values[i + 1]);
+						ss >> region.nthreads;
+						MERIC_INFO << "Region '" << values[0] << "' num_threads: " << region.nthreads << "\n";
 					}
 				}
 			}
