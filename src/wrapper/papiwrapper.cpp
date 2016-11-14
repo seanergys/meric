@@ -90,6 +90,8 @@ void PAPI::close()
 		std::cerr << "PAPI error - can not stop counting\n";
 		exit(6);
 	}
+	
+	PAPI_shutdown();
 }
 
 
