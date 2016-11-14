@@ -1,4 +1,4 @@
-BINARIES=test_mpi basic_test weird_test
+BINARIES=test test_mpi weird_test test3
 FOLDERS=A B
 
 CC=icpc
@@ -7,29 +7,30 @@ MPICC=mpiicpc
 HDEEM=-L../hdeem -lhdeem
 X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
-
+PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 
 default: all
 
-all: mpiTest basicTest weirdTest 
+all: mpiTest basicTest weirdTest test3
 
-mpiTest: distributed.cpp
-	$(MPICC) -O2 -g distributed.cpp -L../lib -lmericmpi -lrt $(HDEEM) $(X86ADAPT) $(CPUFREQ) -o test_mpi
+mpiTest: test_mpi.cpp
+	$(MPICC) -O2 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
-mpiicpc: distributed.cpp
-	mpiicpc -O2 -g distributed.cpp -L../lib -lmericmpi $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o test_mpi
-
-basicTest: shared.cpp
-	${CC}    -O0 -g shared.cpp      -L../lib -lmeric   $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o basic_test
+basicTest: test.cpp
+	${CC}    -O2 -g test.cpp        -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
 
 weirdTest: weird.cpp
-	${CC}    -O2 -g weird.cpp       -L../lib -lmeric   $(HDEEM) $(X86ADAPT) $(CPUFREQ) -lrt -o weird_test
+	${CC}    -O2 -g weird.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o weird_test
+
+test3: test3.cpp
+	${CC}    -O2 -g test3.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test3
+
 
 clean: 
-	rm -rf ${BINARIES} ${FOLDERS} *.csv *.o *.tmp hdeemMeasurement
+	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
 
-cleanFolders:
-	rm -rf ${FOLDERS} hdeemMeasurement
+cleanAll:
+	rm -rf hdeemMeasurement *.tmp
 
 run:
 	. /home/vysocky/meric+/test/environment
