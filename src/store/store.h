@@ -87,6 +87,7 @@ protected:
 			std::ofstream oFile(startCounterFile);
 			oFile << 0;
 			oFile.close();
+			_initCounter = 0;
 		}
 
 		_counters.resize(_regions.size());
