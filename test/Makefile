@@ -1,4 +1,4 @@
-BINARIES=test test_mpi blasTest weird_test test3
+BINARIES=test test_mpi blasTest
 
 CC=icpc
 MPICC=mpiicpc
@@ -10,7 +10,7 @@ PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 
 default: all
 
-all: mpiTest basicTest blasTest weirdTest test3
+all: mpiTest basicTest blasTest
 
 mpiTest: test_mpi.cpp
 	$(MPICC) -O2 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
@@ -25,13 +25,6 @@ blasTest: blas_test.c
 	module load mkl;
 	$(CC)   -O2 -g blas_test.c      -L../lib -I../include -lmeric -mkl      $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
 
-weirdTest: weird.cpp
-	$(CC)    -O2 -g weird.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o weird_test
-
-test3: test3.cpp
-	$(CC)    -O2 -g test3.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test3
-
-
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
 
@@ -40,7 +33,7 @@ cleanAll:
 	rm -rf hdeemMeasurement *.tmp
 
 run:
-	. /home/vysocky/meric+/test/environment
+	. environment
 	mpirun -n 10 -genv I_MPI_DEBUG=5 ./test_mpi
 
 srun:
