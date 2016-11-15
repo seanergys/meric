@@ -71,7 +71,8 @@ protected:
 		_stepID = mutils::getenv("SLURM_STEPID", -1);
 		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
 
-        std::string startCounterFile = "startCounter_" + prefix + outputFilename + ".tmp";
+		mutils::createDir(outputDir + "Counters");
+        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + prefix + outputFilename + ".tmp";
 
 		std::ifstream iFile(startCounterFile);
 		if(iFile.is_open()) {
@@ -80,15 +81,12 @@ protected:
 			_initCounter = std::stoi(numOfStartsStr) + 1;
 			iFile.close();
 
-			std::ofstream oFile(startCounterFile);
-			oFile << _initCounter;
-			oFile.close();
 		} else {
-			std::ofstream oFile(startCounterFile);
-			oFile << 0;
-			oFile.close();
 			_initCounter = 0;
 		}
+		std::ofstream oFile(startCounterFile);
+		oFile << _initCounter;
+		oFile.close();
 
 		_counters.resize(_regions.size());
 		std::vector<std::ofstream> ss(_regions.size());

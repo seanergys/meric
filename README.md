@@ -88,8 +88,8 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
 			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
 			# Data - tuples (mostly pairs) structured like a hash map: key, value
-	* startcounters_log.tmp
-		# Program start counter
+	* hdeemMeasurementCounters
+		# Program start counters, strored in .tmp files.
 	
 	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
 		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
@@ -136,17 +136,17 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 	B { 
 	  FREQUENCY = 2300000, 
 	  UNCORE_FREQUENCY = 23
-	  num_THREADS = 23
+	  NUM_THREADS = 23
 	}
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
 		- Energy consumption is computed from single samples taken by HDEEM (when 
 		  MERIC_CONTINUAL=0, then data are taken from Stats structure)
-		- Single samples are stored (with frequency 1 samples per 1ms)
+		- Single samples are stored (with frequency 1 samples per 1 ms)
 		- Minimal overhead - only times of the beginning and the end of measurement
 		  are stored (samples are processed after the measurement)
-		- Files can become very big when measured regions run for long time!
+		- Files can become very big when measured regions run for a long time!
 
 	export MERIC_DETAILED=1
 		- Not only data from blade, but data from Voltage Regulators (VR-CPU1,
