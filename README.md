@@ -105,21 +105,24 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 ## SET MERIC DEFAULT PARAMETERS ##
 	export MERIC_FREQUNECY=2500000
 	export MERIC_UNCORE_FREQUENCY=25
+	export MERIC_NUM_THREADS=24
 
 ## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION WRITE A FILE **region.options** WITH VALUES FOR EACH REGION ##
 	# EXAMPLE FOR REGIONS A and B
 	A {
 	  FREQUENCY = 1500000,
 	  UNCORE_FREQUENCY = 15
+	  NUM_THREADS = 15
 	}
 
 	B { 
 	  FREQUENCY = 2300000, 
 	  UNCORE_FREQUENCY = 23
+	  num_THREADS = 23
 	}
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
-	MERIC_CONTINUAL=1
+	export MERIC_CONTINUAL=1
 		- Energy consumption is computed from single samples taken by HDEEM (when 
 		  MERIC_CONTINUAL=0, then data are taken from Stats structure)
 		- Single samples are stored (with frequency 1 samples per 1ms)
@@ -127,22 +130,22 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 		  are stored (samples are processed after the measurement)
 		- Files can become very big when measured regions run for long time!
 
-	MERIC_DETAILED=1
+	export MERIC_DETAILED=1
 		- Not only data from blade, but data from Voltage Regulators (VR-CPU1,
 		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too
 
-	MERIC_DEBUG=1
+	export MERIC_DEBUG=1
 		- Data are taken both from samples and Stats structure, so we can compare them
 		- Data are taken from blade and Voltage Regulators too
 		- Only for measurement check - there can be larger overhead because of two
 		  types of data processing performed simultaneously
 
-	MERIC_AGGREGATE=1
+	export MERIC_AGGREGATE=1
 		- ONLY for distributed applications!
 		- Aggregates data from all nodes - there are both average values and sums
 		  included in the output 
 
-	MERIC_COUNTERS=1
+	export MERIC_COUNTERS=1
 		- In development
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##

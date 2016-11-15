@@ -12,13 +12,13 @@ int main(int argc, char **argv)
 	MERIC_MeasureStart("A");
 
 	MERIC_MeasureStart("B");
+	sleep(1);
 	MERIC_MeasureStop();
 
 	MERIC_MeasureStart("B");
-
 	sleep(2);
-
 	MERIC_MeasureStop();
+	
 	MERIC_MeasureStop();
 
 	MERIC_Close();
