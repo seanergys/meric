@@ -25,6 +25,12 @@
 		- To add a counter it is necessary to follow the instructions in wrapper/counters.h.
 
 		+ http://man7.org/linux/man-pages/man2/perf_event_open.2.html
+	
+	- papiwrapper
+		= Hardware counters provided by papi.
+		- To add a counter it is necessary to follow the instructions in wrapper/counters.h.
+		
+		+ http://icl.cs.utk.edu/papi/
 
 
 --------------------------------------------------------------------------------
@@ -34,6 +40,7 @@
 	module load intel/2016.1.150
 	module load mpirt/5.1.2.150
 	module load hdeem/2.2.2
+	module load papi/5.4.1
 
 	# compile MERIC
 	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
@@ -48,25 +55,48 @@
 	export MERIC_UNCORE_FREQUENCY=25
 
 	# run the example
-	./basic_test
+	./test
 
 To understand this example, explore the source file *shared.cpp* to see that this test contains regions A and B (inside A are two regions B). For each region you can set cpu core and uncore frequency. To do so, edit *region.options* file. To use default settings for the region, skip the region settings you don't want, or just rename this file.
 
 --------------------------------------------------------------------------------
 #     3] Measurement results                                                   #
 --------------------------------------------------------------------------------
-DETAILED DESCRIPTION WILL BE ADDED SOON
-
 	# CODE OUTPUT:
 	* hdeemMeasurement
 	 	# contains result files in folders with names of the regions
 	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
+		# 3 types of data in CSV files:
+			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
+			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
+			# Data - tuples (mostly pairs) structured like a hash map: key, value
 	* startcounters_log.tmp
-		# initial counter value
+		# Program start counter
 	
-	# to process the results use RADAR tool
+	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
+	# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
+	# Job info
+	JOB ID,8786406.0
+	Nodelist,taurusi6125
+	Runtime of function [s],0.005079696
+	# Blade samples
+	15635,135.75
+	15636,135.5
+	15637,136.125
+	15638,136.5
+	# Blade summary
+	Energy consumption [J] (Stats structure),0.68
+	Energy consumption [J] (Samples),0.69068
+	Maximal power [W] (Samples),136.5
+	Minimal power [W] (Samples),135.5
+	Average power [W] (Samples),135.969
+	ID of first blade sample,15635
+	ID of last blade sample,15638
 	
-
+	# To process the results use RADAR tool
+	# Repo URL: https://code.it4i.cz/bes0030/readex-radar.git
+	1) Set variables in config.py file (description is included in the file)
+	2) Launch python3 ./printFullReport.py	
 		
 --------------------------------------------------------------------------------
 #     4] MERIC input parameters                                                #
@@ -75,50 +105,49 @@ DETAILED DESCRIPTION WILL BE ADDED SOON
 ## SET MERIC DEFAULT PARAMETERS ##
 	export MERIC_FREQUNECY=2500000
 	export MERIC_UNCORE_FREQUENCY=25
+	export MERIC_NUM_THREADS=24
 
 ## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION WRITE A FILE **region.options** WITH VALUES FOR EACH REGION ##
 	# EXAMPLE FOR REGIONS A and B
 	A {
 	  FREQUENCY = 1500000,
 	  UNCORE_FREQUENCY = 15
+	  NUM_THREADS = 15
 	}
 
 	B { 
 	  FREQUENCY = 2300000, 
 	  UNCORE_FREQUENCY = 23
+	  num_THREADS = 23
 	}
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
-DETAILED DESCRIPTION WILL BE ADDED SOON
+	export MERIC_CONTINUAL=1
+		- Energy consumption is computed from single samples taken by HDEEM (when 
+		  MERIC_CONTINUAL=0, then data are taken from Stats structure)
+		- Single samples are stored (with frequency 1 samples per 1ms)
+		- Minimal overhead - only times of the beginning and the end of measurement
+		  are stored (samples are processed after the measurement)
+		- Files can become very big when measured regions run for long time!
 
-	#0. - no env variable needed
-	#1.
-		MERIC_CONTINUAL=1
-	#2.
-		MERIC_DETAILED=1
-	#3.
-		MERIC_CONTINUAL=1
-		MERIC_DETAILED=1
-	#4.
-		MERIC_DEBUG=1
-	#5. - for distributed only
-		MERIC_AGGREGATE=1
-		MERIC_DEBUG=1
-	#6. - for distributed only
-		MERIC_AGGREGATE=1
-		MERIC_CONTINUAL=1
-		MERIC_DETAILED=1
-	#7. - for distributed only
-		MERIC_AGGREGATE=1
-		MERIC_CONTINUAL=1
-	#8. - for distributed only
-		MERIC_AGGREGATE=1
-		MERIC_DETAILED=1
-	#9. - for distributed only
-		MERIC_AGGREGATE=1
-	#10.- under development
-		MERIC_COUNTERS=1
+	export MERIC_DETAILED=1
+		- Not only data from blade, but data from Voltage Regulators (VR-CPU1,
+		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too
 
+	export MERIC_DEBUG=1
+		- Data are taken both from samples and Stats structure, so we can compare them
+		- Data are taken from blade and Voltage Regulators too
+		- Only for measurement check - there can be larger overhead because of two
+		  types of data processing performed simultaneously
+
+	export MERIC_AGGREGATE=1
+		- ONLY for distributed applications!
+		- Aggregates data from all nodes - there are both average values and sums
+		  included in the output 
+
+	export MERIC_COUNTERS=1
+		- In development
+	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
 	export MERIC_OUTPUT_FILENAME="log"
@@ -132,6 +161,7 @@ DETAILED DESCRIPTION WILL BE ADDED SOON
 	module load intel/2016.1.150
 	module load mpirt/5.1.2.150
 	module load hdeem/2.2.2
+	module load papi/5.4.1
 	make
 
 ## EDIT YOUR CODE TO INSERT MEASUREMENT REGIONS ##
@@ -158,12 +188,12 @@ DETAILED DESCRIPTION WILL BE ADDED SOON
 	# EDIT MAKEFILE
 		-I$(PATH_TO_MERIC)/include
 		-L$(PATH_TO_MERIC)/lib
-		-lmeric -lmericmpi -lhdeem -lcpufreq -lx86_adapt
+		-lmeric -lmericmpi -L../hdeem -lhdeem -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 
 	# OR IF APPLICATION IS COMPILED USING WAF (such as ESPRESO Solver)
 		# * build.config
 			INCLUDES = $PATH_TO_MERIC/include
-			LIBPATH =  $PATH_TO_MERIC/lib
+			LIBPATH =  $PATH_TO_MERIC/lib /sw/taurus/libraries/papi/5.4.1/lib/
 		# * src/app/wscript
 			def configure(ctx):
 			    ctx.env.append_unique("LIB", "meric")
@@ -171,6 +201,7 @@ DETAILED DESCRIPTION WILL BE ADDED SOON
 			    ctx.env.append_unique("LIB", "hdeem")
 			    ctx.env.append_unique("LIB", "cpufreq")
 			    ctx.env.append_unique("LIB", "x86_adapt")
+			    ctx.env.append_unique("LIB", "papi")
 
 	# COMPILE AND RUN YOUR CODE AS USUAL
 	make
