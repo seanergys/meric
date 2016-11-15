@@ -32,9 +32,27 @@
 		
 		+ http://icl.cs.utk.edu/papi/
 
+--------------------------------------------------------------------------------
+#     2] Content of test folder                                                #
+--------------------------------------------------------------------------------
+* source codes
+	* test.cpp
+		* One region, with two another regions inside.
+	* test_mpi.cpp
+		* Same test as test.c, only extended with mpi.
+	* blas_test.cpp
+		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all resources.
+		* WARNING: This test requires mkl module. When make is called, module is loaded.
+* region.options
+	* File that sets exact settings for each region in test.cpp/test_mpi.cpp.
+* Makefile
+* scriptge.sh
+	* Script that generates scripts, each to run a test with one specific settings, and enqueues them.
+	* Ready to do the BLAS test on Taurus.
+	* Be aware that some machines has limit number of jobs in a queue.
 
 --------------------------------------------------------------------------------
-#    2] Compile and run basic example                                          #
+#    3] Compile and run basic example                                          #
 --------------------------------------------------------------------------------
 	# load necessary modules
 	module load intel/2016.1.150
@@ -60,7 +78,7 @@
 To understand this example, explore the source file *shared.cpp* to see that this test contains regions A and B (inside A are two regions B). For each region you can set cpu core and uncore frequency. To do so, edit *region.options* file. To use default settings for the region, skip the region settings you don't want, or just rename this file.
 
 --------------------------------------------------------------------------------
-#     3] Measurement results                                                   #
+#     4] Measurement results                                                   #
 --------------------------------------------------------------------------------
 	# CODE OUTPUT:
 	* hdeemMeasurement
@@ -74,32 +92,32 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 		# Program start counter
 	
 	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
-	# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
-	# Job info
-	JOB ID,8786406.0
-	Nodelist,taurusi6125
-	Runtime of function [s],0.005079696
-	# Blade samples
-	15635,135.75
-	15636,135.5
-	15637,136.125
-	15638,136.5
-	# Blade summary
-	Energy consumption [J] (Stats structure),0.68
-	Energy consumption [J] (Samples),0.69068
-	Maximal power [W] (Samples),136.5
-	Minimal power [W] (Samples),135.5
-	Average power [W] (Samples),135.969
-	ID of first blade sample,15635
-	ID of last blade sample,15638
+		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
+		# Job info
+		JOB ID,8786406.0
+		Nodelist,taurusi6125
+		Runtime of function [s],0.005079696
+		# Blade samples
+		15635,135.75
+		15636,135.5
+		15637,136.125
+		15638,136.5
+		# Blade summary
+		Energy consumption [J] (Stats structure),0.68
+		Energy consumption [J] (Samples),0.69068
+		Maximal power [W] (Samples),136.5
+		Minimal power [W] (Samples),135.5
+		Average power [W] (Samples),135.969
+		ID of first blade sample,15635
+		ID of last blade sample,15638
 	
 	# To process the results use RADAR tool
-	# Repo URL: https://code.it4i.cz/bes0030/readex-radar.git
-	1) Set variables in config.py file (description is included in the file)
-	2) Launch python3 ./printFullReport.py	
-		
+	# Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
+		1) Set variables in config.py file (description is included in the file)
+		2) Launch python3 ./printFullReport.py	
+	
 --------------------------------------------------------------------------------
-#     4] MERIC input parameters                                                #
+#     5] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC DEFAULT PARAMETERS ##
@@ -145,7 +163,7 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 		- Aggregates data from all nodes - there are both average values and sums
 		  included in the output 
 
-	export MERIC_COUNTERS=1
+	export MERIC_COUNTERS=papi or perfevent
 		- In development
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
@@ -153,7 +171,7 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 	export MERIC_OUTPUT_FILENAME="log"
 
 --------------------------------------------------------------------------------
-#      5] Measure energy consumption of your code                              #
+#      6] Measure energy consumption of your code                              #
 --------------------------------------------------------------------------------
 
 ## COMPILE MERIC ##
