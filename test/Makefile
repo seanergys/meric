@@ -1,5 +1,4 @@
-BINARIES=test test_mpi weird_test test3
-FOLDERS=A B
+BINARIES=test test_mpi blasTest weird_test test3
 
 CC=icpc
 MPICC=mpiicpc
@@ -11,25 +10,33 @@ PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 
 default: all
 
-all: mpiTest basicTest weirdTest test3
+all: mpiTest basicTest blasTest weirdTest test3
 
 mpiTest: test_mpi.cpp
 	$(MPICC) -O2 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	${CC}    -O2 -g test.cpp        -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+	$(CC)    -O2 -g test.cpp        -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+
+blasTest: blas_test.c
+	$(info )
+	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
+	$(info )
+	module load mkl;
+	$(CC)   -O2 -g blas_test.c      -L../lib -I../include -lmeric -mkl      $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
 
 weirdTest: weird.cpp
-	${CC}    -O2 -g weird.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o weird_test
+	$(CC)    -O2 -g weird.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o weird_test
 
 test3: test3.cpp
-	${CC}    -O2 -g test3.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test3
+	$(CC)    -O2 -g test3.cpp       -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test3
 
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
 
 cleanAll:
+	make clean
 	rm -rf hdeemMeasurement *.tmp
 
 run:
