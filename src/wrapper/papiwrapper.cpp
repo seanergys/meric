@@ -24,6 +24,11 @@
 #include "papiwrapper.h"
 #include "counters.h"
 
+#include <omp.h>
+#ifdef HAVE_CILK_CILK_API_H
+#include <cilk/cilk_api.h> 
+#endif
+
 using namespace meric;
 
 #ifndef USE_DUMMY
@@ -43,6 +48,20 @@ void PAPI::init()
 	{
 		std::cerr << "PAPI error - can not create event set\n";
 		exit(6);
+	}
+
+	int ret;
+#ifdef HAVE_CILK_CILK_API_H
+	if (__cilkrts_get_nworkers() > omp_get_thread_num())
+		ret = PAPI_thread_init((unsigned long (*)(void))(__cilkrts_get_nworkers));
+	else
+#endif
+		ret = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
+		
+	if (ret != PAPI_OK)
+	{
+		printf("PAPI thread init error\n");
+		exit(1);
 	}
 	
 	initMap(counters);
