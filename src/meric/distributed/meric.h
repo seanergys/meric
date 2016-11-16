@@ -23,24 +23,20 @@ public:
 	void start(const std::string &region)
 	{
 		MPI_Barrier(_currentNode);
-		if (!_MPIglobalRank) {
-			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
-		}
 		if (!_MPInodeRank) {
 			Environment::frequency(regionValue(region).frequency);
-			Meric::start(region);
+			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		}
 		Environment::threadNumber(regionValue(region).nthreads);
+		Meric::start(region);
 	}
 	
 	void stop()
 	{
 		MPI_Barrier(_currentNode);
+		Meric::stop();
 		if (!_MPInodeRank) {
-			Meric::stop();
 			Environment::frequency(regionValue(_store->region()).frequency);
-		}
-		if (!_MPIglobalRank) {
 			Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
 		}
 		Environment::threadNumber(regionValue(_store->region()).nthreads);

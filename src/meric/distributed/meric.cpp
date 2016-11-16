@@ -52,7 +52,7 @@ DistributedMeric::DistributedMeric()
 		HDEEM::start();
 	}
 	
-	Environment::init(defaultParameter);
+	Environment::init(defaultParameter, _MPInodeRank);
 
 	if (Meric::DEBUG) {
         /*
