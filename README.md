@@ -28,6 +28,7 @@
 	
 	- papiwrapper
 		= Hardware counters provided by papi.
+		- NOT SUITABLE FOR THREADED APPLICATIONS!
 		- To add a counter it is necessary to follow the instructions in wrapper/counters.h.
 		
 		+ http://icl.cs.utk.edu/papi/
@@ -121,7 +122,7 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 --------------------------------------------------------------------------------
 
 ## SET MERIC DEFAULT PARAMETERS ##
-	export MERIC_FREQUNECY=2500000
+	export MERIC_FREQUENCY=2500000
 	export MERIC_UNCORE_FREQUENCY=25
 	export MERIC_NUM_THREADS=24
 
