@@ -31,9 +31,11 @@ public:
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{
+		HDEEM::stop();
 		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
+		HDEEM::start();
 	}
 
 	void save(const std::string prefix,

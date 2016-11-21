@@ -38,7 +38,9 @@ public:
 	}
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
-        iterate(_records, prefix, outputDir, outputFilename); 
+        HDEEM::stop();
+        iterate(_records, prefix, outputDir, outputFilename);
+        HDEEM::start();
     }
 	void save(const std::string prefix, const std::string outputDir, const std::string outputFilename,
               std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)

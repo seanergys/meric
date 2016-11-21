@@ -46,9 +46,6 @@ public:
 	{
 		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
-			HDEEM::stop();
-		}
-		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
 				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
 			} else {
@@ -57,9 +54,6 @@ public:
 		}
 		sleep(1);
 		MPI_Barrier(_currentNode);
-		if (!_MPInodeRank) {
-			HDEEM::start();
-		}
 	}
 
 protected:

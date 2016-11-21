@@ -22,6 +22,7 @@ public:
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{
+		HDEEM::stop();
 		if (_rank) {
 			_store.save([&] (std::vector<size_t> &iStarts, size_t iEnd) {
 				saveInterval(iStarts, iEnd);
@@ -31,6 +32,7 @@ public:
 				saveInterval(ss, iStarts, iEnd);
 			});
 		}
+		HDEEM::start();
 	}
 
 protected:

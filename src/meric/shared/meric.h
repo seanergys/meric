@@ -30,9 +30,7 @@ public:
 	
 	void save()
 	{
-		HDEEM::stop();
 		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
-		HDEEM::start();
 	}
 
 	SharedMeric();
