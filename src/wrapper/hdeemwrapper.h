@@ -2,7 +2,7 @@
 #ifndef SRC_WRAPPER_HDEEMWRAPPER_H_
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
-#include "hdeem.h"
+#include "../../hdeem/hdeem.h"
 #include <cstdlib>
 #include <iostream>
 #include <time.h>
