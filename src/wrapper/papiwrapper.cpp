@@ -10,7 +10,9 @@
 #include <array>
 #include <unistd.h>
 /******************************************************************************/
+#ifdef HAVE_PAPI_H
 #include <papi.h>
+#endif
 #include <sys/types.h>
 #include <string.h>
 #include <sys/ioctl.h>

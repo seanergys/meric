@@ -24,7 +24,6 @@ ddt:
 	make install
 
 dummy:
-	make love
 	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g" --dummy
 	make install
 

@@ -2,7 +2,7 @@
 #ifndef SRC_WRAPPER_PAPIWRAPPER_H_
 #define SRC_WRAPPER_PAPIWRAPPER_H_
 
-#include <papi.h>
+
 #include <map>
 #include <iostream>
 
