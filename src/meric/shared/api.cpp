@@ -48,6 +48,7 @@ void MERIC_Close()
 
 	delete holder;
 	holder = NULL;
+    std::cout << "MERIC FIN" << std::endl;
 }
 
 void MERIC_MeasureStart(const char* name)

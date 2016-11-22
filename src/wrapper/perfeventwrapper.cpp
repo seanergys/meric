@@ -30,7 +30,7 @@
 
 using namespace meric;
 
-#ifndef USE_DUMMY
+#if !defined USE_DUMMY && defined HAVE_LINUX_PERF_EVENT_H
 std::map<std::string, long> PERFEVENT::counters;
 
 long PERFEVENT::openCounter(perf_event_attr attr)
@@ -106,9 +106,9 @@ void PERFEVENT::start()
 {
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
-		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
+		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
 			std::cerr << "PREFEVENT error when reseting counter\n";
-		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
+		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) != 0)
 			std::cerr << "PREFEVENT error when starting counting\n";
 	}
 }

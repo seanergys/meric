@@ -7,24 +7,23 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
-	HDEEM::init();
-	HDEEM::start();
+
 	Environment::init(defaultParameter, 0);
+
+        if (Meric::COUNTERS != "none")
+        {
+                _store = new CountersStore(Meric::COUNTERS);
+                return;
+        }
+
+        HDEEM::init();
+        HDEEM::start();
 
 	if (Meric::DEBUG) {
 		_store = new TimeEnergyStore();
 		return;
 	}
 	
-	if (Meric::COUNTERS != "none")
-	{
-		if (Meric::COUNTERS == "papi" || Meric::COUNTERS == "perfevent")
-		{
-			_store = new CountersStore(Meric::COUNTERS);
-			return;
-		}
-	}
-
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();
@@ -42,9 +41,12 @@ SharedMeric::SharedMeric()
 
 SharedMeric::~SharedMeric()
 {
-	HDEEM::stop();
-	HDEEM::close();
-	Environment::close();
+        Environment::close();
+	if (Meric::COUNTERS == "none")
+	{
+		HDEEM::stop();
+		HDEEM::close();
+	}
 	delete _store;
 }
 

@@ -9,7 +9,7 @@
 
 namespace meric {
 
-#ifndef USE_DUMMY
+#if !defined USE_DUMMY && defined HAVE_PAPI_H
 
 class PAPI {
 

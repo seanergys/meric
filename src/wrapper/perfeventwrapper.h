@@ -9,7 +9,7 @@
 
 namespace meric {
 
-#ifndef USE_DUMMY
+#if !defined USE_DUMMY && defined HAVE_LINUX_PERF_EVENT_H
 
 class PERFEVENT {
 

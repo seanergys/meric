@@ -47,13 +47,19 @@ DistributedMeric::DistributedMeric()
 
 	MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 
+	Environment::init(defaultParameter, _MPInodeRank);
+
+        if (Meric::COUNTERS != "none")
+        {
+                _store = new CountersStore(Meric::COUNTERS);
+                return;
+        }
+	
 	if (!_MPInodeRank) {
 		HDEEM::init();
 		HDEEM::start();
 	}
 	
-	Environment::init(defaultParameter, _MPInodeRank);
-
 	if (Meric::DEBUG) {
         /*
         if(Meric::AGGREGATE) {
@@ -71,15 +77,6 @@ DistributedMeric::DistributedMeric()
 		return;
 	}
 	
-	if (Meric::COUNTERS != "none")
-	{
-		if (Meric::COUNTERS == "papi" || Meric::COUNTERS == "perfevent")
-		{
-			_store = new CountersStore(Meric::COUNTERS);
-			return;
-		}
-	}
-
 	if (Meric::CONTINUAL) {
 		if (Meric::DETAILED) {
 			if (Meric::AGGREGATE) {
@@ -113,7 +110,8 @@ DistributedMeric::DistributedMeric()
 
 DistributedMeric::~DistributedMeric()
 {
-	if (!_MPInodeRank) {
+	if (!_MPInodeRank && Meric::COUNTERS == "none")
+	{
 		HDEEM::stop();
 		HDEEM::close();
 	}

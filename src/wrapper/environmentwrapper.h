@@ -91,27 +91,34 @@ public:
 		if (nthreads <= 0)
 			return;
 		std::cout << "set num treads to: " << nthreads << std::endl;
-		if (nthreads != omp_get_num_threads())
+#ifndef USE_DUMMY
+/*		int running = 0;
+		running = omp_get_num_threads();
+		if (nthreads != running)
 		{
 			if (omp_in_parallel())
-				std::cerr << "WARRNING: MERIC changes number of threads inside a parallel region\n";
+				std::cerr << "WARNING: MERIC changes number of threads inside a parallel region\n";
 			omp_set_num_threads(nthreads);
 		}
+*/
+		omp_set_num_threads(nthreads);
 #ifdef HAVE_CILK_CILK_API_H
 		//using cilk
 		__cilkrts_end_cilk();  
 		__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
 #endif
+#endif
 	}
 	
 	static void init(RegionParameters defaultParameter, int rank)
 	{
+#if defined HAVE_X86_ADAPT_H && !defined USE_DUMMY
 		if (x86_adapt_init())
 		{
 			std::cerr << "X86ADAPT init error\n";
 //			exit(1);
 		}
-		
+#endif		
 		if(!rank)
 		{
 			frequency(defaultParameter.frequency);
@@ -122,7 +129,9 @@ public:
 	
 	static void close()
 	{
+#if defined HAVE_X86_ADAPT_H && !defined USE_DUMMY
 		x86_adapt_finalize();
+#endif
 	}
 	
 	

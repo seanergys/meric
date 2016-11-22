@@ -31,7 +31,7 @@
 
 using namespace meric;
 
-#ifndef USE_DUMMY
+#if !defined USE_DUMMY && defined HAVE_PAPI_H
 std::map<std::string, long> PAPI::counters;
 int PAPI::eventSet = PAPI_NULL;
 long long * PAPI::countersValues = NULL;

@@ -4,9 +4,13 @@ LIBPATH=-L/projects/p_readex/cpufrequtils-icc	\
 	-L/sw/taurus/libraries/papi/5.4.1/lib/
 
 
+
 all:
-	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES)"
+	make configure
 	make install
+
+configure:
+	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES)"
 
 install:
 	./waf install #-v
@@ -17,6 +21,11 @@ i:
 ddt:
 	make love
 	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g"
+	make install
+
+dummy:
+	make love
+	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g" --dummy
 	make install
 
 love:
