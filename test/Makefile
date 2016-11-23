@@ -13,10 +13,10 @@ default: all
 all: mpiTest basicTest blasTest
 
 mpiTest: test_mpi.cpp
-	$(MPICC) -O2 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O2 -g test.cpp        -L../lib -lmeric -openmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -fopenmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
 
 blasTest: blas_test.c
 	$(info )
@@ -30,7 +30,7 @@ clean:
 
 cleanAll:
 	make clean
-	rm -rf hdeemMeasurement *.tmp
+	rm -rf hdeemMeasurement* *.tmp
 
 run:
 	. environment
