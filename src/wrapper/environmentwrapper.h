@@ -21,7 +21,7 @@
 #include <omp.h>
 
 const int NODE_SIZE = 24; //TODO
-
+const int FREQ_MULT = 100000;
 #endif
 
 namespace meric {
@@ -41,9 +41,9 @@ public:
 		for (int i=0; i < NODE_SIZE; i++)
 		{
 //			std::cout << "set freq "<<freq<<" for cpu "<<i<<std::endl;
-			ret = cpufreq_set_frequency(i,freq);
+			ret = cpufreq_set_frequency(i,freq*FREQ_MULT);
 
-			if(ret != 0 || freq != cpufreq_get_freq_kernel(i))
+			if(ret != 0 || freq*FREQ_MULT != cpufreq_get_freq_kernel(i))
 			{
 				std::cerr << "CPUFREQ ERROR - failed to set frequency for cpu "<< i << std::endl;
 //				MPI_Abort(MPI_COMM_WORLD, 1);

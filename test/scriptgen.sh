@@ -36,7 +36,7 @@ if [ "$1" = "run" ]; then
 
  ##### LOOPS ##### 
  #XXX - for each LOOP must be added "done" in another XXX section
-  for FREQ in {1200000..2400000..200000}
+  for FREQ in {12..24..2}
   do
   for UN_FREQ in {12..30..1}
   do

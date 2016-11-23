@@ -1,12 +1,12 @@
 {
 "A" : {
-  "FREQUENCY" : 1500000,
+  "FREQUENCY" : 15,
   "UNCORE_FREQUENCY" : 15,
   "NUM_THREADS" : 16
 }
 ,
 "B":{ 
-  "FREQUENCY"= 2300000, 
+  "FREQUENCY"= 23, 
   "UNCORE_FREQUENCY" = 23
 }
 }
