@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 namespace meric {
 
@@ -69,9 +70,12 @@ public:
 
 	Token next() { return _token = _next(); }
 	Token token() { return _token; }
-	std::string value()
+	std::string value() 
 	{
-		return std::string(_buffer.begin(), _buffer.end());
+		std::string s = std::string(_buffer.begin(), _buffer.end());
+		if (s.size() > 2 && s[0] == '\"' && s[s.size()-1] == '\"')
+			return s.substr(1,s.size()-2);
+		return s;
 	}
 
 protected:

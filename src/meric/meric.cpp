@@ -37,22 +37,35 @@ void Meric::readRegionParameters()
 			Meric::COUNTERS = "none";
 		}
 	}
-
+	
+	int bracketCounter = 0;
 	std::vector<std::string> values;
 	Tokenizer tokenizer("region.options");
 	while (tokenizer.next() != Tokenizer::Token::END) {
+		if (bracketCounter < 0)
+			break;
 		switch (tokenizer.token()) {
 		case Tokenizer::Token::STRING:
 			values.push_back(tokenizer.value());
 			break;
 		case Tokenizer::Token::OBJECT_OPEN:
-			if (values.size() != 1) {
+			if ((bracketCounter == 1 && values.size() == 1) || (bracketCounter == 0 && values.size() == 0) ) 
+				bracketCounter++;
+			else
+			{
 				std::cerr << "MERIC ERROR: invalid options format! Use: 'region' { 'parameter' = 'value', ... }\n";
+				bracketCounter = -1;
 			}
 			break;
 		case Tokenizer::Token::OBJECT_CLOSE:
-			if (values.size() % 2 != 1) {
+			if (bracketCounter == 1)
+			{
+				bracketCounter--;
+				break;
+			}
+			if ((bracketCounter == 2 && values.size() % 2 != 1) || bracketCounter > 2) {
 				std::cerr << "MERIC ERROR: invalid options format! Use: 'region' { 'parameter' = 'value', ... }\n";
+				bracketCounter = -1;
 			} else {
 				RegionParameters &region = Meric::parameter[values[0]];
 				for (size_t i = 1; i < values.size(); i += 2) {
@@ -73,6 +86,7 @@ void Meric::readRegionParameters()
 				}
 			}
 			values.clear();
+			bracketCounter--;
 			break;
 		case Tokenizer::Token::ASSIGN:
 		case Tokenizer::Token::DELIMITER:
