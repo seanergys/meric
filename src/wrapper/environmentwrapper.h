@@ -19,8 +19,8 @@
 #endif
 
 #include <omp.h>
+#include <unistd.h>
 
-const int NODE_SIZE = 24; //TODO
 const int FREQ_MULT = 100000;
 #endif
 
@@ -38,7 +38,8 @@ public:
 #elif HAVE_CPUFREQ_H
 		std::cout << "set frequency to: " << freq << "\n";
 		int ret;
-		for (int i=0; i < NODE_SIZE; i++)
+		const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
+		for (int i=0; i < nodeSize; i++)
 		{
 //			std::cout << "set freq "<<freq<<" for cpu "<<i<<std::endl;
 			ret = cpufreq_set_frequency(i,freq*FREQ_MULT);

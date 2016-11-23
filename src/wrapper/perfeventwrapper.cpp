@@ -1,11 +1,3 @@
-/*
- *	TODO
- * moznost ziskat vice info o chybe z errno
- * zpusob ukladani hodnot
- * nastaveni syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0);
- * ukonceni pri erroru
- */
-
 /******************************************************************************/
 #include <cstdlib>
 #include <iostream>
