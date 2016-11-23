@@ -22,14 +22,12 @@
 
 	- perfeventwrapper
 		= Hardware counters provided by perf_event.
-		- To add a counter it is necessary to follow the instructions in wrapper/counters.h.
 
 		+ http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 	
 	- papiwrapper
 		= Hardware counters provided by papi.
 		- NOT SUITABLE FOR THREADED APPLICATIONS!
-		- To add a counter it is necessary to follow the instructions in wrapper/counters.h.
 		
 		+ http://icl.cs.utk.edu/papi/
 
@@ -47,7 +45,7 @@
 * region.options
 	* File that sets exact settings for each region in test.cpp/test_mpi.cpp.
 * Makefile
-* scriptge.sh
+* scriptgen.sh
 	* Script that generates scripts, each to run a test with one specific settings, and enqueues them.
 	* Ready to do the BLAS test on Taurus.
 	* Be aware that some machines has limit number of jobs in a queue.
@@ -70,13 +68,13 @@
 	make
 
 	# set the default frequencies outside of the regions, or inside regions where are not set
-	export MERIC_FREQUENCY=2500000
+	export MERIC_FREQUENCY=25
 	export MERIC_UNCORE_FREQUENCY=25
 
 	# run the example
 	./test
 
-To understand this example, explore the source file *shared.cpp* to see that this test contains regions A and B (inside A are two regions B). For each region you can set cpu core and uncore frequency. To do so, edit *region.options* file. To use default settings for the region, skip the region settings you don't want, or just rename this file.
+To understand this example, explore the source file **test.cpp** to see that this test contains regions A and B (inside A are two regions B). For each region you can set cpu core, uncore frequency and number of threads. To do so, edit **region.options** file. To use default settings for the region, skip the region settings you don't want, or just rename this file.
 
 --------------------------------------------------------------------------------
 #     4] Measurement results                                                   #
@@ -122,22 +120,31 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 --------------------------------------------------------------------------------
 
 ## SET MERIC DEFAULT PARAMETERS ##
-	export MERIC_FREQUENCY=2500000
-	export MERIC_UNCORE_FREQUENCY=25
+	export MERIC_FREQUENCY=24
+	export MERIC_UNCORE_FREQUENCY=24
 	export MERIC_NUM_THREADS=24
 
-## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION WRITE A FILE **region.options** WITH VALUES FOR EACH REGION ##
-	# EXAMPLE FOR REGIONS A and B
-	A {
-	  FREQUENCY = 1500000,
-	  UNCORE_FREQUENCY = 15
-	  NUM_THREADS = 15
+## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION ##
+	If you find a settings that you want to apply for your regions, you can write 
+	a file **region.options**, where you set them. This file must be in JSON format,
+	where each region has an object with parameters. Parametrs names are the same 
+	as exported environment variables, but witout prefix "MERIC_".
+	
+	If any region of your code or any parameter is missing, than this missing 
+	parameter will be set to the same value, as it was before the region started.
+	
+	# EXAMPLE OF **region.options** FILE FOR REGIONS **A** AND **B**
+	{
+	"A" : {
+	  "FREQUENCY" : 15,
+	  "UNCORE_FREQUENCY" : 15,
+	  "NUM_THREADS" : 15
 	}
-
-	B { 
-	  FREQUENCY = 2300000, 
-	  UNCORE_FREQUENCY = 23
-	  NUM_THREADS = 23
+	,
+	"B":{ 
+	  "FREQUENCY": 23,
+	  "UNCORE_FREQUENCY" : 23
+	}
 	}
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
@@ -162,17 +169,19 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 	export MERIC_AGGREGATE=1
 		- ONLY for distributed applications!
 		- Aggregates data from all nodes - there are both average values and sums
-		  included in the output 
+		included in the output 
 
 	export MERIC_COUNTERS=papi or perfevent
-		- In development
+		- Instead of using hdeem you can use papi or perfevent to read HW counters.
+		- To add a counter you want to measure it is necessary to follow 
+		  the instructions in wrapper/counters.h.
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
 	export MERIC_OUTPUT_FILENAME="log"
 
 --------------------------------------------------------------------------------
-#      6] Measure energy consumption of your code                              #
+#      6] Measure energy consumption of your code at Taurus                    #
 --------------------------------------------------------------------------------
 
 ## COMPILE MERIC ##
@@ -225,4 +234,5 @@ To understand this example, explore the source file *shared.cpp* to see that thi
 	# COMPILE AND RUN YOUR CODE AS USUAL
 	make
 	make run
+
 
