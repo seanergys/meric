@@ -17,6 +17,10 @@ int main(int argc, char **argv)
 	sleep(1);
 	MERIC_MeasureStop();
 
+        MERIC_MeasureStart("C");
+        sleep(1);
+        MERIC_MeasureStop();
+
 	MERIC_MeasureStart("B");
 	sleep(2);
 	MERIC_MeasureStop();
