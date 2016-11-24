@@ -17,6 +17,7 @@ int main()
     int loopDGEMM, loopDGEMV;
 //-------------------------------------------------------------------
 MERIC_Init();
+MERIC_MeasureStart("main");
 //-------------------------------------------------------------------
 /*
     printf("LARGE MATRICES\n\n");
@@ -166,6 +167,7 @@ MERIC_MeasureStop();
     mkl_free(A);
     mkl_free(B);
     mkl_free(C);
+MERIC_MeasureStop();
 MERIC_Close();
     return 0;
 }
