@@ -23,7 +23,7 @@ class CountersStore: public Store {
 
 public:
 	void addStart(const std::string &region);
-	void addEnd();
+	void addEnd(int region);
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
         iterate(_records, prefix, outputDir, outputFilename); 

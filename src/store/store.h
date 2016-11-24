@@ -40,15 +40,25 @@ class StoreBase
 public:
 	virtual void addStart(const std::string &region) = 0;
 	virtual void addEnd() = 0;
-	const std::string& region()
+/*	const std::string& region()
 	{
 		return _stack.size() ? _name[_stack.back()] : _mainRegion;
 	}
-
+*/
 	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 
 	virtual ~StoreBase() {};
 
+	int getRegionID(const std::string &region)
+	{
+		if (_regions.find(region) == _regions.end()) {
+			size_t size = _regions.size();
+			_regions[region] = size;
+			_name.push_back(region);
+		}
+		return _regions[region];
+	}
+	
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
 
@@ -136,19 +146,9 @@ protected:
 		}
 	}
 
-	int getRegionID(const std::string &region)
-	{
-		if (_regions.find(region) == _regions.end()) {
-			size_t size = _regions.size();
-			_regions[region] = size;
-			_name.push_back(region);
-		}
-		return _regions[region];
-	}
-
 	std::map<std::string, int> _regions;
 	std::vector<std::string> _name;
-	std::vector<int> _stack;
+//	std::vector<int> _stack;
 	std::string _mainRegion;
 	std::vector<size_t> _counters;
 

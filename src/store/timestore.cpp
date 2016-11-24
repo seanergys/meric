@@ -7,28 +7,16 @@ using namespace meric;
 void TimeStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
-	if (!stackOnly)
-	{
-		timespec time;
-		HDEEM::fillTime(time);
-		_records.push_back(TimeRecord(regionID, time));
-	}
-	_stack.push_back(regionID);
+	timespec time;
+	HDEEM::fillTime(time);
+	_records.push_back(TimeRecord(regionID, time));
 }
 
-void TimeStore::addEnd()
+void TimeStore::addEnd(int region)
 {
-	if (_stack.size()) {
-		if(!stackOnly)
-		{
-			timespec time;
-			HDEEM::fillTime(time);
-			_records.push_back(TimeRecord(_stack.back(), time));
-		}
-		_stack.pop_back();
-	} else {
-		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-	}
+	timespec time;
+	HDEEM::fillTime(time);
+	_records.push_back(TimeRecord(region, time));
 }
 
 void TimeStore::computePeriods()

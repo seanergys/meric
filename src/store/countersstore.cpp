@@ -23,24 +23,18 @@ void CountersStore::addStart(const std::string &region)
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(CountersRecord(_regions[region], record, time));
-	_stack.push_back(_regions[region]);
 }
 
-void CountersStore::addEnd()
+void CountersStore::addEnd(int region)
 {
-	if (_stack.size()) {
-		std::map<std::string, long> record;
-		if (wrapperType == PERFEVENT)
-			PERFEVENT::getValues(record);
-		else if (wrapperType == PAPI)
-			PAPI::getValues(record);
-		struct timespec time;
-		clock_gettime(CLOCK_REALTIME, &time);
-		_records.push_back(CountersRecord(_stack.back(), record, time));
-		_stack.pop_back();
-	} else {
-		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-	}
+	std::map<std::string, long> record;
+	if (wrapperType == PERFEVENT)
+		PERFEVENT::getValues(record);
+	else if (wrapperType == PAPI)
+		PAPI::getValues(record);
+	struct timespec time;
+	clock_gettime(CLOCK_REALTIME, &time);
+	_records.push_back(CountersRecord(region, record, time));
 }
 
 

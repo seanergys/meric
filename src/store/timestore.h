@@ -27,7 +27,7 @@ class TimeStore: public Store {
 	friend class DetailedAggregateStore<TimeStore>;
 public:
 	virtual void addStart(const std::string &region);
-	virtual void addEnd();
+	virtual void addEnd(int region);
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
@@ -61,14 +61,13 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeStore(int so): _hdeem_duration(0), _meric_duration(0), stackOnly(so)
+	TimeStore(): _hdeem_duration(0), _meric_duration(0)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
 	}
 
 protected:
-	int stackOnly;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void computePeriods();
 

@@ -6,30 +6,18 @@ using namespace meric;
 void DetailedEnergyStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
-	if (!stackOnly)
-	{
-		std::array<double, PROBE_NUMBER> energy;
-		timespec time;
-		HDEEM::fillDetailedEnergy(energy, time);
-		_records.push_back(DetailedEnergyRecord(regionID, energy, time));
-	}
-	_stack.push_back(regionID);
+	std::array<double, PROBE_NUMBER> energy;
+	timespec time;
+	HDEEM::fillDetailedEnergy(energy, time);
+	_records.push_back(DetailedEnergyRecord(regionID, energy, time));
 }
 
-void DetailedEnergyStore::addEnd()
+void DetailedEnergyStore::addEnd(int region)
 {
-	if (_stack.size()) {
-		if (!stackOnly)
-		{
-			std::array<double, PROBE_NUMBER> energy;
-			timespec time;
-			HDEEM::fillDetailedEnergy(energy, time);
-			_records.push_back(DetailedEnergyRecord(_stack.back(), energy, time));
-		}
-		_stack.pop_back();
-	} else {
-		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-	}
+	std::array<double, PROBE_NUMBER> energy;
+	timespec time;
+	HDEEM::fillDetailedEnergy(energy, time);
+	_records.push_back(DetailedEnergyRecord(region, energy, time));
 }
 
 void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)

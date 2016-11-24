@@ -27,7 +27,7 @@ class EnergyStore: public Store {
 	friend class DetailedAggregateStore<EnergyStore>;
 public:
 	void addStart(const std::string &region);
-	void addEnd();
+	void addEnd(int region);
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 	{
@@ -50,13 +50,12 @@ public:
 		iterate(_records, processInterval);
 	}
 
-	EnergyStore(int so): stackOnly(so)
+	EnergyStore()
 	{
 		MERIC_INFO << "Create EnergyStore\n";
 	}
 
 protected:
-	int stackOnly;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
 	std::vector<EnergyRecord> _records;

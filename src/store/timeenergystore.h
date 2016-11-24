@@ -25,7 +25,7 @@ class TimeEnergyStore: public TimeStore {
 	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
 	void addStart(const std::string &region);
-	void addEnd();
+	void addEnd(int region);
 
 	void fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd);
 
@@ -60,13 +60,12 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeEnergyStore(int so): stackOnly (so)
+	TimeEnergyStore()
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
 protected:
-	int stackOnly;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
 	std::vector<TimeEnergyRecord> _records;

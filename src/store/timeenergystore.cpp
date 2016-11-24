@@ -7,36 +7,24 @@ using namespace meric;
 void TimeEnergyStore::addStart(const std::string &region)
 {
 	int regionID = getRegionID(region);
-	if (!stackOnly)
-	{
-		timespec hdeemTime, clockTime;
-		std::array<double, PROBE_NUMBER> energy;
+	timespec hdeemTime, clockTime;
+	std::array<double, PROBE_NUMBER> energy;
 
-		HDEEM::fillDetailedEnergy(energy, hdeemTime);
-		HDEEM::fillTime(clockTime);
+	HDEEM::fillDetailedEnergy(energy, hdeemTime);
+	HDEEM::fillTime(clockTime);
 
-		_records.push_back(TimeEnergyRecord(regionID, hdeemTime, clockTime, energy));
-	}
-	_stack.push_back(regionID);
+	_records.push_back(TimeEnergyRecord(regionID, hdeemTime, clockTime, energy));
 }
 
-void TimeEnergyStore::addEnd()
+void TimeEnergyStore::addEnd(int region)
 {
-	if (_stack.size()) {
-		if (!stackOnly)
-		{
-			timespec hdeemTime, clockTime;
-			std::array<double, PROBE_NUMBER> energy;
+	timespec hdeemTime, clockTime;
+	std::array<double, PROBE_NUMBER> energy;
 
-		    HDEEM::fillDetailedEnergy(energy, hdeemTime);
-			HDEEM::fillTime(clockTime);
+    HDEEM::fillDetailedEnergy(energy, hdeemTime);
+	HDEEM::fillTime(clockTime);
 
-			_records.push_back(TimeEnergyRecord(_stack.back(), hdeemTime, clockTime, energy));
-		}
-		_stack.pop_back();
-	} else {
-		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-	}
+	_records.push_back(TimeEnergyRecord(region, hdeemTime, clockTime, energy));
 }
 
 
