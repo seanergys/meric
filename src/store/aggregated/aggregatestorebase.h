@@ -18,7 +18,7 @@ public:
 	}
 
 	void addStart(const std::string &region) { _store.addStart(region); }
-	void addEnd() { _store.addEnd(); };
+	void addEnd(int region) { _store.addEnd(int region); };
 
 	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
 	{
