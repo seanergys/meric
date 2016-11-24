@@ -42,22 +42,13 @@ public:
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
 		_store->addStart(region);
-		_stack.push_back(_store->getRegionID(region));										//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual void stop()
 	{
 		MERIC_INFO << "region '" << _store->region(_stack.size(), _stack.back()) << "' stopping\n";
-		if (_stack.size())
-		{
-			_store->addEnd(_stack.back());
-			_stack.pop_back();
-		}
-		else
-		{
-			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-		}	
+		_store->addEnd(_stack.back());
 		MERIC_INFO << "region '" << _store->region(_stack.size(), _stack.back()) << "' stopped\n";
 	}
 
