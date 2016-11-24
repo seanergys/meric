@@ -28,7 +28,8 @@ public:
 			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		}
 		Environment::threadNumber(regionValue(region).nthreads);
-		Meric::start(region);
+		if(!_MPInodeRank)
+			Meric::start(region);
 		_stack.push_back(_store->getRegionID(region));
 	}
 	
@@ -37,7 +38,8 @@ public:
 		MPI_Barrier(_currentNode);
 		if (_stack.size())
 		{
-			Meric::stop();
+			if(!_MPInodeRank)
+				Meric::stop();
 			_stack.pop_back();
 		}
 		else
