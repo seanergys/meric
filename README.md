@@ -216,7 +216,8 @@ To understand this example, explore the source file **test.cpp** to see that thi
 	# EDIT MAKEFILE
 		-I$(PATH_TO_MERIC)/include
 		-L$(PATH_TO_MERIC)/lib
-		-lmeric -lmericmpi -L../hdeem -lhdeem -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
+		-L../hdeem -lhdeem -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
+		-lmeric OR FOR MPI APPS -lmericmpi 
 
 	# OR IF APPLICATION IS COMPILED USING WAF (such as ESPRESO Solver)
 		# * build.config
@@ -224,8 +225,7 @@ To understand this example, explore the source file **test.cpp** to see that thi
 			LIBPATH =  $PATH_TO_MERIC/lib /sw/taurus/libraries/papi/5.4.1/lib/
 		# * src/app/wscript
 			def configure(ctx):
-			    ctx.env.append_unique("LIB", "meric")
-			    ctx.env.append_unique("LIB", "mericmpi")
+			    ctx.env.append_unique("LIB", "meric")  # OR "mericmpi"
 			    ctx.env.append_unique("LIB", "hdeem")
 			    ctx.env.append_unique("LIB", "cpufreq")
 			    ctx.env.append_unique("LIB", "x86_adapt")
