@@ -72,7 +72,7 @@ DistributedMeric::DistributedMeric()
         if(Meric::AGGREGATE) {
     		_store = new DebugAggregateStore<TimeEnergyStore>(_storingProcs);
 		} else {
-			_store = new TimeEnergyStore(_MPInodeRank);
+			_store = new TimeEnergyStore();
 		}
 		return;
 	}
@@ -88,7 +88,7 @@ DistributedMeric::DistributedMeric()
 			if (Meric::AGGREGATE) {
 				_store = new AggregateStore<TimeStore>(_storingProcs);
 			} else {
-				_store = new TimeStore(_MPInodeRank);
+				_store = new TimeStore();
 			}
 		}
 	} else {
@@ -96,13 +96,13 @@ DistributedMeric::DistributedMeric()
 			if (Meric::AGGREGATE) {
 				_store = new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs);
 			} else {
-				_store = new DetailedEnergyStore(_MPInodeRank);
+				_store = new DetailedEnergyStore();
 			}
 		} else {
 			if (Meric::AGGREGATE) {
 				_store = new AggregateStore<EnergyStore>(_storingProcs);
 			} else {
-				_store = new EnergyStore(_MPInodeRank);
+				_store = new EnergyStore();
 			}
 		}
 	}
