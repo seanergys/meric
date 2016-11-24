@@ -42,7 +42,7 @@ public:
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
 		_store->addStart(region);
-		_stack.push_back(getRegionID(region));										//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		_stack.push_back(_store.getRegionID(region));										//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
@@ -52,7 +52,7 @@ public:
 		if (_stack.size())
 		{
 			_store->addEnd(_stack.back());
-			_stack.pop_back()
+			_stack.pop_back();
 		}
 		else
 		{

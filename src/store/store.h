@@ -39,7 +39,7 @@ class StoreBase
 {
 public:
 	virtual void addStart(const std::string &region) = 0;
-	virtual void addEnd() = 0;
+	virtual void addEnd(int region) = 0;
 /*	const std::string& region()
 	{
 		return _stack.size() ? _name[_stack.back()] : _mainRegion;
