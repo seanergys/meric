@@ -60,12 +60,13 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeEnergyStore()
+	TimeEnergyStore(int so): stackOnly (so)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
 protected:
+	int stackOnly;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
 	std::vector<TimeEnergyRecord> _records;

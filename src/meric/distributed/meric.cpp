@@ -49,11 +49,11 @@ DistributedMeric::DistributedMeric()
 
 	Environment::init(defaultParameter, _MPInodeRank);
 
-        if (Meric::COUNTERS != "none")
-        {
-                _store = new CountersStore(Meric::COUNTERS);
-                return;
-        }
+	if (Meric::COUNTERS != "none")
+	{
+		_store = new CountersStore(Meric::COUNTERS);
+		return;
+	}
 	
 	if (!_MPInodeRank) {
 		HDEEM::init();
@@ -71,9 +71,9 @@ DistributedMeric::DistributedMeric()
         */
         if(Meric::AGGREGATE) {
     		_store = new DebugAggregateStore<TimeEnergyStore>(_storingProcs);
-        } else {
-            _store = new TimeEnergyStore();
-        }
+		} else {
+			_store = new TimeEnergyStore(_MPInodeRank);
+		}
 		return;
 	}
 	
@@ -88,7 +88,7 @@ DistributedMeric::DistributedMeric()
 			if (Meric::AGGREGATE) {
 				_store = new AggregateStore<TimeStore>(_storingProcs);
 			} else {
-				_store = new TimeStore();
+				_store = new TimeStore(_MPInodeRank);
 			}
 		}
 	} else {
@@ -96,13 +96,13 @@ DistributedMeric::DistributedMeric()
 			if (Meric::AGGREGATE) {
 				_store = new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs);
 			} else {
-				_store = new DetailedEnergyStore();
+				_store = new DetailedEnergyStore(_MPInodeRank);
 			}
 		} else {
 			if (Meric::AGGREGATE) {
 				_store = new AggregateStore<EnergyStore>(_storingProcs);
 			} else {
-				_store = new EnergyStore();
+				_store = new EnergyStore(_MPInodeRank);
 			}
 		}
 	}

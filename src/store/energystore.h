@@ -50,12 +50,13 @@ public:
 		iterate(_records, processInterval);
 	}
 
-	EnergyStore()
+	EnergyStore(int so): stackOnly(so)
 	{
 		MERIC_INFO << "Create EnergyStore\n";
 	}
 
 protected:
+	int stackOnly;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
 	std::vector<EnergyRecord> _records;

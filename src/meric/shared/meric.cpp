@@ -10,17 +10,17 @@ SharedMeric::SharedMeric()
 
 	Environment::init(defaultParameter, 0);
 
-        if (Meric::COUNTERS != "none")
-        {
-                _store = new CountersStore(Meric::COUNTERS);
-                return;
-        }
+	if (Meric::COUNTERS != "none")
+	{
+		_store = new CountersStore(Meric::COUNTERS);
+		return;
+	}
 
-        HDEEM::init();
-        HDEEM::start();
+	HDEEM::init();
+	HDEEM::start();
 
 	if (Meric::DEBUG) {
-		_store = new TimeEnergyStore();
+		_store = new TimeEnergyStore(0);
 		return;
 	}
 	
@@ -28,20 +28,20 @@ SharedMeric::SharedMeric()
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();
 		} else {
-			_store = new TimeStore();
+			_store = new TimeStore(0);
 		}
 	} else {
 		if (Meric::DETAILED) {
-			_store = new DetailedEnergyStore();
+			_store = new DetailedEnergyStore(0);
 		} else {
-			_store = new EnergyStore();
+			_store = new EnergyStore(0);
 		}
 	}
 }
 
 SharedMeric::~SharedMeric()
 {
-        Environment::close();
+	Environment::close();
 	if (Meric::COUNTERS == "none")
 	{
 		HDEEM::stop();
