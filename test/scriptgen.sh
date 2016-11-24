@@ -36,16 +36,15 @@ if [ "$1" = "run" ]; then
 
  ##### LOOPS ##### 
  #XXX - for each LOOP must be added "done" in another XXX section
-  for FREQ in {12..24..2}
+  for FREQ in {12..25..2} #{12..25..1}
   do
-  for UN_FREQ in {12..30..1}
+  for UN_FREQ in 12 30 # {12..30..1}
   do
-  for THRD in {1..24..1}
+  for THRD in 1 #{1..24..1}
   do
 
  ##### RUN CONNECTED VARIABLES ##### 
     jobname=$FREQ"intensity"
-    out_dir="TEST"$THRD"_"$FREQ"_"$UN_FREQ
     
     qsub_command=$qsub_command_0
 
@@ -79,14 +78,20 @@ if [ "$1" = "run" ]; then
 		then
 			PBS="#SBATCH -p "$queue" ;"
 			PBS+="#SBATCH -t "$walltime" ;"
-			PBS+="#SBATCH -N 1 ;"			#TODO count required number of nodes
+			PBS+="#SBATCH -N 4 ;"			#TODO count required number of nodes
 			PBS+="#SBATCH --mem "$memory" ;"
 			PBS+="#SBATCH --exclusive ;"
+			PBS+="#SBATCH --ntasks-per-node=1 ;"	#one MPI proc per node
 #			PBS+="#SBATCH --mail-type=ALL ;"
 #			PBS+="#SBATCH --mail-user="$EMAIL" ;"
 
 			##### YOUR SCRIPT #####
-			qsub_command+="./blasTest;"
+#			qsub_command+="./blasTest;"
+                        qsub_command+="make;"
+                        qsub_command+="export MERIC_OUTPUT_DIR=TEST;"
+                        qsub_command+="./test;"
+                        qsub_command+="export MERIC_OUTPUT_DIR=TESTMPI;"
+                        qsub_command+="mpirun -n 4 ./test_mpi;"
 
 			echo "#!/bin/bash;"$PBS$qsub_command | tr ";" "\n" | tr -d "¡" | tee $THRD"_"$FREQ"_"$UN_FREQ".qsub"
 			sbatch $THRD"_"$FREQ"_"$UN_FREQ".qsub"

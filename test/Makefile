@@ -12,6 +12,7 @@ default: all
 
 all: mpiTest basicTest blasTest
 
+ ######
 mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
@@ -23,18 +24,23 @@ blasTest: blas_test.c
 	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
 	$(info )
 	module load mkl;
-	$(CC)   -O2 -g blas_test.c      -L../lib -I../include -lmeric -mkl      $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
+	$(CC)   -O0 -g blas_test.c      -L../lib -I../include -lmeric -mkl      $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
+
+
+ ######
+MeasurementDIRS=hdeemMeasurement* TEST* TESTMPI*
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
 
 cleanAll:
 	make clean
-	rm -rf hdeemMeasurement* *.tmp
+	rm -rf $(MeasurementDIRS) *.tmp
 
+ ######
 run:
-	. environment
-	mpirun -n 10 -genv I_MPI_DEBUG=5 ./test_mpi
+	./test
+	mpirun -n 4 -genv I_MPI_DEBUG=5 ./test_mpi
 
 srun:
 	srun -N 1 -c 24 --tasks-per-node=1 --exclusive -p haswell --x11 --pty bash

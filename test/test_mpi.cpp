@@ -13,19 +13,27 @@ int main(int argc, char **argv)
 
 	MERIC_MeasureStart("A");
 
-	MERIC_MeasureStart("B");
-	sleep(1);
-	MERIC_MeasureStop();
+
+	for(int i = 0; i < 5; i++)
+	{
+MERIC_MeasureStart("iteration");
+
+MERIC_MeasureStart("B");
+        sleep(1);
+        MERIC_MeasureStop(); //B
 
         MERIC_MeasureStart("C");
+        sleep(2);
+        MERIC_MeasureStop(); //C
+
+        MERIC_MeasureStart("B");
         sleep(1);
-        MERIC_MeasureStop();
+        MERIC_MeasureStop(); //B
 
-	MERIC_MeasureStart("B");
-	sleep(2);
-	MERIC_MeasureStop();
+        MERIC_MeasureStop(); //iteration
+    }
 
-	MERIC_MeasureStop();
+	MERIC_MeasureStop(); //A
 
 	MERIC_Close();
 	MPI_Finalize();
