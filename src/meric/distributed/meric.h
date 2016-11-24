@@ -36,10 +36,10 @@ public:
 		MPI_Barrier(_currentNode);
 		Meric::stop();
 		if (!_MPInodeRank) {
-			Environment::frequency(regionValue(_store->region()).frequency);
-			Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
+			Environment::frequency(regionValue(_store->region(_stack.size(), _stack.back())).frequency);
+			Environment::uncoreFrequency(regionValue(_store->region(_stack.size(), _stack.back())).uncoreFrequency);
 		}
-		Environment::threadNumber(regionValue(_store->region()).nthreads);
+		Environment::threadNumber(regionValue(_store->region(_stack.size(), _stack.back())).nthreads);
 	}
 	
 	void save()

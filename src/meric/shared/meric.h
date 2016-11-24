@@ -23,9 +23,9 @@ public:
 	void stop()
 	{
 		Meric::stop();
-		Environment::uncoreFrequency(regionValue(_store->region()).uncoreFrequency);
-		Environment::frequency(regionValue(_store->region()).frequency);
-		Environment::threadNumber(regionValue(_store->region()).nthreads);
+		Environment::uncoreFrequency(regionValue(_store->region(_stack.size(), _stack.back())).uncoreFrequency);
+		Environment::frequency(regionValue(_store->region(_stack.size(), _stack.back())).frequency);
+		Environment::threadNumber(regionValue(_store->region(_stack.size(), _stack.back())).nthreads);
 	}
 	
 	void save()

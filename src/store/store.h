@@ -40,11 +40,11 @@ class StoreBase
 public:
 	virtual void addStart(const std::string &region) = 0;
 	virtual void addEnd(int region) = 0;
-/*	const std::string& region()
+	const std::string& region(int size, int last)
 	{
-		return _stack.size() ? _name[_stack.back()] : _mainRegion;
+		return size ? _name[last] : _mainRegion;
 	}
-*/
+
 	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 
 	virtual ~StoreBase() {};
