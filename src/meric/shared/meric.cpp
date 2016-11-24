@@ -20,7 +20,7 @@ SharedMeric::SharedMeric()
 	HDEEM::start();
 
 	if (Meric::DEBUG) {
-		_store = new TimeEnergyStore(0);
+		_store = new TimeEnergyStore();
 		return;
 	}
 	
@@ -28,13 +28,13 @@ SharedMeric::SharedMeric()
 		if (Meric::DETAILED) {
 			_store = new DetailedTimeStore();
 		} else {
-			_store = new TimeStore(0);
+			_store = new TimeStore();
 		}
 	} else {
 		if (Meric::DETAILED) {
-			_store = new DetailedEnergyStore(0);
+			_store = new DetailedEnergyStore();
 		} else {
-			_store = new EnergyStore(0);
+			_store = new EnergyStore();
 		}
 	}
 }
