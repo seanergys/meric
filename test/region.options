@@ -1,11 +1,11 @@
 {
-"A" : {
+"DGEMM" : {
   "FREQUENCY" : 15,
   "UNCORE_FREQUENCY" : 15,
   "NUM_THREADS" : 16
 }
 ,
-"B":{ 
+"DGEMV":{ 
   "FREQUENCY"= 23, 
   "UNCORE_FREQUENCY" = 23
 }
