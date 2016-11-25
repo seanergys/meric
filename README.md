@@ -43,38 +43,38 @@
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all resources.
 		* WARNING: This test requires mkl module. When make is called, module is loaded.
 * region.options
-	* File that sets exact settings for each region in test.cpp/test_mpi.cpp.
+	* File that sets exact settings for regions inside your code.
+	* In default it is set for blas test.
 * Makefile
-* scriptgen.sh
-	* Script that generates scripts, each to run a test with one specific settings, and enqueues them.
-	* Ready to do the basic test with test.cpp and test_mpi.cpp on Taurus.
-	* Be aware that some machines has limit number of jobs in a queue.
+* run.sh
+	* Script that runs the code with all possible settings.
+	* Ready to do the basic test with test_mpi.cpp on Taurus.
 
 --------------------------------------------------------------------------------
 #    3] Compile and run basic example                                          #
 --------------------------------------------------------------------------------
 	# in the interactive job load necessary modules
-	module load intel/2016.1.150
-	module load mpirt/5.1.2.150
-	module load hdeem/2.2.2
-	module load papi/5.4.1
+		module load intel/2016.1.150
+		module load mpirt/5.1.2.150
+		module load hdeem/2.2.2
+		module load papi/5.4.1
 
 	# compile MERIC
-	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
-	make
+		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
+		make
 	
 	# compile test code
-	cd test
-	make
+		cd test
+		make
 
 	# set the default frequencies outside of the regions, or inside regions where are not set
-	export MERIC_FREQUENCY=25
-	export MERIC_UNCORE_FREQUENCY=25
+		export MERIC_FREQUENCY=25
+		export MERIC_UNCORE_FREQUENCY=25
 
 	# run the example
-	./test
+		./test
 
-To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one C). For each region you can set cpu core, uncore frequency and number of threads. To do so, edit **region.options** file. To use default settings for the region, skip the region settings you don't want, or just rename this file.
+To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one C). For each region you can set cpu core, uncore frequency and number of threads. How to do so, you will find in section MERIC input parameters.
 
 --------------------------------------------------------------------------------
 #     4] Measurement results                                                   #
@@ -118,39 +118,39 @@ To understand this example, explore the source file **test.cpp** to see that thi
 --------------------------------------------------------------------------------
 #      5] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-To find the best settings for each region, you should run your code with all possible settings. To do so, there is a bash script scriptgen.sh in the test folder. In default the script is set to run a segment of all settings for test.cpp and test_mpi.cpp and visualise the result in the RADAR tool.
+To find the best settings for each region, you should run your code with all possible settings. To do so, there is a script run.sh in the test folder. In default the script is set to run a segment of all settings for test_mpi.cpp and visualise the result in the RADAR tool.
 	
 	# Erase previous results to avoid mixing them
-	make cleanAll
+		make cleanAll
 	
 	# Run the script
-	./scriptgen.sh run slurm pbs 
+		sbatch run.sh 
 	
 	# Provide correct configuration file to RADAR
 	# Check inside the cofiguration file if the path to your results is correct
-	mv config.py.TEST config.py
+		mv config.py.TEST config.py
 	
 	# Run RADAR tool
-	./printFullReport.py
+		./printFullReport.py
 	
 	# cd to directory with measurement results
 	# Compile output LaTeX source file and investigate the results
-	pdflatex --shell-escape results.tex
+		pdflatex --shell-escape results.tex
 	
 --------------------------------------------------------------------------------
 #     6] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC DEFAULT PARAMETERS ##
-	export MERIC_FREQUENCY=24
-	export MERIC_UNCORE_FREQUENCY=24
+	export MERIC_FREQUENCY=24        # [0.1 GHz]
+	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24
 
 ## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION ##
 	If you find a settings that you want to apply for your regions, you can write 
 	a file **region.options**, where you set them. This file must be in JSON format,
 	where each region has an object with parameters. Parametrs names are the same 
-	as exported environment variables, but witout prefix "MERIC_".
+	as exported environment variables, but witout the prefix "MERIC_".
 	
 	If any region of your code or any parameter is missing, than this missing 
 	parameter will be set to the same value, as it was before the region started.
@@ -255,18 +255,18 @@ To find the best settings for each region, you should run your code with all pos
 			    ctx.env.append_unique("LIB", "papi")
 
 	# COMPILE AND RUN YOUR CODE AS USUAL
-	make
-	make run
+		make
+		make run
 
 ## TEST YOUR CODE ##
-	# EDIT scriptgen.sh AND RUN IT
-	./scriptgen.sh run slurm pbs
+	# EDIT run.sh AND RUN IT
+		sbatch run.sh
 	
 	# EDIT RADAR config.py - FOLLOW THE INSTRUCTION INSIDE
-
 	# GENERATE RADAR OUTPUT 
-	./printFullReport.py
+		module load python
+		./printFullReport.py
 
 	# COMPILE LaTeX SOURCE FILE THAT IS INSIDE THE FOLDER WITH MEASUREMENT RESULTS
-	pdflatex --shell-escape results.tex
+		pdflatex --shell-escape results.tex
 
