@@ -7,7 +7,7 @@
 #include "../../wrapper/environmentwrapper.h"
 #include "../../wrapper/perfeventwrapper.h"
 #include "../../wrapper/papiwrapper.h"
-
+#include "../../wrapper/raplwrapper.h"
 
 meric::SharedMeric *holder = NULL;
 

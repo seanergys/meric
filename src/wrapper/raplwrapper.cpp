@@ -74,7 +74,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 			std::cerr << "X86ADAPT error while accessing file descriptor\n";
 //			exit(2);
 		}
-		const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, RAPL_COUNTERS::RAPL_PCKG_ENERGY);
+		const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, RAPL_COUNTERS::RAPL_PCKG_ENERGY.c_str());
 		x86_adapt_get_setting(fd, itemId, &dieEnergy);
 		energy += dieEnergy;
 	}
