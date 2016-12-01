@@ -67,6 +67,9 @@ void RAPL::init()
 
 void RAPL::getValues(std::map<std::string, long> & record) 
 {
+	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		record[iterator->first] = 0;
+
 	uint64_t energy = 0;
 	const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	for (int die=0; die<max; die++)
@@ -78,13 +81,19 @@ void RAPL::getValues(std::map<std::string, long> & record)
 			std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
 //			exit(2);
 		}
-		const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, RAPL_COUNTERS::RAPL_PCKG_ENERGY.c_str());
-		x86_adapt_get_setting(fd, itemId, &dieEnergy);
-		energy += dieEnergy;
+		
+		for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		{
+			const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
+			x86_adapt_get_setting(fd, itemId, &dieEnergy);
+			energy += dieEnergy;
+
+			record [iterator->first] += energy*energyUnit;
+		}
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
 	}
-	record [RAPL_COUNTERS::RAPL_PCKG_ENERGY] = energy*energyUnit;
+	
 }
 
 #else
