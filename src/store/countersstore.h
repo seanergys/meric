@@ -15,7 +15,7 @@ struct CountersRecord {
 	timespec time;
 };
 
-enum WRAPPERS {PERFEVENT, PAPI};
+enum WRAPPERS {PERFEVENT, PAPI, RAPL};
 
 
 class CountersStore: public Store {
@@ -46,6 +46,8 @@ public:
 			wrapperType = PERFEVENT;
 		else if (wrapper == "papi")
 			wrapperType = PAPI;
+		else if (wrapper == "rapl")
+			wrapperType = RAPL;
 
 		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
 	}

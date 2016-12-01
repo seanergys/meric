@@ -34,6 +34,8 @@ void MERIC_Init()
 		meric::PERFEVENT::init();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::init();
+	if (meric::Meric::COUNTERS == "rapl")
+		meric::RAPL::init();
 
 	meric::Meric::readRegionParameters();
 	holder = new meric::DistributedMeric();
@@ -56,6 +58,9 @@ void MERIC_Close()
 		meric::PERFEVENT::close();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::close();
+// close() is not needed for RAPL
+//	if (meric::Meric::COUNTERS == "rapl")
+//		meric::RAPL::close();
 
 	holder->save();
 

@@ -1,7 +1,6 @@
 
 #ifndef SRC_WRAPPER_PAPIWRAPPER_H_
 #define SRC_WRAPPER_PAPIWRAPPER_H_
-#include "counterwrapper.h"
 
 #include <map>
 #include <iostream>
@@ -11,7 +10,7 @@ namespace meric {
 
 #if !defined USE_DUMMY && defined HAVE_PAPI_H
 
-class PAPI : public counterwrapper {
+class PAPI{
 
 public:
 
@@ -47,4 +46,4 @@ public:
 
 
 
-#endif /* SRC_WRAPPER_PERFEVENTWRAPPER_H_ */
+#endif /* SRC_WRAPPER_PAPIWRAPPER_H_ */

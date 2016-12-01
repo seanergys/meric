@@ -6,6 +6,7 @@
 
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
+#include "../wrapper/raplwrapper.h"
 
 // #include <sys/time.h>
 // #include <cmath>
@@ -20,6 +21,8 @@ void CountersStore::addStart(const std::string &region)
 		PERFEVENT::getValues(record);
 	else if (wrapperType == PAPI)
 		PAPI::getValues(record);
+	else if (wrapperType == RAPL)
+		RAPL::getValues(record);
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(CountersRecord(_regions[region], record, time));
@@ -32,6 +35,8 @@ void CountersStore::addEnd(int region)
 		PERFEVENT::getValues(record);
 	else if (wrapperType == PAPI)
 		PAPI::getValues(record);
+	else if (wrapperType == RAPL)
+		RAPL::getValues(record);
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(CountersRecord(region, record, time));

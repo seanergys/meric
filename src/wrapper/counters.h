@@ -26,3 +26,13 @@ const std::string COUNTER_CAHE_MISSES = "COUNTER_CACHE_MISSES";
 const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 
 }
+
+/**
+ * to add new RAPL counter:
+ * TODO
+ **/
+namespace RAPL_COUNTERS {
+
+const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
+
+}

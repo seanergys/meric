@@ -1,7 +1,6 @@
 
 #ifndef SRC_WRAPPER_PERFEVENTWRAPPER_H_
 #define SRC_WRAPPER_PERFEVENTWRAPPER_H_
-#include "counterwrapper.h"
 
 #include <linux/perf_event.h>
 #include <map>
@@ -12,7 +11,7 @@ namespace meric {
 
 #if !defined USE_DUMMY && defined HAVE_LINUX_PERF_EVENT_H
 
-class PERFEVENT : public counterwrapper{
+class PERFEVENT {
 
 public:
 
