@@ -47,6 +47,8 @@ double RAPL::energyUnit = 1.0;
 #if !defined USE_DUMMY && defined HAVE_X86_ADAPT_H
 void RAPL::init()
 {
+	initMap(counters);
+
 	uint64_t unit;
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0); //ignoring fact that different nodes may have different units
 	if (fd < 0)
@@ -102,6 +104,8 @@ void RAPL::getValues(std::map<std::string, long> & record)
 void RAPL::initMap(std::map<std::string, long> & dict)
 {
 	dict[RAPL_COUNTERS::RAPL_PCKG_ENERGY] = 0;
+	dict[RAPL_COUNTERS::RAPL_PP0_ENERGY]  = 0;
+	dict[RAPL_COUNTERS::RAPL_RAM_ENERGY]  = 0;
 }
 
 

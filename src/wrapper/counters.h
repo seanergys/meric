@@ -29,10 +29,14 @@ const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 
 /**
  * to add new RAPL counter:
- * TODO
+ * 	add here counter name as it is in "x86a_read -n"
+ * 	init new counter inside void RAPL::initMap(std::map<std::string, long> & dict)
+ * WARNING: all added counters must be ENERGY counters, RAPL time and RAPL power has different unit and RAPL::init() must be changed accordingly. Further explanation at the top of raplwrapper.cpp.
  **/
 namespace RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
+const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";
+const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
 
 }
