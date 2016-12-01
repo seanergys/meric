@@ -51,7 +51,7 @@ void RAPL::init()
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	if (fd < 0)
 	{
-		std::cerr << "X86ADAPT error while accessing file descriptor\n";
+		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
 //		exit(2);
 	}
 	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
@@ -59,6 +59,8 @@ void RAPL::init()
 	unit &= RAPLenergyMask;
 	unit >>= RAPLenergyShift;
 	energyUnit = 1.0/pow(2,unit);
+	if (!x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 }
 
 void RAPL::getValues(std::map<std::string, long> & record) 
@@ -71,12 +73,14 @@ void RAPL::getValues(std::map<std::string, long> & record)
 		const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 		if (fd < 0)
 		{
-			std::cerr << "X86ADAPT error while accessing file descriptor\n";
+			std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
 //			exit(2);
 		}
 		const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, RAPL_COUNTERS::RAPL_PCKG_ENERGY.c_str());
 		x86_adapt_get_setting(fd, itemId, &dieEnergy);
 		energy += dieEnergy;
+		if (!x86_adapt_put_device(X86_ADAPT_DIE, die))
+			std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
 	}
 	record [RAPL_COUNTERS::RAPL_PCKG_ENERGY] = energy*energyUnit;
 }

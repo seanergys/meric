@@ -82,6 +82,9 @@ public:
 
 			setFreq("Intel_UNCORE_MAX_RATIO");
 			setFreq("Intel_UNCORE_MIN_RATIO");
+			
+			if (!x86_adapt_put_device(X86_ADAPT_DIE, die))
+				std::cerr << "X86ADAPT error while closing file descriptor\n";
 		}
 #else
 #endif
