@@ -20,15 +20,15 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
+	meric::Meric::readRegionParameters();
+        holder = new meric::SharedMeric();
+
 	if (meric::Meric::COUNTERS == "perfevent")
 		meric::PERFEVENT::init();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::init();
 	if (meric::Meric::COUNTERS == "rapl")
 		meric::RAPL::init();
-
-	meric::Meric::readRegionParameters();
-	holder = new meric::SharedMeric();
 }
 
 void MERIC_Close()
