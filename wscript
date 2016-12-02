@@ -18,7 +18,7 @@ def configure(ctx):
         ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
-
+        ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)
 
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
@@ -108,5 +108,5 @@ def options(opt):
         "--flags",
         action="store",
         default="-O2",
-        help="Compiler flags (-std=c++11 and -fPIC are default)"
+        help="Compiler flags (-std=c++11, -fPIC and -fopenmp are default)"
     )
