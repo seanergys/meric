@@ -12,7 +12,7 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpicc --flag="$(LIBPATH) $(INCLUDES)"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES)"
 
 install:
 	./waf install #-v
