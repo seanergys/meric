@@ -1,7 +1,9 @@
 INCLUDES=-I/projects/p_readex/cpufrequtils-icc/lib/ \
-	-I/sw/taurus/libraries/papi/5.4.1/include/
+	-I/sw/taurus/libraries/papi/5.4.1/include/	\
+	-I~/readex/x86adapt/x86_adapt/library/include/
 LIBPATH=-L/projects/p_readex/cpufrequtils-icc	\
-	-L/sw/taurus/libraries/papi/5.4.1/lib/
+	-L/sw/taurus/libraries/papi/5.4.1/lib/	\
+	-L~/readex/x86adapt/x86_adapt/build/
 
 
 
