@@ -1,28 +1,9 @@
-/**
- * To add new PAPI counter, add counter Name to papiwrapper.h
- * 
- **/
-/******************************************************************************/
-#include <cstdlib>
-#include <iostream>
-#include <time.h>
-#include <ctime>
-#include <array>
-#include <unistd.h>
-/******************************************************************************/
+
 #ifdef HAVE_PAPI_H
 #include <papi.h>
 #endif
-#include <sys/types.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/syscall.h>
-#include <asm/unistd.h>
-#include <errno.h>
-/******************************************************************************/
-#include <map>
-#include <vector>
 
+#include <vector>
 #include "papiwrapper.h"
 #include "counters.h"
 

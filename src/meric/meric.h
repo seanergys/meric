@@ -13,10 +13,7 @@
 #include "../store/detailedtimestore.h"
 #include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
-/*
-#include "../wrapper/environmentwrapper.h"
-#include "../wrapper/perfeventwrapper.h"
-*/
+
 namespace meric {
 
 struct RegionParameters {
@@ -36,7 +33,7 @@ public:
 	static bool DEBUG;
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
-    static std::string OUTPUT_FILENAME;
+	static std::string OUTPUT_FILENAME;
 
 	virtual void start(const std::string &region)
 	{

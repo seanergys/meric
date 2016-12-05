@@ -1,24 +1,12 @@
-/******************************************************************************/
-#include <cstdlib>
-#include <iostream>
-#include <time.h>
-#include <ctime>
-#include <array>
-#include <unistd.h>
-/******************************************************************************/
-//	#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #ifdef HAVE_LINUX_PERF_EVENT_H
 #include <linux/perf_event.h>
 #endif
-#include <sys/types.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/syscall.h>
 #include <asm/unistd.h>
-#include <errno.h>
-/******************************************************************************/
-#include <map>
-
+// #include <errno.h>
 #include "perfeventwrapper.h"
 #include "counters.h"
 

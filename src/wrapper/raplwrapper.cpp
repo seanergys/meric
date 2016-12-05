@@ -1,6 +1,4 @@
 #ifdef HAVE_X86_ADAPT_H
-#include <stdint.h>
-#include <memory>
 #include "x86_adapt.h"
 
 /* RAPL description
@@ -34,7 +32,6 @@ const uint64_t RAPLtimeMask   = 0xF0000;
 const uint64_t RAPLtimeShift  = 16;
 #endif
 
-#include <map>
 #include <math.h>
 #include "raplwrapper.h"
 #include "counters.h"
