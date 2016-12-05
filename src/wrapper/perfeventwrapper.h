@@ -2,14 +2,16 @@
 #ifndef SRC_WRAPPER_PERFEVENTWRAPPER_H_
 #define SRC_WRAPPER_PERFEVENTWRAPPER_H_
 
+#ifdef HAVE_LINUX_PERF_EVENT_H
 #include <linux/perf_event.h>
+#endif
 #include <map>
 #include <iostream>
 
 
 namespace meric {
 
-#if !defined USE_DUMMY && defined HAVE_LINUX_PERF_EVENT_H
+#ifdef HAVE_LINUX_PERF_EVENT_H
 
 class PERFEVENT {
 

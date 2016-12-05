@@ -7,7 +7,9 @@
 #include <unistd.h>
 /******************************************************************************/
 //	#define _GNU_SOURCE
+#ifdef HAVE_LINUX_PERF_EVENT_H
 #include <linux/perf_event.h>
+#endif
 #include <sys/types.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -22,7 +24,7 @@
 
 using namespace meric;
 
-#if !defined USE_DUMMY && defined HAVE_LINUX_PERF_EVENT_H
+#ifdef HAVE_LINUX_PERF_EVENT_H
 std::map<std::string, long> PERFEVENT::counters;
 
 long PERFEVENT::openCounter(perf_event_attr attr)

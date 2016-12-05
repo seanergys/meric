@@ -9,7 +9,7 @@
 namespace meric {
 
 class RAPL {
-#if !defined USE_DUMMY && defined HAVE_X86_ADAPT_H
+#ifdef HAVE_X86_ADAPT_H
 public:
 
 	static void init();

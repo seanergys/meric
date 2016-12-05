@@ -1,7 +1,6 @@
 #ifndef SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 #define SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 
-#ifndef USE_DUMMY
 #include "../meric/meric.h"
 
 #ifdef HAVE_CPUFREQ_H
@@ -22,7 +21,6 @@
 #include <unistd.h>
 
 const int FREQ_MULT = 100000;
-#endif
 
 namespace meric {
 
@@ -33,9 +31,7 @@ public:
 	static void frequency(uint64_t freq)
 	{
 		MERIC_INFO << "change frequency to " << freq << "\n";
-#ifdef USE_DUMMY
-		std::cout << "set frequency to: " << freq << "\n";
-#elif HAVE_CPUFREQ_H
+#ifdef HAVE_CPUFREQ_H
 		std::cout << "set frequency to: " << freq << "\n";
 		int ret;
 		const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
@@ -57,9 +53,10 @@ public:
 	static void uncoreFrequency(uint64_t freq)
 	{
 		MERIC_INFO << "change uncore frequency to " << freq << std::endl;
-#ifdef USE_DUMMY
-		std::cout << "set uncore frequency to: " << freq << std::endl;
-#elif HAVE_X86_ADAPT_H
+#ifdef HAVE_X86_ADAPT_H
+		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
+			return;
+
 		std::cout << "set uncore frequency to: "<< freq << std::endl;
 		const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 		for (int die=0; die<max; die++)
@@ -95,7 +92,6 @@ public:
 		if (nthreads <= 0)
 			return;
 		std::cout << "set num treads to: " << nthreads << std::endl;
-#ifndef USE_DUMMY
 /*		int running = 0;
 		running = omp_get_num_threads();
 		if (nthreads != running)
@@ -111,17 +107,20 @@ public:
 		__cilkrts_end_cilk();  
 		__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
 #endif
-#endif
 	}
 	
 	static void init(RegionParameters defaultParameter, int rank)
 	{
-#if defined HAVE_X86_ADAPT_H && !defined USE_DUMMY
+#ifdef HAVE_X86_ADAPT_H
 		if (x86_adapt_init())
 		{
 			std::cerr << "X86ADAPT init error\n";
 //			exit(1);
 		}
+		
+		//test if it is possible to set uncore frequency
+		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
+			std::cerr << "X86ADAPT WARNING: UNCORE FREQUENCY SETTINGS IS NOT AVAILABLE\n";
 #endif		
 		if(!rank)
 		{
@@ -133,7 +132,7 @@ public:
 	
 	static void close()
 	{
-#if defined HAVE_X86_ADAPT_H && !defined USE_DUMMY
+#ifdef HAVE_X86_ADAPT_H
 		x86_adapt_finalize();
 #endif
 	}

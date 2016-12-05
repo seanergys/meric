@@ -42,7 +42,7 @@ const uint64_t RAPLtimeShift  = 16;
 using namespace meric;
 
 
-#if !defined USE_DUMMY && defined HAVE_X86_ADAPT_H
+#ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
 double RAPL::energyUnit = 1.0;
 
