@@ -31,8 +31,10 @@ void MERIC_Init()
 	}
 
 	meric::Meric::readRegionParameters();
-        holder = new meric::DistributedMeric();
+	holder = new meric::DistributedMeric();
 
+	//wrappers must be initialized after meric instantiation
+	//rapl counter expects that environment::init() was already called
 	if (meric::Meric::COUNTERS == "perfevent")
 		meric::PERFEVENT::init();
 	if (meric::Meric::COUNTERS == "papi")
