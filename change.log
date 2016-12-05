@@ -1,3 +1,6 @@
+###
+  - new dummy mode (make dummy) - it is possible to turn off hdeem and use the rest of the library
+  - rapl counters 
 
 ### 23.11.2016 #################################################################
   - cpu frequency is set in 0.1 GHz instead of Hz
