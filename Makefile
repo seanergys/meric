@@ -22,11 +22,11 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g"
 	make install
 
 dummy:
-	./waf configure --cpp=icpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g" --dummy
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g" --dummy
 	make install
 
 love:
