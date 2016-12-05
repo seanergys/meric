@@ -270,4 +270,24 @@ To find the best settings for each region, you should run your code with all pos
 	# COMPILE LaTeX SOURCE FILE THAT IS INSIDE THE FOLDER WITH MEASUREMENT RESULTS
 		pdflatex --shell-escape results.tex
 
+--------------------------------------------------------------------------------
+#     8] MERIC compilation on a machine without the hdeem                      #
+--------------------------------------------------------------------------------
+	# install freeipmi
+		https://www.gnu.org/software/freeipmi/download.html
+	# optionaly install other libraries
+		#x86_adapt, cpufreq, papi
+	# set library paths in Meric Makefile
+	# add path to Meric in $LD_LIBRARAY_PATH
+	# load modules
+		# intel compiler
+		# python
+		# papi, x86_adapt or cpufreq if available
+	# compile Meric in dummy mode
+		# all modules works the same as with hdeem, only hdeemwrapper class is replaced with basic access counter
+		# if there is a problem with compiler, set --cpp and --mpi options in Makefile
+		make dummy
+	# remove unused libraries in test/Makefile
+	# compile examples in test directory
+	# export MERIC_COUNTERS variable to measure real data
 
