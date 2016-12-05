@@ -14,7 +14,7 @@ all: mpiTest basicTest blasTest
 
  ######
 mpiTest: test_mpi.cpp
-	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -openmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -fopenmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
 	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -fopenmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
