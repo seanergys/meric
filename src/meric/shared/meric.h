@@ -18,7 +18,7 @@ public:
 		Environment::frequency(regionValue(region).frequency);
 		Environment::threadNumber(regionValue(region).nthreads);
 		Meric::start(region);
-		_stack.push_back(_store->getRegionID(region));
+		_stack.push_back(getRegionID(region));
 	}
 	
 	void stop()
@@ -32,14 +32,14 @@ public:
 		{
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 		}
-		Environment::uncoreFrequency(regionValue(_store->region(_stack.size(), _stack.back())).uncoreFrequency);
-		Environment::frequency(regionValue(_store->region(_stack.size(), _stack.back())).frequency);
-		Environment::threadNumber(regionValue(_store->region(_stack.size(), _stack.back())).nthreads);
+		Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
+		Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
+		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
 	}
 	
 	void save()
 	{
-		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
+		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 	}
 
 	SharedMeric();

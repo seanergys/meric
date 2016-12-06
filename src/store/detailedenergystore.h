@@ -26,7 +26,7 @@ class DetailedEnergyStore: public Store {
 	friend class AggregateStore<DetailedEnergyStore>;
 	friend class DetailedAggregateStore<DetailedEnergyStore>;
 public:
-	void addStart(const std::string &region);
+	void addStart(int region);
 	void addEnd(int region);
 
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
@@ -37,7 +37,9 @@ public:
 		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	}
 
-	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
+	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
+	{
+		_name = regionNames;
         HDEEM::stop();
         iterate(_records, prefix, outputDir, outputFilename);
         HDEEM::start();
@@ -47,6 +49,7 @@ public:
 	{
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 	}
+	
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		iterate(_records, processInterval);

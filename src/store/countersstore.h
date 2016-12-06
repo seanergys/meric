@@ -22,10 +22,12 @@ class CountersStore: public Store {
 
 
 public:
-	void addStart(const std::string &region);
+	void addStart(int region);
 	void addEnd(int region);
 
-	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") { 
+	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
+	{
+		_name = regionNames; 
         iterate(_records, prefix, outputDir, outputFilename); 
     }
     

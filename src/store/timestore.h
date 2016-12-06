@@ -26,14 +26,15 @@ class TimeStore: public Store {
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
 public:
-	virtual void addStart(const std::string &region);
+	virtual void addStart(int region);
 	virtual void addEnd(int region);
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
 
-	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
+	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
+		_name = regionNames;
 		HDEEM::stop();
 		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);

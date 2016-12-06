@@ -4,12 +4,11 @@
 
 using namespace meric;
 
-void TimeStore::addStart(const std::string &region)
+void TimeStore::addStart(int region)
 {
-	int regionID = getRegionID(region);
 	timespec time;
 	HDEEM::fillTime(time);
-	_records.push_back(TimeRecord(regionID, time));
+	_records.push_back(TimeRecord(region, time));
 }
 
 void TimeStore::addEnd(int region)

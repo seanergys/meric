@@ -5,14 +5,13 @@
 
 using namespace meric;
 
-void EnergyStore::addStart(const std::string &region)
+void EnergyStore::addStart(int region)
 {
-	int regionID = getRegionID(region);
 	double energy;
 	timespec time;
 
 	HDEEM::fillEnergy(energy, time);
-	_records.push_back(EnergyRecord(_regions[region], time, energy));
+	_records.push_back(EnergyRecord(region, time, energy));
 }
 
 void EnergyStore::addEnd(int region)

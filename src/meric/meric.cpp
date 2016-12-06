@@ -12,8 +12,10 @@ std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 
 std::map<std::string, RegionParameters> Meric::parameter;
+std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
+std::string Meric::_mainRegion;
 
 void Meric::readRegionParameters()
 {

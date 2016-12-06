@@ -17,11 +17,12 @@ public:
 		MPI_Comm_size(_comm, &_size);
 	}
 
-	void addStart(const std::string &region) { _store.addStart(region); }
+	void addStart(int region) { _store.addStart(region); }
 	void addEnd(int region) { _store.addEnd(region); };
 
-	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
+	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
+		_name = regionNames;
 		HDEEM::stop();
 		if (_rank) {
 			_store.save([&] (std::vector<size_t> &iStarts, size_t iEnd) {

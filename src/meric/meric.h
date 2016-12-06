@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <map>
+#include <vector>
+#include <algorithm>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
@@ -38,21 +40,21 @@ public:
 	virtual void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-		_store->addStart(region);
+		_store->addStart(getRegionID(region));
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual void stop()
 	{
-		MERIC_INFO << "region '" << _store->region(_stack.size(), _stack.back()) << "' stopping\n";
+		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 		_store->addEnd(_stack.back());
-		MERIC_INFO << "region '" << _store->region(_stack.size(), _stack.back()) << "' stopped\n";
+		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 	}
 
 	virtual void save()
 	{
 		MERIC_INFO << "save stored data\n";
-		_store->save( Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME  );
+		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		MERIC_INFO << "store data saved\n";
 	}
 
@@ -67,12 +69,30 @@ protected:
 			return defaultParameter;
 		}
 	}
+	
+	const std::string& getRegionName(int size, int last)
+	{
+		return size ? _name[last] : _mainRegion;
+	}
+	
+	int getRegionID(const std::string &region)
+	{
+		size_t pos = find(_name.begin(), _name.end(), region) - _name.begin();
+		if (pos >= _name.size())
+		{
+			pos = _name.size();			
+			_name.push_back(region);
+		}
+		return pos;
+	}
 
 	static std::map<std::string, RegionParameters> parameter;
 	static RegionParameters defaultParameter;
 
 	static std::vector<int> _stack;
+	static std::vector<std::string> _name;
 	StoreBase * _store;
+	static std::string _mainRegion;
 };
 
 }

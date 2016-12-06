@@ -13,9 +13,8 @@
 
 using namespace meric;
 
-void CountersStore::addStart(const std::string &region)
+void CountersStore::addStart(int region)
 {
-	int regionID = getRegionID(region);
 	std::map<std::string, long> record;
 	if (wrapperType == PERFEVENT)
 		PERFEVENT::getValues(record);
@@ -25,7 +24,7 @@ void CountersStore::addStart(const std::string &region)
 		RAPL::getValues(record);
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
-	_records.push_back(CountersRecord(_regions[region], record, time));
+	_records.push_back(CountersRecord(region, record, time));
 }
 
 void CountersStore::addEnd(int region)

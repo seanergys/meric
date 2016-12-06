@@ -3,13 +3,12 @@
 
 using namespace meric;
 
-void DetailedEnergyStore::addStart(const std::string &region)
+void DetailedEnergyStore::addStart(int region)
 {
-	int regionID = getRegionID(region);
 	std::array<double, PROBE_NUMBER> energy;
 	timespec time;
 	HDEEM::fillDetailedEnergy(energy, time);
-	_records.push_back(DetailedEnergyRecord(regionID, energy, time));
+	_records.push_back(DetailedEnergyRecord(region, energy, time));
 }
 
 void DetailedEnergyStore::addEnd(int region)

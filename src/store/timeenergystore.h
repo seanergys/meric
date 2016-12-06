@@ -24,13 +24,14 @@ class TimeEnergyStore: public TimeStore {
 
 	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
-	void addStart(const std::string &region);
+	void addStart(int region);
 	void addEnd(int region);
 
 	void fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd);
 
-	void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "")
+	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
+		_name = regionNames;
 		HDEEM::stop();
 		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);

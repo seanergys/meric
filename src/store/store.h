@@ -38,26 +38,11 @@ struct DebugRegionStats {
 class StoreBase
 {
 public:
-	virtual void addStart(const std::string &region) = 0;
+	virtual void addStart(int region) = 0;
 	virtual void addEnd(int region) = 0;
-	const std::string& region(int size, int last)
-	{
-		return size ? _name[last] : _mainRegion;
-	}
-
-	virtual void save(const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
-
+	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
 	virtual ~StoreBase() {};
 
-	int getRegionID(const std::string &region)
-	{
-		if (_regions.find(region) == _regions.end()) {
-			size_t size = _regions.size();
-			_regions[region] = size;
-			_name.push_back(region);
-		}
-		return _regions[region];
-	}
 	
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
@@ -65,7 +50,8 @@ protected:
 	template <class TRecord> void iterate(std::vector<TRecord> &records, const std::string &prefix, 
                                           const std::string &outputDir,const std::string &outputFilename)
 	{
-		iterate(records, prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
+		iterate(records, prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) 
+		{
 			saveInterval(ss, iStarts, iEnd);
 		});
 	}
@@ -85,33 +71,35 @@ protected:
         std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + prefix + outputFilename + ".tmp";
 
 		std::ifstream iFile(startCounterFile);
-		if(iFile.is_open()) {
+		if(iFile.is_open())
+		{
 			std::string numOfStartsStr;
 			std::getline(iFile, numOfStartsStr);
 			_initCounter = std::stoi(numOfStartsStr) + 1;
 			iFile.close();
 
-		} else {
+		}else
+		{
 			_initCounter = 0;
 		}
 		std::ofstream oFile(startCounterFile);
 		oFile << _initCounter;
 		oFile.close();
 
-		_counters.resize(_regions.size());
-		std::vector<std::ofstream> ss(_regions.size());
-		std::vector<std::string> name(_regions.size());
-		for (auto it = _regions.begin(); it != _regions.end(); ++it) {
-			std::string folderName = it->first.c_str();
+		_counters.resize(_name.size());
+		std::vector<std::ofstream> ss(_name.size());
+		for (int i=0; i<_name.size(); i++)
+		{
+			std::string folderName = _name[i].c_str();
 			mutils::createDir(outputDir + "/" + folderName);
-
-			ss[it->second].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
-			name[it->second] = it->first;
-		}
-
+			ss[i].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
+		}		
+		
 		std::vector<size_t> starts;
-		for (size_t i = 0; i < records.size(); i++) {
-			if (!starts.size() || records[starts.back()].region != records[i].region) {
+		for (size_t i = 0; i < records.size(); i++)
+		{
+			if (!starts.size() || records[starts.back()].region != records[i].region)
+			{
 				starts.push_back(i);
 				continue;
 			}
@@ -119,8 +107,7 @@ protected:
 			processInterval(ss[records[i].region], starts, i);
 			_counters[records[i].region]++;
 			_counters.resize(records[i].region + 1);
-			_counters.resize(_regions.size());
-
+			_counters.resize(_name.size());
 			starts.pop_back();
 		}
 	}
@@ -130,9 +117,11 @@ protected:
 			std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		std::vector<size_t> starts;
-		_counters.resize(_regions.size());
-		for (size_t i = 0; i < records.size(); i++) {
-			if (!starts.size() || records[starts.back()].region != records[i].region) {
+		_counters.resize(_name.size());
+		for (size_t i = 0; i < records.size(); i++) 
+		{
+			if (!starts.size() || records[starts.back()].region != records[i].region)
+			{
 				starts.push_back(i);
 				continue;
 			}
@@ -140,16 +129,12 @@ protected:
 			processInterval(starts, i);
 			_counters[records[i].region]++;
 			_counters.resize(records[i].region + 1);
-			_counters.resize(_regions.size());
-
+			_counters.resize(_name.size());
 			starts.pop_back();
 		}
 	}
 
-	std::map<std::string, int> _regions;
 	std::vector<std::string> _name;
-//	std::vector<int> _stack;
-	std::string _mainRegion;
 	std::vector<size_t> _counters;
 
 	size_t _initCounter;

@@ -30,7 +30,7 @@ public:
 		Environment::threadNumber(regionValue(region).nthreads);
 		if(!_MPInodeRank)
 			Meric::start(region);
-		_stack.push_back(_store->getRegionID(region));
+		_stack.push_back(getRegionID(region));
 	}
 	
 	void stop()
@@ -47,10 +47,10 @@ public:
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 		}	
 		if (!_MPInodeRank) {
-			Environment::frequency(regionValue(_store->region(_stack.size(), _stack.back())).frequency);
-			Environment::uncoreFrequency(regionValue(_store->region(_stack.size(), _stack.back())).uncoreFrequency);
+			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
+			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
 		}
-		Environment::threadNumber(regionValue(_store->region(_stack.size(), _stack.back())).nthreads);
+		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
 	}
 	
 	void save()
@@ -58,9 +58,9 @@ public:
 		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
-				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
+				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			} else {
-				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
+				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			}
 		}
 		sleep(1);
