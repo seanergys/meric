@@ -40,21 +40,29 @@ public:
 	virtual void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-		_store->addStart(getRegionID(region));
+//		_store->addStart(getRegionID(region));
+		for (int i=0; i<_storeList.size(); i++)
+			_storeList[i]->addStart(getRegionID(region));
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-		_store->addEnd(_stack.back());
+//		_store->addEnd(_stack.back());
+		//spot should be in opposit direction
+		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
+		for(int i=_storeList.size()-1;i>=0; i--)
+			_storeList[i]->addEnd(_stack.back());
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 	}
 
 	virtual void save()
 	{
 		MERIC_INFO << "save stored data\n";
-		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+//		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+		for(int i=0; i<_storeList.size(); i++)
+			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		MERIC_INFO << "store data saved\n";
 	}
 
@@ -91,7 +99,8 @@ protected:
 
 	static std::vector<int> _stack;
 	static std::vector<std::string> _name;
-	StoreBase * _store;
+	//StoreBase * _store;
+	std::vector<StoreBase *> _storeList;
 	static std::string _mainRegion;
 };
 

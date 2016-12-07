@@ -58,9 +58,13 @@ public:
 		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
-				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+//				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+				for(int i=0; i<_storeList.size(); i++)
+					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			} else {
-				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+//				_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+				for(int i=0; i<_storeList.size(); i++)
+					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			}
 		}
 		sleep(1);
