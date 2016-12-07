@@ -3,7 +3,7 @@
 
 # bash script to load modules and set environment varibles to run MERIC test
 # parametres:
-#	-t = optional, doesn't change nevironment only prints list of MERIC variables, that are set
+#	-t = optional, doesn't change environment only prints list of MERIC variables, that are set
 
 ###############################################################################
 # MACHINE DEPENDET SECTION
