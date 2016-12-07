@@ -28,6 +28,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
     // Blade values //
     //////////////////
 
+	ss << "# Store CONTINUAL 1" << std::endl;
 	ss << "# Blade samples" << std::endl;
 
     double energy = 0;

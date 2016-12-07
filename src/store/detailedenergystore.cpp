@@ -35,6 +35,7 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
     //////////////////
     // Blade values //
     //////////////////
+    ss << "# Store CONTINUAL 0" << std::endl;
 	ss << "# Blade summary" << std::endl
 	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;
 
