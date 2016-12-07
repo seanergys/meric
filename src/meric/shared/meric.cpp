@@ -10,15 +10,6 @@ SharedMeric::SharedMeric()
 
 	Environment::init(defaultParameter, 0);
 
-/*----------------------------------------------------------------------------//
-//TEST vicero storu
-	HDEEM::init();
-	HDEEM::start();
-	_storeList.push_back(new EnergyStore());
-	_storeList.push_back(new CountersStore(Meric::COUNTERS));
-	return;
-//----------------------------------------------------------------------------*/
-
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
 		_storeList.push_back(new CountersStore("rapl"));
@@ -62,13 +53,12 @@ SharedMeric::SharedMeric()
 SharedMeric::~SharedMeric()
 {
 	Environment::close();
-	if (Meric::COUNTERS == "none")
+	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
 		HDEEM::stop();
 		HDEEM::close();
 	}
 	
-//	delete _store;
 	for(int i=0;i<_storeList.size(); i++)
 		delete _storeList[i];
 }

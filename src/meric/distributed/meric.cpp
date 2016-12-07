@@ -56,7 +56,6 @@ DistributedMeric::DistributedMeric()
 
 	if (Meric::COUNTERS != "none")
 	{
-//		_store = new CountersStore(Meric::COUNTERS);
 		_storeList.push_back(new CountersStore(Meric::COUNTERS));
 	}
 	
@@ -80,10 +79,8 @@ DistributedMeric::DistributedMeric()
 		    */
 		    if(Meric::AGGREGATE)
 		    {
-	//    		_store = new DebugAggregateStore<TimeEnergyStore>(_storingProcs);
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
 			} else {
-	//			_store = new TimeEnergyStore();
 				_storeList.push_back(new TimeEnergyStore());
 			}
 			return;
@@ -95,19 +92,15 @@ DistributedMeric::DistributedMeric()
 			{
 				if (Meric::AGGREGATE)
 				{
-	//				_store = new DetailedAggregateStore<DetailedTimeStore>(_storingProcs);
 					_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
 				} else {
-	//				_store = new DetailedTimeStore();
 					_storeList.push_back(new DetailedTimeStore());
 				}
 			} else {
 				if (Meric::AGGREGATE)
 				{
-	//				_store = new AggregateStore<TimeStore>(_storingProcs);
 					_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
 				} else {
-	//				_store = new TimeStore();
 					_storeList.push_back(new TimeStore());
 				}
 			}
@@ -116,19 +109,15 @@ DistributedMeric::DistributedMeric()
 			{
 				if (Meric::AGGREGATE)
 				{
-	//				_store = new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs);
 					_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
 				} else {
-	//				_store = new DetailedEnergyStore();
 					_storeList.push_back(new DetailedEnergyStore());
 				}
 			} else {
 				if (Meric::AGGREGATE)
 				{
-	//				_store = new AggregateStore<EnergyStore>(_storingProcs);
 					_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
 				} else {
-	//				_store = new EnergyStore();
 					_storeList.push_back(new EnergyStore());
 				}
 			}
@@ -138,7 +127,7 @@ DistributedMeric::DistributedMeric()
 
 DistributedMeric::~DistributedMeric()
 {
-	if (!_MPInodeRank && Meric::COUNTERS == "none")
+	if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
 	{
 		HDEEM::stop();
 		HDEEM::close();
@@ -147,7 +136,6 @@ DistributedMeric::~DistributedMeric()
 	MPI_Comm_free(&_currentNode);
 	MPI_Comm_free(&_storingProcs);
 
-//	delete _store;
 	for(int i=0;i<_storeList.size(); i++)
 		delete _storeList[i];
 }

@@ -39,7 +39,6 @@ public:
 	
 	void save()
 	{
-//		_store->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		for(int i=0; i<_storeList.size(); i++)
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 	}
