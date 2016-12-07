@@ -3,6 +3,7 @@
 
 using namespace meric;
 
+int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_HDEEM);
 bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , false);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
 bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , false);
@@ -32,9 +33,15 @@ void Meric::readRegionParameters()
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 
+	if (Meric::MODE < MODE_HDEEM || Meric::MODE > MODE_BOTH)
+	{
+		std::cerr << "MERIC WARNING: MERIC MODE unknown value - default "<< MODE_HDEEM <<std::endl;
+		Meric::MODE = MODE_HDEEM;
+	}
+	
 	if (Meric::COUNTERS != "none")
 	{
-		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent" && Meric::COUNTERS != "rapl")
+		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent")
 		{
 			std::cerr << "MERIC WARNING: unknown counter type "<<Meric::COUNTERS<<std::endl;
 			Meric::COUNTERS = "none";

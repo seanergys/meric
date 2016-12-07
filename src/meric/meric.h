@@ -18,6 +18,8 @@
 
 namespace meric {
 
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH};
+
 struct RegionParameters {
 	double frequency;
 	uint64_t uncoreFrequency;
@@ -33,6 +35,7 @@ public:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
+	static int MODE;
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
 	static std::string OUTPUT_FILENAME;

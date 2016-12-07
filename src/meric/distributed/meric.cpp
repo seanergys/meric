@@ -49,71 +49,88 @@ DistributedMeric::DistributedMeric()
 
 	Environment::init(defaultParameter, _MPInodeRank);
 
+	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	{
+		_storeList.push_back(new CountersStore("rapl"));
+	}
+
 	if (Meric::COUNTERS != "none")
 	{
 //		_store = new CountersStore(Meric::COUNTERS);
 		_storeList.push_back(new CountersStore(Meric::COUNTERS));
-		return;
 	}
 	
-	if (!_MPInodeRank) {
-		HDEEM::init();
-		HDEEM::start();
-	}
-	
-	if (Meric::DEBUG) {
-        /*
-        if(Meric::AGGREGATE) {
-            _store = new AggregateStore<TimeEnergyStore>(_storingProcs);
-        } else {
-            _store = new TimeEnergyStore();
-        }
-        return;
-        */
-        if(Meric::AGGREGATE) {
-//    		_store = new DebugAggregateStore<TimeEnergyStore>(_storingProcs);
-			_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
-		} else {
-//			_store = new TimeEnergyStore();
-			_storeList.push_back(new TimeEnergyStore());
+	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+	{
+		if (!_MPInodeRank)
+		{
+			HDEEM::init();
+			HDEEM::start();
 		}
-		return;
-	}
 	
-	if (Meric::CONTINUAL) {
-		if (Meric::DETAILED) {
-			if (Meric::AGGREGATE) {
-//				_store = new DetailedAggregateStore<DetailedTimeStore>(_storingProcs);
-				_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
+		if (Meric::DEBUG)
+		{
+		    /*
+		    if(Meric::AGGREGATE) {
+		        _store = new AggregateStore<TimeEnergyStore>(_storingProcs);
+		    } else {
+		        _store = new TimeEnergyStore();
+		    }
+		    return;
+		    */
+		    if(Meric::AGGREGATE)
+		    {
+	//    		_store = new DebugAggregateStore<TimeEnergyStore>(_storingProcs);
+				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
 			} else {
-//				_store = new DetailedTimeStore();
-				_storeList.push_back(new DetailedTimeStore());
+	//			_store = new TimeEnergyStore();
+				_storeList.push_back(new TimeEnergyStore());
 			}
-		} else {
-			if (Meric::AGGREGATE) {
-//				_store = new AggregateStore<TimeStore>(_storingProcs);
-				_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
-			} else {
-//				_store = new TimeStore();
-				_storeList.push_back(new TimeStore());
-			}
+			return;
 		}
-	} else {
-		if (Meric::DETAILED) {
-			if (Meric::AGGREGATE) {
-//				_store = new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs);
-				_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
+	
+		if (Meric::CONTINUAL)
+		{
+			if (Meric::DETAILED)
+			{
+				if (Meric::AGGREGATE)
+				{
+	//				_store = new DetailedAggregateStore<DetailedTimeStore>(_storingProcs);
+					_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
+				} else {
+	//				_store = new DetailedTimeStore();
+					_storeList.push_back(new DetailedTimeStore());
+				}
 			} else {
-//				_store = new DetailedEnergyStore();
-				_storeList.push_back(new DetailedEnergyStore());
+				if (Meric::AGGREGATE)
+				{
+	//				_store = new AggregateStore<TimeStore>(_storingProcs);
+					_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
+				} else {
+	//				_store = new TimeStore();
+					_storeList.push_back(new TimeStore());
+				}
 			}
 		} else {
-			if (Meric::AGGREGATE) {
-//				_store = new AggregateStore<EnergyStore>(_storingProcs);
-				_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+			if (Meric::DETAILED)
+			{
+				if (Meric::AGGREGATE)
+				{
+	//				_store = new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs);
+					_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
+				} else {
+	//				_store = new DetailedEnergyStore();
+					_storeList.push_back(new DetailedEnergyStore());
+				}
 			} else {
-//				_store = new EnergyStore();
-				_storeList.push_back(new EnergyStore());
+				if (Meric::AGGREGATE)
+				{
+	//				_store = new AggregateStore<EnergyStore>(_storingProcs);
+					_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+				} else {
+	//				_store = new EnergyStore();
+					_storeList.push_back(new EnergyStore());
+				}
 			}
 		}
 	}

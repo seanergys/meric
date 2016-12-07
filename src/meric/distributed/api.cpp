@@ -39,7 +39,8 @@ void MERIC_Init()
 		meric::PERFEVENT::init();
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::init();
-	if (meric::Meric::COUNTERS == "rapl")
+
+	if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
 		meric::RAPL::init();
 }
 
@@ -61,7 +62,7 @@ void MERIC_Close()
 	if (meric::Meric::COUNTERS == "papi")
 		meric::PAPI::close();
 // close() is not needed for RAPL
-//	if (meric::Meric::COUNTERS == "rapl")
+//	if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
 //		meric::RAPL::close();
 
 	holder->save();
