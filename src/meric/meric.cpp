@@ -23,11 +23,28 @@ void Meric::readRegionParameters()
 	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", 0);
 	defaultParameter.frequency       = mutils::getenv("MERIC_FREQUENCY", 0);
 	defaultParameter.uncoreFrequency = mutils::getenv("MERIC_UNCORE_FREQUENCY", 0);
-	if (defaultParameter.frequency == 0 || defaultParameter.uncoreFrequency == 0)
+
+#ifdef HAVE_CPUFREQ_H
+	if (defaultParameter.frequency == 0)
 	{
-		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY\n";
+		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY\n";
+#ifndef HAVE_X86_ADAPT_H
+		exit(1);
+#endif
+	}
+#endif
+
+#ifdef HAVE_X86_ADAPT_H
+	if (defaultParameter.uncoreFrequency == 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY\n";
 		exit(1);
 	}
+#ifdef HAVE_CPUFREQ_H
+	if (defaultParameter.frequency == 0)
+		exit(1);
+#endif
+#endif
 
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
