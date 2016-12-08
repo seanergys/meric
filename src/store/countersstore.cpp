@@ -7,6 +7,7 @@
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
+#include "../wrapper/counters.h"
 
 // #include <sys/time.h>
 // #include <cmath>
@@ -52,8 +53,8 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl;
-//	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+	   << "Nodelist," << _nodelist << std::endl//;
+	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 
 	ss << "# COUNTERS: \n";
@@ -63,10 +64,12 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	}
 
 	
-/*
-	ss << "FLOPs," << FLOPS(result[COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
-*/
-	
+//TODO - TEMPORARY solution
+	ss << "# RATIOS: \n";
+	if (wrapperType == PAPI && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
+		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
+	else if (wrapperType == PERFEVENT && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
+		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
 }
 
 
