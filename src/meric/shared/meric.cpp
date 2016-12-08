@@ -17,22 +17,21 @@ SharedMeric::SharedMeric()
 		if (Meric::DEBUG)
 		{
 			_storeList.push_back(new TimeEnergyStore());
-			return;
-		}
-	
-		if (Meric::CONTINUAL)
-		{
-			if (Meric::DETAILED) {
-				_storeList.push_back(new DetailedTimeStore());
-			} else {
-				_storeList.push_back(new TimeStore());
-			}
 		} else {
-			if (Meric::DETAILED)
+			if (Meric::CONTINUAL)
 			{
-				_storeList.push_back(new DetailedEnergyStore());
+				if (Meric::DETAILED) {
+					_storeList.push_back(new DetailedTimeStore());
+				} else {
+					_storeList.push_back(new TimeStore());
+				}
 			} else {
-				_storeList.push_back(new EnergyStore());
+				if (Meric::DETAILED)
+				{
+					_storeList.push_back(new DetailedEnergyStore());
+				} else {
+					_storeList.push_back(new EnergyStore());
+				}
 			}
 		}
 	}

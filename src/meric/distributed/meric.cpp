@@ -68,7 +68,6 @@ DistributedMeric::DistributedMeric()
 		    } else {
 		        _store = new TimeEnergyStore();
 		    }
-		    return;
 		    */
 		    if(Meric::AGGREGATE)
 		    {
@@ -76,42 +75,41 @@ DistributedMeric::DistributedMeric()
 			} else {
 				_storeList.push_back(new TimeEnergyStore());
 			}
-			return;
-		}
-	
-		if (Meric::CONTINUAL)
-		{
-			if (Meric::DETAILED)
-			{
-				if (Meric::AGGREGATE)
-				{
-					_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
-				} else {
-					_storeList.push_back(new DetailedTimeStore());
-				}
-			} else {
-				if (Meric::AGGREGATE)
-				{
-					_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
-				} else {
-					_storeList.push_back(new TimeStore());
-				}
-			}
 		} else {
-			if (Meric::DETAILED)
+			if (Meric::CONTINUAL)
 			{
-				if (Meric::AGGREGATE)
+				if (Meric::DETAILED)
 				{
-					_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
+					if (Meric::AGGREGATE)
+					{
+						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
+					} else {
+						_storeList.push_back(new DetailedTimeStore());
+					}
 				} else {
-					_storeList.push_back(new DetailedEnergyStore());
+					if (Meric::AGGREGATE)
+					{
+						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
+					} else {
+						_storeList.push_back(new TimeStore());
+					}
 				}
 			} else {
-				if (Meric::AGGREGATE)
+				if (Meric::DETAILED)
 				{
-					_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+					if (Meric::AGGREGATE)
+					{
+						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
+					} else {
+						_storeList.push_back(new DetailedEnergyStore());
+					}
 				} else {
-					_storeList.push_back(new EnergyStore());
+					if (Meric::AGGREGATE)
+					{
+						_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+					} else {
+						_storeList.push_back(new EnergyStore());
+					}
 				}
 			}
 		}
