@@ -7,18 +7,7 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
-
 	Environment::init(defaultParameter, 0);
-
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
-	{
-		_storeList.push_back(new CountersStore("rapl"));
-	}
-	
-	if (Meric::COUNTERS != "none")
-	{
-		_storeList.push_back(new CountersStore(Meric::COUNTERS));
-	}
 
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
@@ -48,6 +37,15 @@ SharedMeric::SharedMeric()
 		}
 	}
 
+	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	{
+		_storeList.push_back(new CountersStore("rapl"));
+	}
+	
+	if (Meric::COUNTERS != "none")
+	{
+		_storeList.push_back(new CountersStore(Meric::COUNTERS));
+	}
 }
 
 SharedMeric::~SharedMeric()

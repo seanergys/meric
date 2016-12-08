@@ -21,7 +21,8 @@ DistributedMeric::DistributedMeric()
 	std::vector<char> names;
 	MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-	for (size_t i = 1; i < rCounts.size(); i++) {
+	for (size_t i = 1; i < rCounts.size(); i++)
+	{
 		rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
 	}
 	names.resize(rDispl.back() + rCounts.back());
@@ -29,10 +30,12 @@ DistributedMeric::DistributedMeric()
 	MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
 
 	std::map<std::string, size_t> nodes;
-	for (size_t i = 0; i < _MPIglobalSize; i++) {
+	for (size_t i = 0; i < _MPIglobalSize; i++)
+	{
 		std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
 		auto it = nodes.find(str);
-		if (it == nodes.end()) {
+		if (it == nodes.end())
+		{
 			size_t s = nodes.size();
 			nodes[str] = s;
 		}
@@ -49,16 +52,6 @@ DistributedMeric::DistributedMeric()
 
 	Environment::init(defaultParameter, _MPInodeRank);
 
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
-	{
-		_storeList.push_back(new CountersStore("rapl"));
-	}
-
-	if (Meric::COUNTERS != "none")
-	{
-		_storeList.push_back(new CountersStore(Meric::COUNTERS));
-	}
-	
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
 		if (!_MPInodeRank)
@@ -122,6 +115,16 @@ DistributedMeric::DistributedMeric()
 				}
 			}
 		}
+	}
+	
+	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	{
+		_storeList.push_back(new CountersStore("rapl"));
+	}
+
+	if (Meric::COUNTERS != "none")
+	{
+		_storeList.push_back(new CountersStore(Meric::COUNTERS));
 	}
 }
 
