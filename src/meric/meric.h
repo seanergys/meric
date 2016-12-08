@@ -18,7 +18,7 @@
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH};
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN};
 
 struct RegionParameters {
 	double frequency;
