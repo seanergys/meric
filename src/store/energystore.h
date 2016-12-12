@@ -46,12 +46,16 @@ public:
 	void save(const std::string prefix, const std::string outputDir, const std::string outputFilename,
               std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
+		HDEEM::stop();
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
+		HDEEM::start();
 	}
 
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
+		HDEEM::stop();
 		iterate(_records, processInterval);
+		HDEEM::start();
 	}
 
 	EnergyStore()
