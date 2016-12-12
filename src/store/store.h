@@ -42,7 +42,7 @@ public:
 	virtual void addEnd(int region) = 0;
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
 	virtual ~StoreBase() {};
-
+	void setRegionsNames(std::vector<std::string> name) {_name = name;};
 	
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
