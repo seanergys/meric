@@ -45,6 +45,9 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore(Meric::COUNTERS));
 	}
+	
+	for (int i=0; i<_storeList.size(); i++)
+		_storeList[i]->setMPIWrite(true);
 }
 
 SharedMeric::~SharedMeric()
