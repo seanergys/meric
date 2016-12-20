@@ -77,7 +77,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	ss << std::endl;
 
-	ss << "# Job info" << std::endl
+	ss << "# Job info - hdeem" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;

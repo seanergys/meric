@@ -49,6 +49,43 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 	
+	int initStore(	int counter,
+					const std::string outputDir,
+					const std::string outputFilename,
+					const std::string prefix = "")
+	{
+		_jobID = mutils::getenv("SLURM_JOBID", -1);
+		_stepID = mutils::getenv("SLURM_STEPID", -1);
+		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+		
+		if(counter >= 0)
+		{
+			_initCounter = counter;
+			return counter;
+		}	
+		
+		//CALLTREE init counter
+		mutils::createDir(outputDir + "Counters");
+        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + prefix + outputFilename + ".tmp";
+
+		std::ifstream iFile(startCounterFile);
+		if(iFile.is_open())
+		{
+			std::string numOfStartsStr;
+			std::getline(iFile, numOfStartsStr);
+			_initCounter = std::stoi(numOfStartsStr) + 1;
+			iFile.close();
+
+		}else
+		{
+			_initCounter = 0;
+		}
+		std::ofstream oFile(startCounterFile);
+		oFile << _initCounter;
+		oFile.close();
+		return _initCounter;
+	};
+	
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;
 
@@ -68,29 +105,6 @@ protected:
             const std::string &outputFilename,
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		_jobID = mutils::getenv("SLURM_JOBID", -1);
-		_stepID = mutils::getenv("SLURM_STEPID", -1);
-		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
-
-		mutils::createDir(outputDir + "Counters");
-        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + prefix + outputFilename + ".tmp";
-
-		std::ifstream iFile(startCounterFile);
-		if(iFile.is_open())
-		{
-			std::string numOfStartsStr;
-			std::getline(iFile, numOfStartsStr);
-			_initCounter = std::stoi(numOfStartsStr) + 1;
-			iFile.close();
-
-		}else
-		{
-			_initCounter = 0;
-		}
-		std::ofstream oFile(startCounterFile);
-		oFile << _initCounter;
-		oFile.close();
-
 		_counters.resize(_name.size());
 		std::vector<std::ofstream> ss(_name.size());
 		for (int i=0; i<_name.size(); i++)

@@ -39,12 +39,12 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	}
 	ss << std::endl;
 
-	ss << "# Job info" << std::endl
+	ss << "# Job info - " << this->_store->counterLabel << std::endl
 	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
 	   << "Nodelist," << this->_store->_nodelist << std::endl;
 	printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1);
 
-	ss << "# COUNTERS: \n";
+	ss << "# COUNTERS - "<<this->_store->counterLabel<<": \n";
 	int j = 0;
 	for(std::map<std::string, long>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{

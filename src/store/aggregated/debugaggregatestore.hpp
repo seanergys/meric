@@ -18,7 +18,7 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
     }
     ss << '\n';
 
-    ss << "# Job info" << std::endl
+    ss << "# Job info - hdeem" << std::endl
        << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
        << "Nodelist," << this->_store->_nodelist << '\n';
 

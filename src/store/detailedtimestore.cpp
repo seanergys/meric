@@ -12,7 +12,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	}
 	ss << std::endl;
 
-	ss << "# Job info" << std::endl
+	ss << "# Job info - hdeem" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
        //<< "Start of function," << _records[iStarts.back()].time << std::endl

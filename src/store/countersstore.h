@@ -55,6 +55,7 @@ public:
 		else if (wrapper == "rapl")
 			wrapperType = RAPL;
 
+		counterLabel = wrapper;
 		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
 	}
 	CountersStore(const std::string wrapper, bool write) : Store(write)
@@ -66,6 +67,7 @@ public:
 		else if (wrapper == "rapl")
 			wrapperType = RAPL;
 
+		counterLabel = wrapper;
 		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
 	}
 	
@@ -75,6 +77,7 @@ public:
 
 protected:
 	int wrapperType;
+	std::string counterLabel;
 
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

@@ -39,8 +39,12 @@ public:
 	
 	void save()
 	{
+		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
+		{
+			initCounter = _storeList[i]->initStore(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+		}
 	}
 
 	SharedMeric();
