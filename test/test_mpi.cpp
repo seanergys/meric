@@ -13,26 +13,26 @@ int main(int argc, char **argv)
 
 	MERIC_MeasureStart("A");
 
-
 	for(int i = 0; i < 5; i++)
 	{
-MERIC_MeasureStart("iteration");
+		MERIC_MeasureStart("iteration");
 
-MERIC_MeasureStart("B");
-        sleep(1);
-        MERIC_MeasureStop(); //B
+		MERIC_MeasureStart("B");
+	        sleep(1);
+        	MERIC_MeasureStop(); //B
 
-        MERIC_MeasureStart("C");
-        sleep(2);
-        MERIC_MeasureStop(); //C
+	        MERIC_MeasureStart("C");
+        	sleep(2);
+	        MERIC_MeasureStop(); //C
 
-        MERIC_MeasureStart("B");
-        sleep(1);
-        MERIC_MeasureStop(); //B
+        	MERIC_MeasureStart("B");
+	        sleep(1);
+        	MERIC_MeasureStop(); //B
 
-        MERIC_MeasureStop(); //iteration
-    }
+	        MERIC_MeasureStop(); //iteration
+	}
 
+	sleep(1);
 	MERIC_MeasureStop(); //A
 
 	MERIC_Close();
