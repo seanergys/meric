@@ -12,6 +12,10 @@
 // #include <sys/time.h>
 // #include <cmath>
 
+#ifdef HAVE_MPI_H
+#include <mpi.h>
+#endif
+
 using namespace meric;
 
 void CountersStore::addStart(int region)
@@ -42,6 +46,15 @@ void CountersStore::addEnd(int region)
 	_records.push_back(CountersRecord(region, record, time));
 }
 
+void CountersStore::fillRegionStats(std::vector<long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
+{
+	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
+	{
+		stats.push_back(counterIt->second - _records[iStarts.back()].record[counterIt->first]);
+	}
+	//last item is time
+	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
+}
 
 void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
@@ -53,7 +66,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl//;
+	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 
@@ -67,9 +80,11 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 //TODO - TEMPORARY solution
 	ss << "# RATIOS: \n";
 	if (wrapperType == PAPI && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
-		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
+		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
+		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
 	else if (wrapperType == PERFEVENT && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
-		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], _records[iEnd].time - _records[iStarts.back()].time) << std::endl;
+		ss << "FLOPs," << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
+		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
 }
 
 

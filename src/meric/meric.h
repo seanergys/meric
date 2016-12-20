@@ -44,7 +44,10 @@ public:
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
 		for (int i=0; i<_storeList.size(); i++)
-			_storeList[i]->addStart(getRegionID(region));
+		{
+			if (_storeList[i]->getMPIWrite())
+				_storeList[i]->addStart(getRegionID(region));
+		}
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
@@ -54,7 +57,10 @@ public:
 		//stop should be in opposit direction
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
 		for(int i=_storeList.size()-1;i>=0; i--)
-			_storeList[i]->addEnd(_stack.back());
+		{
+			if (_storeList[i]->getMPIWrite())
+				_storeList[i]->addEnd(_stack.back());
+		}
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 	}
 

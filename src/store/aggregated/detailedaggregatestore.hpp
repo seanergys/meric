@@ -9,7 +9,7 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     std::cout << "begin" << std::endl;
 
 	DetailedRegionStats stats;
-	this->_store.fillRegionStats(stats, iStarts.back(), iEnd);
+	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
 
     std::cout << "bef gather" << std::endl;
 
@@ -17,17 +17,17 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 
     std::cout << "calltree" << std::endl;
 
-    ss << "# CALLTREE;init_" << this->_store._initCounter;
+    ss << "# CALLTREE;init_" << this->_store->_initCounter;
     for (size_t j = 0; j < iStarts.size()-1; j++) {
-        ss << ";" <<  this->_store._name[this->_store._records[iStarts[j]].region] << "_" << this->_store._counters[this->_store._records[iStarts[j]].region];
+        ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
     }
     ss << '\n';
 
     std::cout << "job info" << std::endl;
 
     ss << "# Job info" << std::endl
-       << "JOB ID," << this->_store._jobID << "." << this->_store._stepID  << '\n'
-       << "Nodelist," << this->_store._nodelist << '\n';
+       << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
+       << "Nodelist," << this->_store->_nodelist << '\n';
 
         double avgEnergy = 0,
                maxEnergy = 0,
@@ -110,7 +110,7 @@ template <class TStore>
 void DetailedAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
 	DetailedRegionStats stats;
-	this->_store.fillRegionStats(stats, iStarts.back(), iEnd);
+	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
 
 	MPI_Gather(&stats, sizeof(DetailedRegionStats), MPI_BYTE, _buffer.data(), sizeof(DetailedRegionStats), MPI_BYTE, 0, this->_comm);
 }

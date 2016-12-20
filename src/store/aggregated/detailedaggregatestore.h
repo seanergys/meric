@@ -11,6 +11,7 @@ template <class TStore>
 class DetailedAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
+//	DetailedAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	DetailedAggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
 	{
 		_buffer.resize(this->_size);

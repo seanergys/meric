@@ -11,6 +11,7 @@ template <class TStore>
 class DebugAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
+//	DebugAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	DebugAggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
 	{
 		_buffer.resize(this->_size);

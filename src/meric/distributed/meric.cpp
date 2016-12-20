@@ -8,7 +8,7 @@ DistributedMeric::DistributedMeric()
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
 	MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
-
+	MPI_Comm_dup(MPI_COMM_WORLD, &_worldCopy);
 	int color;
 	int length;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -71,9 +71,11 @@ DistributedMeric::DistributedMeric()
 		    */
 		    if(Meric::AGGREGATE)
 		    {
+//				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
+				_storeList.back()->setMPIWrite(!_MPInodeRank);
 			} else {
-				_storeList.push_back(new TimeEnergyStore());
+				_storeList.push_back(new TimeEnergyStore(!_MPInodeRank));
 			}
 		} else {
 			if (Meric::CONTINUAL)
@@ -82,16 +84,20 @@ DistributedMeric::DistributedMeric()
 				{
 					if (Meric::AGGREGATE)
 					{
+//						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs, !_MPInodeRank));
 						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
+						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new DetailedTimeStore());
+						_storeList.push_back(new DetailedTimeStore(!_MPInodeRank));
 					}
 				} else {
 					if (Meric::AGGREGATE)
 					{
+//						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs, !_MPInodeRank));
 						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
+						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new TimeStore());
+						_storeList.push_back(new TimeStore(!_MPInodeRank));
 					}
 				}
 			} else {
@@ -99,16 +105,19 @@ DistributedMeric::DistributedMeric()
 				{
 					if (Meric::AGGREGATE)
 					{
+//						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs, !_MPInodeRank));
 						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
+						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new DetailedEnergyStore());
+						_storeList.push_back(new DetailedEnergyStore(!_MPInodeRank));
 					}
 				} else {
 					if (Meric::AGGREGATE)
 					{
 						_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new EnergyStore());
+						_storeList.push_back(new EnergyStore(!_MPInodeRank));
 					}
 				}
 			}
@@ -117,12 +126,15 @@ DistributedMeric::DistributedMeric()
 	
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore("rapl"));
+		_storeList.push_back(new CountersStore("rapl", !_MPInodeRank));	//TODO treba zjistit jestli funguje
 	}
 
 	if (Meric::COUNTERS != "none")
 	{
-		_storeList.push_back(new CountersStore(Meric::COUNTERS));
+		//_storeList.push_back(new CountersStore(Meric::COUNTERS));
+//		_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _worldCopy, true));
+		_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _worldCopy));
+		_storeList.back()->setMPIWrite(true);
 	}
 }
 
@@ -136,9 +148,11 @@ DistributedMeric::~DistributedMeric()
 	Environment::close();
 	MPI_Comm_free(&_currentNode);
 	MPI_Comm_free(&_storingProcs);
+	MPI_Comm_free(&_worldCopy);
 
 	for(int i=0;i<_storeList.size(); i++)
 		delete _storeList[i];
+	_storeList.clear();
 }
 
 

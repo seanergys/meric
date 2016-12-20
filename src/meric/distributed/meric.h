@@ -9,6 +9,7 @@
 #include "../../store/aggregated/aggregatestore.h"
 #include "../../store/aggregated/detailedaggregatestore.h"
 #include "../../store/aggregated/debugaggregatestore.h"
+#include "../../store/aggregated/countersaggregatestore.h"
 
 #include "../../wrapper/environmentwrapper.h"
 
@@ -28,8 +29,7 @@ public:
 			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		}
 		Environment::threadNumber(regionValue(region).nthreads);
-		if(!_MPInodeRank)
-			Meric::start(region);
+		Meric::start(region);
 		_stack.push_back(getRegionID(region));
 	}
 	
@@ -38,8 +38,7 @@ public:
 		MPI_Barrier(_currentNode);
 		if (_stack.size())
 		{
-			if(!_MPInodeRank)
-				Meric::stop();
+			Meric::stop();
 			_stack.pop_back();
 		}
 		else
@@ -56,6 +55,7 @@ public:
 	void save()
 	{
 		MPI_Barrier(_currentNode);
+/*
 		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {
 				for(int i=0; i<_storeList.size(); i++)
@@ -63,6 +63,14 @@ public:
 			} else {
 				for(int i=0; i<_storeList.size(); i++)
 					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+			}
+		}
+*/
+		for(int i=0; i<_storeList.size(); i++)
+		{
+			if (_storeList[i]->getMPIWrite())
+			{
+				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			}
 		}
 		sleep(1);
@@ -77,6 +85,7 @@ protected:
 	std::string _nodeName;
 	MPI_Comm _currentNode;
 	MPI_Comm _storingProcs;
+	MPI_Comm _worldCopy;
 };
 
 }

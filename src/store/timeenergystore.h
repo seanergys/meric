@@ -65,11 +65,21 @@ public:
 		HDEEM::start();
 	}
 
+	TimeEnergyStore(bool write) : TimeStore(write)
+	{
+		MERIC_INFO << "Create TimeEnergyStore\n";
+	}
+
 	TimeEnergyStore()
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
+/*	TimeEnergyStore(bool write = true) : TimeStore(write)
+	{
+		MERIC_INFO << "Create TimeEnergyStore\n";
+	}
+*/
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

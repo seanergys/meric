@@ -59,11 +59,15 @@ public:
 		HDEEM::start();
 	}
 
-	DetailedEnergyStore()
+	DetailedEnergyStore(bool write) : Store(write)
 	{
 		MERIC_INFO << "Create DetailedEnergyStore\n";
 	}
 
+	DetailedEnergyStore()
+	{
+		MERIC_INFO << "Create DetailedEnergyStore\n";
+	}
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
