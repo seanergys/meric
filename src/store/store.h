@@ -49,6 +49,7 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 	
+	int initStore(	int counter) {_initCounter = counter;};
 	int initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,

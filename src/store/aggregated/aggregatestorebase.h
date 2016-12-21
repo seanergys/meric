@@ -46,6 +46,7 @@ public:
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
 		_store->setRegionsNames(regionNames);
+		_store->initStore(_initCounter);
 		if (_rank) {
 			_store->save([&] (std::vector<size_t> &iStarts, size_t iEnd) {
 				saveInterval(iStarts, iEnd);
