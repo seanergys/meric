@@ -49,7 +49,14 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 	
-	int initStore(	int counter) {_initCounter = counter;};
+	int initStore(	int counter)
+	{
+		_jobID = mutils::getenv("SLURM_JOBID", -1);
+		_stepID = mutils::getenv("SLURM_STEPID", -1);
+		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+		_initCounter = counter;
+	};
+	
 	int initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
