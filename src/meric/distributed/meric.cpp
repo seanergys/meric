@@ -126,7 +126,13 @@ DistributedMeric::DistributedMeric()
 	
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore("rapl", !_MPInodeRank));	//TODO treba zjistit jestli funguje
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore>("rapl", _storingProcs));
+			_storeList.back()->setMPIWrite(!_MPInodeRank);
+		}
+		else
+			_storeList.push_back(new CountersStore("rapl", !_MPInodeRank));
 	}
 
 	if (Meric::COUNTERS != "none")
