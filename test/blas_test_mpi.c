@@ -10,7 +10,10 @@
 
 int main(int argc, char **argv)
 {
+int rank, size;
 MPI_Init(&argc, &argv);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     double *A, *B, *C, *Vmat, *v, *vOut;
     int m, n, k, i, j, vMatN;
@@ -96,6 +99,9 @@ MERIC_MeasureStart("main");
     }
 */
 
+if (rank < size/2)
+{
+
     printf("\n 'Heating' cache with dgemm... \n");
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
                 m, n, k, alpha, A, k, B, n, beta, C, n);
@@ -112,7 +118,7 @@ MERIC_MeasureStart("DGEMM");
 MERIC_MeasureStop();
     regionTime = time(NULL) - regionTime;
     printf(" >>> DGEMM TIME: %ld\n", regionTime);
-
+}
 
 /*
     printf("\n Matrix C:\n");
@@ -139,6 +145,9 @@ MERIC_MeasureStop();
     }
     printf("\n");
 */
+MPI_Barrier(MPI_COMM_WORLD);
+if (rank>= size/2)
+{
 
     printf("\n 'Heating' cache with ggemv... \n");
     cblas_dgemv(CblasRowMajor, CblasNoTrans,
@@ -163,6 +172,7 @@ MERIC_MeasureStop();
         printf("%f ", vOut[i]);
     }
 */
+}
     printf ("\n Computations completed.\n\n");
 
     printf ("\n Deallocating memory \n\n");
