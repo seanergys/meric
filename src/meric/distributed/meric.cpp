@@ -136,7 +136,7 @@ DistributedMeric::DistributedMeric()
 		if (Meric::AGGREGATE)
 			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _worldCopy));
 		else
-			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _storingProcs));
+			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _currentNode));
 		_storeList.back()->setMPIWrite(true);
 	}
 }
