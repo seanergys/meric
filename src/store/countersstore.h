@@ -2,7 +2,11 @@
 #ifndef SRC_BASIS_COUNTERSSTORE_H_
 #define SRC_BASIS_COUNTERSSTORE_H_
 
+#include <iomanip>
+
 #include "store.h"
+#include "countersrates.h"
+#include "../wrapper/counters.h"
 
 namespace meric {
 

@@ -1,11 +1,14 @@
 
 #include "countersaggregatestore.h"
+#include "../countersstore.h"
 
 namespace meric {
 
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
+	double AVGtime = 0.0; long   AVGavx  = 0;	//#19
+	
 	std::vector<long> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts, iEnd);
@@ -31,6 +34,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		ss << "AVG "<< description << "," << sum/(dataSize/stride) << std::endl
 		   << "MAX "<< description << "," << max << std::endl
 		   << "MIN "<< description << "," << min << std::endl;
+		return sum/(dataSize/stride);	//AVG	#19
 	};
 
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
@@ -42,14 +46,23 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	ss << "# Job info - " << this->_store->counterLabel << std::endl
 	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
 	   << "Nodelist," << this->_store->_nodelist << std::endl;
-	printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1);
+	AVGtime = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1);	//#19
 
 	ss << "# COUNTERS - "<<this->_store->counterLabel<<": \n";
 	int j = 0;
 	for(std::map<std::string, long>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
-		printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size());
+		if (counterIt->first == PAPI_COUNTERS::COUNTER_AVX || (counterIt->first == PERFEVENT_COUNTERS::COUNTER_AVX)) 	//#19
+			AVGavx = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size());
+		else 
+			printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size());
 	}
+
+//TODO TEMP SOLUTION - REMOVE	#19
+//TODO - TEMPORARY solution
+	if (AVGavx != 0)
+		ss << "# RATIOS: \nFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(AVGavx, AVGtime) << std::endl;
+
 }
 
 template <class TStore>

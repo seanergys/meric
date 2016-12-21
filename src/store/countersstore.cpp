@@ -2,12 +2,10 @@
 #include <time.h>
 
 #include "countersstore.h"
-#include "countersrates.h"
 
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
-#include "../wrapper/counters.h"
 
 // #include <sys/time.h>
 // #include <cmath>
@@ -77,12 +75,12 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	}
 
 	
-//TODO - TEMPORARY solution
+//TODO - TEMPORARY solution	#19
 	if (wrapperType == PAPI && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
-		ss << "# RATIOS: \nFLOPs," << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
+		ss << "# RATIOS: \nFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
 		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
 	else if (wrapperType == PERFEVENT && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
-		ss << "# RATIOS: \nFLOPs," << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
+		ss << "# RATIOS: \nFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
 		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
 }
 
