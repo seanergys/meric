@@ -30,6 +30,9 @@
 		- NOT SUITABLE FOR THREADED APPLICATIONS!
 		
 		+ http://icl.cs.utk.edu/papi/
+		
+	- raplwrapper
+		= Intel RAPL counters read by x86_adapt
 
 --------------------------------------------------------------------------------
 #     2] Content of test folder                                                #
@@ -49,6 +52,10 @@
 * run.sh
 	* Script that runs the code with all possible settings.
 	* Ready to do the basic test with test_mpi.cpp on Taurus.
+* environment_taurus
+	* Basic script that sets chosen MERIC environment variables and informs you about values of set varibles
+	* When runed with argument -t, just prints list of set variables
+	* Make a copy of this script and edit it to suit your needs!
 
 --------------------------------------------------------------------------------
 #    3] Compile and run basic example                                          #
@@ -146,6 +153,13 @@ To find the best settings for each region, you should run your code with all pos
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24
 
+## SET MERIC WORKING MODE ##
+	export MERIC_MODE=0
+		0 = hdeem - uses hdeem to measure energy consumtion
+		1 = rapl - uses rapl counters to measure energy consumtion
+		2 = hdeem & rapl - uses hdeem and rapl at the same time
+		3 = none - doesn't measure energy consumtion, but provides you the option to set parameters for regions
+
 ## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION ##
 	If you find a settings that you want to apply for your regions, you can write 
 	a file **region.options**, where you set them. This file must be in JSON format,
@@ -194,7 +208,8 @@ To find the best settings for each region, you should run your code with all pos
 		included in the output 
 
 	export MERIC_COUNTERS=papi or perfevent
-		- Instead of using hdeem you can use papi or perfevent to read HW counters.
+		- If set you can read HW counters using papi or perfevent
+		- When using counters, there is not only counter value but also an information about flop/s (if possible to measure)
 		- To add a counter you want to measure it is necessary to follow 
 		  the instructions in wrapper/counters.h.
 	
@@ -274,9 +289,9 @@ To find the best settings for each region, you should run your code with all pos
 #     8] MERIC compilation on a machine without the hdeem                      #
 --------------------------------------------------------------------------------
 	# install freeipmi
-		https://www.gnu.org/software/freeipmi/download.html
+		# https://www.gnu.org/software/freeipmi/download.html
 	# optionaly install other libraries
-		#x86_adapt, cpufreq, papi
+		# x86_adapt, cpufreq, papi
 	# set library paths in Meric Makefile
 	# add path to Meric in $LD_LIBRARAY_PATH
 	# load modules
