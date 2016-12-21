@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 2
 #SBATCH --exclusive
-#SBATCH --ntasks-per-node=1
+# #SBATCH --ntasks-per-node=1
 #SBATCH -p haswell
 #SBATCH --mem 62000
 #SBATCH -t 0-1:00
@@ -22,17 +22,19 @@ module load papi/5.4.1
 # COMPILE
 make
 
-# SET MERIC OUTPUT FORMAT
+# SET MERIC OUTPUT
+#export MERIC_COUNTERS=perfevent
+#export MERIC_MODE=2
 export MERIC_DEBUG=1
 
 # FOR EACH SETTINGS
-for proc in 2
+for proc in 48
 do
 	for thread in 1  #{1..24..1}
 	do
-		for cpu_freq in 12 14 # {12..25..1}
+		for cpu_freq in 12 # {12..25..1}
 		do
-			for uncore_freq in 28 30 #{12..30..1}
+			for uncore_freq in 28 #{12..30..1}
 			do
 				# OUTPUT NAMES
 				export MERIC_OUTPUT_FILENAME=$thread"_"$cpu_freq"_"$uncore_freq
@@ -43,11 +45,11 @@ do
 				export MERIC_FREQUENCY=$cpu_freq
 				export MERIC_UNCORE_FREQUENCY=$uncore_freq
 				#export MERIC_COUNTERS=perfevent
-
+				export MERIC_AGGREGATE=0
 				# RUN THE TEST
 				echo
 				echo TEST $MERIC_OUTPUT_FILENAME
-				mpirun -n 2 ./test_mpi
+				mpirun -n $proc ./test_mpi
 
 			done
 		done
