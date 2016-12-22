@@ -61,7 +61,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 //TODO TEMP SOLUTION - REMOVE	#19
 //TODO - TEMPORARY solution
 	if (AVGavx != 0)
-		ss << "# RATIOS: \nFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(AVGavx, AVGtime) << std::endl;
+		ss << "# RATIOS: \nGFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(AVGavx, AVGtime) << std::endl;
 
 }
 
