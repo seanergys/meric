@@ -57,25 +57,29 @@ MERIC_MeasureStop();
     }
 
     printf (" Intializing data \n\n");
+MERIC_MeasureStart("init");
+	#pragma omp parallel for
     for (i = 0; i < (m*k); i++) {
         A[i] = (double)i;  //(double)(i+1);
     }
-
+	#pragma omp parallel for
     for (i = 0; i < (k*n); i++) {
         B[i] = (double)i; //(double)(-i-1);
     }
-
+	#pragma omp parallel for
     for (i = 0; i < (m*n); i++) {
         C[i] = 0.0;
     }
+	#pragma omp parallel for
     for(i = 0; i < (vMatN*vMatN); i++) {
         Vmat[i] = 1.0;
     }
+	#pragma omp parallel for
     for (i = 0; i < vMatN; i++) {
         v[i] = (double)i;
         vOut[i] = 0.0;
     }
-
+MERIC_MeasureStop();
 /*
     printf("\n dgemm input: \n");
     printf("\n Matrix A:\n");
