@@ -42,13 +42,14 @@ using namespace meric;
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
 double RAPL::energyUnit = 1.0;
+std::string RAPL::suffix = "_";
 
 void RAPL::init()
 {
 	initMap(counters);
 
 	uint64_t unit;
-	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0); //ignoring fact that different nodes may have different units
+	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0); //TODO ignoring the fact that different sockets may have different units (rest of the function is done only for the first socket)
 	if (fd < 0)
 	{
 		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
@@ -83,10 +84,19 @@ void RAPL::getValues(std::map<std::string, long> & record)
 		
 		for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		{
-			const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
+//TODO this version doesn't count with more than 10 sockets per node (should be enough for this century)
+			if ((iterator->first.back()-'0') != die)
+				continue;
+			std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);			
+			const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
+			if (itemId < 0) //== -ENXIO
+			{
+				std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
+				continue;
+			}
 			x86_adapt_get_setting(fd, itemId, &dieEnergy);
-std::cerr << iterator->first << " " << dieEnergy*energyUnit <<std::endl;
-			record [iterator->first] += dieEnergy*energyUnit;
+//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit <<std::endl;
+			record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit;
 		}
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -99,15 +109,14 @@ std::cerr << iterator->first << " " << dieEnergy*energyUnit <<std::endl;
 
 void RAPL::initMap(std::map<std::string, long> & dict)
 {
-	dict[RAPL_COUNTERS::RAPL_PCKG_ENERGY] = 0;
-	dict[RAPL_COUNTERS::RAPL_RAM_ENERGY]  = 0;
-/*
-	dict[RAPL_COUNTERS::RAPL_PP0_ENERGY]  = 0;
-	dict[RAPL_COUNTERS::RAPL_DRAM_CH0]    = 0;
-	dict[RAPL_COUNTERS::RAPL_DRAM_CH1]    = 0;
-	dict[RAPL_COUNTERS::RAPL_DRAM_CH2]    = 0;
-	dict[RAPL_COUNTERS::RAPL_DRAM_CH3]    = 0;
-*/
+// RAPL gives us values for each cpu - this is a reason for adding a suffix with number of a socket
+
+//	suffix = "_";	//set suffix you want
+	for (int die = 0; die < x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE); die++)
+	{
+		dict[RAPL_COUNTERS::RAPL_PCKG_ENERGY + suffix + std::to_string(die)] = 0;
+		dict[RAPL_COUNTERS::RAPL_RAM_ENERGY  + suffix + std::to_string(die)] = 0;
+	}
 }
 
 
