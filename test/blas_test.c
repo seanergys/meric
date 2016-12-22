@@ -36,7 +36,7 @@ MERIC_MeasureStart("main");
     alpha = 1.0; beta = 0.0;
 
     printf("\n Allocating memory \n");
-
+MERIC_MeasureStart("malloc");
     A = (double *)mkl_malloc( m*k*sizeof( double ), 64 );
     B = (double *)mkl_malloc( k*n*sizeof( double ), 64 );
     C = (double *)mkl_malloc( m*n*sizeof( double ), 64 );
@@ -44,7 +44,7 @@ MERIC_MeasureStart("main");
 
     v = (double *)mkl_malloc( vMatN*sizeof( double ), 64 );
     vOut = (double *)mkl_malloc( vMatN*sizeof( double ), 64 );
-
+MERIC_MeasureStop();
     if (A == NULL || B == NULL || C == NULL || v == NULL || vOut == NULL) {
       printf( "\n ERROR: Can't allocate memory. Aborting... \n\n");
       mkl_free(A);
