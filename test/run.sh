@@ -1,12 +1,23 @@
 #!/bin/bash
 #SBATCH -N 2
 #SBATCH --exclusive
-# #SBATCH --ntasks-per-node=1
 #SBATCH -p haswell
-#SBATCH --mem 62000
+#SBATCH -A p_readex	#to account your compute time on the readex project
+#SBATCH --mem 62000	#to the memory available on the node. Some nodes have more memory. Please see the documentation.
+	##SBATCH --mem=126000
 #SBATCH -t 0-1:00
-# #SBATCH --mail-type=ALL
-# #SBATCH --mail-user=ondrej.vysocky@vsb.cz
+#SBATCH --comment="cpufreqchown"
+#SBATCH --cpu-freq=Low
+	##SBATCH --mail-type=ALL
+	##SBATCH --mail-user=ondrej.vysocky@vsb.cz
+
+	## openMP	
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=24
+
+	## MPI
+##SBATCH --tasks-per-node=24
+##SBATCH --cpus-per-task=1
 
 # sbatch run.sh
 # squeue -u $USER
