@@ -36,7 +36,12 @@ const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 namespace RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
-const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";
 const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
-
+/*
+const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";
+const std::string RAPL_DRAM_CH0    = "Intel_DRAM_ENERGY_STATUS_CH0";
+const std::string RAPL_DRAM_CH1    = "Intel_DRAM_ENERGY_STATUS_CH1";
+const std::string RAPL_DRAM_CH2    = "Intel_DRAM_ENERGY_STATUS_CH2";
+const std::string RAPL_DRAM_CH3    = "Intel_DRAM_ENERGY_STATUS_CH3";
+*/
 }
