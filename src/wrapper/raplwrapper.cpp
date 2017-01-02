@@ -38,14 +38,15 @@ const uint64_t RAPLtimeShift  = 16;
 
 using namespace meric;
 
-
+std::string RAPL::suffix = "_";
+int RAPL::numOfDevices = 1;
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
 double RAPL::energyUnit = 1.0;
-std::string RAPL::suffix = "_";
 
 void RAPL::init()
 {
+	numOfDevices = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	initMap(counters);
 
 	uint64_t unit;
@@ -71,8 +72,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
 
-	const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-	for (int die=0; die<max; die++)
+	for (int die=0; die<numOfDevices; die++)
 	{
 		uint64_t dieEnergy = 0;
 		const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -112,7 +112,7 @@ void RAPL::initMap(std::map<std::string, long> & dict)
 // RAPL gives us values for each cpu - this is a reason for adding a suffix with number of a socket
 
 //	suffix = "_";	//set suffix you want
-	for (int die = 0; die < x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE); die++)
+	for (int die = 0; die < numOfDevices; die++)
 	{
 		dict[RAPL_COUNTERS::RAPL_PCKG_ENERGY + suffix + std::to_string(die)] = 0;
 		dict[RAPL_COUNTERS::RAPL_RAM_ENERGY  + suffix + std::to_string(die)] = 0;

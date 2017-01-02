@@ -23,7 +23,7 @@ private:
 	static std::map<std::string, long> counters;
 	static double energyUnit;
 	static std::string suffix;
-
+	static int numOfDevices;
 
 #else
 public:
@@ -31,6 +31,9 @@ public:
 	static void close() {};
 	static void getValues(std::map<std::string, long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
 	static void initMap(std::map<std::string, long> & dict);
+private:
+	static std::string suffix;
+	static int numOfDevices;
 #endif
 };
 
