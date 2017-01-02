@@ -230,7 +230,7 @@ To find the best settings for each region, you should run your code with all pos
 	make
 
 ## EDIT YOUR CODE TO INSERT MEASUREMENT REGIONS ##
-	# EDIT MAIN
+	# edit main function
 		#include <meric.h>
 		...
 		MPI_Init(&argc, &argv);
@@ -239,25 +239,25 @@ To find the best settings for each region, you should run your code with all pos
 		MERIC_Close();
 		MPI_Finalize();
 
-	# EDIT FILE WITH A REGION 
-	# INSERT START PROBE AT THE BEGINNING OF THE REGION WITH A UNIQUE NAME
-	# INSERT STOP PROBE AT THE END OF THE REGION - NO NAME NEEDED, ENDS THE LAST STARTED REGION
-	# FOR THE VISUALISATION WITH RADAR TOOL, THERE MUST BE ONE REGION, THAT WRAPS OTHER REGIONS
+	# edit file with a region
+	# insert Start probe at the beginning of the region with a unique name
+	# intert Stop probe at the end of the region - no name needed, ends the last started region
+	# for the visualisation with Radar tool, there must be one region, that wraps other regions
 		#include <meric.h>
 		...
 		MERIC_MeasureStart("A");
 		//region A
 		MERIC_MeasureStop();
-
+	# MPI APPLICATIONS WARNING: Notice that all MPI processes must call Start and Stop for each region, otherwise Meric behavior is undefined. It is not possible to set runtime environment this way, because Meric settings impress whole node and each region settings allow not to follow this restriction.
 
 ## COMPILE YOUR CODE ##
-	# EDIT MAKEFILE
+	# edit Makefile
 		-I$(PATH_TO_MERIC)/include
 		-L$(PATH_TO_MERIC)/lib
 		-L../hdeem -lhdeem -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 		-lmeric OR FOR MPI APPS -lmericmpi 
 
-	# OR IF APPLICATION IS COMPILED USING WAF (such as ESPRESO Solver)
+	# of if application is compiled using waf (such as ESPRESO Solver)
 		# * build.config
 			INCLUDES = $PATH_TO_MERIC/include
 			LIBPATH =  $PATH_TO_MERIC/lib /sw/taurus/libraries/papi/5.4.1/lib/
@@ -269,20 +269,20 @@ To find the best settings for each region, you should run your code with all pos
 			    ctx.env.append_unique("LIB", "x86_adapt")
 			    ctx.env.append_unique("LIB", "papi")
 
-	# COMPILE AND RUN YOUR CODE AS USUAL
+	# compile and run your code as usual
 		make
 		make run
 
 ## TEST YOUR CODE ##
-	# EDIT run.sh AND RUN IT
+	# edit run.sh and run it
 		sbatch run.sh
 	
-	# EDIT RADAR config.py - FOLLOW THE INSTRUCTION INSIDE
+	# edit Radar config.py - follow the instructions inside
 	# GENERATE RADAR OUTPUT 
 		module load python
 		./printFullReport.py
 
-	# COMPILE LaTeX SOURCE FILE THAT IS INSIDE THE FOLDER WITH MEASUREMENT RESULTS
+	# compile LaTeX source file that is inside the folder with measurement results
 		pdflatex --shell-escape results.tex
 
 --------------------------------------------------------------------------------
