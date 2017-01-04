@@ -39,6 +39,7 @@ public:
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
 	static std::string OUTPUT_FILENAME;
+	static std::string REGION_OPTIONS;
 
 	virtual void start(const std::string &region)
 	{
@@ -54,7 +55,7 @@ public:
 	virtual void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-		//stop should be in opposit direction
+		//stop should be in opposit order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
 		for(int i=_storeList.size()-1;i>=0; i--)
 		{
@@ -75,19 +76,9 @@ public:
 	virtual ~Meric() {};
 
 protected:
-/*
-	const RegionParameters& regionValue(const std::string &region)
-	{
-		if (parameter.find(region) != parameter.end()) {
-			return parameter[region];
-		} else {
-			return defaultParameter;
-		}
-	}
-*/
+
 	const RegionParameters& regionValue(const std::string &region, int node = -1)
 	{
-//		pair<string, string> key = make_pair("bob", "sue"); 
 		auto it = parameter.find(std::make_pair(region, node));
 		if	(it != parameter.end())
 		{
@@ -105,7 +96,6 @@ protected:
 			}	
 		}
 	}
-
 	
 	const std::string& getRegionName(int size, int last)
 	{
@@ -123,7 +113,6 @@ protected:
 		return pos;
 	}
 
-//	static std::map<std::string, RegionParameters> parameter;
 	static std::map< std::pair<std::string, int>, RegionParameters> parameter;
 	static RegionParameters defaultParameter;
 

@@ -1,12 +1,12 @@
 {
-"DGEMM" : {
-  "FREQUENCY" : 15,
-  "UNCORE_FREQUENCY" : 15,
-  "NUM_THREADS" : 16
-}
-,
-"DGEMV":{ 
-  "FREQUENCY"= 23, 
-  "UNCORE_FREQUENCY" = 23
-}
+	"DGEMM" : {
+		"FREQUENCY" : 15,
+		"UNCORE_FREQUENCY" : 15,
+		"NUM_THREADS" : 12
+	}
+	,
+	"DGEMV" : { 
+		"FREQUENCY" : 23, 
+		"UNCORE_FREQUENCY" : 23
+	}
 }

@@ -11,6 +11,7 @@ bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("hdeemMeasurement"));
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
+std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
 
 std::map< std::pair<std::string, int>, RegionParameters> Meric::parameter;
 std::vector<std::string> Meric::_name;
@@ -65,115 +66,90 @@ void Meric::readRegionParameters()
 		}
 	}
 	
-	int bracketCounter = 0;
-	std::vector<std::string> values;
-	Tokenizer tokenizer("region.options");
 
-	auto regionValues = [&values] (RegionParameters &region, size_t index)
+	if (! Meric::REGION_OPTIONS.empty())
 	{
-		for (size_t i = index; i < values.size(); i += 2)
+		Tokenizer tokenizer(Meric::REGION_OPTIONS);
+		int bracketCounter = 0;
+		std::vector<std::string> values;
+	
+		auto regionValues = [&values] (RegionParameters &region, size_t index)
 		{
-			std::stringstream ss(values[i + 1]);
-			if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY"))
+			for (size_t i = index; i < values.size(); i += 2)
 			{
-				ss >> region.frequency;
-			}else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY"))
-			{
-				ss >> region.uncoreFrequency;
-			}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) 
-			{
-				ss >> region.nthreads;
-			}
-		}
-	};
-
-	while (tokenizer.next() != Tokenizer::Token::END) {
-		if (bracketCounter < 0)
-			break;
-		switch (tokenizer.token()) {
-		case Tokenizer::Token::STRING:
-			values.push_back(tokenizer.value());
-			break;
-		case Tokenizer::Token::OBJECT_OPEN:
-				bracketCounter++;
-				break;
-/*			if ((bracketCounter == 1 && values.size() == 1) || (bracketCounter == 0 && values.size() == 0) ) 
-				bracketCounter++;
-			else
-			{
-				std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-
-for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
-				bracketCounter = -1;
-			}
-			break;
-*/
-		case Tokenizer::Token::OBJECT_CLOSE:
-			if (bracketCounter == 1)
-			{
-				bracketCounter = 0;
-				break;
-			}
-			else if (bracketCounter == 2) // || bracketCounter > 2)
-			{
-				if (values.size() == 1 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
+				std::stringstream ss(values[i + 1]);
+				if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY"))
 				{
-					bracketCounter--;
-					break;	
+					ss >> region.frequency;
+				}else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY"))
+				{
+					ss >> region.uncoreFrequency;
+				}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) 
+				{
+					ss >> region.nthreads;
 				}
-				else if ((values.size() % 2 != 1))
+			}
+		};
+
+		while (tokenizer.next() != Tokenizer::Token::END) {
+			if (bracketCounter < 0)
+				break;
+			switch (tokenizer.token()) {
+			case Tokenizer::Token::STRING:
+				values.push_back(tokenizer.value());
+				break;
+			case Tokenizer::Token::OBJECT_OPEN:
+					bracketCounter++;
+					break;
+			case Tokenizer::Token::OBJECT_CLOSE:
+				if (bracketCounter == 1)
 				{
-					std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
-					bracketCounter = -1;
+					bracketCounter = 0;
 					break;
 				}
-				RegionParameters &region = Meric::parameter[std::make_pair(values[0], -1)];
-				regionValues(region, 1);
-				values.clear();
-			}
-			else if (bracketCounter == 3)
-			{
-				values.erase(values.end());
-			}
-			else if (bracketCounter == 4 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
-			{
-				RegionParameters &region = Meric::parameter[std::make_pair(values[2], std::stoi(values[1]))];
-				regionValues(region, 3);
-				values.erase(values.begin()+2, values.end());
-			}
-/*				else
+				else if (bracketCounter == 2)
 				{
-					RegionParameters &region = Meric::parameter[values[0]];
-					regionValues(region);
+					if (values.size() == 1 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
+					{
+						bracketCounter--;
+						break;	
+					}
+					else if ((values.size() % 2 != 1))
+					{
+						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
+	for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
+						bracketCounter = -1;
+						break;
+					}
+					RegionParameters &region = Meric::parameter[std::make_pair(values[0], -1)];
+					regionValues(region, 1);
 					values.clear();
 				}
-*/
-
-
-/*				for (size_t i = 1; i < values.size(); i += 2) {
-					if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY")) {
-						std::stringstream ss(values[i + 1]);
-						ss >> region.frequency;
-						MERIC_INFO << "Region '" << values[0] << "' frequency: " << region.frequency << "\n";
-					}
-					else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY")) {
-						std::stringstream ss(values[i + 1]);
-						ss >> region.uncoreFrequency;
-						MERIC_INFO << "Region '" << values[0] << "' uncore frequency: " << region.uncoreFrequency << "\n";
-					}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) {
-						std::stringstream ss(values[i + 1]);
-						ss >> region.nthreads;
-						MERIC_INFO << "Region '" << values[0] << "' num_threads: " << region.nthreads << "\n";
-					}
+				else if (bracketCounter == 3)
+				{
+					values.erase(values.end());
 				}
-*/
-			bracketCounter--;
-			break;
-		case Tokenizer::Token::ASSIGN:
-		case Tokenizer::Token::DELIMITER:
-		case Tokenizer::Token::LINE_END:
-			break;
+				else if (bracketCounter == 4 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
+				{
+					RegionParameters &region = Meric::parameter[std::make_pair(values[2], std::stoi(values[1]))];
+					regionValues(region, 3);
+					values.erase(values.begin()+2, values.end());
+				}
+				else
+				{
+						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
+	for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
+						bracketCounter = -1;
+						break;
+				}
+
+				bracketCounter--;
+				break;
+			case Tokenizer::Token::ASSIGN:
+			case Tokenizer::Token::DELIMITER:
+			case Tokenizer::Token::LINE_END:
+				break;
+			}
 		}
 	}
 }
