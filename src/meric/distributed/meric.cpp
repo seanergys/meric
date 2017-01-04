@@ -55,11 +55,6 @@ DistributedMeric::DistributedMeric()
 	int nodeFirst = (_MPInodeRank) ? 0 : 1;
 	MPI_Scan(&nodeFirst, &_nodeId, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	_nodeId--;
-	if (nodeFirst)
-	{
-		std::string s = "R "+ std::to_string(_MPIglobalRank) + "\t" +std::to_string(_nodeId) + "\n";
-		std::cerr << s;
-	}
 	
 //INIT
 	Environment::init(defaultParameter, _MPInodeRank);

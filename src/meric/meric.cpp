@@ -117,7 +117,6 @@ void Meric::readRegionParameters()
 					else if ((values.size() % 2 != 1))
 					{
 						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-	for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
 						bracketCounter = -1;
 						break;
 					}
@@ -138,7 +137,6 @@ void Meric::readRegionParameters()
 				else
 				{
 						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-	for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
 						bracketCounter = -1;
 						break;
 				}
