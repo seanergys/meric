@@ -40,6 +40,7 @@ using namespace meric;
 
 std::string RAPL::suffix = "_";
 int RAPL::numOfDevices = 1;
+bool RAPL::detailedMode = false;
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
 double RAPL::energyUnit = 1.0;
@@ -72,36 +73,58 @@ void RAPL::getValues(std::map<std::string, long> & record)
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
 
-	for (int die=0; die<numOfDevices; die++)
+	if (detailedMode)
 	{
-		uint64_t dieEnergy = 0;
-		const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
-		if (fd < 0)
+		for (int die=0; die<numOfDevices; die++)
 		{
-			std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
-//			exit(2);
-		}
-		
-		for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-		{
-//TODO this version doesn't count with more than 10 sockets per node (should be enough for this century)
-			if ((iterator->first.back()-'0') != die)
-				continue;
-			std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);			
-			const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
-			if (itemId < 0) //== -ENXIO
+			uint64_t dieEnergy = 0;
+			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
+			if (fd < 0)
 			{
-				std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
-				continue;
+				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
+	//			exit(2);
 			}
-			x86_adapt_get_setting(fd, itemId, &dieEnergy);
-//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit <<std::endl;
-			record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit;
+		
+			for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			{
+	//TODO this version doesn't count with more than 10 sockets per node (should be enough for this century)
+				if ((iterator->first.back()-'0') != die)
+					continue;
+				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);			
+				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
+				if (itemId < 0) //== -ENXIO
+				{
+					std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
+					continue;
+				}
+				x86_adapt_get_setting(fd, itemId, &dieEnergy);
+	//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit <<std::endl;
+				record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit;
+			}
+			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
+				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
 		}
-		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
-			std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
+	}else
+	{
+		for (int die=0; die<numOfDevices; die++)
+		{
+			uint64_t dieEnergy = 0;
+			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
+			if (fd < 0)
+			{
+				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
+		//			exit(2);
+			}
+			for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			{
+				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
+				x86_adapt_get_setting(fd, itemId, &dieEnergy);
+				record [iterator->first] += dieEnergy*energyUnit;
+			}
+			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
+				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
+		}	
 	}
-	
 }
 
 #else
@@ -109,13 +132,32 @@ void RAPL::getValues(std::map<std::string, long> & record)
 
 void RAPL::initMap(std::map<std::string, long> & dict)
 {
-// RAPL gives us values for each cpu - this is a reason for adding a suffix with number of a socket
+// fill this vector
+	std::vector <std::string> names;
+	names.push_back(RAPL_COUNTERS::RAPL_PCKG_ENERGY);
+	names.push_back(RAPL_COUNTERS::RAPL_RAM_ENERGY);
+
+// in detailed mode RAPL gives us values for each cpu 
+// this is a reason for adding a suffix with number of a socket for each counter
 
 //	suffix = "_";	//set suffix you want
-	for (int die = 0; die < numOfDevices; die++)
+
+// DO NOT EDIT THE REST OF THIS FUNCTION
+
+	if (detailedMode)
 	{
-		dict[RAPL_COUNTERS::RAPL_PCKG_ENERGY + suffix + std::to_string(die)] = 0;
-		dict[RAPL_COUNTERS::RAPL_RAM_ENERGY  + suffix + std::to_string(die)] = 0;
+		for(int die = 0; die != names.size(); die++)
+		{
+			dict[names[die] + suffix + std::to_string(die)] = 0;
+		}
+	}else
+	{
+		for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
+		{
+			dict[*it] = 0;
+			dict[*it] = 0;
+		}
+		
 	}
 }
 

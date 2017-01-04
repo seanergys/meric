@@ -41,7 +41,11 @@ void MERIC_Init()
 		meric::PAPI::init();
 
 	if (meric::Meric::MODE == meric::MODE_RAPL || meric::Meric::MODE == meric::MODE_BOTH)
+	{
+		if (meric::Meric::DETAILED)
+			meric::RAPL::detailed();
 		meric::RAPL::init();
+	}
 }
 
 void MERIC_Close()

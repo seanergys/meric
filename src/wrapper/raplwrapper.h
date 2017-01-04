@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_RAPLWRAPPER_H_
 
 #include <map>
+#include <vector>
 #include <iostream>
 
 
@@ -17,6 +18,7 @@ public:
 	
 	static void getValues(std::map<std::string, long> & record);
 	static void initMap(std::map<std::string, long> & dict);
+	static void detailed() {detailedMode = true;};
 
 private:
 		//list of counters
@@ -24,6 +26,7 @@ private:
 	static double energyUnit;
 	static std::string suffix;
 	static int numOfDevices;
+	static bool detailedMode;
 
 #else
 public:
@@ -31,9 +34,11 @@ public:
 	static void close() {};
 	static void getValues(std::map<std::string, long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
 	static void initMap(std::map<std::string, long> & dict);
+	static void detailed() {detailedMode = true;};
 private:
 	static std::string suffix;
 	static int numOfDevices;
+	static bool detailedMode;
 #endif
 };
 
