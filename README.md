@@ -169,6 +169,8 @@ To find the best settings for each region, you should run your code with all pos
 	If any region of your code or any parameter is missing, than this missing 
 	parameter will be set to the same value, as it was before the region started.
 	
+	To run your code with a region settings, set name of the file into environment variable MERIC_REGION_OPTIONS.
+	
 	# EXAMPLE OF **region.options** FILE FOR REGIONS **A** AND **B**
 	{
 	"A" : {
