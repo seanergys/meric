@@ -11,6 +11,8 @@ DistributedMeric::DistributedMeric()
 	MPI_Comm_dup(MPI_COMM_WORLD, &_worldCopy);
 	int color;
 	int length;
+
+//MPI COMM
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
 	MPI_Get_processor_name(name.data(), &length);
 	_nodeName = std::string(name.begin(), name.begin() + length);
@@ -50,8 +52,19 @@ DistributedMeric::DistributedMeric()
 
 	MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 
+	int nodeFirst = (_MPInodeRank) ? 0 : 1;
+	MPI_Scan(&nodeFirst, &_nodeId, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+	_nodeId--;
+	if (nodeFirst)
+	{
+		std::string s = "R "+ std::to_string(_MPIglobalRank) + "\t" +std::to_string(_nodeId) + "\n";
+		std::cerr << s;
+	}
+	
+//INIT
 	Environment::init(defaultParameter, _MPInodeRank);
 
+//STORE
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
 		if (!_MPInodeRank)

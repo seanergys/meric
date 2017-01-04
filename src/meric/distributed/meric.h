@@ -25,10 +25,10 @@ public:
 	{
 		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank) {
-			Environment::frequency(regionValue(region).frequency);
-			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
+			Environment::frequency(regionValue(region, _nodeId).frequency);
+			Environment::uncoreFrequency(regionValue(region, _nodeId).uncoreFrequency);
 		}
-		Environment::threadNumber(regionValue(region).nthreads);
+		Environment::threadNumber(regionValue(region, _nodeId).nthreads);
 		Meric::start(region);
 		_stack.push_back(getRegionID(region));
 	}
@@ -46,10 +46,10 @@ public:
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 		}	
 		if (!_MPInodeRank) {
-			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
-			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
+			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).frequency);
+			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).uncoreFrequency);
 		}
-		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
+		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).nthreads);
 	}
 	
 	void save()
@@ -72,6 +72,7 @@ public:
 			if (_storeList[i]->getMPIWrite())
 			{
 				initCounter = _storeList[i]->initStore(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _nodeName);
+
 				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			}
 		}
@@ -84,6 +85,7 @@ protected:
 	int _MPIglobalSize;
 	int _MPInodeRank;
 	int _MPInodeSize;
+	int _nodeId;
 	std::string _nodeName;
 	MPI_Comm _currentNode;
 	MPI_Comm _storingProcs;

@@ -12,7 +12,7 @@ std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("hdeemMeasurement"));
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 
-std::map<std::string, RegionParameters> Meric::parameter;
+std::map< std::pair<std::string, int>, RegionParameters> Meric::parameter;
 std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
@@ -68,6 +68,25 @@ void Meric::readRegionParameters()
 	int bracketCounter = 0;
 	std::vector<std::string> values;
 	Tokenizer tokenizer("region.options");
+
+	auto regionValues = [&values] (RegionParameters &region, size_t index)
+	{
+		for (size_t i = index; i < values.size(); i += 2)
+		{
+			std::stringstream ss(values[i + 1]);
+			if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY"))
+			{
+				ss >> region.frequency;
+			}else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY"))
+			{
+				ss >> region.uncoreFrequency;
+			}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) 
+			{
+				ss >> region.nthreads;
+			}
+		}
+	};
+
 	while (tokenizer.next() != Tokenizer::Token::END) {
 		if (bracketCounter < 0)
 			break;
@@ -76,26 +95,63 @@ void Meric::readRegionParameters()
 			values.push_back(tokenizer.value());
 			break;
 		case Tokenizer::Token::OBJECT_OPEN:
-			if ((bracketCounter == 1 && values.size() == 1) || (bracketCounter == 0 && values.size() == 0) ) 
+				bracketCounter++;
+				break;
+/*			if ((bracketCounter == 1 && values.size() == 1) || (bracketCounter == 0 && values.size() == 0) ) 
 				bracketCounter++;
 			else
 			{
 				std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
+
+for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
 				bracketCounter = -1;
 			}
 			break;
+*/
 		case Tokenizer::Token::OBJECT_CLOSE:
 			if (bracketCounter == 1)
 			{
-				bracketCounter--;
+				bracketCounter = 0;
 				break;
 			}
-			if ((bracketCounter == 2 && values.size() % 2 != 1) || bracketCounter > 2) {
-				std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-				bracketCounter = -1;
-			} else {
-				RegionParameters &region = Meric::parameter[values[0]];
-				for (size_t i = 1; i < values.size(); i += 2) {
+			else if (bracketCounter == 2) // || bracketCounter > 2)
+			{
+				if (values.size() == 1 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
+				{
+					bracketCounter--;
+					break;	
+				}
+				else if ((values.size() % 2 != 1))
+				{
+					std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
+for (int i=0; i<values.size();i++) std::cout << "\t"<< values[i] << std::endl;
+					bracketCounter = -1;
+					break;
+				}
+				RegionParameters &region = Meric::parameter[std::make_pair(values[0], -1)];
+				regionValues(region, 1);
+				values.clear();
+			}
+			else if (bracketCounter == 3)
+			{
+				values.erase(values.end());
+			}
+			else if (bracketCounter == 4 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
+			{
+				RegionParameters &region = Meric::parameter[std::make_pair(values[2], std::stoi(values[1]))];
+				regionValues(region, 3);
+				values.erase(values.begin()+2, values.end());
+			}
+/*				else
+				{
+					RegionParameters &region = Meric::parameter[values[0]];
+					regionValues(region);
+					values.clear();
+				}
+*/
+
+
+/*				for (size_t i = 1; i < values.size(); i += 2) {
 					if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY")) {
 						std::stringstream ss(values[i + 1]);
 						ss >> region.frequency;
@@ -111,8 +167,7 @@ void Meric::readRegionParameters()
 						MERIC_INFO << "Region '" << values[0] << "' num_threads: " << region.nthreads << "\n";
 					}
 				}
-			}
-			values.clear();
+*/
 			bracketCounter--;
 			break;
 		case Tokenizer::Token::ASSIGN:

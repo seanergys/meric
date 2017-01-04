@@ -75,6 +75,7 @@ public:
 	virtual ~Meric() {};
 
 protected:
+/*
 	const RegionParameters& regionValue(const std::string &region)
 	{
 		if (parameter.find(region) != parameter.end()) {
@@ -83,6 +84,28 @@ protected:
 			return defaultParameter;
 		}
 	}
+*/
+	const RegionParameters& regionValue(const std::string &region, int node = -1)
+	{
+//		pair<string, string> key = make_pair("bob", "sue"); 
+		auto it = parameter.find(std::make_pair(region, node));
+		if	(it != parameter.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			it = parameter.find(std::make_pair(region, -1));
+			if	(it != parameter.end())
+			{
+				return it->second;
+			} else
+			{
+				return defaultParameter;				
+			}	
+		}
+	}
+
 	
 	const std::string& getRegionName(int size, int last)
 	{
@@ -100,7 +123,8 @@ protected:
 		return pos;
 	}
 
-	static std::map<std::string, RegionParameters> parameter;
+//	static std::map<std::string, RegionParameters> parameter;
+	static std::map< std::pair<std::string, int>, RegionParameters> parameter;
 	static RegionParameters defaultParameter;
 
 	static std::vector<int> _stack;
