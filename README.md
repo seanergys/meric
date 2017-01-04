@@ -195,8 +195,9 @@ To find the best settings for each region, you should run your code with all pos
 		- Files can become very big when measured regions run for a long time!
 
 	export MERIC_DETAILED=1
-		- Not only data from blade, but data from Voltage Regulators (VR-CPU1,
+		- Hdeem gives us not only data from blade, but data from Voltage Regulators (VR-CPU1,
 		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too
+		- RAPL returns values for each cpu, but without detailed mode, it is summarized per node
 
 	export MERIC_DEBUG=1
 		- Data are taken both from samples and Stats structure, so we can compare them
