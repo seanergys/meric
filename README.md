@@ -250,6 +250,7 @@ To find the best settings for each region, you should run your code with all pos
 		MERIC_MeasureStart("A");
 		//region A
 		MERIC_MeasureStop();
+	# please, do not use **#** and **@** in names of regions
 	# MPI APPLICATIONS WARNING: Notice that all MPI processes must call Start and Stop for each region, otherwise Meric behavior is undefined. It is not possible to set runtime environment this way, because Meric settings impress whole node and each region settings allow not to follow this restriction.
 
 ## COMPILE YOUR CODE ##
