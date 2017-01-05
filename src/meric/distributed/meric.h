@@ -23,79 +23,34 @@ public:
 
 	void start(const std::string &region)
 	{
-
-if (omp_in_parallel())
-{
-	#pragma omp barrier
-	#pragma omp master
-	{
-			MPI_Barrier(_currentNode);
-			if (!_MPInodeRank) {
-				Environment::frequency(regionValue(region, _nodeId).frequency);
-				Environment::uncoreFrequency(regionValue(region, _nodeId).uncoreFrequency);
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp master
+			{
+				startRegion(region);
 			}
-			Environment::threadNumber(regionValue(region, _nodeId).nthreads);
-			Meric::start(region);
-			_stack.push_back(getRegionID(region));
-	}
-}
-else
-{
-			MPI_Barrier(_currentNode);
-			if (!_MPInodeRank) {
-				Environment::frequency(regionValue(region, _nodeId).frequency);
-				Environment::uncoreFrequency(regionValue(region, _nodeId).uncoreFrequency);
-			}
-			Environment::threadNumber(regionValue(region, _nodeId).nthreads);
-			Meric::start(region);
-			_stack.push_back(getRegionID(region));
-
-}
-
+		}
+		else
+		{
+			startRegion(region);
+		}
 	}
 	
 	void stop()
 	{
-if (omp_in_parallel())
-{
-	#pragma omp barrier
-	#pragma omp master
-	{
-			MPI_Barrier(_currentNode);
-			if (_stack.size())
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp master
 			{
-				Meric::stop();
-				_stack.pop_back();
+				stopRegion();
 			}
-			else
-			{
-				std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			}	
-			if (!_MPInodeRank) {
-				Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).frequency);
-				Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).uncoreFrequency);
-			}
-			Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).nthreads);
-	}
-}
-else
-{
-			MPI_Barrier(_currentNode);
-			if (_stack.size())
-			{
-				Meric::stop();
-				_stack.pop_back();
-			}
-			else
-			{
-				std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			}	
-			if (!_MPInodeRank) {
-				Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).frequency);
-				Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).uncoreFrequency);
-			}
-			Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).nthreads);
-}
+		}
+		else
+		{
+			stopRegion();
+		}
 	}
 	
 	void save()
@@ -136,6 +91,45 @@ protected:
 	MPI_Comm _currentNode;
 	MPI_Comm _storingProcs;
 	MPI_Comm _worldCopy;
+
+private:
+	void startRegion (const std::string &region)
+	{
+		MPI_Barrier(_currentNode);
+		if (!_MPInodeRank)
+		{
+			std::cerr << "START " << region << std::endl;
+			Environment::frequency(regionValue(region, _nodeId).frequency);
+			Environment::uncoreFrequency(regionValue(region, _nodeId).uncoreFrequency);
+		}
+		Environment::threadNumber(regionValue(region, _nodeId).nthreads);
+		Meric::start(region);
+		_stack.push_back(getRegionID(region));
+		return;
+	}
+
+	void stopRegion()
+	{
+		MPI_Barrier(_currentNode);
+		if (_stack.size())
+		{
+			Meric::stop();
+			_stack.pop_back();
+		}
+		else
+		{
+			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+		}	
+		if (!_MPInodeRank) 
+		{
+			std::cerr << "STOP" << std::endl;
+			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).frequency);
+			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).uncoreFrequency);
+		}
+		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).nthreads);
+		return;
+	}
+
 };
 
 }

@@ -223,6 +223,8 @@ To find the best settings for each region, you should run your code with all pos
 --------------------------------------------------------------------------------
 #      7] Measure energy consumption of your code at Taurus                    #
 --------------------------------------------------------------------------------
+## BEFORE WE START ##
+	If you want to use Meric with your parallel application, keep in mind, that all Meric regions must call all processes and all running threads, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node and each region settings allows not to follow this restriction. Because of this, each MeasureStart and MeasureStop starts with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
 
 ## COMPILE MERIC ##
 	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
@@ -252,7 +254,6 @@ To find the best settings for each region, you should run your code with all pos
 		//region A
 		MERIC_MeasureStop();
 	# please, do not use **#** and **@** in names of regions
-	# MPI APPLICATIONS WARNING: Notice that all MPI processes must call Start and Stop for each region, otherwise Meric behavior is undefined. It is not possible to set runtime environment this way, because Meric settings impress whole node and each region settings allow not to follow this restriction.
 
 ## COMPILE YOUR CODE ##
 	# edit Makefile

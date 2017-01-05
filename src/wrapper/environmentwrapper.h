@@ -91,7 +91,6 @@ public:
 	{
 		if (nthreads <= 0)
 			return;
-		std::cout << "set num treads to: " << nthreads << std::endl;
 /*		int running = 0;
 		running = omp_get_num_threads();
 		if (nthreads != running)
@@ -101,12 +100,18 @@ public:
 			omp_set_num_threads(nthreads);
 		}
 */
-		omp_set_num_threads(nthreads);
+		if (!omp_in_parallel())
+		{
+			std::cout << "set num threads to: " << nthreads << std::endl;
+			omp_set_num_threads(nthreads);
+		}
+/*
 #ifdef HAVE_CILK_CILK_API_H
 		//using cilk
 		__cilkrts_end_cilk();  
 		__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
 #endif
+*/
 	}
 	
 	static void init(RegionParameters defaultParameter, int rank)

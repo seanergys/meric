@@ -14,64 +14,34 @@ public:
 	
 	void start(const std::string &region)
 	{
-if (omp_in_parallel())
-{
-	#pragma omp barrier
-	#pragma omp master
-	{
-			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
-			Environment::frequency(regionValue(region).frequency);
-			Environment::threadNumber(regionValue(region).nthreads);
-			Meric::start(region);
-			_stack.push_back(getRegionID(region));
-	}
-}
-else
-{
-			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
-			Environment::frequency(regionValue(region).frequency);
-			Environment::threadNumber(regionValue(region).nthreads);
-			Meric::start(region);
-			_stack.push_back(getRegionID(region));
-}
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp master
+			{
+				startRegion(region);
+			}
+		}
+		else
+		{
+			startRegion(region);
+		}
 	}
 	
 	void stop()
 	{
-if (omp_in_parallel())
-{
-	#pragma omp barrier
-	#pragma omp master
-	{
-			if (_stack.size())
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp master
 			{
-				Meric::stop();
-				_stack.pop_back();
+				stopRegion();
 			}
-			else
-			{
-				std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			}
-			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
-			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
-			Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
-	}
-}
-else
-{
-	if (_stack.size())
-	{
-		Meric::stop();
-		_stack.pop_back();
-	}
-	else
-	{
-		std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-	}
-	Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
-	Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
-	Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
-}
+		}
+		else
+		{
+			stopRegion();
+		}
 	}
 	
 	void save()
@@ -86,6 +56,35 @@ else
 
 	SharedMeric();
 	~SharedMeric();
+private:
+	void startRegion(const std::string &region)
+	{
+		std::cerr << "START " << region << std::endl;
+		Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
+		Environment::frequency(regionValue(region).frequency);
+		Environment::threadNumber(regionValue(region).nthreads);
+		Meric::start(region);
+		_stack.push_back(getRegionID(region));
+		return;
+	}
+	
+	void stopRegion()
+	{
+		std::cerr << "STOP" << std::endl;
+		if (_stack.size())
+		{
+			Meric::stop();
+			_stack.pop_back();
+		}
+		else
+		{
+			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+		}
+		Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
+		Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
+		Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
+		return;
+	}
 };
 
 }
