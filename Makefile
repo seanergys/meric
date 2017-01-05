@@ -31,7 +31,7 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -O0 -g" --verbose
 	make install
 
 dummy:

@@ -30,14 +30,12 @@ public:
 
 	static void frequency(uint64_t freq)
 	{
-		MERIC_INFO << "change frequency to " << freq << "\n";
 #ifdef HAVE_CPUFREQ_H
-		std::cout << "set frequency to: " << freq << "\n";
+		MERIC_INFO << "set frequency to: " << freq << "\n";
 		int ret;
 		const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
 		for (int i=0; i < nodeSize; i++)
 		{
-//			std::cout << "set freq "<<freq<<" for cpu "<<i<<std::endl;
 			ret = cpufreq_set_frequency(i,freq*FREQ_MULT);
 
 			if(ret != 0 || freq*FREQ_MULT != cpufreq_get_freq_kernel(i))
@@ -52,12 +50,11 @@ public:
 	
 	static void uncoreFrequency(uint64_t freq)
 	{
-		MERIC_INFO << "change uncore frequency to " << freq << std::endl;
 #ifdef HAVE_X86_ADAPT_H
 		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 			return;
 
-		std::cout << "set uncore frequency to: "<< freq << std::endl;
+		MERIC_INFO << "set uncore frequency to: "<< freq << std::endl;
 		const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 		for (int die=0; die<max; die++)
 		{
@@ -102,7 +99,7 @@ public:
 */
 		if (!omp_in_parallel())
 		{
-			std::cout << "set num threads to: " << nthreads << std::endl;
+			MERIC_INFO << "set num threads to: " << nthreads << std::endl;
 			omp_set_num_threads(nthreads);
 		}
 /*

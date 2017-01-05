@@ -8,7 +8,7 @@
 #include <iomanip>
 
 
-#ifdef __MERIC_DEBUG__
+#ifdef VERBOSE
 #define MERIC_INFO std::cout
 #else
 #define MERIC_INFO if (true); else std::cout

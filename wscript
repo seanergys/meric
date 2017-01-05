@@ -10,6 +10,8 @@ def configure(ctx):
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
+    if ctx.options.verbose:
+        ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
     else:
@@ -77,6 +79,13 @@ def build(ctx):
 
 
 def options(opt):
+    opt.add_option(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="verbose"
+    )
+    
     opt.add_option(
         "--dummy",
         action="store_true",

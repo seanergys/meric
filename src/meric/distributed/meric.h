@@ -98,7 +98,6 @@ private:
 		MPI_Barrier(_currentNode);
 		if (!_MPInodeRank)
 		{
-			std::cerr << "START " << region << std::endl;
 			Environment::frequency(regionValue(region, _nodeId).frequency);
 			Environment::uncoreFrequency(regionValue(region, _nodeId).uncoreFrequency);
 		}
@@ -122,7 +121,6 @@ private:
 		}	
 		if (!_MPInodeRank) 
 		{
-			std::cerr << "STOP" << std::endl;
 			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).frequency);
 			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back()), _nodeId).uncoreFrequency);
 		}

@@ -59,7 +59,6 @@ public:
 private:
 	void startRegion(const std::string &region)
 	{
-		std::cerr << "START " << region << std::endl;
 		Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
 		Environment::frequency(regionValue(region).frequency);
 		Environment::threadNumber(regionValue(region).nthreads);
@@ -70,7 +69,6 @@ private:
 	
 	void stopRegion()
 	{
-		std::cerr << "STOP" << std::endl;
 		if (_stack.size())
 		{
 			Meric::stop();
