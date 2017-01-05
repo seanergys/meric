@@ -14,17 +14,17 @@ all: mpiTest basicTest blasTest
 
  ######
 mpiTest: test_mpi.cpp
-	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -fopenmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -qopenmp $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -fopenmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -qopenmp  $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
 
 blasTest: blas_test.c
 	$(info )
 	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
 	$(info )
 	module load mkl;
-	$(CC)   -O0 -g blas_test.c      -L../lib -I../include -lmeric -mkl      $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
+	$(CC) -O0 -g blas_test.c      -L../lib -I../include -lmeric -mkl -qopenmp     $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
 
 
  ######
