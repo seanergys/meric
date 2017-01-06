@@ -2,6 +2,7 @@
 #ifndef SRC_WRAPPER_HDEEMWRAPPER_H_
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
+#include "../basis/utils.h"
 #include "../../hdeem/hdeem.h"
 #include <cstdlib>
 #include <iostream>
@@ -23,18 +24,16 @@ public:
 	static void close() { hdeem_close(&bmc); }
 	static void start() 
 	{
-		int status = hdeem_start(&bmc);
-		if (status)
+	MERIC_INFO << "HDEEM START\n";
+		if (hdeem_start(&bmc))
 		{
-			checkHDEEM(status, "start");
-		}
-		else	//second start according to hdeem reference guide
-		{
+			//second start according to hdeem reference guide
+			std::cerr << "HDEEM ERROR: function start (1st), trying 2nd start...\n";
 			checkHDEEM(hdeem_clear(&bmc), "clear");
-			status = hdeem_start(&bmc);
+			int status = hdeem_start(&bmc);
 			if (status)
 			{
-				checkHDEEM(status, "start");
+				checkHDEEM(status, "start (2nd)");
 				exit(99);
 			}
 		}
