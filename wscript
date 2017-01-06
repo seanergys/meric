@@ -6,7 +6,7 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC" , "-fopenmp"])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC" , "-qopenmp"])
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
@@ -118,5 +118,5 @@ def options(opt):
         "--flags",
         action="store",
         default="-O2",
-        help="Compiler flags (-std=c++14, -fPIC and -fopenmp are default)"
+        help="Compiler flags (-std=c++14, -fPIC and -qopenmp are default)"
     )
