@@ -146,9 +146,12 @@ void RAPL::initMap(std::map<std::string, long> & dict)
 
 	if (detailedMode)
 	{
-		for(int die = 0; die != names.size(); die++)
+		for(int die = 0; die != numOfDevices; die++)
 		{
-			dict[names[die] + suffix + std::to_string(die)] = 0;
+			for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
+			{
+				dict[*it + suffix + std::to_string(die)] = 0;
+			}
 		}
 	}else
 	{
