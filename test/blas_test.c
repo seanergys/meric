@@ -8,13 +8,19 @@
 #include <time.h>
 #include <meric.h>
 
+double timespec2double(timespec time) 
+{
+	return time.tv_sec + (double)time.tv_nsec/1e9;
+}
+
 int main()
 {
     double *A, *B, *C, *Vmat, *v, *vOut;
     int m, n, k, i, j, vMatN;
-    double alpha, beta;
-    time_t regionTime;
+    double alpha, beta, timeAvg, gflop;
+    timespec timeStart, timeEnd;
     int loopDGEMM, loopDGEMV;
+    struct timeval stime, etime, diff;
 //-------------------------------------------------------------------
 MERIC_Init();
 MERIC_MeasureStart("main");
@@ -26,12 +32,17 @@ MERIC_MeasureStart("main");
     loopDGEMV=125; //550;
 */
 //-------------------------------------------------------------------
-// /*
+/*
     printf("SMALL MATRICES\n\n");
     m = 500, k = 500, n = 500, vMatN=500;
     loopDGEMM=4500; //5000;
     loopDGEMV=450000;//500000;
-// */
+*/
+//-------------------------------------------------------------------
+    printf("FLOPs mearurement TEST\n\n");
+    m = 3000, k = 3000, n = 3000, vMatN=500;
+    loopDGEMM=100; //5000;
+    loopDGEMV=0;//500000;
 //-------------------------------------------------------------------
     alpha = 1.0; beta = 0.0;
 
@@ -106,15 +117,22 @@ MERIC_MeasureStop();
 
 
     printf ("\n Computing matrix product using Intel(R) MKL dgemm function via CBLAS interface \n\n");
-    regionTime = time(NULL);
+    clock_gettime(CLOCK_REALTIME, &timeStart);
+
 MERIC_MeasureStart("DGEMM");
     for(int i=0;i<loopDGEMM;i++)
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
                     m, n, k, alpha, A, k, B, n, beta, C, n);
 MERIC_MeasureStop();
-    regionTime = time(NULL) - regionTime;
-    printf(" >>> DGEMM TIME: %ld\n", regionTime);
 
+    clock_gettime(CLOCK_REALTIME, &timeEnd);
+    printf(" >>> DGEMM TIME: %lf\n", timespec2double(timeEnd)-timespec2double(timeStart));
+  
+    timeAvg = (timespec2double(timeEnd) - timespec2double(timeStart))/loopDGEMM;
+    gflop = (2.0*m*n*k + 1.0*m*n)*1E-9;
+    printf("Average time:%e secs \n", timeAvg);
+    printf("GFlop       :%.5f \n", gflop);
+    printf("GFlop/sec   :%.5f \n", gflop/timeAvg);
 
 /*
     printf("\n Matrix C:\n");
@@ -150,14 +168,14 @@ MERIC_MeasureStop();
 
 
     printf("\n Computing matrix-vector product using dgemv function. \n\n");
-    regionTime = time(NULL);
+    clock_gettime(CLOCK_REALTIME, &timeStart);
 MERIC_MeasureStart("DGEMV");
     for(int i=0;i<loopDGEMV;i++)
         cblas_dgemv(CblasRowMajor, CblasNoTrans, 
                     vMatN, vMatN, alpha, Vmat, vMatN, v, 1, beta, vOut, 1);
 MERIC_MeasureStop();
-    regionTime = time(NULL) - regionTime;
-    printf(" >>> DGEMV TIME: %ld\n", regionTime);
+    clock_gettime(CLOCK_REALTIME, &timeEnd);
+    printf(" >>> DGEMV TIME: %lf\n", timespec2double(timeEnd)-timespec2double(timeStart));
 
 /*
     printf("\n Vector vOut:\n");
