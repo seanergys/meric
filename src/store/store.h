@@ -74,7 +74,7 @@ public:
 		
 		//CALLTREE init counter
 		mutils::createDir(outputDir + "Counters");
-        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + prefix + outputFilename + ".tmp";
+        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
 
 		std::ifstream iFile(startCounterFile);
 		if(iFile.is_open())
