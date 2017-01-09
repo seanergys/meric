@@ -20,7 +20,7 @@ public:
 	
 	//Packed SP GFLOP/s = 1.0E-09*(AVX_INSTS_CALC*8)/runtime;
 	//Packed DP GFLOP/s = 1.0E-09*(AVX_INSTS_CALC*4)/runtime;
-	static double FLOPS(long long avx, double time) {return (1.0E-09*(avx*4)/time); };
+	static double FLOPS(long long avx, double time) {return (1.0E-09*(avx*8)/time); };
 
 };
 
