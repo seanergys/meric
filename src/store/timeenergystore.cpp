@@ -121,6 +121,14 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
         last = 1;
     }
 
+    if (energyConsumption <= 0.0)
+  	{
+  		if (duration <= 0.4)
+	    	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
+	    else
+	    	std::cerr << "MERIC ERROR: No HDEEM samples\n";
+	}
+	
 	ss << "# Blade summary" << std::endl
 	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
 	   << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl

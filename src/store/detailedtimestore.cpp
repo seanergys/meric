@@ -56,6 +56,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
     } else {
         first = 0;
         last = 1;
+        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
     }
 
 	ss << "# Blade summary" << std::endl
@@ -106,6 +107,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
             avgWatts = energy/(last-first);
             energyConsumption = duration * energy / (last - first);
         } else {
+        	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
             firstPrinted = 0;
             lastPrinted = 1;
         }
