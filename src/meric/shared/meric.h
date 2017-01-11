@@ -46,6 +46,10 @@ public:
 	
 	void save()
 	{
+		if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+		{
+			HDEEM::stop();
+		}
 		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
 		{

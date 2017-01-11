@@ -55,7 +55,6 @@ SharedMeric::~SharedMeric()
 	Environment::close();
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
-		HDEEM::stop();
 		HDEEM::close();
 	}
 	

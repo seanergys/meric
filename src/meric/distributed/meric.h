@@ -67,6 +67,11 @@ public:
 			}
 		}
 */
+
+		if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
+		{
+			HDEEM::stop();
+		}
 		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
 		{
@@ -77,7 +82,6 @@ public:
 				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
 			}
 		}
-		sleep(1);
 		MPI_Barrier(_currentNode);
 	}
 

@@ -159,7 +159,6 @@ DistributedMeric::~DistributedMeric()
 {
 	if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
 	{
-		HDEEM::stop();
 		HDEEM::close();
 	}
 	Environment::close();

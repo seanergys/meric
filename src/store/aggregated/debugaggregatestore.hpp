@@ -121,9 +121,6 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
         maxEnergyStatsStruct = 0;
         minEnergyStatsStruct = _buffer[0].energyStatsStructure[sensorID];
 
-
-        std::cout << minEnergy << std::endl;
-
         // Iterate through nodes
         for (size_t i = 0; i < this->_size; i++) {
             if(maxEnergy < _buffer[i].energy[sensorID]) {

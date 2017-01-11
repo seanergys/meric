@@ -26,6 +26,13 @@ void TimeStore::computePeriods()
 	_meric_period = _end - _start;
 	_hdeem_duration = _hdeem_period.tv_sec + (double)_hdeem_period.tv_nsec / 1e9;
 	_meric_duration = _meric_period.tv_sec + (double)_meric_period.tv_nsec / 1e9;
+	
+	
+	
+MERIC_INFO << "DURATION: " << _meric_duration << std::endl;
+MERIC_INFO << "DURATION hdeem: " << _hdeem_duration << std::endl;
+MERIC_INFO << "Real blade freq: "<< status.total_blade_values /_hdeem_duration <<std::endl;
+MERIC_INFO << "Real vr freq: " << status.total_vr_values /_hdeem_duration << std::endl;
 }
 
 void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
@@ -133,14 +140,21 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
     } else {
         first = 0;
         last = 1;
+        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
     }
-    
-    if (energyConsumption <= 0.0)
-  	{
-  		if (duration <= 0.4)
-	    	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
-	    else
-	    	std::cerr << "MERIC ERROR: No HDEEM samples\n";
+
+	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
+	{
+		std::cerr << "LOW amount of hdeem samples!!!\n";
+		std::cerr << 1+last-first << " samples in "<<duration <<" sec\n";
+		std::cerr << "IN REGION WITH CALLTREE: init_" << _initCounter;
+		for (size_t j = 0; j < iStarts.size()-1; j++)
+		{
+			std::cerr << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
+		}
+		std::cerr << std::endl;
+		
+		
 	}
 	
 	ss << "# Blade summary" << std::endl
