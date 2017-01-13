@@ -21,7 +21,7 @@ extern "C"
 #include <string.h>
 #endif
 
-#define HDEEM_VERSION "2.2.2"
+#define HDEEM_VERSION "2.2.20ms"
 
 #define StartedBy(status)			((status >> 1 & 1) ? "IPMI" : "GPIO")
 #define IsStartedByIpmi(status)			(status >> 1 & 1)
@@ -139,7 +139,6 @@ typedef struct hdeem_status{
 #include <freeipmi/freeipmi.h>
 #include <freeipmi/api/ipmi-api.h>
 
-
 /* Describe how to connect to the BMC */
 typedef struct hdeem_bmc_data {
 	char * host;
@@ -157,6 +156,8 @@ typedef struct hdeem_bmc_data {
 	int vr_frequency;
 	struct timespec skew_blade;
 	struct timespec skew_vr;
+	int lib2d[2], d2lib[2], de2lib[2];
+	int hdeemd_pid;
 } hdeem_bmc_data_t;
 
 /* One snapshot of the blade power sensor(s) */

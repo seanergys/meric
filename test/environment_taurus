@@ -14,7 +14,7 @@ modules()
         module purge
         module load intel/2016.1.150
         module load mpirt/5.1.2.150
-        module load hdeem/2.2.2
+        module load hdeem/2.2.20ms
         module load papi/5.4.1
 }
 
@@ -57,11 +57,11 @@ modules
  ### ENVIRONMENT VARIABLES ###
 export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25 
-export MERIC_NUM_THREADS=12
+#export MERIC_NUM_THREADS=12
 export MERIC_COUNTERS=perfevent	#perfevent papi
 export MERIC_MODE=2	#enum {hdeem=0, rapl=1, both=2, run=3}
 export MERIC_AGGREGATE=0
-export MERIC_CONTINUAL=0
+export MERIC_CONTINUAL=1
 export MERIC_DETAILED=1
 # export MERIC_DEBUG=1
 

@@ -63,7 +63,7 @@
 	# in the interactive job load necessary modules
 		module load intel/2016.1.150
 		module load mpirt/5.1.2.150
-		module load hdeem/2.2.2
+		module load hdeem/2.2.20ms
 		module load papi/5.4.1
 
 	# compile MERIC
@@ -232,7 +232,7 @@ If you want to insert Meric regions into code you don't know, instead of Meric p
 	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
 	module load intel/2016.1.150
 	module load mpirt/5.1.2.150
-	module load hdeem/2.2.2
+	module load hdeem/2.2.20ms
 	module load papi/5.4.1
 	make
 
