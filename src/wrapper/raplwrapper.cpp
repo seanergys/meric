@@ -26,7 +26,7 @@ TIME    ENERGY     POWER
 9876 543 21098 7654 3210
 */
 const uint64_t RAPLpowerMask  = 0xF;
-const uint64_t RAPLenergyMask = 0xF00;
+const uint64_t RAPLenergyMask = 0x1F00;
 const uint64_t RAPLenergyShift= 8;
 const uint64_t RAPLtimeMask   = 0xF0000;
 const uint64_t RAPLtimeShift  = 16;
@@ -43,13 +43,14 @@ int RAPL::numOfDevices = 1;
 bool RAPL::detailedMode = false;
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
-double RAPL::energyUnit = 1.0;
+std::map<std::string, double> RAPL::energyUnit;
 
 void RAPL::init()
 {
 	numOfDevices = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	initMap(counters);
 
+	//set unit modifier for Intel_RAPL_Pckg_Energy
 	uint64_t unit;
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0); //TODO ignoring the fact that different sockets may have different units (rest of the function is done only for the first socket)
 	if (fd < 0)
@@ -63,9 +64,18 @@ void RAPL::init()
 	x86_adapt_get_setting(fd, itemId, &unit);
 	unit &= RAPLenergyMask;
 	unit >>= RAPLenergyShift;
-	energyUnit = 1.0/pow(2,unit);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+	
+	energyUnit["Intel_RAPL_Pckg_Energy"] = 1.0/pow(2,unit);
+	//the rest unit modifiers are set according to x86_adapt "documentation"
+	//https://github.com/tud-zih-energy/x86_energy/blob/eac130973b2fbfa0b5a3e72ef9912af617584d97/rapl.c#L763
+	energyUnit["Intel_RAPL_RAM_Energy"] = 1.0/pow(2,16);
+	energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"] = 1.0/pow(2,18);
+	energyUnit["Intel_DRAM_ENERGY_STATUS_CH1"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
+	energyUnit["Intel_DRAM_ENERGY_STATUS_CH2"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
+	energyUnit["Intel_DRAM_ENERGY_STATUS_CH3"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
+
 }
 
 void RAPL::getValues(std::map<std::string, long> & record) 
@@ -97,9 +107,14 @@ void RAPL::getValues(std::map<std::string, long> & record)
 					std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
 					continue;
 				}
+				if (!energyUnit.count(itemName))
+				{
+					std::cerr << "X86ADAPT RAPL missing unit modifier for counter - " << itemName <<" Add modifier in RAPL::init()"<<std::endl;
+					continue;					
+				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-	//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit <<std::endl;
-				record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit;
+	//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit[itemName] <<std::endl;
+				record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit[itemName];
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -119,7 +134,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += dieEnergy*energyUnit;
+				record [iterator->first] += dieEnergy*energyUnit[iterator->first];
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";

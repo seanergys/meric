@@ -23,7 +23,7 @@ public:
 private:
 		//list of counters
 	static std::map<std::string, long> counters;
-	static double energyUnit;
+	static std::map<std::string, double> energyUnit;
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
