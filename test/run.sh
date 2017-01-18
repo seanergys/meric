@@ -5,7 +5,7 @@
 #SBATCH -A p_readex	#to account your compute time on the readex project
 #SBATCH --mem 62000	#to the memory available on the node. Some nodes have more memory. Please see the documentation.
 	##SBATCH --mem=126000
-#SBATCH -t 0-0:10
+#SBATCH -t 0-1:00
 #SBATCH --comment="cpufreqchown"
 #SBATCH --cpu-freq=Low
 	##SBATCH --mail-type=ALL
@@ -21,38 +21,46 @@
 
 # sbatch run.sh
 # squeue -u $USER
-###############################################################################
+################################################################################
 
-# LOAD MODULES
+# LOAD MODULES #################################################################
 module purge
 module load intel/2016.1.150
 module load mpirt/5.1.2.150
 module load hdeem/2.2.20ms
 module load papi/5.4.1
 
-# COMPILE
+# COMPILE ######################################################################
 make
 
-# SET MERIC OUTPUT
-#export MERIC_COUNTERS=perfevent
-export MERIC_MODE=2
-export MERIC_DEBUG=1
-# export MERIC_AGGREGATE=0
-# export MERIC_DETAILED=0
-# export MERIC_CONTINUAL=0
+# RUN FIRST TEST TO AVOID HDEEM ERROR ##########################################
+export MERIC_FREQUENCY=25
+export MERIC_UNCORE_FREQUENCY=25
+mpirun -n 24 ./test_mpi
+make cleanAll
+make
 
-# FOR EACH SETTINGS
+# SET MERIC OUTPUT #############################################################
+export MERIC_OUTPUT_DIR="TESTMPI"
+export MERIC_COUNTERS=perfevent
+export MERIC_MODE=2
+# export MERIC_DEBUG=1
+export MERIC_AGGREGATE=0
+export MERIC_DETAILED=1
+export MERIC_CONTINUAL=1
+
+# RUN THE CODE FOR EACH SETTINGS ###############################################
+echo "RUNNING"
 for proc in 24
 do
-	for thread in 1  #{1..24..1}
+	for thread in 1  #{24..1..1}
 	do
-		for cpu_freq in 12 14 # {12..25..1}
+		for cpu_freq in 16 14 12 # {25..12..1}
 		do
-			for uncore_freq in 28 30 #{12..30..1}
+			for uncore_freq in 30 28 26 #{30..12..1}
 			do
-				# OUTPUT NAMES
+				# OUTPUT FILE NAME
 				export MERIC_OUTPUT_FILENAME=$thread"_"$cpu_freq"_"$uncore_freq
-				export MERIC_OUTPUT_DIR="TESTMPI"
 
 				# TEST SETTINGS
 				export MERIC_NUM_THREADS=$thread
@@ -61,7 +69,8 @@ do
 
 				# RUN THE TEST
 				echo
-				echo TEST $MERIC_OUTPUT_FILENAME
+				echo TEST $MERIC_OUTPUT_FILENAME 
+				mpirun -n $proc ./test_mpi
 				mpirun -n $proc ./test_mpi
 
 			done
