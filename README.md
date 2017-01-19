@@ -261,7 +261,7 @@ If you want to insert Meric regions into code you don't know, instead of Meric p
 	# edit Makefile
 		-I$(PATH_TO_MERIC)/include
 		-L$(PATH_TO_MERIC)/lib
-		-L../hdeem -lhdeem -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
+		-L../hdeem -lhdeem -lfreeipmi -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 		-lmeric OR FOR MPI APPS -lmericmpi 
 
 	# of if application is compiled using waf (such as ESPRESO Solver)
@@ -272,6 +272,7 @@ If you want to insert Meric regions into code you don't know, instead of Meric p
 			def configure(ctx):
 			    ctx.env.append_unique("LIB", "meric")  # OR "mericmpi"
 			    ctx.env.append_unique("LIB", "hdeem")
+			    ctx.env.append_unique("LIB", "freeipmi")
 			    ctx.env.append_unique("LIB", "cpufreq")
 			    ctx.env.append_unique("LIB", "x86_adapt")
 			    ctx.env.append_unique("LIB", "papi")
