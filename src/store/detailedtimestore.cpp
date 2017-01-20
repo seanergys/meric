@@ -56,7 +56,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
     } else {
         first = 0;
         last = 1;
-        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
+        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
     }
 
 	ss << "# Blade summary" << std::endl
@@ -76,11 +76,22 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
     unsigned int vrSensorNum = vrSensor.size();
     first = std::ceil(start * _samples.nb_vr_values);
     last  = std::floor(end * _samples.nb_vr_values);
+
+	double firstPrinted = first;
+	double lastPrinted = last; 
+	if(last < 1 || last <= first) 
+	{
+		std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<"\n";
+		firstPrinted = 0;
+		lastPrinted = 1;
+	}
+	
+	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
+	{
+		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
+	}
     
     for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
-        double firstPrinted = first;
-        double lastPrinted = last; 
-
         ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
         energy = 0;
         maxWatts = 0;
@@ -106,10 +117,6 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
             
             avgWatts = energy/(last-first);
             energyConsumption = duration * energy / (last - first);
-        } else {
-        	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
-            firstPrinted = 0;
-            lastPrinted = 1;
         }
 
         ss << "# Voltage regulator (" << vrSensor[sensorID] << ") summary" << std::endl

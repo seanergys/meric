@@ -140,21 +140,12 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
     } else {
         first = 0;
         last = 1;
-        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
+        std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
     }
 
 	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
 	{
-		std::cerr << "LOW amount of hdeem samples!!!\n";
-		std::cerr << 1+last-first << " samples in "<<duration <<" sec\n";
-		std::cerr << "IN REGION WITH CALLTREE: init_" << _initCounter;
-		for (size_t j = 0; j < iStarts.size()-1; j++)
-		{
-			std::cerr << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
-		}
-		std::cerr << std::endl;
-		
-		
+		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
 	ss << "# Blade summary" << std::endl

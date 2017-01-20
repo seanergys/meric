@@ -117,16 +117,19 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
         avgWatts = energy/(last-first);
         energyConsumption = duration * energy / (last - first);
     } else {
+    	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
         first = 0;
         last = 1;
     }
 
-    if (energyConsumption <= 0.0)
-  	{
-  		if (duration <= 0.4)
-	    	std::cerr << "MERIC ERROR: No HDEEM samples, probably too short region\n";
-	    else
-	    	std::cerr << "MERIC ERROR: No HDEEM samples\n";
+	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
+	{
+		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
+	}
+	
+	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
+	{
+		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
 	ss << "# Blade summary" << std::endl
@@ -147,11 +150,17 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     unsigned int vrSensorNum = vrSensor.size();
     first = std::ceil(start * _samples.nb_vr_values);
     last  = std::floor(end * _samples.nb_vr_values);
-    
-    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
-        double firstPrinted = first;
-        double lastPrinted = last;
 
+	double firstPrinted = first;
+	double lastPrinted = last;
+	if(last < 1 || last <= first) 
+	{
+		std::cerr << "MERIC WARNING: No HDEEM samples, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<"\n";
+		firstPrinted = 0;
+		lastPrinted = 1;
+	}
+
+    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
         ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
         energy = 0;
         maxWatts = 0;
@@ -177,11 +186,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
             
             avgWatts = energy/(last-first);
             energyConsumption = duration * energy / (last - first);
-        } else {
-            firstPrinted = 0;
-            lastPrinted = 1;
-        }
-
+        } 
+        
         ss << "# Voltage regulator (" << vrSensor[sensorID] << ") summary" << std::endl
            << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl
            << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl
@@ -190,6 +196,11 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
            << "Average power [W] (Samples)" << "," << avgWatts << std::endl
            << "ID of first VR sample" << "," << firstPrinted << std::endl
            << "ID of last VR sample" << "," << lastPrinted-1 << std::endl;
+		
+		if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
+		{
+			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << vrSensor[sensorID]<<"\n";
+		}
     }
 
 }
