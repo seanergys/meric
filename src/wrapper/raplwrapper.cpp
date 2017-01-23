@@ -71,7 +71,7 @@ void RAPL::init()
 	//the rest unit modifiers are set according to x86_adapt "documentation"
 	//https://github.com/tud-zih-energy/x86_energy/blob/eac130973b2fbfa0b5a3e72ef9912af617584d97/rapl.c#L763
 	energyUnit["Intel_RAPL_RAM_Energy"] = 1.0/pow(2,16);
-	energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"] = 1.0/pow(2,18);
+	energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"] = 1.0/pow(2,16);	//1.0/pow(2,18)
 	energyUnit["Intel_DRAM_ENERGY_STATUS_CH1"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
 	energyUnit["Intel_DRAM_ENERGY_STATUS_CH2"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
 	energyUnit["Intel_DRAM_ENERGY_STATUS_CH3"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
