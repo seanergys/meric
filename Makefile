@@ -21,7 +21,7 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES)"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) " #-DVERBOSE"
 
 install:
 	./waf install #-v
