@@ -14,6 +14,7 @@ public:
 	
 	void start(const std::string &region)
 	{
+#ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
 			#pragma omp barrier
@@ -23,6 +24,7 @@ public:
 			}
 		}
 		else
+#endif
 		{
 			startRegion(region);
 		}
@@ -30,6 +32,7 @@ public:
 	
 	void stop()
 	{
+#ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
 			#pragma omp barrier
@@ -39,6 +42,7 @@ public:
 			}
 		}
 		else
+#endif
 		{
 			stopRegion();
 		}

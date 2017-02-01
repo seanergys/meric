@@ -17,7 +17,9 @@
 #include <cilk/cilk_api.h> 
 #endif
 
+#ifdef HAVE_OMP_H
 #include <omp.h>
+#endif
 #include <unistd.h>
 
 const int FREQ_MULT = 100000;
@@ -97,11 +99,13 @@ public:
 			omp_set_num_threads(nthreads);
 		}
 */
+#ifdef HAVE_OMP_H
 		if (!omp_in_parallel())
 		{
 			MERIC_INFO << "set num threads to: " << nthreads << std::endl;
 			omp_set_num_threads(nthreads);
 		}
+#endif
 /*
 #ifdef HAVE_CILK_CILK_API_H
 		//using cilk

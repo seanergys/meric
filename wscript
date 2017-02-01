@@ -6,7 +6,8 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC" , "-qopenmp"])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])
+    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])

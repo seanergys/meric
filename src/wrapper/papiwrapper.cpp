@@ -38,9 +38,11 @@ void PAPI::init()
 	if (__cilkrts_get_nworkers() > omp_get_thread_num())
 		ret = PAPI_thread_init((unsigned long (*)(void))(__cilkrts_get_nworkers));
 	else
-#endif
+#elif HAVE_OMP_H 
 		ret = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
-		
+#else
+	ret = PAPI_OK;
+#endif		
 	if (ret != PAPI_OK)
 	{
 		printf("PAPI thread init error\n");
