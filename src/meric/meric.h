@@ -27,7 +27,6 @@ struct RegionParameters {
 };
 
 class Meric {
-
 public:
 	static void readRegionParameters();
 
@@ -35,6 +34,7 @@ public:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
+	static bool SAMPLES;
 	static int MODE;
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;

@@ -52,10 +52,15 @@ public:
 		iterate(_records, processInterval);
 	}
 
-	EnergyStore(bool write) : Store(write)
+	EnergyStore(bool samples, bool write) : Store(samples, write)
 	{
 		MERIC_INFO << "Create EnergyStore\n";
 	}
+	EnergyStore(bool samples)
+	{
+		MERIC_INFO << "Create EnergyStore\n";
+	}
+	
 	EnergyStore()
 	{
 		MERIC_INFO << "Create EnergyStore\n";

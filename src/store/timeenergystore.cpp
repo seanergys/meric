@@ -92,7 +92,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     // Blade values //
     //////////////////
 
-	ss << "# Blade samples" << std::endl;
+	if(printSamples)
+		ss << "# Blade samples" << std::endl;
 
 	double energy = 0;
     double maxWatts = 0;
@@ -112,7 +113,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
             }
 
             energy += valTmp;
-            ss << it << "," << valTmp << std::endl;
+            if (printSamples)
+	            ss << it << "," << valTmp << std::endl;
         }
         avgWatts = energy/(last-first);
         energyConsumption = duration * energy / (last - first);
@@ -160,8 +162,10 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		lastPrinted = 1;
 	}
 
-    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
-        ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
+    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++)
+    {
+    	if (printSamples)
+	        ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
         energy = 0;
         maxWatts = 0;
         minWatts = 0;
@@ -181,7 +185,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
                 } 
         
                 energy += valTmp;
-                ss << it << "," << valTmp << std::endl;
+                if(printSamples)
+	                ss << it << "," << valTmp << std::endl;
             }
             
             avgWatts = energy/(last-first);

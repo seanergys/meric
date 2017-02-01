@@ -205,6 +205,10 @@ To find the best settings for each region, you should run your code with all pos
 		- Only for measurement check - there can be larger overhead because of two
 		  types of data processing performed simultaneously
 
+	export MERIC_SAMPLES=1
+		- when using HDEEM samples to read the energy consumtion, MERIC prints 
+		  each sample to the output file, if MERIC_SAMPLES is set
+
 	export MERIC_AGGREGATE=1
 		- ONLY for distributed applications!
 		- Aggregates data from all nodes - there are both average values and sums

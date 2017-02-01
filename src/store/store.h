@@ -41,8 +41,8 @@ public:
 	virtual void addStart(int region) = 0;
 	virtual void addEnd(int region) = 0;
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
-	StoreBase() {};
-	StoreBase(bool write) : MPIProcessWrite(write) {};
+	StoreBase(bool samples = false) : printSamples(samples) {};
+	StoreBase(bool samples, bool write) : printSamples(samples), MPIProcessWrite(write) {};
 //	StoreBase(bool write = true) : MPIProcessWrite(write) {};
 	virtual ~StoreBase() {};
 	void setRegionsNames(std::vector<std::string> name) {_name = name;};
@@ -169,6 +169,7 @@ protected:
 	int _stepID;
 	std::string _nodelist;
 	bool MPIProcessWrite;
+	bool printSamples;
 };
 
 class Store: public StoreBase {
@@ -178,8 +179,9 @@ public:
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	Store() : StoreBase() {};
-	Store(bool write) : StoreBase(write) {};
-//	Store(bool write = true) : StoreBase(write) {};
+	Store(bool samples) : StoreBase(samples) {};
+	Store(bool samples, bool write) : StoreBase(samples, write) {};
+//	Store(bool samples, bool write = true) : StoreBase(samples, write) {};
 	virtual ~Store() {};
 };
 

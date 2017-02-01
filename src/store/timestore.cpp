@@ -113,8 +113,10 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
     //////////////////
 
 	ss << "# Store CONTINUAL 1" << std::endl;
-	ss << "# Blade samples" << std::endl;
 
+	if (printSamples)
+		ss << "# Blade samples" << std::endl;
+	
 	double energy = 0;
 	double maxWatts = 0;
     double minWatts = 0;
@@ -133,7 +135,8 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
             }
 
             energy += valTmp;
-            ss << it << "," << valTmp << std::endl;
+            if (printSamples)
+	            ss << it << "," << valTmp << std::endl;
         }
         avgWatts = energy/(last-first);
         energyConsumption = duration * energy / (last - first);

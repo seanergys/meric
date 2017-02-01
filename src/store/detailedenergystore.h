@@ -53,7 +53,12 @@ public:
 		iterate(_records, processInterval);
 	}
 
-	DetailedEnergyStore(bool write) : Store(write)
+	DetailedEnergyStore(bool samples, bool write) : Store(samples, write)
+	{
+		MERIC_INFO << "Create DetailedEnergyStore\n";
+	}
+
+	DetailedEnergyStore(bool samples) : Store(samples)
 	{
 		MERIC_INFO << "Create DetailedEnergyStore\n";
 	}
@@ -62,6 +67,7 @@ public:
 	{
 		MERIC_INFO << "Create DetailedEnergyStore\n";
 	}
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

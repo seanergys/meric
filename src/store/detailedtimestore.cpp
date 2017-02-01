@@ -29,8 +29,9 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
     //////////////////
 
 	ss << "# Store CONTINUAL 1" << std::endl;
-	ss << "# Blade samples" << std::endl;
-
+	
+	if(printSamples)
+		ss << "# Blade samples" << std::endl;
     double energy = 0;
     double maxWatts = 0;
     double minWatts = 0;
@@ -49,7 +50,8 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
             }
 
             energy += valTmp;
-            ss << it << "," << valTmp << std::endl;
+            if (printSamples)
+	            ss << it << "," << valTmp << std::endl;
         }
         avgWatts = energy/(last-first);
         energyConsumption = duration * energy / (last - first);
@@ -91,28 +93,35 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
 	}
     
-    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++) {
-        ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
+    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++)
+    {
+		if(printSamples)
+			ss << "# Voltage regulator (" << vrSensor[sensorID] << ") samples" << std::endl;
         energy = 0;
         maxWatts = 0;
         minWatts = 0;
         avgWatts = 0;
         energyConsumption = 0;
 
-        if(last > 0 && last > first) {
+        if(last > 0 && last > first)
+        {
             maxWatts = _samples.vr_power[first].value[sensorID];
             minWatts = maxWatts;
-            for(size_t it = first; it < last; it++) {
+            for(size_t it = first; it < last; it++)
+            {
                 double valTmp = _samples.vr_power[it].value[sensorID];
 
-                if (valTmp > maxWatts) {
+                if (valTmp > maxWatts)
+                {
                     maxWatts = valTmp;
-                } else if (valTmp < minWatts) {
+                } else if (valTmp < minWatts)
+                {
                     minWatts = valTmp;
                 } 
         
                 energy += valTmp;
-                ss << it << "," << valTmp << std::endl;
+                if (printSamples)
+	                ss << it << "," << valTmp << std::endl;
             }
             
             avgWatts = energy/(last-first);

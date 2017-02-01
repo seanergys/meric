@@ -50,7 +50,7 @@ public:
 	}
 
 //	CountersStore(const std::string wrapper, bool write = true) : Store(write)
-	CountersStore(const std::string wrapper)
+	CountersStore(const std::string wrapper, bool samples) : Store(samples)
 	{
 		if (wrapper == "perfevent")
 			wrapperType = PERFEVENT;
@@ -62,7 +62,7 @@ public:
 		counterLabel = wrapper;
 		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
 	}
-	CountersStore(const std::string wrapper, bool write) : Store(write)
+	CountersStore(const std::string wrapper, bool samples, bool write) : Store(samples, write)
 	{
 		if (wrapper == "perfevent")
 			wrapperType = PERFEVENT;

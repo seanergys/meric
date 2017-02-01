@@ -28,14 +28,14 @@ public:
 
 	AggregateStoreBase(MPI_Comm &comm): _comm(comm)
 	{
-		_store = new TStore();
+		_store = new TStore(false);
 		MPI_Comm_rank(_comm, &_rank);
 		MPI_Comm_size(_comm, &_size);
 	}
 
 	AggregateStoreBase(const std::string counterType, MPI_Comm &comm): _comm(comm)
 	{
-		_store = new TStore(counterType);
+		_store = new TStore(counterType, false);
 		MPI_Comm_rank(_comm, &_rank);
 		MPI_Comm_size(_comm, &_size);
 	}

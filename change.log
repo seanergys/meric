@@ -9,6 +9,7 @@
   - in test folder is an environment script to set MERIC variables
   - region.options file is not loaded implicitly, but user have to set MERIC_REGION_OPTIONS environment variable
   - Meric prints its output only when configured with --verbose (make ddt)
+  - to reduce the output, Meric doesn't print hdeem samples, if MERIC_SAMPLES=1 is not set
   
   - when using counters, there is also an information about flop/s  
 

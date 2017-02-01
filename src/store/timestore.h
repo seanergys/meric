@@ -60,7 +60,13 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeStore(bool write): _hdeem_duration(0), _meric_duration(0), Store(write)
+	TimeStore(bool samples, bool write): _hdeem_duration(0), _meric_duration(0), Store(samples, write)
+	{
+		MERIC_INFO << "Create TimeStore\n";
+		clock_gettime(CLOCK_REALTIME, &_start);
+	}
+
+	TimeStore(bool samples): _hdeem_duration(0), _meric_duration(0), Store(samples)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);

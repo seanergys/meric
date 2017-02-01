@@ -16,21 +16,21 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore());
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
 		} else {
 			if (Meric::CONTINUAL)
 			{
 				if (Meric::DETAILED) {
-					_storeList.push_back(new DetailedTimeStore());
+					_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES));
 				} else {
-					_storeList.push_back(new TimeStore());
+					_storeList.push_back(new TimeStore(Meric::SAMPLES));
 				}
 			} else {
 				if (Meric::DETAILED)
 				{
-					_storeList.push_back(new DetailedEnergyStore());
+					_storeList.push_back(new DetailedEnergyStore(Meric::SAMPLES));
 				} else {
-					_storeList.push_back(new EnergyStore());
+					_storeList.push_back(new EnergyStore(Meric::SAMPLES));
 				}
 			}
 		}
@@ -38,12 +38,12 @@ SharedMeric::SharedMeric()
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore("rapl"));
+		_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES));
 	}
 	
 	if (Meric::COUNTERS != "none")
 	{
-		_storeList.push_back(new CountersStore(Meric::COUNTERS));
+		_storeList.push_back(new CountersStore(Meric::COUNTERS, Meric::SAMPLES));
 	}
 	
 	for (int i=0; i<_storeList.size(); i++)

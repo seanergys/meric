@@ -83,7 +83,7 @@ DistributedMeric::DistributedMeric()
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
 				_storeList.back()->setMPIWrite(!_MPInodeRank);
 			} else {
-				_storeList.push_back(new TimeEnergyStore(!_MPInodeRank));
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
 		} else {
 			if (Meric::CONTINUAL)
@@ -96,7 +96,7 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new DetailedTimeStore(!_MPInodeRank));
+						_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES, !_MPInodeRank));
 					}
 				} else {
 					if (Meric::AGGREGATE)
@@ -105,7 +105,7 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new TimeStore(!_MPInodeRank));
+						_storeList.push_back(new TimeStore(Meric::SAMPLES, !_MPInodeRank));
 					}
 				}
 			} else {
@@ -117,7 +117,7 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new DetailedEnergyStore(!_MPInodeRank));
+						_storeList.push_back(new DetailedEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 					}
 				} else {
 					if (Meric::AGGREGATE)
@@ -125,7 +125,7 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new EnergyStore(!_MPInodeRank));
+						_storeList.push_back(new EnergyStore(Meric::SAMPLES, !_MPInodeRank));
 					}
 				}
 			}
@@ -140,7 +140,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-			_storeList.push_back(new CountersStore("rapl", !_MPInodeRank));
+			_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES, !_MPInodeRank));
 	}
 
 	if (Meric::COUNTERS != "none")
