@@ -1,4 +1,5 @@
 #!/bin/bash
+# #SBATCH -w taurusi4168 # RUN ONE TEST AT THE SAME NODES
 #SBATCH -N 1
 #SBATCH --exclusive
 #SBATCH -p haswell
@@ -22,6 +23,7 @@
 # sbatch run.sh
 # squeue -u $USER
 ################################################################################
+hostname	#get node name
 
 # LOAD MODULES #################################################################
 module purge
@@ -36,28 +38,45 @@ make
 # RUN FIRST TEST TO AVOID HDEEM ERROR ##########################################
 export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25
+export MERIC_OUTPUT_DIR="DELETEME"
 mpirun -n 24 ./test_mpi
-make cleanAll
 make
 
 # SET MERIC OUTPUT #############################################################
-export MERIC_OUTPUT_DIR="TESTMPI"
+export MERIC_OUTPUT_DIR="TEST"
 export MERIC_COUNTERS=perfevent
 export MERIC_MODE=2
-# export MERIC_DEBUG=1
-export MERIC_AGGREGATE=0
 export MERIC_DETAILED=1
 export MERIC_CONTINUAL=1
+#export MERIC_AGGREGATE=0
+
+
+# REMOVE LAST RESULT FROM THE PREVIOUS RUN #####################################
+# useful if test did not finished and you want to continue where it ended
+# do not use this part if you want more tests with the same settings, as well as IF in RUN section of this script (marked with <<<)
+if [ "$( ls $MERIC_OUTPUT_DIR'Counters/' )" ]
+then
+	LAST=$( ls -t $MERIC_OUTPUT_DIR"Counters/startCounter_"* | head -1 | sed 's/[^_]*_\(.*\).tmp/\1/' )
+	rm $MERIC_OUTPUT_DIR"Counters/startCounter_"$LAST.tmp
+	for dir in $MERIC_OUTPUT_DIR/*
+	do
+		rm -f $dir/$LAST.csv
+	done
+fi
+
 
 # RUN THE CODE FOR EACH SETTINGS ###############################################
+# export KMP_AFFINITY=compact
+# export KMP_AFFINITY="granularity=core,scatter"
+
 echo "RUNNING"
-for proc in 24
+for proc in 1
 do
-	for thread in 1  #{24..1..1}
+	for thread in {24..1..1}
 	do
-		for cpu_freq in 16 14 12 # {25..12..1}
+		for cpu_freq in {25..12..1} # or 25 {24..12..2}
 		do
-			for uncore_freq in 30 28 26 #{30..12..1}
+			for uncore_freq in {30..12..1} # or {30..12..2}
 			do
 				# OUTPUT FILE NAME
 				export MERIC_OUTPUT_FILENAME=$thread"_"$cpu_freq"_"$uncore_freq
@@ -69,10 +88,16 @@ do
 
 				# RUN THE TEST
 				echo
-				echo TEST $MERIC_OUTPUT_FILENAME 
-				mpirun -n $proc ./test_mpi
-				mpirun -n $proc ./test_mpi
+				echo "TEST output:" $MERIC_OUTPUT_FILENAME 
 
+					# DO NOT USE THIS if, if you want more test with same settings <<<
+				if [ ! -f $MERIC_OUTPUT_DIR"Counters/startCounter_"$MERIC_OUTPUT_FILENAME".tmp" ]
+				then
+					#mpirun -n $proc ./test_mpi
+					./test
+				else
+					echo $MERIC_OUTPUT_FILENAME skipped
+				fi
 			done
 		done
 	done

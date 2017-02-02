@@ -12,6 +12,7 @@
   - Meric prints its output about its progress only when configured with --verbose (make ddt)
   - to reduce content of output files, Meric doesn't print hdeem samples, if MERIC_SAMPLES=1 is not set
   - when using counters, there is also an information about flop/s  
+  - enhanced version of run.sh 
 
 ### 23.11.2016 #################################################################
   - cpu frequency is set in 0.1 GHz instead of Hz
