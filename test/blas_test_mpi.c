@@ -7,6 +7,7 @@
 #include "mkl.h"
 #include <time.h>
 #include <meric.h>
+#include <mpi.h>
 
 int main(int argc, char **argv)
 {
