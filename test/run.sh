@@ -39,7 +39,8 @@ make
 export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25
 export MERIC_OUTPUT_DIR="DELETEME"
-mpirun -n 24 ./test_mpi
+#mpirun -n 24 ./test_mpi
+./test
 make
 
 # SET MERIC OUTPUT #############################################################
