@@ -1,16 +1,16 @@
-### XX.XX.XXXX #################################################################
+### 02.02.2017 #################################################################
+  - git repository moved from git@code.it4i.cz:xvysoc01/meric.git to git@code.it4i.cz:vys0053/meric.git
   - update from hdeem/2.2.2 to hdeem/2.2.20ms
   - now requires c++14 standart
+  - rapl counters
   - it is now possible to use hdeem, rapl and counters at one time
-  - MERIC works in modes - export MERIC_MODE
+  - MERIC works in modes - export MERIC_MODE, see README
   - new compilation dummy mode (make dummy) - it is possible to turn off hdeem and use the rest of the library
-  - rapl counters 
   - papi and perfevent counters now gives correct values for MPI code
   - in test folder is an environment script to set MERIC variables
   - region.options file is not loaded implicitly, but user have to set MERIC_REGION_OPTIONS environment variable
-  - Meric prints its output only when configured with --verbose (make ddt)
-  - to reduce the output, Meric doesn't print hdeem samples, if MERIC_SAMPLES=1 is not set
-  
+  - Meric prints its output about its progress only when configured with --verbose (make ddt)
+  - to reduce content of output files, Meric doesn't print hdeem samples, if MERIC_SAMPLES=1 is not set
   - when using counters, there is also an information about flop/s  
 
 ### 23.11.2016 #################################################################
@@ -22,68 +22,4 @@
   - connection to RADAR tool, that is set by default to run with MERIC test.cpp and test_mpi.cpp examples
   - hdeem measurement counters are moved to separated folder, that has the same name as MERIC_OUTPUT_DIR with suffix "Counters"
 
-
-
-
-
-
-DURATION: 6.22941
-DURATION hdeem: 6.22982
-Real blade freq: 1808.4
-Real vr freq: 169.186
-hdeemd_ipmi: Unknown Command 0x00
-hdeemd_ipmi: Unknown Command 0x00
-HDEEM ERROR: function get_global return status 110
-
-
-When the power consumption values are requested, HDEMM sends a GPIO
-signal to the FPGA component which starts reading the sensors. A sensor that
-records the overall blade power consumption is read by the FPGA at a
-frequency of 1000 values per second.
-
-Six Voltage Regulator sensors corresponding to the VR-CPU0 and VR-CPU1
-processor sockets and to the VR-DIMMAB, VR-DIMMCD, VR-DIMMEF and VR-
-DIMMGH memory channels for each socket, are read at a frequency of 100
-values per second.
-
-
-typedef struct hdeem_status {
-	unsigned char status;
-	struct timespec start_time;
-	struct timespec stop_time;
-	unsigned long long int total_blade_values;
-	unsigned long long int total_vr_values;
-	int blade_frequency;
-	int vr_frequency;
-	unsigned long long int pending_blade_values;
-	unsigned long long int pending_vr_values;
-} hdeem_status_t;
-
-* blade_frequency
-	Theoretical BMC blade sensor frequency (1000 Hz) may differ from the ratio total_blade_values/collect_duration
-* vr_frequency
-	Theoretical BMC vr sensor frequency (1000 Hz) may differ from the ratio total_vr_values/collect_duration
-
-
-printf("Real blade freq: %f\n", readStatus.total_blade_values /(duration.tv_sec + duration.tv_nsec/1000000000.));
-printf("Real vr freq: %f\n", readStatus.total_vr_values /(duration.tv_sec + duration.tv_nsec/1000000000.));
-printf("Freq blade values: %d\n", readStatus.blade_frequency);
-printf("Freq vr values: %d\n", readStatus.vr_frequency);
-
-
-
-H INIT
-H START
-REGION B
-H STOP
-H CHECK STATUS
-DURATION: 2.01931
-DURATION hdeem: 2.01113
-Real blade freq: 1000.43
-Real vr freq: 99.9438
-H GET GLOBAL
-hdeemd_ipmi: Unknown Command 0x00
-hdeemd_ipmi: Unknown Command 0x00
-H DATA FREE
-H CLOSE
 
