@@ -60,6 +60,12 @@ public:
 	void save()
 	{
 		MPI_Barrier(_currentNode);
+		if (_stack.size() != 0)
+		{
+			if (!_MPInodeRank)
+				std::cerr << "MERIC ERROR: not all regions were stopped before the MERIC_Close()\n";
+			exit -1;
+		}
 /*
 		if (!_MPInodeRank) {
 			if (Meric::AGGREGATE) {

@@ -50,6 +50,12 @@ public:
 	
 	void save()
 	{
+		if (_stack.size() != 0)
+		{
+			std::cerr << "MERIC ERROR: not all regions were stopped before the MERIC_Close()\n";
+			exit -1;
+		}
+		
 		if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 		{
 			HDEEM::stop();
