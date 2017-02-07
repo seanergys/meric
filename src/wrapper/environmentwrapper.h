@@ -22,9 +22,13 @@
 #endif
 #include <unistd.h>
 
-const int FREQ_MULT = 100000;
 
 namespace meric {
+
+const int FREQ_MULT = 100000;
+const int MAX_FREQ = 25;
+const int MAX_UNCORE_FREQ = 30;
+
 
 class Environment {
 
