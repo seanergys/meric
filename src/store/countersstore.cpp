@@ -76,12 +76,50 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	
 //TODO - TEMPORARY solution	#19
-	if (wrapperType == PAPI && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
-		ss << "# RATIOS: \nGLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
-		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
-	else if (wrapperType == PERFEVENT && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
-		ss << "# RATIOS: \nGFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - _records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
-		timespec2double(_records[iEnd].time - _records[iStarts.back()].time)) << std::endl;
+	if (wrapperType == PAPI)
+	{
+		ss << "# RATIOS: \n";
+		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
+		{
+			ss << "GLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
+				_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - 
+				_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
+				timespec2double(_records[iEnd].time - _records[iStarts.back()].time)
+				) << std::endl;
+		}
+		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+		{
+			ss << "Computional Intensity," << 
+				std::fixed << std::setprecision(5) << CountersRates::computionalIntansity(
+					_records[iEnd].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+					_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+					_records[iEnd].record[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
+					_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_CACHE_MISSES]
+				) << std::endl;
+		}
+	}
+	else if (wrapperType == PERFEVENT)
+	{
+		ss << "# RATIOS: \n";
+		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
+		{
+			ss << "GFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
+				_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - 
+				_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
+				timespec2double(_records[iEnd].time - _records[iStarts.back()].time)
+				) << std::endl;
+		}
+		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+		{
+			ss << "Computional Intensity," << 
+				std::fixed << std::setprecision(5) << CountersRates::computionalIntansity(
+					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+					_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
+					_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
+				) << std::endl;
+		}
+	}
 }
 
 
