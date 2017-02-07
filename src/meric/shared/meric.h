@@ -50,6 +50,9 @@ public:
 	
 	void save()
 	{
+		Environment::uncoreFrequency(meric::MAX_UNCORE_FREQ);
+		Environment::frequency(meric::MAX_FREQ);
+
 		if (_stack.size() != 0)
 		{
 			std::cerr << "MERIC ERROR: not all regions were stopped before the MERIC_Close()\n";

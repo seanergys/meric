@@ -60,6 +60,13 @@ public:
 	void save()
 	{
 		MPI_Barrier(_currentNode);
+		
+		if (!_MPInodeRank)
+		{
+			Environment::uncoreFrequency(meric::MAX_UNCORE_FREQ);
+			Environment::frequency(meric::MAX_FREQ);
+		}
+		
 		if (_stack.size() != 0)
 		{
 			if (!_MPInodeRank)
