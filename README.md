@@ -318,4 +318,10 @@ If you want to insert Meric regions into code you don't know, instead of Meric p
 	# compile examples in test directory
 	# export MERIC_COUNTERS variable to measure real data
 
+--------------------------------------------------------------------------------
+#     9] MERIC with a fortran code                                             #
+--------------------------------------------------------------------------------
+There are fortran module and interface in the include directory. 
+When calling MERIC_MeasureStart keep in mind that string parameter must end with //char(0).
+	CALL MERIC_MeasureStart("region_name"//char(0))
 
