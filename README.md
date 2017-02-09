@@ -45,6 +45,9 @@
 	* blas_test.cpp
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all resources.
 		* WARNING: This test requires mkl module. When make is called, module is loaded.
+	* samples_test.cpp
+		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if Meric detects this sample as a first one of this region.
+		* Follow the instructions inside to set the test.
 * region.options
 	* File that sets exact settings for regions inside your code.
 	* In default it is set for blas test.
@@ -216,7 +219,8 @@ To find the best settings for each region, you should run your code with all pos
 
 	export MERIC_COUNTERS=papi or perfevent
 		- If set you can read HW counters using papi or perfevent
-		- When using counters, there is not only counter value but also an information about flop/s (if possible to measure)
+		- When using counters, there is not only counter value but also an information 
+		  about computional and arithmetic intensity (if possible to measure)
 		- To add a counter you want to measure it is necessary to follow 
 		  the instructions in wrapper/counters.h.
 	

@@ -11,7 +11,7 @@ PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
 
 default: all
 
-all: mpiTest basicTest blasTest
+all: samplesTest mpiTest basicTest blasTest
 
  ######
 mpiTest: test_mpi.cpp
@@ -19,6 +19,9 @@ mpiTest: test_mpi.cpp
 
 basicTest: test.cpp
 	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+
+samplesTest: samples_test.cpp
+	$(CC)    -O0 -g samples_test.cpp        -L../lib -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o samples
 
 blasTest: blas_test.c
 	$(info )
