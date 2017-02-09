@@ -60,6 +60,13 @@ public:
 	void save()
 	{
 		MPI_Barrier(_currentNode);
+
+		if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
+		{
+			HDEEM::stop(_stopTime);
+		}
+
+		Meric::close();
 		
 		if (!_MPInodeRank)
 		{
@@ -70,8 +77,10 @@ public:
 		if (_stack.size() != 0)
 		{
 			if (!_MPInodeRank)
+			{
 				std::cerr << "MERIC ERROR: not all regions were stopped before the MERIC_Close()\n";
-			exit -1;
+				MPI_Abort(MPI_COMM_WORLD, -1);
+			}
 		}
 /*
 		if (!_MPInodeRank) {
@@ -84,11 +93,6 @@ public:
 			}
 		}
 */
-
-		if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
-		{
-			HDEEM::stop();
-		}
 		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
 		{

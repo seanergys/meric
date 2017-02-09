@@ -18,11 +18,17 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
        //<< "Start of function," << _records[iStarts.back()].time << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
-	double start = (_records[iStarts.back()].time - _start) / _meric_period;
-	double end = (_records[iEnd].time - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
     double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
+	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts.back()].time - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t last  = std::floor(duration * _hdeem_freq) + first;
+	if (last > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
+		last = _samples.nb_blade_values;
+	}
+
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< first  << std::endl;
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< last << std::endl;
 
     //////////////////
     // Blade values //
@@ -76,8 +82,10 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 
     std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
     unsigned int vrSensorNum = vrSensor.size();
-    first = std::ceil(start * _samples.nb_vr_values);
-    last  = std::floor(end * _samples.nb_vr_values);
+	first = first/10 + VRDELAY; //10x lower freq
+	last  = last/10  + VRDELAY;
+	if (last > _samples.nb_vr_values)
+		last = _samples.nb_vr_values;
 
 	double firstPrinted = first;
 	double lastPrinted = last; 
@@ -87,12 +95,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 		firstPrinted = 0;
 		lastPrinted = 1;
 	}
-	
-	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
-	{
-		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
-	}
-    
+	    
     for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++)
     {
 		if(printSamples)

@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <ctime>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
@@ -15,6 +16,10 @@
 #include "../store/detailedtimestore.h"
 #include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
+
+#include "../wrapper/perfeventwrapper.h"
+#include "../wrapper/papiwrapper.h"
+
 
 namespace meric {
 
@@ -55,7 +60,7 @@ public:
 	virtual void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-		//stop should be in opposit order as start
+		//stop should be in opposite order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
 		for(int i=_storeList.size()-1;i>=0; i--)
 		{
@@ -71,6 +76,18 @@ public:
 		for(int i=0; i<_storeList.size(); i++)
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		MERIC_INFO << "store data saved\n";
+	}
+
+	virtual void close()
+	{
+		if (COUNTERS == "perfevent")
+			PERFEVENT::close();
+		if (COUNTERS == "papi")
+			PAPI::close();
+		// close() is not needed for RAPL
+//		if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
+//			meric::RAPL::close();
+
 	}
 
 	virtual ~Meric() {};
@@ -120,6 +137,7 @@ protected:
 	static std::vector<std::string> _name;
 	std::vector<StoreBase *> _storeList;
 	static std::string _mainRegion;
+	static timespec _startTime, _stopTime;
 };
 
 }

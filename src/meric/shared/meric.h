@@ -50,6 +50,11 @@ public:
 	
 	void save()
 	{
+		if (MODE == MODE_HDEEM || MODE == MODE_BOTH)
+		{
+			HDEEM::stop(_stopTime);
+		}
+		Meric::close();
 		Environment::uncoreFrequency(meric::MAX_UNCORE_FREQ);
 		Environment::frequency(meric::MAX_FREQ);
 
@@ -59,10 +64,6 @@ public:
 			exit -1;
 		}
 		
-		if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
-		{
-			HDEEM::stop();
-		}
 		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
 		{

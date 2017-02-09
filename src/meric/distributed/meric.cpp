@@ -65,7 +65,7 @@ DistributedMeric::DistributedMeric()
 		if (!_MPInodeRank)
 		{
 			HDEEM::init();
-			HDEEM::start();
+			HDEEM::start(_startTime);
 		}
 	
 		if (Meric::DEBUG)

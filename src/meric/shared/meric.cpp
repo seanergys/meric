@@ -12,7 +12,8 @@ SharedMeric::SharedMeric()
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
 		HDEEM::init();
-		HDEEM::start();
+		HDEEM::start(_startTime);
+
 
 		if (Meric::DEBUG)
 		{

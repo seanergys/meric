@@ -50,6 +50,7 @@ void MERIC_Init()
 
 void MERIC_Close()
 {
+	MERIC_INFO << "CLOSEing\n";
 	int finalized;
 	MPI_Finalized(&finalized);
 	if (finalized) {
@@ -60,16 +61,9 @@ void MERIC_Close()
 		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
-
-	if (meric::Meric::COUNTERS == "perfevent")
-		meric::PERFEVENT::close();
-	if (meric::Meric::COUNTERS == "papi")
-		meric::PAPI::close();
-// close() is not needed for RAPL
-//	if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
-//		meric::RAPL::close();
-
+	MERIC_INFO << "SAVEing\n";
 	holder->save();
+	MERIC_INFO << "SAVEd\n";
 
 	delete holder;
 	holder = NULL;

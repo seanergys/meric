@@ -19,6 +19,8 @@ std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
 std::string Meric::_mainRegion;
+timespec Meric::_startTime;
+timespec Meric::_stopTime;
 
 void Meric::readRegionParameters()
 {

@@ -46,15 +46,7 @@ void MERIC_Close()
 		exit(EXIT_FAILURE);
 	}
 
-	if (meric::Meric::COUNTERS == "perfevent")
-		meric::PERFEVENT::close();
-	if (meric::Meric::COUNTERS == "papi")
-		meric::PAPI::close();
-// close() is not needed for RAPL
-//	if (meric::Meric::MODE != meric::MODE_HDEEM)
-//		meric::RAPL::close();
 	holder->save();
-
 
 	delete holder;
 	holder = NULL;

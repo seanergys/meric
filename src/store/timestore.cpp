@@ -25,23 +25,29 @@ void TimeStore::computePeriods()
 	_hdeem_period = status.stop_time_blade - status.start_time_blade;
 	_meric_period = _end - _start;
 	_hdeem_duration = _hdeem_period.tv_sec + (double)_hdeem_period.tv_nsec / 1e9;
-	_meric_duration = _meric_period.tv_sec + (double)_meric_period.tv_nsec / 1e9;
-	
-	
-	
-MERIC_INFO << "DURATION: " << _meric_duration << std::endl;
-MERIC_INFO << "DURATION hdeem: " << _hdeem_duration << std::endl;
-MERIC_INFO << "Real blade freq: "<< status.total_blade_values /_hdeem_duration <<std::endl;
-MERIC_INFO << "Real vr freq: " << status.total_vr_values /_hdeem_duration << std::endl;
+//	_meric_duration = _meric_period.tv_sec + (double)_meric_period.tv_nsec / 1e9;
+
+//	_start = status.start_time_blade;
+	_hdeem_freq = 1000; //status.total_blade_values /_meric_duration;
+	_timeAdjustment = 1000 * mutils::timeToDouble(_start - status.start_time_blade) -1;
+	MERIC_INFO << "TIME ADJUSTMENT: " << _timeAdjustment << std::endl; 
+//	MERIC_INFO << "DURATION: " << _meric_duration << std::endl;
+	MERIC_INFO << "DURATION hdeem: " << _hdeem_duration << std::endl;
+	MERIC_INFO << "HDEEM freq: "<< status.total_blade_values /_hdeem_duration <<std::endl;
+//	MERIC_INFO << "REAL freq:  " << status.total_blade_values /_meric_duration << std::endl;
+	MERIC_INFO << "SAMPLES hdeem: " << status.total_blade_values << std::endl;
 }
 
 void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 {
-	double start = (_records[iStarts].time - _start) / _meric_period;
-	double end = (_records[iEnd].time - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts].time - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t last  = std::floor(stats.duration * _hdeem_freq) + first;
+	if (last > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
+		last = _samples.nb_blade_values;
+	}
 
 	double energy = 0;
 	for (size_t it = first; it < last; it++) {
@@ -56,13 +62,18 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 
 void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
-	double start = (_records[iStarts].time - _start) / _meric_period;
-	double end = (_records[iEnd].time - _start) / _meric_period;
-	size_t firstBlade = std::ceil(start * _samples.nb_blade_values);
-	size_t lastBlade = std::floor(end * _samples.nb_blade_values);
-	size_t firstVR = std::ceil(start * _samples.nb_vr_values);
-	size_t lastVR = std::floor(end * _samples.nb_vr_values);
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	size_t firstBlade = std::ceil(mutils::timeToDouble(_records[iStarts].time - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t lastBlade  = std::floor(stats.duration * _hdeem_freq) + firstBlade;
+	if (lastBlade > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts].region] << " LAST SAMPLE miss: " << lastBlade << ", max: " << _samples.nb_blade_values << std::endl;
+		lastBlade = _samples.nb_blade_values;
+	}
+	size_t firstVR    = firstBlade/10 + VRDELAY; //10x lower freq
+	size_t lastVR     = lastBlade/10  + VRDELAY;
+	if (lastVR > _samples.nb_vr_values)
+		lastVR = _samples.nb_vr_values;
 
 	std::vector<double> energy(PROBE_NUMBER, 0);
 	for (size_t it = firstBlade; it < lastBlade; it++) {
@@ -102,11 +113,17 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
-	double start = (_records[iStarts.back()].time - _start) / _meric_period;
-	double end = (_records[iEnd].time - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
-    double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
+	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
+	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts.back()].time - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t last  = std::floor(duration * _hdeem_freq) + first;
+	if (last > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
+		last = _samples.nb_blade_values;
+	}
+	
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< first  << std::endl;
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< last << std::endl;
 
     //////////////////
     // Blade values //
@@ -145,11 +162,6 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
         last = 1;
         std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
     }
-
-	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
-	{
-		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
-	}
 	
 	ss << "# Blade summary" << std::endl
 	   << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl

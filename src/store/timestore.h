@@ -23,6 +23,8 @@ class DetailedAggregateStore;
 
 class TimeStore: public Store {
 
+	#define VRDELAY 2	//from list of VR samples we noticed, that VR samples are shifted by two samples
+
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
 public:
@@ -43,21 +45,38 @@ public:
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFilename, 
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
+		timespec time1, time2;
+		clock_gettime(CLOCK_REALTIME, &time1);
 		HDEEM::getSamples(_samples);
+		clock_gettime(CLOCK_REALTIME, &time2);
+		MERIC_INFO << "HDEEM GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
+
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
+
+		clock_gettime(CLOCK_REALTIME, &time1);
 		HDEEM::deleteSamples(_samples);
+		clock_gettime(CLOCK_REALTIME, &time2);
+		MERIC_INFO << "HDEEM DELETE SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
+		timespec time1, time2;
+		clock_gettime(CLOCK_REALTIME, &time1);
 		HDEEM::getSamples(_samples);
+		clock_gettime(CLOCK_REALTIME, &time2);
+		MERIC_INFO << "HDEEM GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
+
 		iterate(_records, processInterval);
+
+		clock_gettime(CLOCK_REALTIME, &time1);
 		HDEEM::deleteSamples(_samples);
+		clock_gettime(CLOCK_REALTIME, &time2);
+		MERIC_INFO << "HDEEM DELETE SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+
 	}
 
 	TimeStore(bool samples, bool write): _hdeem_duration(0), _meric_duration(0), Store(samples, write)
@@ -90,8 +109,9 @@ protected:
 
 	timespec _start, _end;
 	timespec _hdeem_period, _meric_period;
-	double _hdeem_duration, _meric_duration;
+	double _hdeem_duration, _meric_duration, _hdeem_freq;
 	hdeem_global_reading_t _samples;
+	size_t _timeAdjustment;
 
 	std::vector<TimeRecord> _records;
 };

@@ -20,11 +20,17 @@ namespace meric {
 class HDEEM {
 
 public:
-	static void init() { checkHDEEM(hdeem_init(&bmc), "init"); }
-	static void close() { hdeem_close(&bmc); }
-	static void start() 
+	static void init() 
 	{
-	MERIC_INFO << "HDEEM START\n";
+		checkHDEEM(hdeem_init(&bmc), "init");
+		checkHDEEM(hdeem_clear(&bmc), "clear");	//extra clear should not make a problem
+	}
+	
+	static void close() { hdeem_close(&bmc); }
+	static void start(timespec & time) 
+	{
+		MERIC_INFO << "HDEEM START\n";
+		clock_gettime(CLOCK_REALTIME, &time);
 		if (hdeem_start(&bmc))
 		{
 			//second start according to hdeem reference guide
@@ -39,15 +45,22 @@ public:
 		}
 	}
 	
-	static void stop() { checkHDEEM(hdeem_stop(&bmc), "stop"); }
+	static void stop(timespec & time)
+	{
+		MERIC_INFO << "HDEEM STOP\n";
+		usleep(2e4); //extra 20 blade samples, 2 vr samples
+		clock_gettime(CLOCK_REALTIME, &time);
+		checkHDEEM(hdeem_stop(&bmc), "stop");
+	}
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
 	static void fillEnergy(double &energy, timespec &time)
 	{
+		clock_gettime(CLOCK_REALTIME, &time);
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy = stats.energy_blade_values.value[0];
-		time = stats.read_time_blade;
+//		time = stats.read_time_blade;
 		hdeem_stats_free(&stats);
 	}
 	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy, timespec &time)
@@ -82,7 +95,10 @@ class HDEEM {
 public:
 	static void init() {};
 	static void close() {};
-	static void start() {};
+	static void start(timespec & time) 
+	{
+		clock_gettime(CLOCK_REALTIME, &time);
+	};
 	static void stop() {};
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }

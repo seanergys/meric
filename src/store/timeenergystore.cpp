@@ -29,13 +29,22 @@ void TimeEnergyStore::addEnd(int region)
 
 void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd)
 {
-	double start = (_records[iStarts].clockTime - _start) / _meric_period;
-	double end = (_records[iEnd].clockTime - _start) / _meric_period;
-	size_t firstBlade = std::ceil(start * _samples.nb_blade_values);
-	size_t lastBlade = std::floor(end * _samples.nb_blade_values);
-	size_t firstVR = std::ceil(start * _samples.nb_vr_values);
-	size_t lastVR = std::floor(end * _samples.nb_vr_values);
+	stats.mericDuration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
+	size_t firstBlade = std::ceil(mutils::timeToDouble(_records[iStarts].clockTime - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t lastBlade  = std::floor(stats.mericDuration * _hdeem_freq) + firstBlade;
+	if (lastBlade > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts].region] << " LAST SAMPLE miss: " << lastBlade << ", max: " << _samples.nb_blade_values << std::endl;
+		lastBlade = _samples.nb_blade_values;
+	}
+	MERIC_INFO << _name[_records[iStarts].region] << " FIRST: "<< firstBlade  << std::endl;
+	MERIC_INFO << _name[_records[iStarts].region] << " LAST:  "<< lastBlade << std::endl;
 
+	size_t firstVR    = firstBlade/10 + VRDELAY; //10x lower freq
+	size_t lastVR     = lastBlade/10  + VRDELAY;
+	if (lastVR > _samples.nb_vr_values)
+		lastVR = _samples.nb_vr_values;
+	
 	std::vector<double> energy(PROBE_NUMBER, 0);
 	for (size_t it = firstBlade; it < lastBlade; it++) {
 		energy[0] += _samples.blade_power[it].value[0];
@@ -45,9 +54,6 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
 			energy[vr + 1] += _samples.vr_power[it].value[vr];
 		}
 	}
-
-	stats.mericDuration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
-	stats.hdeemDuration = mutils::timeToDouble(_records[iEnd].hdeemTime - _records[iStarts].hdeemTime);
 
     // Init energy with 0
     for(size_t it = 0; it < PROBE_NUMBER; it++) {
@@ -82,12 +88,17 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;
 
-	double start = (_records[iStarts.back()].clockTime - _start) / _meric_period;
-	double end = (_records[iEnd].clockTime - _start) / _meric_period;
-	size_t first = std::ceil(start * _samples.nb_blade_values);
-	size_t last = std::floor(end * _samples.nb_blade_values);
     double duration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts.back()].clockTime);
-
+	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts.back()].clockTime - _start) * _hdeem_freq) + _timeAdjustment;
+	size_t last  = std::floor(duration * _hdeem_freq) + first;
+	if (last > _samples.nb_blade_values)
+	{
+		MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
+		last = _samples.nb_blade_values;
+	}
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< first  << std::endl;
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< last << std::endl;
+	
     //////////////////
     // Blade values //
     //////////////////
@@ -123,11 +134,6 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
         first = 0;
         last = 1;
     }
-
-	if ((1+last-first) < duration*900) //hdeem should take 1000 samples per second
-	{
-		std::cerr << "MERIC WARNING: LOW amount of HDEEM samples in region " << _name[_records[iStarts.back()].region]<<"\n";
-	}
 	
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
 	{
@@ -150,8 +156,12 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 
     std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
     unsigned int vrSensorNum = vrSensor.size();
-    first = std::ceil(start * _samples.nb_vr_values);
-    last  = std::floor(end * _samples.nb_vr_values);
+
+	first = first/10 + VRDELAY; //10x lower freq
+	last  = last/10  + VRDELAY;
+	if (last > _samples.nb_vr_values)
+		last = _samples.nb_vr_values;
+
 
 	double firstPrinted = first;
 	double lastPrinted = last;
