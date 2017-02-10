@@ -25,8 +25,10 @@
 
 namespace meric {
 
-const int FREQ_MULT = 100000;
+const int CPUFREQ_FREQ_MULT = 100000;
+const int X86ADAPT_FREQ_MULT = 256;
 const int MAX_FREQ = 25;
+const int X86ADAPT_MAX_FREQ = 33;
 const int MAX_UNCORE_FREQ = 30;
 
 
@@ -36,21 +38,61 @@ public:
 
 	static void frequency(uint64_t freq)
 	{
-#ifdef HAVE_CPUFREQ_H
-		MERIC_INFO << "set frequency to: " << freq << "\n";
-		int ret;
-		const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
-		for (int i=0; i < nodeSize; i++)
-		{
-			ret = cpufreq_set_frequency(i,freq*FREQ_MULT);
 
-			if(ret != 0 || freq*FREQ_MULT != cpufreq_get_freq_kernel(i))
+#ifdef HAVE_CPUFREQ_H
+		if (freq <= MAX_FREQ)
+		{
+			MERIC_INFO << "CPUFREQ set frequency to: " << freq << "\n";
+			int ret;
+			const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
+			for (int i=0; i < nodeSize; i++)
 			{
-				std::cerr << "CPUFREQ ERROR - failed to set frequency for cpu "<< i << std::endl;
-//				MPI_Abort(MPI_COMM_WORLD, 1);
+				ret = cpufreq_set_frequency(i,freq*CPUFREQ_FREQ_MULT);
+
+				if(ret != 0 || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(i))
+				{
+					std::cerr << "CPUFREQ ERROR - failed to set frequency for cpu "<< i << std::endl;
+	//				MPI_Abort(MPI_COMM_WORLD, 1);
+				}
+			}
+		}
+		else
+#endif
+#ifdef HAVE_X86_ADAPT_H
+		{	//x86adapt allows to set cpu frequency ut to 3.3 GHz
+			if (freq > X86ADAPT_MAX_FREQ)
+			{
+				std::cerr << "CPU frequency did not changed to: " << freq << std::endl;
+				return;
+			}
+			if (x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState") < 0)
+				return;
+			MERIC_INFO << "X86ADAPT set frequency to: " << freq << "\n";
+
+			const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
+			for (int cpu=0; cpu<max; cpu++)
+			{
+				int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+				if (fd < 0)
+				{
+					std::cerr << "X86ADAPT error while accessing file descriptor\n";
+	//				exit(2);
+				}
+
+				if(x86_adapt_set_setting(fd, x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState"),freq*X86ADAPT_FREQ_MULT) != 8)
+				{
+					std::cerr << "X86ADAPT error while setting core frequecy\n";
+	//					exit(3);
+				}
+			
+				if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+					std::cerr << "X86ADAPT error while closing file descriptor\n";
 			}
 		}
 #else
+		{
+			std::cerr << "CPU frequency did not changed to: " << freq << std::endl;
+		}
 #endif
 	}
 	
@@ -60,7 +102,7 @@ public:
 		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 			return;
 
-		MERIC_INFO << "set uncore frequency to: "<< freq << std::endl;
+		MERIC_INFO << "X86ADAPT set uncore frequency to: "<< freq << std::endl;
 		const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 		for (int die=0; die<max; die++)
 		{
