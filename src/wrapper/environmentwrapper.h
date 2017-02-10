@@ -151,6 +151,10 @@ public:
 			MERIC_INFO << "set num threads to: " << nthreads << std::endl;
 			omp_set_num_threads(nthreads);
 		}
+		else
+		{
+			MERIC_INFO << "MERIC WARNING: paralel region, num threads did not change to: " << nthreads << std::endl;
+		}
 #endif
 /*
 #ifdef HAVE_CILK_CILK_API_H
