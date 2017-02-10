@@ -61,7 +61,7 @@ public:
 		if (_stack.size() != 0)
 		{
 			std::cerr << "MERIC ERROR: not all regions were stopped before the MERIC_Close()\n";
-			exit -1;
+			exit(-1);
 		}
 		
 		int initCounter = -1;
