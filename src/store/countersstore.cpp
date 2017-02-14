@@ -68,15 +68,21 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 
+	unsigned long long int summary = 0;
+	unsigned long long int value;
 	ss << "# COUNTERS - "<<counterLabel<<": \n";
 	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		ss << counterIt->first << "," << counterIt->second - _records[iStarts.back()].record[counterIt->first] << std::endl;
+		value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+		ss << counterIt->first << "," << value << std::endl;
+		summary += value;
 	}
 
 	
 //TODO - TEMPORARY solution	#19
-	if (wrapperType == PAPI)
+	if (wrapperType == RAPL)
+		ss << "Energy summary," << summary << std::endl;
+	else if (wrapperType == PAPI)
 	{
 		ss << "# RATIOS: \n";
 		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
