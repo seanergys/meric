@@ -31,9 +31,7 @@ struct mutils {
 		struct stat info;
 		if(stat(dir.c_str(), &info ) != 0)
 		{
-			std::stringstream ss;
-			ss << "mkdir -p " + dir;
-			int status = std::system(ss.str().c_str());
+			mkdir(dir.c_str(), ACCESSPERMS);
 		}
 	}
 };
