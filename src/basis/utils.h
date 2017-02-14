@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <iomanip>
-
+#include <sys/stat.h>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -25,10 +25,16 @@ struct mutils {
 	{
 		return time.tv_sec + time.tv_nsec / 1e9;
 	}
-	static void createDir(const std::string &dir) {
-		std::stringstream ss;
-		ss << "mkdir -p " + dir;
-		int status = std::system(ss.str().c_str());
+	
+	static void createDir(const std::string &dir)
+	{
+		struct stat info;
+		if(stat(dir.c_str(), &info ) != 0)
+		{
+			std::stringstream ss;
+			ss << "mkdir -p " + dir;
+			int status = std::system(ss.str().c_str());
+		}
 	}
 };
 
