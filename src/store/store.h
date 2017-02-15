@@ -114,13 +114,17 @@ protected:
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		_counters.resize(_name.size());
+		timespec time1, time2;
+		clock_gettime(CLOCK_REALTIME, &time1);
 		std::vector<std::ofstream> ss(_name.size());
 		for (int i=0; i<_name.size(); i++)
 		{
 			std::string folderName = _name[i].c_str();
 			mutils::createDir(outputDir + "/" + folderName);
 			ss[i].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
-		}		
+		}
+		clock_gettime(CLOCK_REALTIME, &time2);
+		MERIC_INFO << "MERIC open csv files in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 		
 		std::vector<size_t> starts;
 		for (size_t i = 0; i < records.size(); i++)

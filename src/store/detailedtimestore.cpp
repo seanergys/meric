@@ -91,7 +91,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	double lastPrinted = last; 
 	if(last < 1 || last <= first) 
 	{
-		std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<"\n";
+		std::cerr << "MERIC WARNING: No HDEEM samples, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<"\n";
 		firstPrinted = 0;
 		lastPrinted = 1;
 	}

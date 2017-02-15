@@ -28,12 +28,7 @@ class EnergyStore: public Store {
 public:
 	void addStart(int region);
 	void addEnd(int region);
-
-	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
-	{
-		stats.energy = _records[iEnd].energy - _records[iStarts].energy;
-		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	}
+	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

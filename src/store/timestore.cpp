@@ -48,6 +48,10 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 		MERIC_INFO << _name[_records[iStarts].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
 		last = _samples.nb_blade_values;
 	}
+	if (last <= first)
+	{
+		std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<stats.duration<<"s) region "<< _name[_records[iStarts].region]<<"\n";
+	}
 
 	double energy = 0;
 	for (size_t it = first; it < last; it++) {
@@ -70,10 +74,20 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 		MERIC_INFO << _name[_records[iStarts].region] << " LAST SAMPLE miss: " << lastBlade << ", max: " << _samples.nb_blade_values << std::endl;
 		lastBlade = _samples.nb_blade_values;
 	}
+	
 	size_t firstVR    = firstBlade/10 + VRDELAY; //10x lower freq
 	size_t lastVR     = lastBlade/10  + VRDELAY;
 	if (lastVR > _samples.nb_vr_values)
 		lastVR = _samples.nb_vr_values;
+
+	if (lastBlade <= firstBlade)
+	{
+		std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<stats.duration<<"s) region "<< _name[_records[iStarts].region]<<"\n";
+	}
+	else if (lastVR <= firstVR)
+	{
+		std::cerr << "MERIC WARNING: No HDEEM samples, probably too short ("<<stats.duration<<"s) detailed region "<< _name[_records[iStarts].region]<<"\n";
+	}
 
 	std::vector<double> energy(PROBE_NUMBER, 0);
 	for (size_t it = firstBlade; it < lastBlade; it++) {
@@ -102,6 +116,9 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 
 void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
+	timespec time1, time2;
+	clock_gettime(CLOCK_REALTIME, &time1);
+		
     ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
@@ -170,5 +187,8 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
        << "Average power [W] (Samples)" << "," << avgWatts << std::endl
        << "ID of first blade sample" << "," << first << std::endl
        << "ID of last blade sample" << "," << last-1 << std::endl;
+
+	clock_gettime(CLOCK_REALTIME, &time2);
+	MERIC_INFO << "MERIC record save: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 
 }

@@ -27,10 +27,11 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
 	}
 	ss << std::endl;
 
+	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	ss << "# Job info - hdeem" << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+	   << "Runtime of function [s]," << duration << std::endl;
 
     //////////////////
     // Blade values //
@@ -41,7 +42,14 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
 
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
 	{
-		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<_records[iEnd].time - _records[iStarts.back()].time<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
+		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
+	}
+	else if (duration < 0.01)
+	{
+		std::string info = " detailed";
+		if (duration > 0.001)
+			info = "";
+		std::cerr << "MERIC WARNING: very short (" <<duration<<"s)"<< info <<" region " << _name[_records[iStarts.back()].region] << " results might be skewed\n";
 	}
 
     ///////////////////////
@@ -58,7 +66,7 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
 		
 		if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
 		{
-			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].time - _records[iStarts.back()].time<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << vrSensor[sensorID]<<"\n";
+			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << vrSensor[sensorID]<<"\n";
 		}
     }
 
