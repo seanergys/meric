@@ -7,7 +7,8 @@ void DetailedEnergyStore::addStart(int region)
 {
 	std::array<double, PROBE_NUMBER> energy;
 	timespec time;
-	HDEEM::fillDetailedEnergy(energy, time);
+	HDEEM::fillDetailedEnergy(energy);
+	HDEEM::fillTime(time);
 	_records.push_back(DetailedEnergyRecord(region, energy, time));
 }
 
@@ -15,7 +16,8 @@ void DetailedEnergyStore::addEnd(int region)
 {
 	std::array<double, PROBE_NUMBER> energy;
 	timespec time;
-	HDEEM::fillDetailedEnergy(energy, time);
+	HDEEM::fillTime(time);
+	HDEEM::fillDetailedEnergy(energy);
 	_records.push_back(DetailedEnergyRecord(region, energy, time));
 }
 

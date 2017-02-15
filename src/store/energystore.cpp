@@ -10,7 +10,8 @@ void EnergyStore::addStart(int region)
 	double energy;
 	timespec time;
 
-	HDEEM::fillEnergy(energy, time);
+	HDEEM::fillEnergy(energy);
+	HDEEM::fillTime(time);
 	_records.push_back(EnergyRecord(region, time, energy));
 }
 
@@ -19,7 +20,8 @@ void EnergyStore::addEnd(int region)
 	double energy;
 	timespec time;
 
-	HDEEM::fillEnergy(energy, time);
+	HDEEM::fillTime(time);
+	HDEEM::fillEnergy(energy);
 	_records.push_back(EnergyRecord(region, time, energy));
 }
 

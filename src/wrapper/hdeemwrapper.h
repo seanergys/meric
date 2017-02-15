@@ -54,22 +54,19 @@ public:
 	}
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
-	static void fillEnergy(double &energy, timespec &time)
+	static void fillEnergy(double &energy)
 	{
-		clock_gettime(CLOCK_REALTIME, &time);
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy = stats.energy_blade_values.value[0];
-//		time = stats.read_time_blade;
 		hdeem_stats_free(&stats);
 	}
-	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy)
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy[0] = stats.energy_blade_values.value[0];
 		memcpy(energy.data() + 1, stats.energy_vr_values.value, (PROBE_NUMBER - 1) * sizeof(double));
-		time = stats.read_time_blade;
 		hdeem_stats_free(&stats);
 	}
 
@@ -102,18 +99,16 @@ public:
 	static void stop() {};
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
-	static void fillEnergy(double &energy, timespec &time)
+	static void fillEnergy(double &energy)
 	{
 		energy = HDEEM::energy++;
-		clock_gettime(CLOCK_REALTIME, &time);
 	}
-	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy)
 	{
 		for (size_t i = 0; i < PROBE_NUMBER; i++) {
 			energy[i] = HDEEM::energy;
 		}
 		HDEEM::energy++;
-		clock_gettime(CLOCK_REALTIME, &time);
 	}
 
 	static void getStatus(hdeem_status_t &status)

@@ -8,10 +8,9 @@
 namespace meric {
 
 struct TimeEnergyRecord {
-	TimeEnergyRecord(int region, timespec &hdeemTime, timespec &clockTime, std::array<double, PROBE_NUMBER> &energy)
-	: region(region), hdeemTime(hdeemTime), clockTime(clockTime), energy(energy) {};
+	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, PROBE_NUMBER> &energy)
+	: region(region), clockTime(clockTime), energy(energy) {};
 
-	timespec hdeemTime;
 	timespec clockTime;
     std::array<double, PROBE_NUMBER> energy;
 	int region;

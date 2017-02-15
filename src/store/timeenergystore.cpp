@@ -6,24 +6,24 @@ using namespace meric;
 
 void TimeEnergyStore::addStart(int region)
 {
-	timespec hdeemTime, clockTime;
+	timespec time;
 	std::array<double, PROBE_NUMBER> energy;
 
-	HDEEM::fillDetailedEnergy(energy, hdeemTime);
-	HDEEM::fillTime(clockTime);
+	HDEEM::fillDetailedEnergy(energy);
+	HDEEM::fillTime(time);
 
-	_records.push_back(TimeEnergyRecord(region, hdeemTime, clockTime, energy));
+	_records.push_back(TimeEnergyRecord(region, time, energy));
 }
 
 void TimeEnergyStore::addEnd(int region)
 {
-	timespec hdeemTime, clockTime;
+	timespec time;
 	std::array<double, PROBE_NUMBER> energy;
 
-    HDEEM::fillDetailedEnergy(energy, hdeemTime);
-	HDEEM::fillTime(clockTime);
+	HDEEM::fillTime(time);
+    HDEEM::fillDetailedEnergy(energy);
 
-	_records.push_back(TimeEnergyRecord(region, hdeemTime, clockTime, energy));
+	_records.push_back(TimeEnergyRecord(region, time, energy));
 }
 
 
