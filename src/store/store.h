@@ -114,6 +114,7 @@ protected:
 			std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		_counters.resize(_name.size());
+		_levels.resize(_name.size());
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
 		std::vector<std::ofstream> ss(_name.size());
@@ -131,17 +132,23 @@ protected:
 		{
 			if (!starts.size() || records[starts.back()].region != records[i].region)
 			{
+				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
-				continue;
 			}
-
-			processInterval(ss[records[i].region], starts, i);
-			_counters[records[i].region]++;
-			_counters.resize(records[i].region + 1);
-			_counters.resize(_name.size());
-			starts.pop_back();
+			else
+			{
+				processInterval(ss[records[i].region], starts, i);
+				_counters[records[i].region]++;		
+				for(size_t j=0; j<_levels.size(); j++)
+				{
+					if (_levels[j] > _levels[records[i].region])
+						_counters[j] = 0;
+				}
+				starts.pop_back();
+			}
 		}
 	}
+
 
 	template <class TRecord> void iterate(
 			std::vector<TRecord> &records,
@@ -149,24 +156,31 @@ protected:
 	{
 		std::vector<size_t> starts;
 		_counters.resize(_name.size());
+		_levels.resize(_name.size());
 		for (size_t i = 0; i < records.size(); i++) 
 		{
 			if (!starts.size() || records[starts.back()].region != records[i].region)
 			{
+				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
-				continue;
 			}
-
-			processInterval(starts, i);
-			_counters[records[i].region]++;
-			_counters.resize(records[i].region + 1);
-			_counters.resize(_name.size());
-			starts.pop_back();
+			else
+			{
+				processInterval(starts, i);
+				_counters[records[i].region]++;
+				for(size_t j=0; j<_levels.size(); j++)
+				{
+					if (_levels[j] > _levels[records[i].region])
+						_counters[j] = 0;
+				}
+				starts.pop_back();
+			}
 		}
 	}
 
 	std::vector<std::string> _name;
 	std::vector<size_t> _counters;
+	std::vector<size_t> _levels;
 
 	size_t _initCounter;
 	int _jobID;
