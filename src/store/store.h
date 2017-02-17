@@ -133,7 +133,7 @@ protected:
 			if (!starts.size() || records[starts.back()].region != records[i].region)
 			{
 				if (_levels[records[i].region] && _levels[records[i].region]!=starts.size())
-					std::cerr << "MERIC ERROR: region "<< _name[records[i].region] << " is called more than once in one call tree\n";
+					std::cerr << "MERIC WARNING: region "<< _name[records[i].region] << " is called more than once in one call tree, check the call tree if everything is ok\n";
 				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
 			}
@@ -164,7 +164,7 @@ protected:
 			if (!starts.size() || records[starts.back()].region != records[i].region)
 			{
 				if (_levels[records[i].region])
-					std::cerr << "MERIC ERROR: region "<< _name[records[i].region] << " is called more than once in one call tree\n";
+					std::cerr << "MERIC ERROR: region "<< _name[records[i].region] << " is called more than once in one call tree, check the call tree if everything is ok\n";
 				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
 			}

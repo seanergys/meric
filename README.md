@@ -232,9 +232,30 @@ To find the best settings for each region, you should run your code with all pos
 #      7] Measure energy consumption of your code at Taurus                    #
 --------------------------------------------------------------------------------
 ## BEFORE WE START ##
-If you want to use Meric with a parallel application, keep in mind, that all Meric regions must call all processes and all running threads, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node and each region settings allows not to follow this restriction. Because of this, each MeasureStart and MeasureStop starts with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
+If you want to use Meric with a parallel application, keep in mind, that all processes and all running threads 
+must call every Meric region, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node and each region settings allows not to follow this restriction. Because of this, each MeasureStart and MeasureStop starts with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
 
 If you want to insert Meric regions into code you don't know, instead of Meric probes insert into the code MPI and openMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
+
+There is one more restriction in placing probes into the code. In current version Meric does not support recursively nested regions and regions with at least three starts where fist and third calls are at the same level, but second call is at higher level. This case is shown in example:
+
+	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in thi example
+		MERIC_MeasureStart("A")	//first call of region A
+		MERIC_MeasureStop()
+
+		MERIC_MeasureStart("B")
+			MERIC_MeasureStart("A")	//region A called at higher nested level
+			MERIC_MeasureStop()
+		MERIC_MeasureStop()
+
+		MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
+			MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
+			MERIC_MeasureStop()	//region C will has defect in call tree
+		MERIC_MeasureStop()
+	MERIC_MeasureStop()
+
+
+
 
 ## COMPILE MERIC ##
 	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
