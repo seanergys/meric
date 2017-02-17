@@ -190,12 +190,12 @@ To find the best settings for each region, you should run your code with all pos
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
-		- Energy consumption is computed from single samples taken by HDEEM (when 
-		  MERIC_CONTINUAL=0, then data are taken from Stats structure)
-		- Single samples are stored (with frequency 1 samples per 1 ms)
+		- Single samples are stored in HDEEM internal memory and read at the end of the runtime
+		  (with frequency 1000 samples per 1 second for a blade and 100 samples in detailed mode for VRs)
 		- Minimal overhead - only times of the beginning and the end of measurement
 		  are stored (samples are processed after the measurement)
-		- Files can become very big when measured regions run for a long time!
+		- in noncontinual mode (MERIC_CONTINUAL=0) energy consumption measured directly 
+		  (with HDEEM internal delay) at each region start and end
 
 	export MERIC_DETAILED=1
 		- Hdeem gives us not only data from blade, but data from Voltage Regulators (VR-CPU1,
@@ -209,8 +209,9 @@ To find the best settings for each region, you should run your code with all pos
 		  types of data processing performed simultaneously
 
 	export MERIC_SAMPLES=1
-		- when using HDEEM samples to read the energy consumtion, MERIC prints 
+		- When using HDEEM samples to read the energy consumtion, MERIC prints 
 		  each sample to the output file, if MERIC_SAMPLES is set
+		- Files can become very big when measured regions run for a long time
 
 	export MERIC_AGGREGATE=1
 		- ONLY for distributed applications!
