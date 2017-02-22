@@ -21,7 +21,7 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) " #-DVERBOSE"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -DVERBOSE"
 
 install:
 	./waf install #-v
@@ -38,6 +38,9 @@ dummy:
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH) $(INCLUDES) -g" --dummy
 	make install
 
+gcc:
+	./waf configure --cpp=g++ --flag="$(LIBPATH) $(INCLUDES)"
+	make install
 love:
 	./waf clean
 

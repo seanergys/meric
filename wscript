@@ -6,8 +6,10 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])
-    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])
+#    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
+#    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
+    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
@@ -16,12 +18,17 @@ def configure(ctx):
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
     else:
+#        ctx.env.append_unique("DEFINES", [ "HAVE_HDEEM_H" ])	# if problem with searching
         ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=True)
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
-    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
+#    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
+
+#    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching
+#    ctx.env.append_unique("DEFINES", [ "HAVE_X86_ADAPT_H" ])	#if problem with searching
+
 
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
