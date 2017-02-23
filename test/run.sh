@@ -75,7 +75,7 @@ for proc in 1
 do
 	for thread in {24..1..1}
 	do
-		for cpu_freq in {25..12..1} # or 25 {24..12..2}
+		for cpu_freq in {25..12..1} # or 25 {24..12..2} or {33..12..2}
 		do
 			for uncore_freq in {30..12..1} # or {30..12..2}
 			do
