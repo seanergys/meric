@@ -1,5 +1,5 @@
 
-#include "../include/meric.h"
+#include <meric.h>
 
 #include <cstdlib>
 #include <iostream>

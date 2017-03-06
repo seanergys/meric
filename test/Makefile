@@ -1,8 +1,9 @@
-BINARIES=test test_mpi blasTest
+BINARIES=test test_mpi blasTest samples
 
 CC=icpc
 MPICC=mpiicpc
 
+MERIC=-L../lib -I../include
 HDEEM=-L../hdeem -lhdeem
 FREEIPMI=-lfreeipmi
 X86ADAPT=-L/usr/local/lib -lx86_adapt
@@ -15,20 +16,20 @@ all: samplesTest mpiTest basicTest blasTest
 
  ######
 mpiTest: test_mpi.cpp
-	$(MPICC) -O0 -g test_mpi.cpp    -L../lib -lmericmpi -lrt -qopenmp $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt -qopenmp $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp        -L../lib -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
 
 samplesTest: samples_test.cpp
-	$(CC)    -O0 -g samples_test.cpp        -L../lib -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o samples
+	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o samples
 
 blasTest: blas_test.c
 	$(info )
 	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
 	$(info )
 	module load mkl;
-	$(CC) -O0 -g blas_test.c      -L../lib -I../include -lmeric -mkl -qopenmp     $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
+	$(CC) -O0 -g blas_test.c $(MERIC) -lmeric -mkl -qopenmp     $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
 
 
  ######

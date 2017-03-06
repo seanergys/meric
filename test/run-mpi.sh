@@ -40,8 +40,6 @@ export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25
 export MERIC_OUTPUT_DIR="DELETEME"
 mpirun -n 24 ./test_mpi
-#./test
-make
 
 # SET MERIC OUTPUT #############################################################
 export MERIC_OUTPUT_DIR="TEST"
@@ -99,7 +97,6 @@ do
 				if [ ! -f $MERIC_OUTPUT_DIR"Counters/startCounter_"$MERIC_OUTPUT_FILENAME".tmp" ]
 				then
 					mpirun -n $proc ./test_mpi
-					#./test
 				else
 					echo $MERIC_OUTPUT_FILENAME skipped
 				fi

@@ -1,10 +1,10 @@
 
-#include "mpi.h"
-#include "../include/meric.h"
+#include <meric.h>
 
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#include "mpi.h"
 
 int main(int argc, char **argv)
 {
