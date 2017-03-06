@@ -52,9 +52,9 @@
 	* File that sets exact settings for regions inside your code.
 	* In default it is set for blas test.
 * Makefile
-* run.sh
-	* Script that runs the code with all possible settings.
-	* Ready to do the basic test with test_mpi.cpp on Taurus.
+* run.sh and run-mpi.sh
+	* Scripts that runs the code with all possible settings.
+	* Ready to do the basic test with test and test_mpi.cpp on Taurus.
 * environment_taurus
 	* Basic script that sets chosen MERIC environment variables and informs you about values of set varibles
 	* When runed with argument -t, just prints list of set variables

@@ -4,6 +4,7 @@
   - added computional intensity measurement
   - much faster Meric IO
   - new warnings when regions are too short or wehen call tree might be invalid
+  - Meric does not switch the environment during runtime if region options is not set
   
 ### 02.02.2017 #################################################################
   - git repository moved from git@code.it4i.cz:xvysoc01/meric.git to git@code.it4i.cz:vys0053/meric.git
