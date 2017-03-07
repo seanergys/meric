@@ -148,14 +148,17 @@ void RAPL::getValues(std::map<std::string, long> & record)
 
 unsigned long long RAPL::repairValues(long startValue, long stopValue, std::string counter)
 {
-	std::cerr << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << RAPLMAX * energyUnit[counter] - startValue + stopValue << std::endl;
 	if (!energyUnit.count(counter))
 	{
 		//missing unit modifier
 		return 0;
 	}
 	else
-	 	return RAPLMAX * energyUnit[counter] - startValue + stopValue;
+	{
+		MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<RAPLMAX * energyUnit[counter] <<" " <<counter << std::endl;
+		MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << RAPLMAX * energyUnit[counter] - startValue + stopValue << std::endl;
+		return RAPLMAX * energyUnit[counter] - startValue + stopValue;
+	}
 }
 
 void RAPL::initMap(std::map<std::string, long> & dict)

@@ -77,7 +77,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 		{
 			if (wrapperType == RAPL)
 			{
-				value = RAPL::repairValues(counterIt->second, _records[iStarts.back()].record[counterIt->first], counterIt->first);
+				value = RAPL::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 			}
 			else	//TODO parfevent a papi overflow
 			{
