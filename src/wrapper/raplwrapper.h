@@ -19,6 +19,7 @@ public:
 	static void getValues(std::map<std::string, long> & record);
 	static void initMap(std::map<std::string, long> & dict);
 	static void detailed() {detailedMode = true;};
+	static unsigned long long repairValues(long startValue, long stopValue, std::string counter);
 
 private:
 		//list of counters
@@ -27,6 +28,7 @@ private:
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
+	static long long RAPLMAX;
 
 #else
 public:
@@ -35,10 +37,12 @@ public:
 	static void getValues(std::map<std::string, long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
 	static void initMap(std::map<std::string, long> & dict);
 	static void detailed() {detailedMode = true;};
+	static unsigned long long repairValues(long startValue, long stopValue, std::string counter) {return 0;};
 private:
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
+	static long long RAPLMAX;
 #endif
 };
 

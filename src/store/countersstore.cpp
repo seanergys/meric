@@ -73,7 +73,21 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	ss << "# COUNTERS - "<<counterLabel<<": \n";
 	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
+		{
+			if (wrapperType == RAPL)
+			{
+				value = RAPL::repairValues(counterIt->second, _records[iStarts.back()].record[counterIt->first], counterIt->first);
+			}
+			else	//TODO parfevent a papi overflow
+			{
+				std::cerr << "MERIC ERROR: counter overflow\n";
+			}
+		}
+		else
+		{
+			value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+		}
 		ss << counterIt->first << "," << value << std::endl;
 		summary += value;
 	}

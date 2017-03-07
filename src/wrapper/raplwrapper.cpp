@@ -41,6 +41,8 @@ using namespace meric;
 std::string RAPL::suffix = "_";
 int RAPL::numOfDevices = 1;
 bool RAPL::detailedMode = false;
+long long RAPL::RAPLMAX = pow(2,32);
+
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long> RAPL::counters;
 std::map<std::string, double> RAPL::energyUnit;
@@ -52,13 +54,13 @@ void RAPL::init()
 
 	//set unit modifier for Intel_RAPL_Pckg_Energy
 	uint64_t unit;
-	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0); //TODO ignoring the fact that different sockets may have different units (rest of the function is done only for the first socket)
+	//ignoring the fact that different sockets may have different units
+	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	if (fd < 0)
 	{
 		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
 		std::cerr << "WARNING: RAPL values will be without any unit\n";
 		return;
-//		exit(2);
 	}
 	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
 	x86_adapt_get_setting(fd, itemId, &unit);
@@ -82,7 +84,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 {
 	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
-
+	
 	if (detailedMode)
 	{
 		for (int die=0; die<numOfDevices; die++)
@@ -113,7 +115,6 @@ void RAPL::getValues(std::map<std::string, long> & record)
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-	//std::cerr << itemName << suffix<<die << " " << dieEnergy*energyUnit[itemName] <<std::endl;
 				record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit[itemName];
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
@@ -144,6 +145,18 @@ void RAPL::getValues(std::map<std::string, long> & record)
 
 #else
 #endif
+
+unsigned long long RAPL::repairValues(long startValue, long stopValue, std::string counter)
+{
+	std::cerr << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << RAPLMAX * energyUnit[counter] - startValue + stopValue << std::endl;
+	if (!energyUnit.count(counter))
+	{
+		//missing unit modifier
+		return 0;
+	}
+	else
+	 	return RAPLMAX * energyUnit[counter] - startValue + stopValue;
+}
 
 void RAPL::initMap(std::map<std::string, long> & dict)
 {
