@@ -109,8 +109,8 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 		}
 		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
 		{
-			ss << "Computional Intensity," << 
-				std::fixed << std::setprecision(5) << CountersRates::computionalIntansity(
+			ss << "Computational Intensity," << 
+				std::fixed << std::setprecision(5) << CountersRates::computationalIntensity(
 					_records[iEnd].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
 					_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
 					_records[iEnd].record[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
@@ -131,8 +131,8 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 		}
 		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
 		{
-			ss << "Computional Intensity," << 
-				std::fixed << std::setprecision(5) << CountersRates::computionalIntansity(
+			ss << "Computational Intensity," << 
+				std::fixed << std::setprecision(5) << CountersRates::computationalIntensity(
 					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
 					_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
 					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
