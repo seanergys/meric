@@ -19,12 +19,14 @@ public:
 	
 	static void getValues(std::map<std::string, long long> & record);
 	static void initMap(std::map<std::string, long long> & dict);
+	static unsigned long long repairValues(long long startValue, long long stopValue, std::string counter);
 
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
 	static int eventSet;
 	static long long * countersValues;
+	static long long COUNTERMAX;
 
 };
 
@@ -37,6 +39,10 @@ public:
 	static void close() {};
 	static void getValues(std::map<std::string, long long> & record) {std::cerr << "PAPI::getValues() TODO\n"; };
 	static void initMap(std::map<std::string, long long> & dict);
+	static unsigned long long repairValues(long long startValue, long long stopValue, std::string counter);
+	
+private:
+	static long long COUNTERMAX;
 };
 
 

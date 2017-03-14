@@ -3,14 +3,16 @@
 #include <papi.h>
 #endif
 
-#include <vector>
-#include "papiwrapper.h"
-#include "counters.h"
-
-#include <omp.h>
 #ifdef HAVE_CILK_CILK_API_H
 #include <cilk/cilk_api.h> 
 #endif
+
+#include <vector>
+#include <limits.h>
+#include <omp.h>
+
+#include "papiwrapper.h"
+#include "counters.h"
 
 using namespace meric;
 
@@ -18,6 +20,7 @@ using namespace meric;
 std::map<std::string, long long> PAPI::counters;
 int PAPI::eventSet = PAPI_NULL;
 long long * PAPI::countersValues = NULL;
+long long PAPI::COUNTERMAX = LLONG_MAX;
 
 void PAPI::init()
 {
@@ -34,12 +37,15 @@ void PAPI::init()
 	}
 
 	int ret;
+/*
 #ifdef HAVE_CILK_CILK_API_H
 	if (__cilkrts_get_nworkers() > omp_get_thread_num())
 		ret = PAPI_thread_init((unsigned long (*)(void))(__cilkrts_get_nworkers));
 	else
-#elif HAVE_OMP_H 
-		ret = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
+#elif HAVE_OMP_H
+*/
+#ifdef HAVE_OMP_H
+	ret = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
 #else
 	ret = PAPI_OK;
 #endif		
@@ -118,6 +124,14 @@ void PAPI::getValues(std::map<std::string, long long> & record)
 
 #else
 #endif
+
+// solve counter overflow
+unsigned long long PAPI::repairValues(long long startValue, long long stopValue, std::string counter)
+{
+	MERIC_INFO << "PAPI OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
+	MERIC_INFO << "PAPI REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
+	return COUNTERMAX - startValue + stopValue;
+}
 
 void PAPI::initMap(std::map<std::string, long long> & dict)
 {

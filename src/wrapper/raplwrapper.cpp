@@ -42,7 +42,7 @@ using namespace meric;
 std::string RAPL::suffix = "_";
 int RAPL::numOfDevices = 1;
 bool RAPL::detailedMode = false;
-long long RAPL::RAPLMAX = pow(2,32);
+long long RAPL::COUNTERMAX = pow(2,32);
 
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long long> RAPL::counters;
@@ -156,9 +156,9 @@ unsigned long long RAPL::repairValues(long long startValue, long long stopValue,
 	}
 	else
 	{
-		MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<RAPLMAX * energyUnit[counter] <<" " <<counter << std::endl;
-		MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << RAPLMAX * energyUnit[counter] - startValue + stopValue << std::endl;
-		return RAPLMAX * energyUnit[counter] - startValue + stopValue;
+		MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX * energyUnit[counter] <<" " <<counter << std::endl;
+		MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX * energyUnit[counter] - startValue + stopValue << std::endl;
+		return COUNTERMAX * energyUnit[counter] - startValue + stopValue;
 	}
 }
 

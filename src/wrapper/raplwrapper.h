@@ -28,7 +28,7 @@ private:
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
-	static long long RAPLMAX;
+	static long long COUNTERMAX;
 
 #else
 public:
@@ -42,7 +42,7 @@ private:
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
-	static long long RAPLMAX;
+	static long long COUNTERMAX;
 #endif
 };
 

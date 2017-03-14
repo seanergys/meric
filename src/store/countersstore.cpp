@@ -75,13 +75,17 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	{
 		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
 		{
-			if (wrapperType == RAPL)
+			if (wrapperType == PERFEVENT)
+			{
+				value = PERFEVENT::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			}
+			else if (wrapperType == PAPI)
+			{
+				value = PAPI::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			}
+			else if (wrapperType == RAPL)
 			{
 				value = RAPL::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
-			else	//TODO parfevent a papi overflow
-			{
-				std::cerr << "MERIC ERROR: counter overflow\n";
 			}
 		}
 		else

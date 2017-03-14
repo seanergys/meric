@@ -2,11 +2,14 @@
 #ifdef HAVE_LINUX_PERF_EVENT_H
 #include <linux/perf_event.h>
 #endif
+
 #include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <asm/unistd.h>
+#include <limits.h>
 // #include <errno.h>
+
 #include "perfeventwrapper.h"
 #include "counters.h"
 
@@ -14,6 +17,7 @@ using namespace meric;
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
 std::map<std::string, long long> PERFEVENT::counters;
+long long PERFEVENT::COUNTERMAX = LLONG_MAX;
 
 long PERFEVENT::openCounter(perf_event_attr attr)
 {
@@ -95,8 +99,6 @@ void PERFEVENT::start()
 	}
 }
 
-
-
 void PERFEVENT::getValues(std::map<std::string, long long> & record) 
 {
 	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -116,6 +118,15 @@ void PERFEVENT::getValues(std::map<std::string, long long> & record)
 
 #else
 #endif
+
+// solve counter overflow
+unsigned long long PERFEVENT::repairValues(long long startValue, long long stopValue, std::string counter)
+{
+	MERIC_INFO << "PERFEVENT OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
+	MERIC_INFO << "PERFEVENT REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
+	return COUNTERMAX - startValue + stopValue;
+}
+
 
 void PERFEVENT::initMap(std::map<std::string, long long> & dict)
 {
