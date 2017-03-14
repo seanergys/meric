@@ -44,11 +44,31 @@ void CountersStore::addEnd(int region)
 	_records.push_back(CountersRecord(region, record, time));
 }
 
-void CountersStore::fillRegionStats(std::vector<long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
+void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
 {
+	unsigned long long int value;
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		stats.push_back(counterIt->second - _records[iStarts.back()].record[counterIt->first]);
+		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
+		{
+			if (wrapperType == PERFEVENT)
+			{
+				value = PERFEVENT::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			}
+			else if (wrapperType == PAPI)
+			{
+				value = PAPI::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			}
+			else if (wrapperType == RAPL)
+			{
+				value = RAPL::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			}
+		}
+		else
+		{
+			value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+		}
+		stats.push_back(value);
 	}
 	//last item is time
 	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);

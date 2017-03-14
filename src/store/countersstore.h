@@ -30,7 +30,7 @@ class CountersStore: public Store {
 public:
 	void addStart(int region);
 	void addEnd(int region);
-	void fillRegionStats(std::vector<long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
+	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
