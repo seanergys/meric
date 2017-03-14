@@ -23,7 +23,7 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void saveInterval(std::vector<size_t> &iStarts, size_t iEnd);
 	
-	std::vector <long>   _bufferCounters;
+	std::vector <long long>   _bufferCounters;
 	std::vector <double> _bufferTime;
 	MPI_Datatype consolidate;
 };

@@ -16,14 +16,14 @@ public:
 	static void init();
 	static void close() {};
 	
-	static void getValues(std::map<std::string, long> & record);
-	static void initMap(std::map<std::string, long> & dict);
+	static void getValues(std::map<std::string, long long> & record);
+	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
-	static unsigned long long repairValues(long startValue, long stopValue, std::string counter);
+	static unsigned long long repairValues(long long startValue, long long stopValue, std::string counter);
 
 private:
 		//list of counters
-	static std::map<std::string, long> counters;
+	static std::map<std::string, long long> counters;
 	static std::map<std::string, double> energyUnit;
 	static std::string suffix;
 	static int numOfDevices;
@@ -34,10 +34,10 @@ private:
 public:
 	static void init() {};
 	static void close() {};
-	static void getValues(std::map<std::string, long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
-	static void initMap(std::map<std::string, long> & dict);
+	static void getValues(std::map<std::string, long long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
+	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
-	static unsigned long long repairValues(long startValue, long stopValue, std::string counter) {return 0;};
+	static unsigned long long repairValues(long long startValue, long long stopValue, std::string counter) {return 0;};
 private:
 	static std::string suffix;
 	static int numOfDevices;

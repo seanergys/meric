@@ -11,11 +11,11 @@
 namespace meric {
 
 struct CountersRecord {
-	CountersRecord(int region, std::map <std::string, long> record, timespec time)
+	CountersRecord(int region, std::map <std::string, long long> record, timespec time)
 	: region(region), record(record), time(time){};
 	
 	int region;
-	std::map <std::string, long> record;
+	std::map <std::string, long long> record;
 	timespec time;
 };
 
@@ -30,7 +30,7 @@ class CountersStore: public Store {
 public:
 	void addStart(int region);
 	void addEnd(int region);
-	void fillRegionStats(std::vector<long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
+	void fillRegionStats(std::vector<long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

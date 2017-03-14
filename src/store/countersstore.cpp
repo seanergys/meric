@@ -18,7 +18,7 @@ using namespace meric;
 
 void CountersStore::addStart(int region)
 {
-	std::map<std::string, long> record;
+	std::map<std::string, long long> record;
 	if (wrapperType == PERFEVENT)
 		PERFEVENT::getValues(record);
 	else if (wrapperType == PAPI)
@@ -32,7 +32,7 @@ void CountersStore::addStart(int region)
 
 void CountersStore::addEnd(int region)
 {
-	std::map<std::string, long> record;
+	std::map<std::string, long long> record;
 	if (wrapperType == PERFEVENT)
 		PERFEVENT::getValues(record);
 	else if (wrapperType == PAPI)
@@ -44,9 +44,9 @@ void CountersStore::addEnd(int region)
 	_records.push_back(CountersRecord(region, record, time));
 }
 
-void CountersStore::fillRegionStats(std::vector<long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
+void CountersStore::fillRegionStats(std::vector<long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
+	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
 		stats.push_back(counterIt->second - _records[iStarts.back()].record[counterIt->first]);
 	}
@@ -71,7 +71,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	unsigned long long int summary = 0;
 	unsigned long long int value;
 	ss << "# COUNTERS - "<<counterLabel<<": \n";
-	for(std::map<std::string, long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
+	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
 		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
 		{

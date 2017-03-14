@@ -35,6 +35,7 @@ const uint64_t RAPLtimeShift  = 16;
 #include <math.h>
 #include "raplwrapper.h"
 #include "counters.h"
+#include "../basis/utils.h"
 
 using namespace meric;
 
@@ -44,9 +45,10 @@ bool RAPL::detailedMode = false;
 long long RAPL::RAPLMAX = pow(2,32);
 
 #ifdef HAVE_X86_ADAPT_H
-std::map<std::string, long> RAPL::counters;
+std::map<std::string, long long> RAPL::counters;
 std::map<std::string, double> RAPL::energyUnit;
 
+// set counters units
 void RAPL::init()
 {
 	numOfDevices = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
@@ -80,9 +82,10 @@ void RAPL::init()
 
 }
 
-void RAPL::getValues(std::map<std::string, long> & record) 
+//	read counters values
+void RAPL::getValues(std::map<std::string, long long> & record) 
 {
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
 	
 	if (detailedMode)
@@ -97,7 +100,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 	//			exit(2);
 			}
 		
-			for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 	//TODO this version doesn't count with more than 10 sockets per node (should be enough for this century)
 				if ((iterator->first.back()-'0') != die)
@@ -131,7 +134,7 @@ void RAPL::getValues(std::map<std::string, long> & record)
 				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
 		//			exit(2);
 			}
-			for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
@@ -143,10 +146,8 @@ void RAPL::getValues(std::map<std::string, long> & record)
 	}
 }
 
-#else
-#endif
-
-unsigned long long RAPL::repairValues(long startValue, long stopValue, std::string counter)
+// solve counter overflow
+unsigned long long RAPL::repairValues(long long startValue, long long stopValue, std::string counter)
 {
 	if (!energyUnit.count(counter))
 	{
@@ -161,7 +162,11 @@ unsigned long long RAPL::repairValues(long startValue, long stopValue, std::stri
 	}
 }
 
-void RAPL::initMap(std::map<std::string, long> & dict)
+#else
+#endif
+
+//	set list of counters to measure
+void RAPL::initMap(std::map<std::string, long long> & dict)
 {
 // fill this vector
 	std::vector <std::string> names;

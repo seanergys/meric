@@ -13,7 +13,7 @@
 using namespace meric;
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
-std::map<std::string, long> PERFEVENT::counters;
+std::map<std::string, long long> PERFEVENT::counters;
 
 long PERFEVENT::openCounter(perf_event_attr attr)
 {
@@ -69,13 +69,13 @@ void PERFEVENT::init()
 
 void PERFEVENT::close()
 {
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_DISABLE, 0) != 0)
 			std::cerr << "PREFEVENT error when stoping counting\n";
 	}
 	
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (::close(iterator->second) != 0)
 			std::cerr << "PREFEVENT error when closing file descriptor\n"; 
@@ -86,7 +86,7 @@ void PERFEVENT::close()
 
 void PERFEVENT::start()
 {
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
 			std::cerr << "PREFEVENT error when reseting counter\n";
@@ -97,9 +97,9 @@ void PERFEVENT::start()
 
 
 
-void PERFEVENT::getValues(std::map<std::string, long> & record) 
+void PERFEVENT::getValues(std::map<std::string, long long> & record) 
 {
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		long long result = 0;
 		if ((read(iterator->second, &result, sizeof(long long))) != sizeof(long long))
@@ -117,7 +117,7 @@ void PERFEVENT::getValues(std::map<std::string, long> & record)
 #else
 #endif
 
-void PERFEVENT::initMap(std::map<std::string, long> & dict)
+void PERFEVENT::initMap(std::map<std::string, long long> & dict)
 {
 //	dict[PERFEVENT_COUNTERS::] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;

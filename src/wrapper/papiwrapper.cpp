@@ -15,7 +15,7 @@
 using namespace meric;
 
 #ifdef HAVE_PAPI_H
-std::map<std::string, long> PAPI::counters;
+std::map<std::string, long long> PAPI::counters;
 int PAPI::eventSet = PAPI_NULL;
 long long * PAPI::countersValues = NULL;
 
@@ -53,7 +53,7 @@ void PAPI::init()
 
 	std::vector<int> eventList;
 
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		int eventCode;
 		if (PAPI_event_name_to_code((char *)iterator->first.c_str(), &eventCode) != PAPI_OK)
@@ -99,7 +99,7 @@ void PAPI::close()
 }
 
 
-void PAPI::getValues(std::map<std::string, long> & record) 
+void PAPI::getValues(std::map<std::string, long long> & record) 
 {
 	if (PAPI_read(eventSet, countersValues) != PAPI_OK)
 	{
@@ -108,7 +108,7 @@ void PAPI::getValues(std::map<std::string, long> & record)
 	}
 	
 	int i = 0;
-	for(std::map<std::string, long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		record[iterator->first] = countersValues[i];
 		i++;
@@ -119,7 +119,7 @@ void PAPI::getValues(std::map<std::string, long> & record)
 #else
 #endif
 
-void PAPI::initMap(std::map<std::string, long> & dict)
+void PAPI::initMap(std::map<std::string, long long> & dict)
 {
 	dict[PAPI_COUNTERS::COUNTER_AVX] = 0;
 	dict[PAPI_COUNTERS::COUNTER_CACHE_MISSES] = 0;
