@@ -15,7 +15,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	_bufferCounters.resize(this->_size * stats.size());
 
 //TODO - basic mpi vs aggregate mpi counter store se lisi predevsim v tom, ktere procesy sbiraji a nasledne zapisuji vysledky
-	MPI_Gather(stats.data(), stats.size(), MPI_LONG, _bufferCounters.data(), stats.size(), MPI_LONG, 0, this->_comm);
+	MPI_Gather(stats.data(), stats.size(), MPI_LONG_LONG, _bufferCounters.data(), stats.size(), MPI_LONG_LONG, 0, this->_comm);
 	MPI_Gather(&time, 1, MPI_DOUBLE, &_bufferTime[0], 1, MPI_DOUBLE, 0, this->_comm);
 
 	auto printStats = [&ss](const std::string description, const auto& data, const int dataSize, const int stride)	//lambda C++14 (auto argument)
@@ -72,7 +72,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, 
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts, iEnd);
 
-	MPI_Gather(stats.data(), stats.size(), MPI_LONG, _bufferCounters.data(), stats.size(), MPI_LONG, 0, this->_comm);
+	MPI_Gather(stats.data(), stats.size(), MPI_LONG_LONG, _bufferCounters.data(), stats.size(), MPI_LONG_LONG, 0, this->_comm);
 	MPI_Gather(&time, 1, MPI_DOUBLE, &_bufferTime[0], 1, MPI_DOUBLE, 0, this->_comm);
 }
 	
