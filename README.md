@@ -349,6 +349,7 @@ There is one more restriction in placing probes into the code. In current versio
 --------------------------------------------------------------------------------
 There are fortran module and interface in the include directory. 
 When calling MERIC_MeasureStart keep in mind that string parameter must end with //char(0).
+
 	CALL MERIC_MeasureStart("region_name"//char(0))
 
 --------------------------------------------------------------------------------
@@ -358,7 +359,8 @@ Into include folder the header readex.h was added. Instead of Meric functions ca
 
 As an example of the api use, test.cpp example code has this interface
 
-##List of functions:##
+## LIST OF FUNCTIONS ##
+
 	void READEX_INIT();
 		library init
 	void READEX_CLOSE();
