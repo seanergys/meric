@@ -19,7 +19,7 @@ mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt -qopenmp $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test
+	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test -DUSE_MERIC
 
 samplesTest: samples_test.cpp
 	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o samples
