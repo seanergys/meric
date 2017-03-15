@@ -7,9 +7,9 @@ namespace meric {
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	double AVGtime = 0.0; unsigned long long   AVGavx  = 0;	//#19
+	double AVGtime = 0.0; unsigned long long AVGavx = 0;	//#19
 	
-	std::vector<long long> stats;
+	std::vector<unsigned long long> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts, iEnd);
 	_bufferCounters.resize(this->_size * stats.size());
@@ -68,7 +68,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
-	std::vector<long long> stats;
+	std::vector<unsigned long long> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts, iEnd);
 

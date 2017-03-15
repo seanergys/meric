@@ -13,6 +13,7 @@
 
 #include "papiwrapper.h"
 #include "counters.h"
+#include "../basis/utils.h"
 
 using namespace meric;
 
