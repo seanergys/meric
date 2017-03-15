@@ -1,4 +1,7 @@
 
+#ifndef READEX_H_
+#define READEX_H_
+
 #ifdef USE_SCOREP
 #include "SCOREP_User.h"
 #endif
@@ -72,4 +75,4 @@ void READEX_PHASE_STOP(struct SCOREP_User_Region* handle)
 	#endif
 }
 
-
+#endif /* READEX_H_ */
