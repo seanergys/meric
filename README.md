@@ -353,7 +353,7 @@ When calling MERIC_MeasureStart keep in mind that string parameter must end with
 	CALL MERIC_MeasureStart("region_name"//char(0))
 
 --------------------------------------------------------------------------------
-#     10] shared Score-P/MERIC api                                             #
+#     10] Shared Score-P/MERIC api                                             #
 --------------------------------------------------------------------------------
 Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is recommneded not to use them both in one time. 
 
