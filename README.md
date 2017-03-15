@@ -40,6 +40,7 @@
 * source codes
 	* test.cpp
 		* One region, with two another regions inside.
+		* This test has shared Score-P/MERIC api. See section 10 of this README.
 	* test_mpi.cpp
 		* Same test as test.c, only extended with mpi.
 	* blas_test.cpp
@@ -176,16 +177,15 @@ To find the best settings for each region, you should run your code with all pos
 	
 	# EXAMPLE OF **region.options** FILE FOR REGIONS **A** AND **B**
 	{
-	"A" : {
-	  "FREQUENCY" : 15,
-	  "UNCORE_FREQUENCY" : 15,
-	  "NUM_THREADS" : 15
-	}
-	,
-	"B":{ 
-	  "FREQUENCY": 23,
-	  "UNCORE_FREQUENCY" : 23
-	}
+		"A" : {
+		  "FREQUENCY" : 15,
+		  "UNCORE_FREQUENCY" : 15,
+		  "NUM_THREADS" : 15
+		},
+		"B" : { 
+		  "FREQUENCY": 23,
+		  "UNCORE_FREQUENCY" : 23
+		}
 	}
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
@@ -350,4 +350,30 @@ There is one more restriction in placing probes into the code. In current versio
 There are fortran module and interface in the include directory. 
 When calling MERIC_MeasureStart keep in mind that string parameter must end with //char(0).
 	CALL MERIC_MeasureStart("region_name"//char(0))
+
+--------------------------------------------------------------------------------
+#     10] shared Score-P/MERIC api                                             #
+--------------------------------------------------------------------------------
+Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is recommneded not to use them both in one time. 
+
+As an example of the api use, test.cpp example code has this interface
+
+##List of functions:##
+	void READEX_INIT();
+		library init
+	void READEX_CLOSE();
+		library finish the run
+	void READEX_REGION_DEFINE(handle);
+		define region handle
+	void READEX_REGION_START(struct SCOREP_User_Region* handle, const char* name, uint32_t type);
+		region start
+	void READEX_REGION_STOP(struct SCOREP_User_Region* handle);
+		region stop
+	void READEX_PHASE_START(struct SCOREP_User_Region* handle, const char* name, uint32_t type);
+		phase region start
+	void READEX_PHASE_STOP(struct SCOREP_User_Region* handle);
+		phase region stop
+
+
+
 
