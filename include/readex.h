@@ -2,14 +2,11 @@
 #ifndef READEX_H_
 #define READEX_H_
 
-#ifdef USE_SCOREP
-#include "SCOREP_User.h"
-#endif
+#include "scorep/SCOREP_User.h"
+#include "scorep/SCOREP_User_Types.h"
 
 #ifdef USE_MERIC
 #include <meric.h>
-#include "scorep/SCOREP_User.h"
-#include "scorep/SCOREP_User_Types.h"
 #endif
 
 void READEX_INIT()
