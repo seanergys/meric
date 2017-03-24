@@ -49,9 +49,12 @@
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if Meric detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
-* region.options
-	* File that sets exact settings for regions inside your code.
-	* In default it is set for blas test.
+* config direcory
+	* region.options
+		* File that sets exact settings for regions inside your code.
+		* In default it is set for blas test.
+	* region.options.extra
+		* Configuration file, that shows what all possible ways how to specify the settings.
 * Makefile
 * run.sh and run-mpi.sh
 	* Scripts that runs the code with all possible settings.
@@ -164,30 +167,6 @@ To find the best settings for each region, you should run your code with all pos
 		2 = hdeem & rapl - uses hdeem and rapl at the same time
 		3 = none - doesn't measure energy consumtion, but provides you the option to set parameters for regions
 
-## TO SET FREQUENCY AND UNCORE_FREQUENCY FOR EACH REGION ##
-	If you find a settings that you want to apply for your regions, you can write 
-	a file **region.options**, where you set them. This file must be in JSON format,
-	where each region has an object with parameters. Parametrs names are the same 
-	as exported environment variables, but witout the prefix "MERIC_".
-	
-	If any region of your code or any parameter is missing, than this missing 
-	parameter will be set to the same value, as it was before the region started.
-	
-	To run your code with a region settings, set name of the file into environment variable MERIC_REGION_OPTIONS.
-	
-	# EXAMPLE OF **region.options** FILE FOR REGIONS **A** AND **B**
-	{
-		"A" : {
-		  "FREQUENCY" : 15,
-		  "UNCORE_FREQUENCY" : 15,
-		  "NUM_THREADS" : 15
-		},
-		"B" : { 
-		  "FREQUENCY": 23,
-		  "UNCORE_FREQUENCY" : 23
-		}
-	}
-
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
 		- Single samples are stored in HDEEM internal memory and read at the end of the runtime
@@ -228,6 +207,41 @@ To find the best settings for each region, you should run your code with all pos
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
 	export MERIC_OUTPUT_FILENAME="log"
+
+## SET MORE SETTINGS ##
+	Settings throught the exprorted envoronment variable should fullfil your need when manualy searching the optimal settings. To set more complex settings the configuration file must be define.
+	In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are not applied and no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
+	
+	To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
+
+	The basic settings via configuration file is settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the prefix "MERIC_".
+	
+	In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object that specify the settings for each region.
+
+	It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket.
+	If any region of your code or any parameter is missing, the default setting is set.
+
+	"@SOCKET" : {
+		"0" : {
+			"A" : {
+				"FREQUENCY" : 13,
+				"UNCORE_FREQUENCY" : 13
+			}
+		}
+	}
+	
+	To define ignore settings, write a object with the key "@IGNORE", and value is another object, that might contain "@REGIONS" with array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
+
+	"@IGNORE" : {
+		"@REGIONS" : ["A", "B", "C"],
+		"@CHANGE" : {
+			"FREQUENCY" : 2,
+			"UNCORE_FREQUENCY" : 2,
+			"NUM_THREADS" : 2
+		}
+	}
+
+	Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
 #      7] Measure energy consumption of your code at Taurus                    #

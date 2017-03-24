@@ -1,12 +1,19 @@
 ### XX.XX.XXXX #################################################################
   - added Fortran interface
-  - repaired measurement based on HDEEM samples - no meric warninigs about hdeem frequency
+  - repaired measurement based on HDEEM samples - no meric warnings about hdeem frequency
   - added computational intensity measurement
   - much faster Meric IO
-  - new warnings when regions are too short or wehen call tree might be invalid
-  - Meric does not switch the environment during runtime if region options is not set
+  - new warnings when regions are too short
   - handles RAPL overflow
   - added shared Score-P/Meric api
+  - MERIC_NUM_THREADS is now obligatory parameter
+  - input region options json file is now parsed via sheredom library which is much more accurate in input file format
+  - completely new way of work with region options, that gives much more options to set - see the README "MERIC input parameters" section!
+		+ Meric does not switch the environment during runtime if region options is not set
+  		+ per node and per socket settings
+  		+ user-defined list of regions and size of change of settings to ignore
+  		+ different default settings
+  - updated error messages 
   
 ### 02.02.2017 #################################################################
   - git repository moved from git@code.it4i.cz:xvysoc01/meric.git to git@code.it4i.cz:vys0053/meric.git
@@ -25,7 +32,7 @@
   - enhanced version of run.sh 
 
 ### 23.11.2016 #################################################################
-  - cpu frequency is set in 0.1 GHz instead of Hz
+  - CPU core frequency is set in 0.1 GHz instead of Hz
   - region.options file format changed to JSON
   - counters store - a possibility to store HW counters values using papi or perfevent
   - set number of threads for each region using MERIC_NUM_THREADS variable
