@@ -8,6 +8,8 @@ using namespace meric;
 SharedMeric::SharedMeric()
 {
 	Environment::init(defaultParameter, 0);
+	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+		currentState.socket[socket] = defaultParameter;
 
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{

@@ -58,6 +58,8 @@ DistributedMeric::DistributedMeric()
 	
 //INIT
 	Environment::init(defaultParameter, _MPInodeRank);
+	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+		currentState.socket[socket] = defaultParameter;
 
 //STORE
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)

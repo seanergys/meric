@@ -7,9 +7,11 @@
 #include <vector>
 #include <algorithm>
 #include <ctime>
+#include <cmath>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
+#include "../basis/json.h"
 #include "../store/detailedenergystore.h"
 #include "../store/energystore.h"
 #include "../store/timestore.h"
@@ -31,6 +33,10 @@ struct RegionParameters {
 	int nthreads;
 };
 
+struct SocketsRegionParameters {
+	RegionParameters socket [2];
+};
+
 class Meric {
 public:
 	static void readRegionParameters();
@@ -45,6 +51,7 @@ public:
 	static std::string OUTPUT_DIR;
 	static std::string OUTPUT_FILENAME;
 	static std::string REGION_OPTIONS;
+	const int NUMOFSOCKETS = 2;	//TODO get this number from a source
 
 	virtual void start(const std::string &region)
 	{
@@ -94,24 +101,116 @@ public:
 
 protected:
 
-	const RegionParameters& regionValue(const std::string &region, int node = -1)
+	static void readRegionOptions();
+	static RegionParameters getRegionSettings(json_object_element_s * data);
+	static int getDefaultParameters();
+	
+	bool ignoreRegion(const std::string &region)
 	{
-		auto it = parameter.find(std::make_pair(region, node));
-		if	(it != parameter.end())
+		for (std::vector<std::string>::iterator it=ignoreRegions.begin(); it!=ignoreRegions.end(); it++)
 		{
-			return it->second;
+			if (region == *it)
+				return true;
 		}
+		return false;
+			
+	}
+	
+	/**
+	 * current settings to test if there is a change in values
+	 * region name
+	 * id of a node for the settings is searching
+	 **/
+	const SocketsRegionParameters regionValue(SocketsRegionParameters& settings, const std::string &region, int node = -1)
+	{
+		SocketsRegionParameters change = {};
+		if (REGION_OPTIONS == "")
+			return change;
+		
+		auto cmpSettings = [&] (SocketsRegionParameters & prev, RegionParameters & next, int socket)
+		{
+			//core frequency
+			if (next.frequency)
+			{
+				if (abs(prev.socket[socket].frequency-next.frequency) > ignoreSettings.frequency)
+				{
+					change.socket[socket].frequency = abs( prev.socket[socket].frequency - next.frequency);
+					prev.socket[socket].frequency = next.frequency;
+				}
+			}
+			else
+			{
+				if (abs(prev.socket[socket].frequency-defaultParameter.frequency) > ignoreSettings.frequency)
+				{
+					change.socket[socket].frequency = abs( prev.socket[socket].frequency - defaultParameter.frequency);
+					prev.socket[socket].frequency = defaultParameter.frequency;
+				}
+			}
+			
+			//uncore frequency
+			if(next.uncoreFrequency)
+			{
+				if (abs(prev.socket[socket].uncoreFrequency - next.uncoreFrequency) > ignoreSettings.uncoreFrequency)
+				{
+					change.socket[socket].uncoreFrequency = abs(prev.socket[socket].uncoreFrequency - next.uncoreFrequency);
+					prev.socket[socket].uncoreFrequency = next.uncoreFrequency;
+				}
+			}
+			else
+			{
+				if (abs(prev.socket[socket].uncoreFrequency-defaultParameter.uncoreFrequency) > ignoreSettings.uncoreFrequency)
+				{
+					change.socket[socket].uncoreFrequency = abs( prev.socket[socket].uncoreFrequency - defaultParameter.uncoreFrequency);
+					prev.socket[socket].uncoreFrequency = defaultParameter.uncoreFrequency;
+				}			
+			}
+			
+			//threads
+			if(next.nthreads)
+			{
+				if (abs(prev.socket[socket].nthreads - next.nthreads) > ignoreSettings.nthreads)
+				{
+					change.socket[socket].nthreads = abs(prev.socket[socket].nthreads - next.nthreads);
+					prev.socket[socket].nthreads = next.nthreads;
+				}
+			}
+			else
+			{
+				if (abs(prev.socket[socket].nthreads-defaultParameter.nthreads) > ignoreSettings.nthreads)
+				{
+					change.socket[socket].nthreads = abs( prev.socket[socket].nthreads - defaultParameter.nthreads);
+					prev.socket[socket].nthreads = defaultParameter.nthreads;
+				}			
+			}
+		};
+	
+		if (parameter.find(region) == parameter.end())	//region name not in list
+			for (int socket=0; socket<NUMOFSOCKETS; socket++)
+				cmpSettings(settings, defaultParameter, socket);
 		else
 		{
-			it = parameter.find(std::make_pair(region, -1));
-			if	(it != parameter.end())
-			{
-				return it->second;
-			} else
-			{
-				return defaultParameter;				
-			}	
+			std::map<std::pair<int, int>, struct RegionParameters>::iterator it;
+			for (int socket=0; socket<NUMOFSOCKETS; socket++)
+			{	
+				if (node != -1 && (it = parameter[region].find(std::make_pair(node, socket))) != parameter[region].end())
+					cmpSettings(settings, it->second, socket);
+				else if (node != -1 && (it = parameter[region].find(std::make_pair(node, -1))) != parameter[region].end())
+					cmpSettings(settings, it->second, socket);
+				else if ((it = parameter[region].find(std::make_pair(-1, socket))) != parameter[region].end())
+					cmpSettings(settings, it->second, socket);
+				else if ((it = parameter[region].find(std::make_pair(-1, -1))) != parameter[region].end())
+					cmpSettings(settings, it->second, socket);
+				else
+					cmpSettings(settings, defaultParameter, socket);
+			}
 		}
+/*
+		MERIC_INFO << region << " CHANGE\n"
+			<< "\tFRQ "<< change.socket[0].frequency	<< std::endl
+			<< "\tunF "<< change.socket[0].uncoreFrequency	<< std::endl
+			<< "\tTHR "<< change.socket[0].nthreads	<< std::endl;
+*/
+		return change;
 	}
 	
 	const std::string& getRegionName(int size, int last)
@@ -124,14 +223,19 @@ protected:
 		size_t pos = find(_name.begin(), _name.end(), region) - _name.begin();
 		if (pos >= _name.size())
 		{
-			pos = _name.size();			
+			pos = _name.size();
 			_name.push_back(region);
 		}
 		return pos;
 	}
 
-	static std::map< std::pair<std::string, int>, RegionParameters> parameter;
+	//              region_name                     node socket       settings
+	static std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > parameter;
+	static RegionParameters ignoreSettings;
+	static std::vector <std::string> ignoreRegions;
+
 	static RegionParameters defaultParameter;
+	static SocketsRegionParameters currentState;
 
 	static std::vector<int> _stack;
 	static std::vector<std::string> _name;

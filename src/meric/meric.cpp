@@ -14,27 +14,40 @@ std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
 
-std::map< std::pair<std::string, int>, RegionParameters> Meric::parameter;
+std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
+RegionParameters Meric::ignoreSettings = {};
+std::vector <std::string> Meric::ignoreRegions;
 std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
+SocketsRegionParameters Meric::currentState;
 std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;
 
+
 void Meric::readRegionParameters()
 {
-	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", 0);
+	if (getDefaultParameters())
+		exit(1);
+
+	if (! Meric::REGION_OPTIONS.empty())
+		readRegionOptions();
+}
+
+int Meric::getDefaultParameters()
+{
+	int ret=0;
+//OBLIGATORY SECTION
+	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", -1);
 	defaultParameter.frequency       = mutils::getenv("MERIC_FREQUENCY", 0);
 	defaultParameter.uncoreFrequency = mutils::getenv("MERIC_UNCORE_FREQUENCY", 0);
 
-#ifdef HAVE_CPUFREQ_H
+#if defined (HAVE_CPUFREQ_H) || HAVE_X86_ADAPT_H
 	if (defaultParameter.frequency == 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY\n";
-#ifndef HAVE_X86_ADAPT_H
-		exit(1);
-#endif
+		ret = 1;
 	}
 #endif
 
@@ -42,14 +55,27 @@ void Meric::readRegionParameters()
 	if (defaultParameter.uncoreFrequency == 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY\n";
-		exit(1);
+		ret = 1;
 	}
-#ifdef HAVE_CPUFREQ_H
-	if (defaultParameter.frequency == 0)
-		exit(1);
-#endif
 #endif
 
+#ifdef HAVE_OMP_H
+	if (defaultParameter.nthreads < 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_NUM_THREADS\n"
+				  << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
+		ret = 1;
+	}
+	if (mutils::getenv("OMP_NUM_THREADS", 0))
+	{
+		std::cerr << "MERIC WARNIG: do not use OMP_NUM_THREADS\n";
+	}
+#endif
+
+	if (ret)
+		return ret;
+
+//OPTIONAL SECTION
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
@@ -69,89 +95,157 @@ void Meric::readRegionParameters()
 		}
 	}
 	
-
-	if (! Meric::REGION_OPTIONS.empty())
-	{
-		Tokenizer tokenizer(Meric::REGION_OPTIONS);
-		int bracketCounter = 0;
-		std::vector<std::string> values;
-	
-		auto regionValues = [&values] (RegionParameters &region, size_t index)
-		{
-			for (size_t i = index; i < values.size(); i += 2)
-			{
-				std::stringstream ss(values[i + 1]);
-				if (StringCompare::caseInsensitiveEq(values[i], "FREQUENCY"))
-				{
-					ss >> region.frequency;
-				}else if (StringCompare::caseInsensitiveEq(values[i], "UNCORE_FREQUENCY"))
-				{
-					ss >> region.uncoreFrequency;
-				}else if (StringCompare::caseInsensitiveEq(values[i], "NUM_THREADS")) 
-				{
-					ss >> region.nthreads;
-				}
-			}
-		};
-
-		while (tokenizer.next() != Tokenizer::Token::END) {
-			if (bracketCounter < 0)
-				break;
-			switch (tokenizer.token()) {
-			case Tokenizer::Token::STRING:
-				values.push_back(tokenizer.value());
-				break;
-			case Tokenizer::Token::OBJECT_OPEN:
-					bracketCounter++;
-					break;
-			case Tokenizer::Token::OBJECT_CLOSE:
-				if (bracketCounter == 1)
-				{
-					bracketCounter = 0;
-					break;
-				}
-				else if (bracketCounter == 2)
-				{
-					if (values.size() == 1 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
-					{
-						bracketCounter--;
-						break;	
-					}
-					else if ((values.size() % 2 != 1))
-					{
-						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-						bracketCounter = -1;
-						break;
-					}
-					RegionParameters &region = Meric::parameter[std::make_pair(values[0], -1)];
-					regionValues(region, 1);
-					values.clear();
-				}
-				else if (bracketCounter == 3)
-				{
-					values.erase(values.end());
-				}
-				else if (bracketCounter == 4 && StringCompare::caseInsensitiveEq(values[0], "@NODE"))
-				{
-					RegionParameters &region = Meric::parameter[std::make_pair(values[2], std::stoi(values[1]))];
-					regionValues(region, 3);
-					values.erase(values.begin()+2, values.end());
-				}
-				else
-				{
-						std::cerr << "MERIC ERROR: invalid options format! Use JSON: {\"region\": { \"parameter\" : 'value', ... }, ... }\n";
-						bracketCounter = -1;
-						break;
-				}
-
-				bracketCounter--;
-				break;
-			case Tokenizer::Token::ASSIGN:
-			case Tokenizer::Token::DELIMITER:
-			case Tokenizer::Token::LINE_END:
-				break;
-			}
-		}
-	}
+	return 0;
 }
 
+void Meric::readRegionOptions()
+{
+//load input file
+	std::string line, jsonString = "";
+	std::ifstream jsonFile (Meric::REGION_OPTIONS);
+
+	if (jsonFile.is_open())
+	{
+		while (getline(jsonFile,line))
+		{
+			jsonString += " " + line;
+		}
+		jsonFile.close();
+	}
+	const char * json = jsonString.c_str();
+
+// parse input json
+	struct json_value_s* root = json_parse(json, strlen(json));
+	if (root ==  NULL)
+	{
+		std::cerr << "MERIC ERROR: empty or invalid input json\n";
+		return;
+	}
+
+	struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+	if (data == NULL)
+	{
+		free(root);
+		return;
+	}
+
+//	process the settings into a structure
+	struct json_object_element_s* region;
+	struct json_object_element_s* node;
+	struct json_object_element_s* socket;
+	
+	do
+	{
+		if (data->name->string[0] != '@')	//region
+		{
+			parameter[std::string(data->name->string)][std::make_pair(-1, -1)] = getRegionSettings(data);
+		}
+		else if (std::string(data->name->string) == "@IGNORE")
+		{
+			MERIC_INFO << data->name->string <<"\n";
+			struct json_object_element_s* ignore = ((struct json_object_s*)data->value->payload)->start;
+			do
+			{
+				if (std::string(ignore->name->string) == "@REGIONS")
+				{
+					struct json_array_element_s* set = ((struct json_array_s*)ignore->value->payload)->start;
+					do
+					{
+						MERIC_INFO << "\t" << ((struct json_string_s*)set->value->payload)->string << std::endl;
+						ignoreRegions.push_back(std::string(((struct json_string_s*)set->value->payload)->string));
+						set = set->next;
+					}while(set != NULL);
+				}
+				else if (std::string(ignore->name->string) == "@CHANGE")
+				{
+					ignoreSettings = getRegionSettings(ignore);
+				}
+				ignore = ignore->next;
+			}while(ignore != NULL);
+		}
+		else if(std::string(data->name->string) == "@NODE")
+		{
+			MERIC_INFO << data->name->string <<"\n";
+			node = ((struct json_object_s*)data->value->payload)->start;
+
+			do{
+				//list of regions
+				struct json_object_element_s* socketOrRegion = ((struct json_object_s*)node->value->payload)->start;
+				do{
+					if(std::string(socketOrRegion->name->string) == "@SOCKET")
+					{
+						socket = ((struct json_object_s*)socketOrRegion->value->payload)->start;
+						do{
+							//list of regions
+							region = ((struct json_object_s*)socket->value->payload)->start;
+							do{
+								parameter[std::string(region->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), std::stoi(std::string(socket->name->string)))] = getRegionSettings(region);
+								region = region->next;
+							}while (region != NULL);
+							socket = socket->next;
+						}while (socket != NULL);
+					}
+					else	//list of regions
+					{
+						parameter[std::string(socketOrRegion->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), -1)] = getRegionSettings(socketOrRegion);
+					}
+					socketOrRegion = socketOrRegion->next;
+				}while (socketOrRegion != NULL);
+
+				node = node->next;
+			}while(node != NULL);
+
+		}
+		else if(std::string(data->name->string) == "@SOCKET")
+		{
+			std::cerr << data->name->string <<"\n";
+			socket = ((struct json_object_s*)data->value->payload)->start;
+			do{
+				//list of regions
+				region = ((struct json_object_s*)socket->value->payload)->start;
+				do{
+					parameter[std::string(region->name->string)][std::make_pair(-1, std::stoi(std::string(socket->name->string)))] = getRegionSettings(region);
+					region = region->next;
+				}while (region != NULL);
+				socket = socket->next;
+			}while(socket != NULL);
+		}
+		data = data->next;
+
+	}while(data != NULL);
+
+/*
+//print the parameters (core frequency only)
+	for ( const auto &regs : parameter )
+	{
+		for(const auto & pair : parameter[regs.first])	
+		{
+			MERIC_INFO << regs.first << "\n"
+				<< "\t" << pair.first.first << ":" << pair.first.second<< "\n"
+				<< "\t" << pair.second.frequency << "\n\n";
+		}
+	}
+*/
+	free(root);
+}
+
+RegionParameters Meric::getRegionSettings(json_object_element_s * data)
+{
+	RegionParameters param = {};
+	struct json_object_element_s* set = ((struct json_object_s*)data->value->payload)->start;
+	
+	do
+	{
+		if ("FREQUENCY" == std::string(set->name->string))
+				param.frequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		else if ("UNCORE_FREQUENCY" == std::string(set->name->string))
+				param.uncoreFrequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		else if ("NUM_THREADS" == std::string(set->name->string))
+				param.nthreads = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		else
+				std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;
+		set = set->next;
+	}while (set != NULL);
+	
+	return param;
+}

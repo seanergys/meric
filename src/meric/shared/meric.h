@@ -17,16 +17,27 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
-			#pragma omp master
+			if (ignoreRegion(region))
 			{
-				startRegion(region);
+				#pragma omp master
+				_stack.push_back(getRegionID(region));
+			}
+			else
+			{
+				#pragma omp barrier
+				#pragma omp master
+				{
+					startRegion(region);
+				}
 			}
 		}
 		else
 #endif
 		{
-			startRegion(region);
+			if (ignoreRegion(region))
+					_stack.push_back(getRegionID(region));
+			else
+				startRegion(region);
 		}
 	}
 	
@@ -35,16 +46,27 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
-			#pragma omp master
+			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
-				stopRegion();
+				#pragma omp master
+				_stack.pop_back();
+			}
+			else
+			{
+				#pragma omp barrier
+				#pragma omp master
+				{
+					stopRegion();
+				}
 			}
 		}
 		else
 #endif
 		{
-			stopRegion();
+			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
+					_stack.pop_back();
+			else
+				stopRegion();
 		}
 	}
 	
@@ -77,12 +99,17 @@ public:
 private:
 	void startRegion(const std::string &region)
 	{
-		if (REGION_OPTIONS != "")
+		SocketsRegionParameters change = regionValue(currentState, region);
+		for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		{
-			Environment::uncoreFrequency(regionValue(region).uncoreFrequency);
-			Environment::frequency(regionValue(region).frequency);
-			Environment::threadNumber(regionValue(region).nthreads);
+			if(change.socket[socket].uncoreFrequency)
+				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+			if(change.socket[socket].frequency)
+				Environment::frequency(currentState.socket[socket].frequency, socket);
 		}
+		if(change.socket[0].nthreads)
+			Environment::threadNumber(currentState.socket[0].nthreads);
+
 		Meric::start(region);
 		_stack.push_back(getRegionID(region));
 	}
@@ -97,14 +124,19 @@ private:
 		else
 		{
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+			return;
 		}
 		
-		if (REGION_OPTIONS != "")
+		SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
+		for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		{
-			Environment::uncoreFrequency(regionValue(getRegionName(_stack.size(), _stack.back())).uncoreFrequency);
-			Environment::frequency(regionValue(getRegionName(_stack.size(), _stack.back())).frequency);
-			Environment::threadNumber(regionValue(getRegionName(_stack.size(), _stack.back())).nthreads);
+			if(change.socket[socket].uncoreFrequency)
+				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+			if(change.socket[socket].frequency)
+				Environment::frequency(currentState.socket[socket].frequency, socket);
 		}
+		if(change.socket[0].nthreads)
+			Environment::threadNumber(currentState.socket[0].nthreads);
 	}
 };
 
