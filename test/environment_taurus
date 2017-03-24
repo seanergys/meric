@@ -3,7 +3,7 @@
 
 # bash script to load modules and set environment varibles to run MERIC test
 # parametres:
-#	-t = optional, doesn't change environment only prints list of MERIC variables, that are set
+#	-t = optional, doesn't change the environment only prints a list of MERIC variables, that are set
 
 ###############################################################################
 # MACHINE DEPENDET SECTION
@@ -57,12 +57,12 @@ modules
  ### ENVIRONMENT VARIABLES ###
 export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25 
-#export MERIC_NUM_THREADS=12
+export MERIC_NUM_THREADS=0
 export MERIC_COUNTERS=perfevent	#perfevent papi
 export MERIC_MODE=2	#enum {hdeem=0, rapl=1, both=2, run=3}
 export MERIC_AGGREGATE=0
 export MERIC_CONTINUAL=1
-#export MERIC_DETAILED=1
+# export MERIC_DETAILED=1
 # export MERIC_DEBUG=1
 # export MERIC_SAMPLES=1
 
