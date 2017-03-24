@@ -35,23 +35,36 @@ const int MAX_UNCORE_FREQ = 30;
 class Environment {
 
 public:
-
-	static void frequency(uint64_t freq)
+	static void frequency(uint64_t freq, int socket = -1)
 	{
 
+		if (freq > X86ADAPT_MAX_FREQ || freq <= 0)
+		{
+			std::cerr << "CPU frequency did not changed to invalid value: " << freq << std::endl;
+			return;
+		}
+			
 #ifdef HAVE_CPUFREQ_H
 		if (freq <= MAX_FREQ)
 		{
-			MERIC_INFO << "CPUFREQ set frequency to: " << freq << "\n";
+			MERIC_INFO << "CPUFREQ set frequency to: " << freq;
 			int ret;
-			const int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
-			for (int i=0; i < nodeSize; i++)
+			int nodeSize = sysconf(_SC_NPROCESSORS_ONLN);
+			int cpu = 0;
+			if(socket != -1)
 			{
-				ret = cpufreq_set_frequency(i,freq*CPUFREQ_FREQ_MULT);
+				nodeSize = SOCKET_SIZE*(socket+1);
+				cpu = SOCKET_SIZE*socket;
+			}
+			MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
-				if(ret != 0 || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(i))
+			for (; cpu < nodeSize; cpu++)
+			{
+				ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
+
+				if(ret != 0 || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))
 				{
-					std::cerr << "CPUFREQ ERROR - failed to set frequency for cpu "<< i << std::endl;
+					std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
 	//				MPI_Abort(MPI_COMM_WORLD, 1);
 				}
 			}
@@ -59,57 +72,74 @@ public:
 		else
 #endif
 #ifdef HAVE_X86_ADAPT_H
-		{	//x86adapt allows to set cpu frequency ut to 3.3 GHz
-			if (freq > X86ADAPT_MAX_FREQ)
+		{	//x86adapt allows to set cpu frequency up to 3.3 GHz
+			if (x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState") < 0)
 			{
-				std::cerr << "CPU frequency did not changed to: " << freq << std::endl;
+				std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
 				return;
 			}
-			if (x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState") < 0)
-				return;
-			MERIC_INFO << "X86ADAPT set frequency to: " << freq << "\n";
+			MERIC_INFO << "X86ADAPT set frequency to: " << freq;
 
-			const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
-			for (int cpu=0; cpu<max; cpu++)
+			int nodeSize = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
+			int cpu=0;
+			if(socket != -1)
+			{
+				nodeSize = SOCKET_SIZE*(socket+1);
+				cpu = SOCKET_SIZE*socket;
+			}
+			MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
+				
+			for (; cpu<nodeSize; cpu++)
 			{
 				int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
 				if (fd < 0)
 				{
-					std::cerr << "X86ADAPT error while accessing file descriptor\n";
+					std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
 	//				exit(2);
 				}
 
 				if(x86_adapt_set_setting(fd, x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState"),freq*X86ADAPT_FREQ_MULT) != 8)
 				{
-					std::cerr << "X86ADAPT error while setting core frequecy\n";
+					std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
 	//					exit(3);
 				}
 			
 				if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-					std::cerr << "X86ADAPT error while closing file descriptor\n";
+					std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 			}
 		}
 #else
 		{
-			std::cerr << "CPU frequency did not changed to: " << freq << std::endl;
+			std::cerr << "CPU frequency did not changed to value: " << freq << std::endl;
 		}
 #endif
 	}
 	
-	static void uncoreFrequency(uint64_t freq)
+	static void uncoreFrequency(uint64_t freq, int socket = -1)
 	{
 #ifdef HAVE_X86_ADAPT_H
 		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
+		{
+			std::cerr << "X86ADAPT ERROR: uncore frequency settings not allowed\n";
 			return;
+		}
 
-		MERIC_INFO << "X86ADAPT set uncore frequency to: "<< freq << std::endl;
-		const int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-		for (int die=0; die<max; die++)
+		MERIC_INFO << "X86ADAPT set uncore frequency to: "<< freq;
+		int max = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+		int die=0;
+		if (socket != -1 && socket < max)
+		{
+			die = socket;
+			max = socket+1;
+		}
+		MERIC_INFO << "; soc " << die << " - " << max-1<< std::endl;
+			
+		for (; die<max; die++)
 		{
 			int fd = x86_adapt_get_device(X86_ADAPT_DIE, die);
 			if (fd < 0)
 			{
-				std::cerr << "X86ADAPT error while accessing file descriptor\n";
+				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
 //				exit(2);
 			}
 
@@ -117,7 +147,7 @@ public:
 			{
 				if(x86_adapt_set_setting(fd, x86_adapt_lookup_ci_name(X86_ADAPT_DIE, description),freq ) != 8)
 				{
-					std::cerr << "X86ADAPT error while setting uncore frequecy\n";
+					std::cerr << "X86ADAPT ERROR: error while setting uncore frequecy\n";
 //					exit(3);
 				}
 			};
@@ -126,7 +156,7 @@ public:
 			setFreq("Intel_UNCORE_MIN_RATIO");
 			
 			if ( x86_adapt_put_device(X86_ADAPT_DIE, die))
-				std::cerr << "X86ADAPT error while closing file descriptor\n";
+				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 		}
 #else
 #endif
@@ -136,24 +166,18 @@ public:
 	{
 		if (nthreads <= 0)
 			return;
-/*		int running = 0;
-		running = omp_get_num_threads();
-		if (nthreads != running)
-		{
-			if (omp_in_parallel())
-				std::cerr << "WARNING: MERIC changes number of threads inside a parallel region\n";
-			omp_set_num_threads(nthreads);
-		}
-*/
 #ifdef HAVE_OMP_H
-		if (!omp_in_parallel())
+		if (nthreads != omp_get_num_threads())
 		{
-			MERIC_INFO << "set num threads to: " << nthreads << std::endl;
-			omp_set_num_threads(nthreads);
-		}
-		else
-		{
-			MERIC_INFO << "MERIC WARNING: paralel region, num threads did not change to: " << nthreads << std::endl;
+			if (!omp_in_parallel())
+			{
+				MERIC_INFO << "OPENMP set num threads to: " << nthreads << std::endl;
+				omp_set_num_threads(nthreads);
+			}
+			else
+			{
+				MERIC_INFO << "MERIC WARNING: paralel region, num threads did not change to: " << nthreads << std::endl;
+			}
 		}
 #endif
 /*
@@ -170,13 +194,34 @@ public:
 #ifdef HAVE_X86_ADAPT_H
 		if (x86_adapt_init())
 		{
-			std::cerr << "X86ADAPT init error\n";
+			std::cerr << "X86ADAPT ERROR: init error\n";
 //			exit(1);
 		}
 		
+		#ifdef HAVE_X86_ADAPT_H
+			SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+		#else
+			std::string line;
+			std::ifstream jsonFile ("/proc/cpuifo");
+			if (jsonFile.is_open())
+			{
+				while (getline(jsonFile,line))
+				{
+					if (line.find("cpu cores"))
+					{
+						line = line.substr(line.find(":"));
+						break;
+					}
+				}
+				jsonFile.close();
+				SOCKET_SIZE = std::stoi(line);
+			}
+		#endif
+
+		
 		//test if it is possible to set uncore frequency
-		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
-			std::cerr << "X86ADAPT WARNING: UNCORE FREQUENCY SETTINGS IS NOT AVAILABLE\n";
+//		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
+//			std::cerr << "X86ADAPT WARNING: UNCORE FREQUENCY SETTINGS IS NOT AVAILABLE\n";
 #endif		
 		if(!rank)
 		{
@@ -192,7 +237,10 @@ public:
 		x86_adapt_finalize();
 #endif
 	}
-	
+
+private:
+
+static int SOCKET_SIZE;	
 	
 };
 
