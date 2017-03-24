@@ -1,0 +1,90 @@
+{
+	"A" : {
+		"FREQUENCY" : 12,
+		"UNCORE_FREQUENCY" : 12,
+		"NUM_THREADS" : 2
+	}
+	,
+	"B":{ 
+		"FREQUENCY" : 25, 
+		"UNCORE_FREQUENCY" : 25
+	},
+	
+	"@SOCKET" : {
+		"0" : {
+			"A" : {
+				"FREQUENCY" : 13,
+				"UNCORE_FREQUENCY" : 13
+			},
+			"B":{ 
+				"FREQUENCY" : 24, 
+				"UNCORE_FREQUENCY" : 24
+			}
+		},
+		"1" : {
+			"A" : {
+				"FREQUENCY" : 18,
+				"UNCORE_FREQUENCY" : 18
+			},
+			"B":{ 
+				"FREQUENCY" : 19, 
+				"UNCORE_FREQUENCY" : 19
+			}
+		}
+	},
+	
+	"@NODE" : {
+		"0" : {
+			"A" : {
+				"FREQUENCY" : 13,
+				"UNCORE_FREQUENCY" : 13
+			},
+			"B":{ 
+				"FREQUENCY" : 24, 
+				"UNCORE_FREQUENCY" : 24
+			},
+			
+			"@SOCKET" : {
+				"0" : {
+					"A" : {
+						"FREQUENCY" : 13,
+						"UNCORE_FREQUENCY" : 13
+					},
+					"B":{ 
+						"FREQUENCY" : 24, 
+						"UNCORE_FREQUENCY" : 24
+					}
+				},
+				"1" : {
+					"A" : {
+						"FREQUENCY" : 18,
+						"UNCORE_FREQUENCY" : 18
+					},
+					"B":{ 
+						"FREQUENCY" : 19, 
+						"UNCORE_FREQUENCY" : 19
+					}
+				}
+			}
+		},
+		"1" : {
+			"A" : {
+				"FREQUENCY" : 15,
+				"UNCORE_FREQUENCY" : 15
+			},
+			"B":{ 
+				"FREQUENCY" : 16, 
+				"UNCORE_FREQUENCY" : 16
+			}
+		}
+	},
+
+	"@IGNORE" : {
+		"@REGIONS" : ["A", "B", "C"],
+		"@CHANGE" : {
+			"FREQUENCY" : 2,
+			"UNCORE_FREQUENCY" : 2,
+			"NUM_THREADS" : 2
+		}
+	}
+}
