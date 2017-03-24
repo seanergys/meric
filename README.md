@@ -209,17 +209,17 @@ To find the best settings for each region, you should run your code with all pos
 	export MERIC_OUTPUT_FILENAME="log"
 
 ## SET MORE SETTINGS ##
-	Settings throught the exprorted envoronment variable should fullfil your need when manualy searching the optimal settings. To set more complex settings the configuration file must be define.
-	In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are not applied and no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
+Settings throught the exprorted envoronment variable should fullfil your need when manualy searching the optimal settings. To set more complex settings the configuration file must be define.
+In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are not applied and no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
 	
-	To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
+To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
 
-	The basic settings via configuration file is settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the prefix "MERIC_".
+The basic settings via configuration file is settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the prefix "MERIC_".
 	
-	In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object that specify the settings for each region.
+In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object that specify the settings for each region.
 
-	It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket.
-	If any region of your code or any parameter is missing, the default setting is set.
+It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket.
+If any region of your code or any parameter is missing, the default setting is set.
 
 	"@SOCKET" : {
 		"0" : {
@@ -230,7 +230,7 @@ To find the best settings for each region, you should run your code with all pos
 		}
 	}
 	
-	To define ignore settings, write a object with the key "@IGNORE", and value is another object, that might contain "@REGIONS" with array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
+To define ignore settings, write a object with the key "@IGNORE", and value is another object, that might contain "@REGIONS" with array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
@@ -241,7 +241,7 @@ To find the best settings for each region, you should run your code with all pos
 		}
 	}
 
-	Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
+Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
 #      7] Measure energy consumption of your code at Taurus                    #
