@@ -96,7 +96,10 @@ public:
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
-	static void stop() {};
+	static void stop(timespec & time) 
+	{
+		clock_gettime(CLOCK_REALTIME, &time);
+	};
 
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
 	static void fillEnergy(double &energy)
