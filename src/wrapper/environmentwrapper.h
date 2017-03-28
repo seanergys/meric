@@ -30,7 +30,7 @@ const int X86ADAPT_FREQ_MULT = 256;
 const int MAX_FREQ = 25;
 const int X86ADAPT_MAX_FREQ = 33;
 const int MAX_UNCORE_FREQ = 30;
-
+static int SOCKET_SIZE;	
 
 class Environment {
 
@@ -198,30 +198,27 @@ public:
 //			exit(1);
 		}
 		
-		#ifdef HAVE_X86_ADAPT_H
-			SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-		#else
-			std::string line;
-			std::ifstream jsonFile ("/proc/cpuifo");
-			if (jsonFile.is_open())
-			{
-				while (getline(jsonFile,line))
-				{
-					if (line.find("cpu cores"))
-					{
-						line = line.substr(line.find(":"));
-						break;
-					}
-				}
-				jsonFile.close();
-				SOCKET_SIZE = std::stoi(line);
-			}
-		#endif
-
-		
 		//test if it is possible to set uncore frequency
 //		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 //			std::cerr << "X86ADAPT WARNING: UNCORE FREQUENCY SETTINGS IS NOT AVAILABLE\n";
+
+		SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+#else
+		std::string line;
+		std::ifstream jsonFile ("/proc/cpuifo");
+		if (jsonFile.is_open())
+		{
+			while (getline(jsonFile,line))
+			{
+				if (line.find("cpu cores"))
+				{
+					line = line.substr(line.find(":"));
+					break;
+				}
+			}
+			jsonFile.close();
+			SOCKET_SIZE = std::stoi(line);
+		}
 #endif		
 		if(!rank)
 		{
@@ -240,7 +237,7 @@ public:
 
 private:
 
-static int SOCKET_SIZE;	
+
 	
 };
 
