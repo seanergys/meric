@@ -39,7 +39,7 @@ void READEX_CLOSE()
 #endif
 
 #ifdef USE_SCOREP
-	#define READEX_REGION_STOP( handle, name, type ) \
+	#define READEX_REGION_STOP( handle ) \
 		SCOREP_USER_REGION_END( handle )
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
