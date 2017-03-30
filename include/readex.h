@@ -23,11 +23,15 @@
 	#define READEX_CLOSE()
 #endif
 
-
-//Score-P 3.0
-//SCOREP_USER_REGION_DEFINE(handle)
-#define READEX_REGION_DEFINE( handle ) \
-	static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+//READEX_REGION_DEFINE(handle)
+#ifdef USE_SCOREP
+	//Score-P 3.0
+	//SCOREP_USER_REGION_DEFINE(handle)
+	#define READEX_REGION_DEFINE( handle ) \
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+#else
+	#define READEX_REGION_DEFINE( handle )
+#endif
 
 //READEX_REGION_START(handle, name, type) 
 #ifdef USE_SCOREP
