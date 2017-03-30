@@ -18,10 +18,9 @@
 
 	#define READEX_CLOSE() \
 		MERIC_Close();
-#elif defined USE_SCOREP
-	#define READEX_INIT() ;
-
-	#define READEX_CLOSE() ;
+#else
+	#define READEX_INIT()
+	#define READEX_CLOSE()
 #endif
 
 
@@ -37,6 +36,8 @@
 #elif defined USE_MERIC
 	#define READEX_REGION_START( handle, name, type ) \
 		MERIC_MeasureStart( name );
+#else
+	#define READEX_REGION_START( handle, name, type )
 #endif
 
 //READEX_REGION_STOP(handle)
@@ -46,6 +47,8 @@
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
 		MERIC_MeasureStop();
+#else
+	#define READEX_REGION_STOP( handle )
 #endif
 
 //READEX_PHASE_START(handle, name, type)
@@ -55,6 +58,8 @@
 #elif defined USE_MERIC
 	#define READEX_PHASE_START( handle, name, type ) \
 		MERIC_MeasureStart( name );
+	#else
+		#define READEX_PHASE_START( handle, name, type )
 #endif
 
 //READEX_PHASE_STOP(handle)
@@ -64,6 +69,8 @@
 #elif defined USE_MERIC
 	#define READEX_PHASE_STOP( handle ) \
 		MERIC_MeasureStop();
+#else
+	#define READEX_PHASE_STOP( handle )
 #endif
 
 
