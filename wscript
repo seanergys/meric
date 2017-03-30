@@ -6,8 +6,10 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-#    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
+    if ctx.options.withgcc:
+        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
+    else:
+        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
 #    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
     ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
 
@@ -87,6 +89,13 @@ def build(ctx):
 
 
 def options(opt):
+    opt.add_option(
+        "--withgcc",
+        action="store_true",
+        default=False,
+        help="use GCC instead of Intel compiler"
+    )
+
     opt.add_option(
         "--verbose",
         action="store_true",

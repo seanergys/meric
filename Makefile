@@ -39,7 +39,7 @@ dummy:
 	make install
 
 gcc:
-	./waf configure --cpp=g++ --flag="$(LIBPATH) $(INCLUDES)"
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH) $(INCLUDES)"
 	make install
 love:
 	./waf clean
