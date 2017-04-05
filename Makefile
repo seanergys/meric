@@ -1,6 +1,9 @@
 #PAPI - taurus
-PAPI_INC=-I/sw/taurus/libraries/papi/5.4.1/include/
-PAPI_LIB=-L/sw/taurus/libraries/papi/5.4.1/lib/
+# PAPI_INC=-I/sw/taurus/libraries/papi/5.4.1/include/
+# PAPI_LIB=-L/sw/taurus/libraries/papi/5.4.1/lib/
+#PAPI - jetson
+PAPI_INC=-I/apps/papi/5.4.3/include
+PAPI_LIB=-L/apps/papi/5.4.3/lib
 #CPUFREQ - taurus
 CPUFREQ_INC=-I/projects/p_readex/cpufrequtils-icc/lib/
 CPUFREQ_LIB=-L/projects/p_readex/cpufrequtils-icc
@@ -8,8 +11,8 @@ CPUFREQ_LIB=-L/projects/p_readex/cpufrequtils-icc
 X86A_INC=-I$(HOME)/readex/x86adapt/x86_adapt/library/include/
 X86A_LIB=-L$(HOME)/readex/x86adapt/x86_adapt/build/
 #FREEIPMI - salomon
-FREEIPMI_INC=-I$(HOME)/readex/meric/hdeem/freeipmi-1.5.5/libfreeipmi/include/
-FREEIPMI_LIB=
+#FREEIPMI_INC=-I$(HOME)/meric/hdeem/freeipmi-1.5.5/libfreeipmi/include/
+#FREEIPMI_LIB=
 
 
 INCLUDES= $(PAPI_INC) $(X86A_INC) $(CPUFREQ_INC) $(FREEIPMI_INC)
@@ -41,6 +44,11 @@ dummy:
 gcc:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH) $(INCLUDES)"
 	make install
+
+arm:
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH) $(INCLUDES)" --dummy
+	make install
+
 love:
 	./waf clean
 

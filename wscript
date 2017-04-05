@@ -19,6 +19,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
     if ctx.options.dummy:
         ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
     else:
 #        ctx.env.append_unique("DEFINES", [ "HAVE_HDEEM_H" ])	# if problem with searching
         ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=True)
