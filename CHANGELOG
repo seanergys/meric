@@ -13,7 +13,8 @@
   		+ per node and per socket settings
   		+ user-defined list of regions and size of change of settings to ignore
   		+ different default settings
-  - updated error messages 
+  - updated error messages
+  - freeipmi library is not needed to compile Meric without HDEEM
   
 ### 02.02.2017 #################################################################
   - git repository moved from git@code.it4i.cz:xvysoc01/meric.git to git@code.it4i.cz:vys0053/meric.git

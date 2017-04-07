@@ -340,16 +340,13 @@ There is one more restriction in placing probes into the code. In current versio
 --------------------------------------------------------------------------------
 #     8] MERIC compilation on a machine without the hdeem                      #
 --------------------------------------------------------------------------------
-	# install freeipmi
-		# https://www.gnu.org/software/freeipmi/download.html
-	# optionaly install other libraries
-		# x86_adapt, cpufreq, papi
+	# optionaly install libraries that Meric uses
+		# x86_adapt, cpufreq, papi, freeipmi, hdeem
 	# set library paths in Meric Makefile
 	# add path to Meric in $LD_LIBRARAY_PATH
-	# load modules
-		# intel compiler
-		# python
-		# papi, x86_adapt or cpufreq if available
+	# load modules or install libraries that Meric uses
+		# compiler
+		# optionaly papi, x86_adapt, cpufreq
 	# compile Meric in dummy mode
 		# all modules works the same as with hdeem, only hdeemwrapper class is replaced with basic access counter
 		# if there is a problem with compiler, set --cpp and --mpi options in Makefile
