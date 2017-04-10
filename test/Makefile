@@ -1,14 +1,27 @@
-BINARIES=test test_mpi blasTest samples
+COMPILER=INTEL
+#COMPILER=GCC
 
-CC=icpc
-MPICC=mpiicpc
+ifeq ($(COMPILER),INTEL)
+	CC=icpc
+	MPICC=mpiicpc
+	OPENMP=-qopenmp
+else #ifeq($(COMPILER),GCC)
+	CC=g++
+	MPICC=mpic++
+	OPENMP=-fopenmp
+endif
 
+################################################################################
 MERIC=-L../lib -I../include
 HDEEM=-L../hdeem -lhdeem
 FREEIPMI=-lfreeipmi
 X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
 PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
+#PAPI=-L/apps/papi/5.4.3/lib/ -lpapi
+
+BINARIES=test test_mpi blasTest samples
+################################################################################
 
 default: all
 
@@ -16,20 +29,20 @@ all: samplesTest mpiTest basicTest blasTest
 
  ######
 mpiTest: test_mpi.cpp
-	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt -qopenmp $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o test -DUSE_MERIC
+	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test -DUSE_MERIC
 
 samplesTest: samples_test.cpp
-	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -qopenmp  $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o samples
+	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples
 
 blasTest: blas_test.c
 	$(info )
 	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
 	$(info )
 	module load mkl;
-	$(CC) -O0 -g blas_test.c $(MERIC) -lmeric -mkl -qopenmp     $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -lrt -o blasTest
+	$(CC) -O0 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o blasTest
 
 
  ######
