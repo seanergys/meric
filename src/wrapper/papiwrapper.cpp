@@ -17,11 +17,13 @@
 
 using namespace meric;
 
+
+long long PAPI::COUNTERMAX = LLONG_MAX;
+
 #ifdef HAVE_PAPI_H
 std::map<std::string, long long> PAPI::counters;
 int PAPI::eventSet = PAPI_NULL;
 long long * PAPI::countersValues = NULL;
-long long PAPI::COUNTERMAX = LLONG_MAX;
 
 void PAPI::init()
 {
