@@ -33,9 +33,11 @@ print("\nBarcelona Supercomputing Center (c) 2016")
 print("Simple TI INA3221 Python interface")
 print("For interrupt press CTRL+C or send a signal to the deamon with: sudo pkill -INT $basename\n")
 
-print("timestamp, bus_V_DC, bus_V_GPU, bus_V_CPU, shunt_mV_DC, shunt_mV_CPU, shunt_mV_GPU, \
-load_V_DC, load_V_GPU, load_V_CPU, current_mA_DC, current_mA_GPU, current_mA_CPU, \
-power_consumption_W_DC, power_consumption_W_GPU, power_consumption_CPU", file = myFile)
+# print("timestamp, bus_V_DC, bus_V_GPU, bus_V_CPU, shunt_mV_DC, shunt_mV_CPU, shunt_mV_GPU, \
+# load_V_DC, load_V_GPU, load_V_CPU, current_mA_DC, current_mA_GPU, current_mA_CPU, \
+# power_consumption_W_DC, power_consumption_W_GPU, power_consumption_CPU", file = myFile)
+
+print("# timestamp, power_consumption_W_DC, power_consumption_W_GPU, power_consumption_CPU", file = myFile)
 
 ina3221 = SDL_INA3221.SDL_INA3221(addr=0x40)
 
@@ -68,10 +70,12 @@ while True:
     power_w3 = (current_ma3/1000) * loadVoltage3
 
     # Print everything
-    print("{:.4f}".format(myTimestamp) + ", " + "{:.4f}".format(busVoltage1) + ", " + "{:.4f}".format(busVoltage2) + ", " + "{:.4f}".format(busVoltage3) + ", " +
-            "{:.4f}".format(shuntVoltage1) + ", " + "{:.4f}".format(shuntVoltage2) + ", " + "{:.4f}".format(shuntVoltage3) + ", " +
-            "{:.4f}".format(loadVoltage1) + ", " + "{:.4f}".format(loadVoltage2) + ", " + "{:.4f}".format(loadVoltage3) + ", " +
-            "{:.4f}".format(current_ma1) + ", " + "{:.4f}".format(current_ma2) + ", " + "{:.4f}".format(current_ma3) + ", " +
-            "{:.4f}".format(power_w1) + ", " + "{:.4f}".format(power_w2) + ", " + "{:.4f}".format(power_w3), file=myFile)
+#    print("{:.4f}".format(myTimestamp) + ", " + "{:.4f}".format(busVoltage1) + ", " + "{:.4f}".format(busVoltage2) + ", " + "{:.4f}".format(busVoltage3) + ", " +
+#            "{:.4f}".format(shuntVoltage1) + ", " + "{:.4f}".format(shuntVoltage2) + ", " + "{:.4f}".format(shuntVoltage3) + ", " +
+#            "{:.4f}".format(loadVoltage1) + ", " + "{:.4f}".format(loadVoltage2) + ", " + "{:.4f}".format(loadVoltage3) + ", " +
+#            "{:.4f}".format(current_ma1) + ", " + "{:.4f}".format(current_ma2) + ", " + "{:.4f}".format(current_ma3) + ", " +
+#            "{:.4f}".format(power_w1) + ", " + "{:.4f}".format(power_w2) + ", " + "{:.4f}".format(power_w3), file=myFile)
 
+    print("{:.4f}".format(myTimestamp) + ", " + "{:.4f}".format(power_w1) + ", " + "{:.4f}".format(power_w2) + ", " + "{:.4f}".format(power_w3), file=myFile)
+            
     time.sleep(0.2)
