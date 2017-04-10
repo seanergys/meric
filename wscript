@@ -6,12 +6,12 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    if ctx.options.withgcc:
-        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
-    else:
-        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
-#    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
-    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
+#    if ctx.options.withgcc:
+#        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
+#    else:
+#        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
+#    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
 
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
