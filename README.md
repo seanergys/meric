@@ -366,26 +366,28 @@ When calling MERIC_MeasureStart keep in mind that string parameter must end with
 --------------------------------------------------------------------------------
 #     10] Shared Score-P/MERIC api                                             #
 --------------------------------------------------------------------------------
-Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is recommneded not to use them both in one time. 
+Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is not possible to use Meric and Score-P simultaneously. 
 
-As an example of the api use, test.cpp example code has this interface
+As an example of the api use, test.cpp example code has this interface.
 
 ## LIST OF FUNCTIONS ##
+Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
-	void READEX_INIT();
+	READEX_INIT()
 		library init
-	void READEX_CLOSE();
+	READEX_CLOSE()
 		library finish the run
-	void READEX_REGION_DEFINE(handle);
+	READEX_REGION_DEFINE(handle)
 		define region handle
-	void READEX_REGION_START(struct SCOREP_User_Region* handle, const char* name, uint32_t type);
+	READEX_REGION_START(handle, name, type)
 		region start
-	void READEX_REGION_STOP(struct SCOREP_User_Region* handle);
+	READEX_REGION_STOP(handle)
 		region stop
-	void READEX_PHASE_START(struct SCOREP_User_Region* handle, const char* name, uint32_t type);
+	READEX_PHASE_START(handle, name, type)
 		phase region start
-	void READEX_PHASE_STOP(struct SCOREP_User_Region* handle);
+	READEX_PHASE_STOP(handle)
 		phase region stop
+	
 
 
 
