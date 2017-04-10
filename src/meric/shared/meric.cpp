@@ -3,19 +3,12 @@
 
 using namespace meric;
 
-
-
 SharedMeric::SharedMeric()
 {
-	Environment::init(defaultParameter, 0);
-	for (int socket=0; socket < NUMOFSOCKETS; socket++)
-		currentState.socket[socket] = defaultParameter;
-
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
 		HDEEM::init();
 		HDEEM::start(_startTime);
-
 
 		if (Meric::DEBUG)
 		{
@@ -51,6 +44,11 @@ SharedMeric::SharedMeric()
 	
 	for (int i=0; i<_storeList.size(); i++)
 		_storeList[i]->setMPIWrite(true);
+
+	Environment::init(defaultParameter, 0);
+	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+		currentState.socket[socket] = defaultParameter;
+
 }
 
 SharedMeric::~SharedMeric()

@@ -56,11 +56,6 @@ DistributedMeric::DistributedMeric()
 	MPI_Scan(&nodeFirst, &_nodeId, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	_nodeId--;
 	
-//INIT
-	Environment::init(defaultParameter, _MPInodeRank);
-	for (int socket=0; socket < NUMOFSOCKETS; socket++)
-		currentState.socket[socket] = defaultParameter;
-
 //STORE
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
@@ -155,6 +150,12 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _currentNode));
 		_storeList.back()->setMPIWrite(true);
 	}
+
+//INIT
+	Environment::init(defaultParameter, _MPInodeRank);
+	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+		currentState.socket[socket] = defaultParameter;
+
 }
 
 DistributedMeric::~DistributedMeric()
