@@ -366,9 +366,7 @@ When calling MERIC_MeasureStart keep in mind that string parameter must end with
 --------------------------------------------------------------------------------
 #     10] Shared Score-P/MERIC api                                             #
 --------------------------------------------------------------------------------
-Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is not possible to use Meric and Score-P simultaneously. 
-
-As an example of the api use, test.cpp example code has this interface.
+Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP. It is not possible to use Meric and Score-P simultaneously. As an example of the api use, test.cpp example code has this interface.
 
 ## LIST OF FUNCTIONS ##
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
