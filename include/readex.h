@@ -7,6 +7,8 @@
 
 #ifdef USE_MERIC
 #include <meric.h>
+#elif defined USE_SCOREP
+#include <cstddef>
 #endif
 
 
