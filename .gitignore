@@ -4,4 +4,6 @@ build
 *.so
 *.o
 *.a
-
+test/hdeemMeasurement/
+test/hdeemMeasurementCounters/
+tools/__pycache__/
