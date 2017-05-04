@@ -1,3 +1,7 @@
+### XX.XX.XXXX #################################################################
+  - updated shared Score-P/Meric header file
+  - ARM jetson energy measurement (NOT FINISHED)
+
 ### 10.04.2017 #################################################################
   - added Fortran interface
   - repaired measurement based on HDEEM samples - no meric warnings about hdeem frequency
