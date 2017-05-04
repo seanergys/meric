@@ -5,10 +5,14 @@
 #include "scorep/SCOREP_User.h"
 #include "scorep/SCOREP_User_Types.h"
 
+#ifdef USE_SCOREP_MANUAL
+	#define USE_SCOREP
+#endif
+
 #ifdef USE_MERIC
-#include <meric.h>
+	#include <meric.h>
 #elif defined USE_SCOREP
-#include <cstddef>
+	#include <cstddef>
 #endif
 
 
@@ -36,7 +40,7 @@
 #endif
 
 //READEX_REGION_START(handle, name, type) 
-#ifdef USE_SCOREP
+#ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_START( handle, name, type ) \
 		SCOREP_USER_REGION_BEGIN( handle, name, type )
 #elif defined USE_MERIC
@@ -47,7 +51,7 @@
 #endif
 
 //READEX_REGION_STOP(handle)
-#ifdef USE_SCOREP
+#ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP( handle ) \
 		SCOREP_USER_REGION_END( handle )
 #elif defined USE_MERIC
