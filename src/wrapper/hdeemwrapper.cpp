@@ -8,7 +8,7 @@ using namespace meric;
 
 hdeem_bmc_data_t HDEEM::bmc;
 hdeem_global_reading_t HDEEM::_samples;
-siize_t HDEEM::_timeAdjustment = 0;
+size_t HDEEM::_timeAdjustment = 0;
 
 size_t HDEEM::setTimeAdjustment(timespec start)
 {
@@ -21,13 +21,17 @@ size_t HDEEM::setTimeAdjustment(timespec start)
 
 std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
+
 	std::string errMessage = "";
 	*firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 
+//MERIC_INFO << "FIRST " << *firstBlade << std::endl;
+//MERIC_INFO << "LAST " << *lastBlade << std::endl;
+
 	if (*lastBlade > _samples.nb_blade_values)	//TODO
 	{
-		errMessage << "HDEEM ERROR - missing samples\n";
+		errMessage = "HDEEM ERROR - missing samples\n";
 		*lastBlade = -1;
 	}
 
@@ -35,7 +39,7 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 	*lastVR  = *lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
 	if (*lastVR > _samples.nb_vr_values)
 		*lastVR = _samples.nb_vr_values;
-	
+
 	for (unsigned int sensorID = 0; sensorID < PROBE_NUMBER; sensorID++)
 	{
 		energy[sensorID]   = 0.0;
@@ -47,9 +51,13 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 	{
 		maxWatts[sensorID] = _samples.blade_power[firstSample].value[sensorID];
 		minWatts[sensorID] = maxWatts[sensorID];
+		double valTmp;
 		for (size_t it = firstSample; it < lastSample; it++)
 		{
-			double valTmp = _samples.blade_power[it].value[sensorID];
+			if (sensorID == 0)
+				valTmp = _samples.blade_power[it].value[sensorID];
+			else
+				valTmp = _samples.vr_power[it].value[sensorID];
 			if (valTmp > maxWatts[sensorID])
 				maxWatts[sensorID] = valTmp;
 			else if (valTmp < minWatts[sensorID])
@@ -57,52 +65,17 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 			energy[sensorID] += valTmp;
 		}
 	};
-	
+
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 	{
-		//TODO lambda
-		
-		//DC
-		maxWatts[sensorID] = _samples.blade_power[*firstBlade].value[sensorID];
-		minWatts[sensorID] = maxWatts[sensorID];
-		for (size_t it = *firstBlade; it < *lastBlade; it++)
-		{
-			double valTmp = _samples.blade_power[it].value[sensorID];
-			if (valTmp > maxWatts[sensorID])
-				maxWatts[sensorID] = valTmp;
-			else if (valTmp < minWatts[sensorID])
-				minWatts[sensorID] = valTmp;
-			energy[sensorID] += valTmp;
-		}
-
-		//VR
-		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
-		{
-			if(*lastVR > 0 && *lastVR > *firstVR)
-			{
-				maxWatts[sensorID] = _samples.vr_power[first].value[sensorID];
-				minWatts[sensorID] = maxWatts[sensorID];
-				for(size_t it = firstVR; it < lastVR; it++)
-				{
-					double valTmp = _samples.vr_power[it].value[sensorID];
-					if (valTmp > maxWatts[sensorID])
-						maxWatts[sensorID] = valTmp;
-					else if (valTmp < minWatts[sensorID])
-						minWatts[sensorID] = valTmp;        
-					energy[sensorID] += valTmp;
-				}
-			}
-		}
-/*		
 		getEnergySamples(*firstBlade, *lastBlade, 0);
 		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
 			getEnergySamples(*firstVR, *lastVR, sensorID);
-*/		
 	}else
 	{
 		*firstBlade = -1;
 		*lastBlade = -1;
-		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region";
+		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region";
 	}
 
 	return errMessage;	
