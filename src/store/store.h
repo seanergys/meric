@@ -14,6 +14,7 @@
 #include <iomanip>
 
 #include "../wrapper/hdeemwrapper.h"
+#include "../wrapper/jetsonwrapper.h"
 #include "../basis/utils.h"
 
 namespace meric {
@@ -24,13 +25,13 @@ struct RegionStats {
 };
 
 struct DetailedRegionStats {
-	double energy[PROBE_NUMBER];
+	double energy[HDEEM::PROBE_NUMBER];											//TODO odstranit zavislost na HDEEM ?
 	double duration;
 };
 
 struct DebugRegionStats {
-    double energyStatsStructure[PROBE_NUMBER];
-	double energy[PROBE_NUMBER];
+	double energyStatsStructure[HDEEM::PROBE_NUMBER];
+	double energy[HDEEM::PROBE_NUMBER];
 	double mericDuration;
 	double hdeemDuration;
 };

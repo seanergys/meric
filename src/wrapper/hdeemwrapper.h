@@ -9,25 +9,33 @@
 #include <time.h>
 #include <ctime>
 #include <array>
+#include <vector>
 #include <unistd.h>
 
-#define PROBE_NUMBER 7
+//#define PROBE_NUMBER 7
 
 namespace meric {
 
-#ifndef USE_DUMMY
 
 class HDEEM {
 
 public:
-	static void init() 
+	static const int FREQUENCY = 1000;
+	static const int FREQUENCY_VR = 100;
+	static const int VRDELAY = 2; //from list of VR samples we noticed, that VR samples are shifted by two samples
+	static const int PROBE_NUMBER = 7;	//BLADE + {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
+	static std::string storeLabel;
+	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
+
+#ifndef USE_DUMMY
+	static void init()
 	{
 		checkHDEEM(hdeem_init(&bmc), "init");
 		checkHDEEM(hdeem_clear(&bmc), "clear");	//extra clear should not make a problem
 	}
 	
 	static void close() { hdeem_close(&bmc); }
-	static void start(timespec & time) 
+	static void start(timespec & time)
 	{
 		MERIC_INFO << "HDEEM START\n";
 		clock_gettime(CLOCK_REALTIME, &time);
@@ -70,12 +78,19 @@ public:
 		hdeem_stats_free(&stats);
 	}
 
+	static size_t setTimeAdjustment(timespec start);
 	static void getStatus(hdeem_status_t &status) { checkHDEEM(hdeem_check_status(&bmc, &status), "get_status"); }
-	static void getSamples(hdeem_global_reading_t &samples) { checkHDEEM(hdeem_get_global(&bmc, &samples), "get_global"); }
+	//static void getSamples(hdeem_global_reading_t &samples) { checkHDEEM(hdeem_get_global(&bmc, &samples), "get_global"); }
+	static void getSamples() { checkHDEEM(hdeem_get_global(&bmc, &_samples), "get_global"); }
 	static void deleteSamples(hdeem_global_reading_t &samples) { hdeem_data_free(&samples); }
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *min, double *max);
+//	static void getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts);
+	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
 
 private:
 	static hdeem_bmc_data_t bmc;
+	static hdeem_global_reading_t _samples;
+	static size_t _timeAdjustment;
 
 	static void checkHDEEM(int status, const std::string &function)
 	{
@@ -87,16 +102,13 @@ private:
 
 #else
 
-class HDEEM {
-
-public:
 	static void init() {};
 	static void close() {};
-	static void start(timespec & time) 
+	static void start(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
-	static void stop(timespec & time) 
+	static void stop(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
@@ -128,6 +140,10 @@ public:
 	}
 	static void getSamples(hdeem_global_reading_t &samples) { samples.nb_blade_values = samples.nb_vr_values = 0; }
 	static void deleteSamples(hdeem_global_reading_t &samples) {};
+	static size_t setTimeAdjustment(timespec start) {};
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *min, double *max) { return "";};
+	static void getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts) {};
+	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};
 
 private:
 	static size_t energy;

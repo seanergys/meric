@@ -8,6 +8,7 @@
 #include "../../wrapper/perfeventwrapper.h"
 #include "../../wrapper/papiwrapper.h"
 #include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/jetsonwrapper.h"
 
 meric::SharedMeric *holder = NULL;
 
@@ -35,6 +36,8 @@ void MERIC_Init()
 			meric::RAPL::detailed();
 		meric::RAPL::init();
 	}
+	if (meric::Meric::MODE == meric::MODE_JETSON)
+		meric::JETSON::init();
 }
 
 void MERIC_Close()

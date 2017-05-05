@@ -25,7 +25,17 @@ struct mutils {
 	{
 		return time.tv_sec + time.tv_nsec / 1e9;
 	}
-	
+
+	static timespec stringToTime(const std::string &data)
+	{
+		timespec time;
+		int sec, nsec;
+		sscanf( data.c_str(), "%d.%d", &sec, &nsec );
+		time.tv_sec = sec;
+		time.tv_nsec = nsec;
+		return time;
+	}
+		
 	static void createDir(const std::string &dir)
 	{
 		struct stat info;

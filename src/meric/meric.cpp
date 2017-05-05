@@ -80,7 +80,7 @@ int Meric::getDefaultParameters()
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 
-	if (Meric::MODE < MODE_HDEEM || Meric::MODE > MODE_RUN)
+	if (Meric::MODE < MODE_HDEEM || Meric::MODE > MODE_JETSON)
 	{
 		std::cerr << "MERIC WARNING: MERIC MODE unknown value - default "<< MODE_HDEEM <<std::endl;
 		Meric::MODE = MODE_HDEEM;

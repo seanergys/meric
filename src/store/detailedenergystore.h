@@ -7,10 +7,10 @@
 namespace meric {
 
 struct DetailedEnergyRecord {
-	DetailedEnergyRecord(int region, std::array<double, PROBE_NUMBER> &energy, timespec &time)
+	DetailedEnergyRecord(int region, std::array<double, HDEEM::PROBE_NUMBER> &energy, timespec &time)
 	: time(time), energy(energy), region(region) {};
 
-	std::array<double, PROBE_NUMBER> energy;
+	std::array<double, HDEEM::PROBE_NUMBER> energy;
 	timespec time;
 	int region;
 };
@@ -31,7 +31,7 @@ public:
 
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 	{
-		for (size_t p = 0; p < PROBE_NUMBER; p++) {
+		for (size_t p = 0; p < HDEEM::PROBE_NUMBER; p++) {
 			stats.energy[p] = _records[iEnd].energy[p] - _records[iStarts].energy[p];
 		}
 		stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);

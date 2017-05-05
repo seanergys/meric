@@ -23,7 +23,7 @@ class DetailedAggregateStore;
 
 class TimeStore: public Store {
 
-	#define VRDELAY 2	//from list of VR samples we noticed, that VR samples are shifted by two samples
+	enum WRAPPERS {HDEEM, JETSON};
 
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
@@ -45,59 +45,97 @@ public:
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFilename, 
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		sleep(1); // wait for HDEEM to load all samples
+		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 		timespec time1, time2;
+		
 		clock_gettime(CLOCK_REALTIME, &time1);
-		HDEEM::getSamples(_samples);
+		if (wrapperType == HDEEM)
+			HDEEM::getSamples(_samples);
+		else if (wrapperType == JETSON)
+			JETSON::getSamples(_samplesJetson);
 		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "HDEEM GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
+		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 
-		clock_gettime(CLOCK_REALTIME, &time1);
-		HDEEM::deleteSamples(_samples);
-		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "HDEEM DELETE SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+		if (wrapperType == HDEEM)
+		{
+			clock_gettime(CLOCK_REALTIME, &time1);
+			HDEEM::deleteSamples(_samples);
+			clock_gettime(CLOCK_REALTIME, &time2);
+			MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+		}
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		sleep(1); // wait for HDEEM to load all samples
+		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 		timespec time1, time2;
+	
 		clock_gettime(CLOCK_REALTIME, &time1);
-		HDEEM::getSamples(_samples);
+
+		if (wrapperType == HDEEM)
+			HDEEM::getSamples(_samples);
+		else if (wrapperType == JETSON)
+			JETSON::getSamples(_samplesJetson);
 		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "HDEEM GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
+		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 
 		iterate(_records, processInterval);
 
-		clock_gettime(CLOCK_REALTIME, &time1);
-		HDEEM::deleteSamples(_samples);
-		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "HDEEM DELETE SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
-
+		if (wrapperType == HDEEM)
+		{
+			clock_gettime(CLOCK_REALTIME, &time1);
+			HDEEM::deleteSamples(_samples);
+			clock_gettime(CLOCK_REALTIME, &time2);
+			MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+		}
 	}
 
-	TimeStore(bool samples, bool write): _hdeem_duration(0), _meric_duration(0), Store(samples, write)
+	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
+
+		if (wrapper == HDEEM::storeLabel)
+			wrapperType = HDEEM;
+		else if (wrapper == JETSON::storeLabel)
+			wrapperType = JETSON;
 	}
 
-	TimeStore(bool samples): _hdeem_duration(0), _meric_duration(0), Store(samples)
+	TimeStore(const std::string wrapper, bool samples): Store(samples)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
+
+		if (wrapper == HDEEM::storeLabel)
+			wrapperType = HDEEM;
+		else if (wrapper == JETSON::storeLabel)
+			wrapperType = JETSON;
 	}
 
-	TimeStore(): _hdeem_duration(0), _meric_duration(0)
+	TimeStore(const std::string wrapper)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
+
+		if (wrapper == HDEEM::storeLabel)
+			wrapperType = HDEEM;
+		else if (wrapper == JETSON::storeLabel)
+			wrapperType = JETSON;
+	}
+	
+	TimeStore(bool samples): Store(samples)
+	{
+		MERIC_INFO << "Create TimeStore\n";
+		clock_gettime(CLOCK_REALTIME, &_start);
+
+		wrapperType = HDEEM; //default
 	}
 
-/*	TimeStore(bool write = true): _hdeem_duration(0), _meric_duration(0), Store(write)
+
+/*	TimeStore(bool write = true): Store(write)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
@@ -107,11 +145,12 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void computePeriods();
 
-	timespec _start, _end;
-	timespec _hdeem_period, _meric_period;
-	double _hdeem_duration, _meric_duration, _hdeem_freq;
+	int wrapperType;
+	timespec _start;
 	hdeem_global_reading_t _samples;
+	std::vector<jetsonSample> _samplesJetson;
 	size_t _timeAdjustment;
+	int _samples_freq;
 
 	std::vector<TimeRecord> _records;
 };

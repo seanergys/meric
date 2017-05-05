@@ -17,17 +17,17 @@ class DetailedTimeStore: public TimeStore {
 	friend class AggregateStore<DetailedTimeStore>;
 	friend class DetailedAggregateStore<DetailedTimeStore>;
 public:
-	DetailedTimeStore(bool samples, bool write) : TimeStore(samples, write)
+	DetailedTimeStore(bool samples, bool write) : TimeStore("hdeem", samples, write)
 	{
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}
 
-	DetailedTimeStore(bool samples) : TimeStore(samples)
+	DetailedTimeStore(bool samples) : TimeStore("hdeem", samples)
 	{
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}
 	
-	DetailedTimeStore()
+	DetailedTimeStore(): TimeStore("hdeem")
 	{
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}

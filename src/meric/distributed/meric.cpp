@@ -102,7 +102,7 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new TimeStore(Meric::SAMPLES, !_MPInodeRank));
+						_storeList.push_back(new TimeStore("hdeem", Meric::SAMPLES, !_MPInodeRank));
 					}
 				}
 			} else {
@@ -156,6 +156,8 @@ DistributedMeric::DistributedMeric()
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
+	if (Meric::MODE == MODE_JETSON && (!_MPInodeRank))
+		JETSON::init();
 }
 
 DistributedMeric::~DistributedMeric()

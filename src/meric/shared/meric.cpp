@@ -19,7 +19,7 @@ SharedMeric::SharedMeric()
 				if (Meric::DETAILED) {
 					_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES));
 				} else {
-					_storeList.push_back(new TimeStore(Meric::SAMPLES));
+					_storeList.push_back(new TimeStore("hdeem", Meric::SAMPLES));
 				}
 			} else {
 				if (Meric::DETAILED)
@@ -36,6 +36,11 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES));
 	}
+	
+	if (Meric::MODE == MODE_JETSON)
+	{
+		_storeList.push_back(new TimeStore("jetson", Meric::SAMPLES));
+	}	
 	
 	if (Meric::COUNTERS != "none")
 	{

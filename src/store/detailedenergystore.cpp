@@ -5,7 +5,7 @@ using namespace meric;
 
 void DetailedEnergyStore::addStart(int region)
 {
-	std::array<double, PROBE_NUMBER> energy;
+	std::array<double, HDEEM::PROBE_NUMBER> energy;
 	timespec time;
 	HDEEM::fillDetailedEnergy(energy);
 	HDEEM::fillTime(time);
@@ -14,7 +14,7 @@ void DetailedEnergyStore::addStart(int region)
 
 void DetailedEnergyStore::addEnd(int region)
 {
-	std::array<double, PROBE_NUMBER> energy;
+	std::array<double, HDEEM::PROBE_NUMBER> energy;
 	timespec time;
 	HDEEM::fillTime(time);
 	HDEEM::fillDetailedEnergy(energy);

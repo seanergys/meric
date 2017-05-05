@@ -19,8 +19,8 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
     double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
-	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts.back()].time - _start) * _hdeem_freq) + _timeAdjustment;
-	size_t last  = std::floor(duration * _hdeem_freq) + first;
+	size_t first = std::ceil(mutils::timeToDouble(_records[iStarts.back()].time - _start) * _samples_freq) + _timeAdjustment;
+	size_t last  = std::floor(duration * _samples_freq) + first;
 	if (last > _samples.nb_blade_values)
 	{
 		MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST SAMPLE miss: " << last << ", max: " << _samples.nb_blade_values << std::endl;
@@ -82,8 +82,8 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 
     std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
     unsigned int vrSensorNum = vrSensor.size();
-	first = first/10 + VRDELAY; //10x lower freq
-	last  = last/10  + VRDELAY;
+	first = first/10 + HDEEM::VRDELAY; //10x lower freq
+	last  = last/10  + HDEEM::VRDELAY;
 	if (last > _samples.nb_vr_values)
 		last = _samples.nb_vr_values;
 

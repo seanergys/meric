@@ -8,11 +8,11 @@
 namespace meric {
 
 struct TimeEnergyRecord {
-	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, PROBE_NUMBER> &energy)
+	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, HDEEM::PROBE_NUMBER> &energy)
 	: region(region), clockTime(clockTime), energy(energy) {};
 
 	timespec clockTime;
-    std::array<double, PROBE_NUMBER> energy;
+    std::array<double, HDEEM::PROBE_NUMBER> energy;
 	int region;
 };
 
@@ -41,7 +41,6 @@ public:
               const std::string outputFilename,
               std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
@@ -50,7 +49,6 @@ public:
 	}
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		clock_gettime(CLOCK_REALTIME, &_end);
 		sleep(1); // wait for HDEEM to load all samples
 		computePeriods();
 		HDEEM::getSamples(_samples);
@@ -58,17 +56,17 @@ public:
 		HDEEM::deleteSamples(_samples);
 	}
 
-	TimeEnergyStore(bool samples, bool write) : TimeStore(samples, write)
+	TimeEnergyStore(bool samples, bool write) : TimeStore("hdeem", samples, write)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
-	TimeEnergyStore(bool samples) : TimeStore(samples)
+	TimeEnergyStore(bool samples) : TimeStore("hdeem", samples)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
-	TimeEnergyStore()
+	TimeEnergyStore() : TimeStore("hdeem")
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
