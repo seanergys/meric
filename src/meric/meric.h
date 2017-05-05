@@ -25,7 +25,7 @@
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN};
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON};
 
 struct RegionParameters {
 	double frequency;
@@ -55,7 +55,6 @@ public:
 
 	virtual void start(const std::string &region)
 	{
-		MERIC_INFO << "region '" << region << "' starting\n";
 		for (int i=0; i<_storeList.size(); i++)
 		{
 			if (_storeList[i]->getMPIWrite())
@@ -66,7 +65,6 @@ public:
 
 	virtual void stop()
 	{
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 		//stop should be in opposite order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
 		for(int i=_storeList.size()-1;i>=0; i--)

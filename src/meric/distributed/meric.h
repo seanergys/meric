@@ -23,6 +23,7 @@ public:
 
 	void start(const std::string &region)
 	{
+		MERIC_INFO << "region '" << region << "' starting\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
@@ -56,6 +57,7 @@ public:
 	
 	void stop()
 	{
+		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
