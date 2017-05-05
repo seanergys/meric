@@ -13,6 +13,8 @@ def configure(ctx):
 #    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
     ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
 
+    ctx.env.append_unique("DEFINES", [ "JETSONMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools/jetsonMeasurement\""])
+    
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.verbose:
@@ -31,8 +33,7 @@ def configure(ctx):
 
 #    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching
 #    ctx.env.append_unique("DEFINES", [ "HAVE_X86_ADAPT_H" ])	#if problem with searching
-
-
+    
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())

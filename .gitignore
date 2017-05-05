@@ -7,3 +7,4 @@ build
 test/hdeemMeasurement/
 test/hdeemMeasurementCounters/
 tools/__pycache__/
+tools/jetsonMeasurement/
