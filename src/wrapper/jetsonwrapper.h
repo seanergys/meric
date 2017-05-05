@@ -41,7 +41,7 @@ public:
 	static void init();
 	static void getSamples(std::vector<jetsonSample> & samples);	//load samples from the system
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *minWatts, double *maxWatts);
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[]);
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time)
 	{

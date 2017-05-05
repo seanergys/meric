@@ -33,17 +33,29 @@ void TimeStore::computePeriods()	//OK
 
 }
 
-void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//getData pro vsechna VR ?
+void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//co s tim errorem ?
 {
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
-	double energy, min, max;
+	double * energy;
+	double * min;
+	double * max;
 	std::string msg = "";
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	if (wrapperType == HDEEM)
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energy, &min, &max);
+	{
+		energy = new double [HDEEM::PROBE_NUMBER];
+		min = new double [HDEEM::PROBE_NUMBER];
+		max = new double [HDEEM::PROBE_NUMBER];
+		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+	}
 	else if (wrapperType == JETSON)
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energy, &min, &max);
+	{
+		energy = new double [JETSON::PROBE_NUMBER];
+		min = new double [JETSON::PROBE_NUMBER];
+		max = new double [JETSON::PROBE_NUMBER];
+		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+	}
 
 	if (msg != "")
 		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
@@ -55,7 +67,11 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 */
 	stats.energy = 0;
 	if(lastBlade > 0)
-		stats.energy = stats.duration * energy / (lastBlade - firstBlade);
+		stats.energy = stats.duration * energy[0] / (lastBlade - firstBlade);
+
+	delete [] energy;
+	delete [] min;
+	delete [] max;
 }
 
 void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
@@ -64,53 +80,30 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	if (wrapperType == HDEEM)
 		probeNum = HDEEM::PROBE_NUMBER;
 	else if (wrapperType == JETSON)
-		probeNum = JETSON::PROBE_NUMBER;
+		probeNum = JETSON::PROBE_NUMBER;										//potrebuji probeNum ?
 
-	std::vector<double> energy(probeNum, 0);
+//	std::vector<double> energy(probeNum, 0);
 	
 	std::string msg = "";
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
-	double energyBlade, min, max;
+	double * energy;
+	double * min;
+	double * max;
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	if (wrapperType == HDEEM)
 	{
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energyBlade, &min, &max);
-		//HDEEM::getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts)	
-
-////////////////////////////////////////////////////////////////////////////////
-			size_t firstVR    = firstBlade/10 + HDEEM::VRDELAY; //10x lower freq		//TODO HDEEM::getDataVR
-			size_t lastVR     = lastBlade/10  + HDEEM::VRDELAY;
-			if (lastVR > _samples.nb_vr_values)
-				lastVR = _samples.nb_vr_values;
-
-			for (size_t it = firstVR; it < lastVR; it++)								//TODO
-			{
-				for (size_t vr = 0; vr < HDEEM::PROBE_NUMBER - 1; vr++)
-				{
-					energy[vr + 1] += _samples.vr_power[it].value[vr];					// <<<
-				}
-			}
-////////////////////////////////////////////////////////////////////////////////
+		energy = new double [HDEEM::PROBE_NUMBER];
+		min = new double [HDEEM::PROBE_NUMBER];
+		max = new double [HDEEM::PROBE_NUMBER];
+		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 	}
 	else if (wrapperType == JETSON)
 	{
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energyBlade, &min, &max);
-		//JETSON::getDataVR();
-
-////////////////////////////////////////////////////////////////////////////////
-
-			for (size_t it = firstVR; it < lastVR; it++)						//TODO
-			{
-				for (size_t vr = 0; vr < JETSON::PROBE_NUMBER - 1; vr++)
-				{
-					if (vr == 0)
-						energy[vr + 1] += _samplesJetson[it].GPU;					// <<<
-					else if (vr == 1)
-						energy[vr + 1] += _samplesJetson[it].CPU;					// <<<
-				}
-			}
-////////////////////////////////////////////////////////////////////////////////
+		energy = new double [JETSON::PROBE_NUMBER];
+		min = new double [JETSON::PROBE_NUMBER];
+		max = new double [JETSON::PROBE_NUMBER];
+		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 	}
 
 	if (msg != "")
@@ -127,27 +120,29 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	}
 
 
-
-//urceni spotreby energie na jednotlivych sensorech
-	for(size_t i=0; i < HDEEM::PROBE_NUMBER; i++)
+	for(size_t i=0; i < HDEEM::PROBE_NUMBER; i++)								//TODO probeNum - stats je automaticky nastaveno na sirku hdeem
 	{
 		stats.energy[i] = 0;
 	}
 	
+	//DC
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
-		stats.energy[0] = stats.duration * energyBlade / (lastBlade - firstBlade);
+		stats.energy[0] = stats.duration * energy[0] / (lastBlade - firstBlade);
 	}
 	
-
-	if(lastVR > 0 && lastVR > firstVR)											//TODO
+	//VR
+	if(lastVR > 0 && lastVR > firstVR)
 	{
 		for (size_t it = 1; it < probeNum; it++)
 		{
 			stats.energy[it] = stats.duration * energy[it] / (lastVR - firstVR);
 		}
 	}
-
+	
+	delete [] energy;
+	delete [] min;
+	delete [] max;
 }
 
 void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -171,18 +166,28 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
-	double energy   = 0.0;
-	double minWatts = 0.0;
-	double maxWatts = 0.0;
+	double * energy;
+	double * minWatts;
+	double * maxWatts;
     double avgWatts = 0.0;
     double energyConsumption = 0.0;
 
 	std::string msg = "";
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	if (wrapperType == HDEEM)
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energy, &minWatts, &maxWatts);
+	{
+		energy = new double [HDEEM::PROBE_NUMBER];
+		minWatts = new double [HDEEM::PROBE_NUMBER];
+		maxWatts = new double [HDEEM::PROBE_NUMBER];
+		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
+	}
 	else if (wrapperType == JETSON)
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, &energy, &minWatts, &maxWatts); 	//jine volani pro oba pripady - reseni _start na 0.0 ??
+	{
+		energy = new double [JETSON::PROBE_NUMBER];
+		minWatts = new double [JETSON::PROBE_NUMBER];
+		maxWatts = new double [JETSON::PROBE_NUMBER];
+		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts); 	//jine volani pro oba pripady - reseni _start na 0.0 ??
+	}
 	
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
@@ -209,7 +214,7 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 			for (size_t it = firstBlade; it < lastBlade; it++)
 				ss << it << "," << samples[it] << std::endl;
 		}
-		avgWatts = energy/(lastBlade-firstBlade);
+		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
 	} else {
 		firstBlade = 0;
@@ -219,12 +224,16 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	
 	ss << "# Blade summary" << std::endl
 	   << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl
-       << "Maximal power [W] (Samples)" << "," << maxWatts << std::endl
-       << "Minimal power [W] (Samples)" << "," << minWatts << std::endl
+       << "Maximal power [W] (Samples)" << "," << maxWatts[0] << std::endl
+       << "Minimal power [W] (Samples)" << "," << minWatts[0] << std::endl
        << "Average power [W] (Samples)" << "," << avgWatts << std::endl
        << "ID of first blade sample" << "," << firstBlade << std::endl
        << "ID of last blade sample" << "," << lastBlade-1 << std::endl;
 
+	delete [] energy;
+	delete [] minWatts;
+	delete [] maxWatts;
+	
 	clock_gettime(CLOCK_REALTIME, &time2);
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 }

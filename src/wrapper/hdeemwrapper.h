@@ -83,8 +83,7 @@ public:
 	//static void getSamples(hdeem_global_reading_t &samples) { checkHDEEM(hdeem_get_global(&bmc, &samples), "get_global"); }
 	static void getSamples() { checkHDEEM(hdeem_get_global(&bmc, &_samples), "get_global"); }
 	static void deleteSamples(hdeem_global_reading_t &samples) { hdeem_data_free(&samples); }
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *min, double *max);
-//	static void getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts);
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
 
 private:
@@ -141,8 +140,7 @@ private:
 	static void getSamples(hdeem_global_reading_t &samples) { samples.nb_blade_values = samples.nb_vr_values = 0; }
 	static void deleteSamples(hdeem_global_reading_t &samples) {};
 	static size_t setTimeAdjustment(timespec start) {};
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *min, double *max) { return "";};
-	static void getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts) {};
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]) { return "";};	//TODO mozna bude potreba inicializovat zde vstupni parametry
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};
 
 private:

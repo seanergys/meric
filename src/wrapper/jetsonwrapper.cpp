@@ -82,7 +82,7 @@ void JETSON::getSamples(std::vector<jetsonSample> & samples)					//prejmenovat l
 	samples = _samples; //TODO void - neni 
 }
 
-std::string JETSON::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *minWatts, double *maxWatts)	//TODO getRegionData
+std::string JETSON::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])	//TODO getRegionData
 {
 	*firstBlade = 0;
 	*lastBlade  = 0;
@@ -103,12 +103,12 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 		return "MERIC ERROR: missing JETSON samples for region ";
 	}
 	
-	firstVR = firstBlade;
-	lastVR  = lastBlade;
+	*firstVR = *firstBlade;
+	*lastVR  = *lastBlade;
 
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 	{
-
+/*
 		*maxWatts = _samples[*firstBlade].DC;
 		*minWatts = *maxWatts;
 		for (size_t it = *firstBlade; it < *lastBlade; it++)
@@ -120,16 +120,16 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 				*minWatts = valTmp;
 			*energy += valTmp;
 		}
-		
-/*
-			for (size_t it = firstVR; it < lastVR; it++)						//TODO
+*/		
+
+/**/
+			for (size_t it = *firstBlade; it < *lastBlade; it++)						//TODO
 			{
-				for (size_t sensorId = 0; vr < JETSON::PROBE_NUMBER - 1; vr++)
+				for (size_t sensorId = 0; sensorId < JETSON::PROBE_NUMBER - 1; sensorId++)
 				{
+					double valTmp = 0.0;
 					switch(sensorId)
 					{
-						double valTmp = 0.0;
-						
 						case 0 :
 						{
 							valTmp = _samples[it].DC;
@@ -147,14 +147,14 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 						}
 					}
 					
-					if (valTmp > *maxWatts)	//max[]
-						*maxWatts = valTmp;	//max[]
-					else if (valTmp < *minWatts)	//min[]
-						*minWatts = valTmp;	//min[]
-					*energy += valTmp;	//energy[sensorId]
+					if (valTmp > maxWatts[sensorId])	//max[]
+						maxWatts[sensorId] = valTmp;	//max[]
+					else if (valTmp < minWatts[sensorId])	//min[]
+						minWatts[sensorId] = valTmp;	//min[]
+					energy[sensorId] += valTmp;	//energy[sensorId]
 				}
 			}
-*/		
+/**/
 		
 	}else
 	{

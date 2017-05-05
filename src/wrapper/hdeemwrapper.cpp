@@ -19,7 +19,7 @@ size_t HDEEM::setTimeAdjustment(timespec start)
 	return _timeAdjustment;
 }
 
-std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double *energy, double *minWatts, double *maxWatts)
+std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
 	std::string errMessage = "";
 	*firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
@@ -30,22 +30,74 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 		errMessage << "HDEEM ERROR - missing samples\n";
 		*lastBlade = -1;
 	}
+
+	*firstVR = *firstBlade/(FREQUENCY/FREQUENCY_VR) + VRDELAY;
+	*lastVR  = *lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
+	if (*lastVR > _samples.nb_vr_values)
+		*lastVR = _samples.nb_vr_values;
 	
-	*energy = 0.0;
+	for (unsigned int sensorID = 0; sensorID < PROBE_NUMBER; sensorID++)
+	{
+		energy[sensorID]   = 0.0;
+		maxWatts[sensorID] = 0.0;
+		minWatts[sensorID] = 0.0;
+	}
+
+	auto getEnergySamples = [&] (size_t firstSample, size_t lastSample, size_t sensorID)
+	{
+		maxWatts[sensorID] = _samples.blade_power[firstSample].value[sensorID];
+		minWatts[sensorID] = maxWatts[sensorID];
+		for (size_t it = firstSample; it < lastSample; it++)
+		{
+			double valTmp = _samples.blade_power[it].value[sensorID];
+			if (valTmp > maxWatts[sensorID])
+				maxWatts[sensorID] = valTmp;
+			else if (valTmp < minWatts[sensorID])
+				minWatts[sensorID] = valTmp;
+			energy[sensorID] += valTmp;
+		}
+	};
 	
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 	{
-		*maxWatts = _samples.blade_power[*firstBlade].value[0];
-		*minWatts = *maxWatts;
+		//TODO lambda
+		
+		//DC
+		maxWatts[sensorID] = _samples.blade_power[*firstBlade].value[sensorID];
+		minWatts[sensorID] = maxWatts[sensorID];
 		for (size_t it = *firstBlade; it < *lastBlade; it++)
 		{
-			double valTmp = _samples.blade_power[it].value[0];
-			if (valTmp > *maxWatts)
-				*maxWatts = valTmp;
-			else if (valTmp < *minWatts)
-				*minWatts = valTmp;
-			*energy += valTmp;
+			double valTmp = _samples.blade_power[it].value[sensorID];
+			if (valTmp > maxWatts[sensorID])
+				maxWatts[sensorID] = valTmp;
+			else if (valTmp < minWatts[sensorID])
+				minWatts[sensorID] = valTmp;
+			energy[sensorID] += valTmp;
 		}
+
+		//VR
+		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
+		{
+			if(*lastVR > 0 && *lastVR > *firstVR)
+			{
+				maxWatts[sensorID] = _samples.vr_power[first].value[sensorID];
+				minWatts[sensorID] = maxWatts[sensorID];
+				for(size_t it = firstVR; it < lastVR; it++)
+				{
+					double valTmp = _samples.vr_power[it].value[sensorID];
+					if (valTmp > maxWatts[sensorID])
+						maxWatts[sensorID] = valTmp;
+					else if (valTmp < minWatts[sensorID])
+						minWatts[sensorID] = valTmp;        
+					energy[sensorID] += valTmp;
+				}
+			}
+		}
+/*		
+		getEnergySamples(*firstBlade, *lastBlade, 0);
+		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
+			getEnergySamples(*firstVR, *lastVR, sensorID);
+*/		
 	}else
 	{
 		*firstBlade = -1;
@@ -53,48 +105,10 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("<<duration<<"s) region";
 	}
 
-	
-	//TODO
-	*firstVR    = *firstBlade/(FREQUENCY/FREQUENCY_VR) + VRDELAY;
-	*lastVR     = *lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
-	//...
-
-	//
 	return errMessage;	
 }
 
-/*
-void HDEEM::getDataVR(size_t firstBlade, size_t lastBlade, size_t &firstVR, size_t &lastVR, double &energy, double &minWatts, double &maxWatts)
-{
 
-	firstVR    = firstBlade/(FREQUENCY/FREQUENCY_VR) + VRDELAY;
-	lastVR     = lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
-	if (lastVR > _samples.nb_vr_values)
-		lastVR = _samples.nb_vr_values;
-
-	for (unsigned int sensorID = 0; sensorID < PROBE_NUMBER-1; sensorID++)
-	{
-		energy[sensorID]   = 0.0;
-		maxWatts[sensorID] = 0.0;
-		minWatts[sensorID] = 0.0;
-
-		if(lastVR > 0 && lastVR > firstVR)
-		{
-			maxWatts[sensorID] = _samples.vr_power[first].value[sensorID];
-			minWatts[sensorID] = maxWatts[sensorID];
-			for(size_t it = firstVR; it < lastVR; it++)
-			{
-				double valTmp = _samples.vr_power[it].value[sensorID];
-				if (valTmp > maxWatts[sensorID])
-					maxWatts[sensorID] = valTmp;
-				else if (valTmp < minWatts[sensorID])
-					minWatts[sensorID] = valTmp;        
-				energy[sensorID] += valTmp;
-			}
-		}
-	}
-}
-*/
 void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples)
 {
 	if (sensorId == 0)
