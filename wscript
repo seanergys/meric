@@ -38,6 +38,7 @@ def configure(ctx):
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
         ctx.env.CXX = list(ctx.env.MPICXX)
+        ctx.env.LINK_CXX = ctx.env.CXX
         ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H" ])
 
     ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
@@ -72,6 +73,8 @@ def build(ctx):
 
     if not ctx.env.MPICXX:
         return
+    
+    ctx.all_envs["mpi"].LINK_CXX = ctx.all_envs["mpi"].CXX
 
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
