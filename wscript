@@ -6,12 +6,13 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                 #no openMP
     if ctx.options.withgcc:
-        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-fopenmp"])    #GCC
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
+        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC", "-qopenmp"])    #Intel
-#    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                #no openMP
-    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                         #with openMP
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
+        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
 
     ctx.env.append_unique("DEFINES", [ "JETSONMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools/jetsonMeasurement\""])
     
