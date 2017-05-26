@@ -40,7 +40,8 @@ public:
 
 		if (freq > X86ADAPT_MAX_FREQ || freq <= 0)
 		{
-			std::cerr << "CPU frequency did not changed to invalid value: " << freq << std::endl;
+			if (freq != 0)
+				std::cerr << "CPU frequency did not changed to invalid value: " << freq << std::endl;
 			return;
 		}
 			
@@ -117,6 +118,12 @@ public:
 	
 	static void uncoreFrequency(uint64_t freq, int socket = -1)
 	{
+		if (freq > MAX_UNCORE_FREQ || freq <= 0)
+		{
+			if (freq != 0)
+				std::cerr << "Uncore frequency did not changed to invalid value: " << freq << std::endl;
+			return;
+		}
 #ifdef HAVE_X86_ADAPT_H
 		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 		{
