@@ -47,15 +47,15 @@ void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, doub
 	{
 		if (wrapperType == PERFEVENT)
 		{
-			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
+			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
 		else if (wrapperType == PAPI)
 		{
-			stats.push_back(PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
+			stats.push_back(PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
 		else if (wrapperType == RAPL)
 		{
-			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
+			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
 	}
 }
@@ -82,15 +82,15 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	{
 		if (wrapperType == PERFEVENT)
 		{
-			value = PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
+			value = PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 		else if (wrapperType == PAPI)
 		{
-			value = PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
+			value = PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 		else if (wrapperType == RAPL)
 		{
-			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
+			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 
 		ss << counterIt->first << "," << value << std::endl;
@@ -100,7 +100,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	
 //TODO - TEMPORARY solution	#19
 	if (wrapperType == RAPL)
-		ss << "Energy summary," << summary << std::endl;
+		ss << "Energy summary," << summary + timespec2double(runtime) * RAPL::RAPL_BASELINE << std::endl;
 	else if (wrapperType == PAPI)
 	{
 		ss << "# RATIOS: \n";

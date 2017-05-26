@@ -12,14 +12,14 @@ namespace meric {
 class RAPL {
 #ifdef HAVE_X86_ADAPT_H
 public:
-
+	static const int RAPL_BASELINE = 70; // 70 W
 	static void init();
 	static void close() {};
 	
 	static void getValues(std::map<std::string, long long> & record);
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
-	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter, double runtime);
+	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
 
 private:
 		//list of counters
@@ -32,12 +32,13 @@ private:
 
 #else
 public:
+	static const int RAPL_BASELINE = 70; // 70 W
 	static void init() {};
 	static void close() {};
 	static void getValues(std::map<std::string, long long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
-	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter, double runtime) {return 0;};
+	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter) {return 0;};
 private:
 	static std::string suffix;
 	static int numOfDevices;

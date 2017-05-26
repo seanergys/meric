@@ -121,7 +121,7 @@ void PERFEVENT::getValues(std::map<std::string, long long> & record)
 #endif
 
 // solve counter overflow
-unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter, double runtime)
+unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter)
 {
 	if (stopValue < startValue)
 	{

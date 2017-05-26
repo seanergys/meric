@@ -31,7 +31,6 @@ const uint64_t RAPLenergyShift= 8;
 const uint64_t RAPLtimeMask   = 0xF0000;
 const uint64_t RAPLtimeShift  = 16;
 
-const int RAPL_BASELINE = 70; // 70 W
 #endif
 
 #include <math.h>
@@ -149,9 +148,8 @@ void RAPL::getValues(std::map<std::string, long long> & record)
 }
 
 // solve counter overflow and add baseline energy consumption
-unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter, double runtime)
+unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter)
 {
-	unsigned long long value = RAPL_BASELINE * runtime;
 	if (stopValue < startValue)
 	{	
 		if (!energyUnit.count(counter))
@@ -163,11 +161,11 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 		{
 			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX * energyUnit[counter] <<" " <<counter << std::endl;
 			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX * energyUnit[counter] - startValue + stopValue << std::endl;
-			return value + COUNTERMAX * energyUnit[counter] - startValue + stopValue;
+			return COUNTERMAX * energyUnit[counter] - startValue + stopValue;
 		}
 	}
 	else
-		return value + stopValue - startValue;
+		return stopValue - startValue;
 }
 
 #else
