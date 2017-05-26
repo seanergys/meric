@@ -51,12 +51,20 @@ public:
 		
 		clock_gettime(CLOCK_REALTIME, &time1);
 		if (wrapperType == HDEEM)
+		{
 			HDEEM::getSamples(_samples);
+			if(_samples.nb_blade_values == 0)
+			{
+				HDEEM::deleteSamples(_samples);
+				std::cerr << "MERIC ERROR: No HDEEM samples\n";
+				throw 1;
+			}
+		}
 		else if (wrapperType == JETSON)
 			JETSON::getSamples(_samplesJetson);
 		clock_gettime(CLOCK_REALTIME, &time2);
 		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
-
+		
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 
 		if (wrapperType == HDEEM)
@@ -76,7 +84,15 @@ public:
 		clock_gettime(CLOCK_REALTIME, &time1);
 
 		if (wrapperType == HDEEM)
+		{
 			HDEEM::getSamples(_samples);
+			if(_samples.nb_blade_values == 0)
+			{
+				HDEEM::deleteSamples(_samples);
+				std::cerr << "MERIC ERROR: No HDEEM samples\n";
+				throw 1;
+			}
+		}
 		else if (wrapperType == JETSON)
 			JETSON::getSamples(_samplesJetson);
 		clock_gettime(CLOCK_REALTIME, &time2);

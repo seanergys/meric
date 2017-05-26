@@ -12,6 +12,7 @@
 #include <fstream>
 #include <ctime>
 #include <iomanip>
+#include <exception> 
 
 #include "../wrapper/hdeemwrapper.h"
 #include "../wrapper/jetsonwrapper.h"
@@ -94,6 +95,26 @@ public:
 		oFile.close();
 		return _initCounter;
 	};
+	
+	void restoreCounter(int counter,
+					const std::string outputDir,
+					const std::string outputFilename,
+					const std::string prefix = "")
+	{
+		std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
+		
+		if(counter == 0)
+		{
+			remove(startCounterFile.c_str());
+		}
+		else
+		{
+			std::ofstream oFile(startCounterFile);
+			oFile << _initCounter-1;
+			oFile.close();
+		}		
+	};
+
 	
 protected:
 	virtual void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) = 0;

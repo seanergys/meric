@@ -92,7 +92,16 @@ public:
 		for(int i=0; i<_storeList.size(); i++)
 		{
 			initCounter = _storeList[i]->initStore(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
-			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+			try
+			{
+				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+			}
+			catch (int &e)
+			{
+				//exception for hdeem store only, that is always first store in the list
+				_storeList[i]->restoreCounter(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
+				break;
+			}
 		}
 	}
 

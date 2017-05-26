@@ -134,7 +134,16 @@ public:
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
-				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+				try
+				{
+					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+				}
+				catch (int &e)
+				{
+					//exception for hdeem store only, that is always first store in the list
+					_storeList[i]->restoreCounter(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
+					MPI_Abort(MPI_COMM_WORLD, 1);
+				}
 			}
 		}
 		MPI_Barrier(_currentNode);
