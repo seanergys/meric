@@ -2,13 +2,9 @@
 #include <time.h>
 
 #include "countersstore.h"
-
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
-
-// #include <sys/time.h>
-// #include <cmath>
 
 #ifdef HAVE_MPI_H
 #include <mpi.h>
@@ -46,32 +42,22 @@ void CountersStore::addEnd(int region)
 
 void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	unsigned long long int value;
+	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
+		if (wrapperType == PERFEVENT)
 		{
-			if (wrapperType == PERFEVENT)
-			{
-				value = PERFEVENT::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
-			else if (wrapperType == PAPI)
-			{
-				value = PAPI::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
-			else if (wrapperType == RAPL)
-			{
-				value = RAPL::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
+			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
 		}
-		else
+		else if (wrapperType == PAPI)
 		{
-			value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+			stats.push_back(PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
 		}
-		stats.push_back(value);
+		else if (wrapperType == RAPL)
+		{
+			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, *time));
+		}
 	}
-	//last item is time
-	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 }
 
 void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -82,10 +68,11 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	}
 	ss << std::endl;
 
+	timespec runtime = _records[iEnd].time - _records[iStarts.back()].time;
 	ss << "# Job info - "<< counterLabel << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+	   << "Runtime of function [s]," << runtime << std::endl;
 
 
 	unsigned long long int summary = 0;
@@ -93,25 +80,19 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	ss << "# COUNTERS - "<<counterLabel<<": \n";
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		if (counterIt->second < _records[iStarts.back()].record[counterIt->first]) //overflow
+		if (wrapperType == PERFEVENT)
 		{
-			if (wrapperType == PERFEVENT)
-			{
-				value = PERFEVENT::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
-			else if (wrapperType == PAPI)
-			{
-				value = PAPI::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
-			else if (wrapperType == RAPL)
-			{
-				value = RAPL::repairValues(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			}
+			value = PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
 		}
-		else
+		else if (wrapperType == PAPI)
 		{
-			value = counterIt->second - _records[iStarts.back()].record[counterIt->first];
+			value = PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
 		}
+		else if (wrapperType == RAPL)
+		{
+			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first, timespec2double(runtime));
+		}
+
 		ss << counterIt->first << "," << value << std::endl;
 		summary += value;
 	}
@@ -128,7 +109,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 			ss << "GLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
 				_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - 
 				_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
-				timespec2double(_records[iEnd].time - _records[iStarts.back()].time)
+				timespec2double(runtime)
 				) << std::endl;
 		}
 		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
@@ -150,7 +131,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 			ss << "GFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
 				_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - 
 				_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
-				timespec2double(_records[iEnd].time - _records[iStarts.back()].time)
+				timespec2double(runtime)
 				) << std::endl;
 		}
 		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))

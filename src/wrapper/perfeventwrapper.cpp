@@ -121,11 +121,16 @@ void PERFEVENT::getValues(std::map<std::string, long long> & record)
 #endif
 
 // solve counter overflow
-unsigned long long PERFEVENT::repairValues(long long startValue, long long stopValue, std::string counter)
+unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter, double runtime)
 {
-	MERIC_INFO << "PERFEVENT OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
-	MERIC_INFO << "PERFEVENT REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
-	return COUNTERMAX - startValue + stopValue;
+	if (stopValue < startValue)
+	{
+		MERIC_INFO << "PERFEVENT OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
+		MERIC_INFO << "PERFEVENT REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
+		return COUNTERMAX - startValue + stopValue;
+	}
+	else
+		return stopValue - startValue;
 }
 
 

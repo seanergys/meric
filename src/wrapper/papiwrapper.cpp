@@ -129,11 +129,16 @@ void PAPI::getValues(std::map<std::string, long long> & record)
 #endif
 
 // solve counter overflow
-unsigned long long PAPI::repairValues(long long startValue, long long stopValue, std::string counter)
+unsigned long long PAPI::getResultValue(long long startValue, long long stopValue, std::string counter, double runtime)
 {
-	MERIC_INFO << "PAPI OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
-	MERIC_INFO << "PAPI REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
-	return COUNTERMAX - startValue + stopValue;
+	if (stopValue < startValue)
+	{
+		MERIC_INFO << "PAPI OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;
+		MERIC_INFO << "PAPI REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX- startValue + stopValue << std::endl;
+		return COUNTERMAX - startValue + stopValue;
+	}
+	else
+		return stopValue - startValue;
 }
 
 void PAPI::initMap(std::map<std::string, long long> & dict)
