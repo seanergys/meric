@@ -40,6 +40,7 @@ struct systemLimits{
 const int CPUFREQ_FREQ_MULT = 100000;
 const int X86ADAPT_FREQ_MULT = 256;
 const int X86ADAPT_MAX_FREQ = 33;
+const int CPUFREQ_MAX_FREQ = 25;
 
 static int SOCKET_SIZE;
 
@@ -73,7 +74,7 @@ public:
 		else
 		{
 #ifdef HAVE_CPUFREQ_H
-			if (freq <= MAX_FREQ)
+			if (freq <= CPUFREQ_MAX_FREQ)
 			{
 				MERIC_INFO << "CPUFREQ set frequency to: " << freq;
 				int ret;
