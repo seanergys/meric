@@ -26,7 +26,7 @@ void JETSON::init()
 }
 
 
-void JETSON::getSamples(std::vector<jetsonSample> & samples)					//prejmenovat loadSamples()
+int JETSON::getSamples()					//prejmenovat loadSamples()
 {
 	std::ifstream iFile(filename);
 	if(iFile.is_open())
@@ -77,9 +77,11 @@ void JETSON::getSamples(std::vector<jetsonSample> & samples)					//prejmenovat l
 
 	MERIC_INFO <<"JETSON samples #" << _samples.size() << std::endl;
 	if (_samples.size() == 0)
+	{
 		std::cerr << "MERIC ERROR: no JETSON samples\n";
-
-	samples = _samples; //TODO void - neni 
+		return 1;
+	}
+	return 0;
 }
 
 std::string JETSON::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])	//TODO getRegionData

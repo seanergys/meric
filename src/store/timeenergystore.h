@@ -41,19 +41,21 @@ public:
               const std::string outputFilename,
               std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		sleep(1); // wait for HDEEM to load all samples
+		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		HDEEM::getSamples(_samples);
+		if(HDEEM::getSamples())
+			throw 1;
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
-		HDEEM::deleteSamples(_samples);
+		HDEEM::deleteSamples();
 	}
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
-		sleep(1); // wait for HDEEM to load all samples
+		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		HDEEM::getSamples(_samples);
+		if(HDEEM::getSamples())
+			throw 1;
 		iterate(_records, processInterval);
-		HDEEM::deleteSamples(_samples);
+		HDEEM::deleteSamples();
 	}
 
 	TimeEnergyStore(bool samples, bool write) : TimeStore("hdeem", samples, write)

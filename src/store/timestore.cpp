@@ -20,20 +20,13 @@ void TimeStore::addEnd(int region)	//OK
 
 void TimeStore::computePeriods()	//OK
 {
-	if (wrapperType == JETSON)													//TODO odtsranit z ** jinych trid ** dotaz na frekvenci a time adjustment
-	{	_samples_freq = JETSON::FREQUENCY;
+	if (wrapperType == JETSON)
 		JETSON::setTimeAdjustment(_start);
-		_timeAdjustment = 0;
-	}	
 	else if (wrapperType == HDEEM)
-	{
-		_samples_freq = HDEEM::FREQUENCY;
-		_timeAdjustment = HDEEM::setTimeAdjustment(_start);
-	}
-
+		HDEEM::setTimeAdjustment(_start);
 }
 
-void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//co s tim errorem ?
+void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//OK
 {
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -59,12 +52,7 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 
 	if (msg != "")
 		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
-/*
-	if (lastBlade <= firstBlade)
-	{
-		std::cerr << "MERIC ERROR: No samples, probably too short ("<<stats.duration<<"s) region "<< _name[_records[iStarts].region]<<"\n";
-	}
-*/
+
 	stats.energy = 0;
 	if(lastBlade > 0)
 		stats.energy = stats.duration * energy[0] / (lastBlade - firstBlade);
@@ -81,8 +69,6 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 		probeNum = HDEEM::PROBE_NUMBER;
 	else if (wrapperType == JETSON)
 		probeNum = JETSON::PROBE_NUMBER;										//potrebuji probeNum ?
-
-//	std::vector<double> energy(probeNum, 0);
 	
 	std::string msg = "";
 	size_t firstBlade, lastBlade;

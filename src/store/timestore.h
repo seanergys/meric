@@ -47,65 +47,46 @@ public:
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		timespec time1, time2;
-		
-		clock_gettime(CLOCK_REALTIME, &time1);
+
 		if (wrapperType == HDEEM)
 		{
-			HDEEM::getSamples(_samples);
-			if(_samples.nb_blade_values == 0)
-			{
-				HDEEM::deleteSamples(_samples);
-				std::cerr << "MERIC ERROR: No HDEEM samples\n";
+			if(HDEEM::getSamples())
 				throw 1;
-			}
 		}
 		else if (wrapperType == JETSON)
-			JETSON::getSamples(_samplesJetson);
-		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
-		
+		{
+			if(JETSON::getSamples())
+				throw 1;
+		}
+
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 
 		if (wrapperType == HDEEM)
 		{
-			clock_gettime(CLOCK_REALTIME, &time1);
-			HDEEM::deleteSamples(_samples);
-			clock_gettime(CLOCK_REALTIME, &time2);
-			MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+			HDEEM::deleteSamples();
 		}
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		timespec time1, time2;
-	
-		clock_gettime(CLOCK_REALTIME, &time1);
 
 		if (wrapperType == HDEEM)
 		{
-			HDEEM::getSamples(_samples);
-			if(_samples.nb_blade_values == 0)
-			{
-				HDEEM::deleteSamples(_samples);
-				std::cerr << "MERIC ERROR: No HDEEM samples\n";
+			if(HDEEM::getSamples())
 				throw 1;
-			}
 		}
 		else if (wrapperType == JETSON)
-			JETSON::getSamples(_samplesJetson);
-		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
+		{
+			if(JETSON::getSamples())
+				throw 1;
+		}
 
 		iterate(_records, processInterval);
 
 		if (wrapperType == HDEEM)
 		{
-			clock_gettime(CLOCK_REALTIME, &time1);
-			HDEEM::deleteSamples(_samples);
-			clock_gettime(CLOCK_REALTIME, &time2);
-			MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
+			HDEEM::deleteSamples();
 		}
 	}
 
@@ -163,11 +144,6 @@ protected:
 
 	int wrapperType;
 	timespec _start;
-	hdeem_global_reading_t _samples;
-	std::vector<jetsonSample> _samplesJetson;
-	size_t _timeAdjustment;
-	int _samples_freq;
-
 	std::vector<TimeRecord> _records;
 };
 
