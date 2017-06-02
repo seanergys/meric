@@ -58,6 +58,22 @@ SharedMeric::SharedMeric()
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
+
+
+	//wrappers must be initialized after meric instantiation
+	//rapl counter expects that environment::init() was already called
+	if (Meric::COUNTERS == "perfevent")
+		PERFEVENT::init();
+	if (Meric::COUNTERS == "papi")
+		PAPI::init();
+	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	{
+		if (Meric::DETAILED)
+			RAPL::detailed();
+		RAPL::init();
+	}
+	if (Meric::MODE == MODE_JETSON)
+		JETSON::init();
 }
 
 SharedMeric::~SharedMeric()

@@ -4,12 +4,6 @@
 #include "../../../include/meric.h"
 #include "meric.h"
 
-#include "../../wrapper/environmentwrapper.h"
-#include "../../wrapper/perfeventwrapper.h"
-#include "../../wrapper/papiwrapper.h"
-#include "../../wrapper/raplwrapper.h"
-#include "../../wrapper/jetsonwrapper.h"
-
 meric::SharedMeric *holder = NULL;
 
 void MERIC_Init()
@@ -23,21 +17,6 @@ void MERIC_Init()
 
 	meric::Meric::readRegionParameters();
 	holder = new meric::SharedMeric();
-
-	//wrappers must be initialized after meric instantiation
-	//rapl counter expects that environment::init() was already called
-	if (meric::Meric::COUNTERS == "perfevent")
-		meric::PERFEVENT::init();
-	if (meric::Meric::COUNTERS == "papi")
-		meric::PAPI::init();
-	if (meric::Meric::MODE == meric::MODE_RAPL || meric::Meric::MODE == meric::MODE_BOTH)
-	{
-		if (meric::Meric::DETAILED)
-			meric::RAPL::detailed();
-		meric::RAPL::init();
-	}
-	if (meric::Meric::MODE == meric::MODE_JETSON)
-		meric::JETSON::init();
 }
 
 void MERIC_Close()
