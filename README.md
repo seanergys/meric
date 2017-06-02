@@ -393,7 +393,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 --------------------------------------------------------------------------------
 To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. To start it, user must run a script on the background, that you must start before runnig a code and end when the measurement is finished. This energy measurement script effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py.
 
-ARM core and uncore frequencies are much lower then Haswell's. To easily set these frequncies, input values are in kHz. It is remmendet to set frequencies from a list made by administrators, see:
+ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequncies, input values are in kHz. It is remmendet to set frequencies from a list made by administrators, see:
 
 	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
 	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
