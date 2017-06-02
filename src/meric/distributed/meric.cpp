@@ -152,7 +152,11 @@ DistributedMeric::DistributedMeric()
 	}
 
 //INIT
-	Environment::init(defaultParameter, _MPInodeRank);
+	if (Meric::MODE == MODE_JETSON)
+		Environment::init(SYS_JETSON, defaultParameter, _MPInodeRank);
+	else
+		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
+
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 

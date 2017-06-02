@@ -79,8 +79,9 @@ public:
 			HDEEM::stop(_stopTime);
 		}
 		Meric::close();
-		Environment::uncoreFrequency(meric::MAX_UNCORE_FREQ);
-		Environment::frequency(meric::MAX_FREQ);
+//		Environment::uncoreFrequency(meric::MAX_UNCORE_FREQ);
+//		Environment::frequency(meric::MAX_FREQ);
+		Environment::setDefaultFrequencies();
 
 		if (_stack.size() != 0)
 		{

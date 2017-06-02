@@ -50,7 +50,11 @@ SharedMeric::SharedMeric()
 	for (int i=0; i<_storeList.size(); i++)
 		_storeList[i]->setMPIWrite(true);
 
-	Environment::init(defaultParameter, 0);
+	if (Meric::MODE == MODE_JETSON)
+		Environment::init(SYS_JETSON, defaultParameter, 0);
+	else
+		Environment::init(SYS_HASWELL, defaultParameter, 0);
+	
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
