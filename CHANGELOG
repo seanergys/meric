@@ -1,6 +1,6 @@
 ### XX.XX.XXXX #################################################################
   - updated shared Score-P/Meric header file
-  - ARM jetson energy measurement (NOT FINISHED)
+  - ARM jetson energy measurement and frequncy scaling
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

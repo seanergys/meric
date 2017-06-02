@@ -59,10 +59,12 @@
 * run.sh and run-mpi.sh
 	* Scripts that runs the code with all possible settings.
 	* Ready to do the basic test with test and test_mpi.cpp on Taurus.
+* run-jetson.sh
+	* Template script to submit a job on BSC ARM Jetson platform.
 * environment_taurus
 	* Basic script that sets chosen MERIC environment variables and informs you about values of set varibles
-	* When runed with argument -t, just prints list of set variables
-	* Make a copy of this script and edit it to suit your needs!
+	* When runed with argument -t, just prints list of set variables.
+	* Make a copy of this script and edit it to suit your needs.
 
 --------------------------------------------------------------------------------
 #    3] Compile and run basic example                                          #
@@ -386,6 +388,28 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 	READEX_PHASE_STOP(handle)
 		phase region stop
 	
+--------------------------------------------------------------------------------
+#     11] Using MERIC on BSC ARM Jetson                                        #
+--------------------------------------------------------------------------------
+To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. To start it, user must run a script on the background, that you must start before runnig a code and end when the measurement is finished. This energy measurement script effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py.
+
+ARM core and uncore frequencies are much lower then Haswell's. To easily set these frequncies, input values are in kHz. It is remmendet to set frequencies from a list made by administrators, see:
+
+	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
+	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
+
+	uncore:	/sys/kernel/debug/clock/emc/possible_rates
+	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
+
+See run-jetson.sh script in the test directory, that shows how to do a test on Jetson.
+
+
+
+
+
+
+
+
 
 
 
