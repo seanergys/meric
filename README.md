@@ -10,25 +10,20 @@
 * wrapper
 	- environmentwrapper
 		= CPU core frequency and uncore frequency settings.
-
 		+ http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils
-
 		+ https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/X86Adapt
 
 	- hdeemwrapper
 		= Energy measurement using hdeem.
-
 		+ https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement
 
 	- perfeventwrapper
 		= Hardware counters provided by perf_event.
-
 		+ http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 	
 	- papiwrapper
 		= Hardware counters provided by papi.
 		- NOT SUITABLE FOR THREADED APPLICATIONS!
-		
 		+ http://icl.cs.utk.edu/papi/
 		
 	- raplwrapper
@@ -157,10 +152,10 @@ To find the best settings for each region, you should run your code with all pos
 #     6] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
-## SET MERIC DEFAULT PARAMETERS ##
+## SET MERIC DEFAULT PARAMETERS - mandatory parameters ##
 	export MERIC_FREQUENCY=24        # [0.1 GHz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
-	export MERIC_NUM_THREADS=24
+	export MERIC_NUM_THREADS=24      # [0 for applications that doesn't use threads]
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
