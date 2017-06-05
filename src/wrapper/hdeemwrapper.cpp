@@ -66,18 +66,28 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 		}
 	};
 
-	if(*lastBlade > 0 && *lastBlade > *firstBlade)
+	//VR
+	if(*lastVR > 0 && *lastVR > *firstVR)
 	{
-		getEnergySamples(*firstBlade, *lastBlade, 0);
 		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
 			getEnergySamples(*firstVR, *lastVR, sensorID);
 	}else
+	{
+		*firstVR = -1;
+		*lastVR = -1;
+		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) detailed region";
+	}
+
+	//BLADE
+	if(*lastBlade > 0 && *lastBlade > *firstBlade)
+		getEnergySamples(*firstBlade, *lastBlade, 0);
+	else
 	{
 		*firstBlade = -1;
 		*lastBlade = -1;
 		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region";
 	}
-
+	
 	return errMessage;	
 }
 

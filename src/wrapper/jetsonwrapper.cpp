@@ -162,6 +162,8 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 	{
 		*firstBlade = -1;
 		*lastBlade  = -1;
+		*firstVR    = -1;
+		*lastVR     = -1;
 		return "MERIC ERROR: No JETSON samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	

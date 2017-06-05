@@ -98,7 +98,10 @@ public:
 		if (wrapper == HDEEM::storeLabel)
 			wrapperType = HDEEM;
 		else if (wrapper == JETSON::storeLabel)
+		{
 			wrapperType = JETSON;
+			_start=0;
+		}
 	}
 
 	TimeStore(const std::string wrapper, bool samples): Store(samples)
@@ -109,7 +112,10 @@ public:
 		if (wrapper == HDEEM::storeLabel)
 			wrapperType = HDEEM;
 		else if (wrapper == JETSON::storeLabel)
+		{
 			wrapperType = JETSON;
+			_start=0;
+		}
 	}
 
 	TimeStore(const std::string wrapper)
@@ -120,7 +126,10 @@ public:
 		if (wrapper == HDEEM::storeLabel)
 			wrapperType = HDEEM;
 		else if (wrapper == JETSON::storeLabel)
+		{
 			wrapperType = JETSON;
+			_start=0;
+		}
 	}
 	
 	TimeStore(bool samples): Store(samples)

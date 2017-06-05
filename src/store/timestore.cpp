@@ -64,12 +64,6 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 
 void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
-	size_t probeNum;
-	if (wrapperType == HDEEM)
-		probeNum = HDEEM::PROBE_NUMBER;
-	else if (wrapperType == JETSON)
-		probeNum = JETSON::PROBE_NUMBER;										//potrebuji probeNum ?
-	
 	std::string msg = "";
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -89,24 +83,14 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 		energy = new double [JETSON::PROBE_NUMBER];
 		min = new double [JETSON::PROBE_NUMBER];
 		max = new double [JETSON::PROBE_NUMBER];
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 	}
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts].region]<< std::endl;
 	
-// err check																	//TODO
-	if (lastBlade <= firstBlade)
-	{
-		std::cerr << "MERIC ERROR: No HDEEM samples, probably too short ("<<stats.duration<<"s) region "<< _name[_records[iStarts].region]<<"\n";
-	}
-	else if (lastVR <= firstVR)
-	{
-		std::cerr << "MERIC WARNING: No HDEEM samples, probably too short ("<<stats.duration<<"s) detailed region "<< _name[_records[iStarts].region]<<"\n";
-	}
 
-
-	for(size_t i=0; i < HDEEM::PROBE_NUMBER; i++)								//TODO probeNum - stats je automaticky nastaveno na sirku hdeem
+	for(size_t i=0; i < HDEEM::PROBE_NUMBER; i++) //stats.energy has always HDEEM::PROBE_NUMBER size
 	{
 		stats.energy[i] = 0;
 	}
@@ -120,6 +104,12 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	//VR
 	if(lastVR > 0 && lastVR > firstVR)
 	{
+		size_t probeNum;
+		if (wrapperType == HDEEM)
+			probeNum = HDEEM::PROBE_NUMBER;
+		else if (wrapperType == JETSON)
+			probeNum = JETSON::PROBE_NUMBER;
+			
 		for (size_t it = 1; it < probeNum; it++)
 		{
 			stats.energy[it] = stats.duration * energy[it] / (lastVR - firstVR);
@@ -172,10 +162,10 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 		energy = new double [JETSON::PROBE_NUMBER];
 		minWatts = new double [JETSON::PROBE_NUMBER];
 		maxWatts = new double [JETSON::PROBE_NUMBER];
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts); 	//jine volani pro oba pripady - reseni _start na 0.0 ??
+		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
 	}
 	
-	if (msg != "")
+	if (msg != "" && msg.find("detailed") == std::string::npos)
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< firstBlade << " in time "<< int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
