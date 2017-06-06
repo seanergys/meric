@@ -21,7 +21,7 @@ class AggregateStore;
 template <class TStore>
 class DetailedAggregateStore;
 
-class TimeStore: public Store {
+template <class TSystem> class TimeStore: public Store {
 
 	enum WRAPPERS {HDEEM, JETSON};
 
@@ -48,46 +48,21 @@ public:
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 
-		if (wrapperType == HDEEM)
-		{
-			if(HDEEM::getSamples())
-				throw 1;
-		}
-		else if (wrapperType == JETSON)
-		{
-			if(JETSON::getSamples())
-				throw 1;
-		}
-
+		if(TSystem::getSamples())
+			throw 1;
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
+		TSystem::deleteSamples();
 
-		if (wrapperType == HDEEM)
-		{
-			HDEEM::deleteSamples();
-		}
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 
-		if (wrapperType == HDEEM)
-		{
-			if(HDEEM::getSamples())
-				throw 1;
-		}
-		else if (wrapperType == JETSON)
-		{
-			if(JETSON::getSamples())
-				throw 1;
-		}
-
+		if(TSystem::getSamples())
+			throw 1;
 		iterate(_records, processInterval);
-
-		if (wrapperType == HDEEM)
-		{
-			HDEEM::deleteSamples();
-		}
+		TSystem::deleteSamples();
 	}
 
 	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)
@@ -95,12 +70,13 @@ public:
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
 
-		if (wrapper == HDEEM::storeLabel)
+		if (wrapper == HDEEM::storeLabel)	//TODO
 			wrapperType = HDEEM;
 		else if (wrapper == JETSON::storeLabel)
 		{
 			wrapperType = JETSON;
-			_start=0;
+			_start.tv_sec=0;
+			_start.tv_nsec=0;
 		}
 	}
 
@@ -114,7 +90,8 @@ public:
 		else if (wrapper == JETSON::storeLabel)
 		{
 			wrapperType = JETSON;
-			_start=0;
+			_start.tv_sec=0;
+			_start.tv_nsec=0;
 		}
 	}
 
@@ -128,7 +105,8 @@ public:
 		else if (wrapper == JETSON::storeLabel)
 		{
 			wrapperType = JETSON;
-			_start=0;
+			_start.tv_sec=0;
+			_start.tv_nsec=0;
 		}
 	}
 	

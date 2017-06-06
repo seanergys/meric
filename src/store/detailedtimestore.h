@@ -12,7 +12,7 @@ class AggregateStore;
 template <class TStore>
 class DetailedAggregateStore;
 
-class DetailedTimeStore: public TimeStore {
+class DetailedTimeStore: public TimeStore <HDEEM>{
 
 	friend class AggregateStore<DetailedTimeStore>;
 	friend class DetailedAggregateStore<DetailedTimeStore>;
@@ -22,12 +22,12 @@ public:
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}
 
-	DetailedTimeStore(bool samples) : TimeStore("hdeem", samples)
+	DetailedTimeStore(bool samples) : TimeStore ("hdeem", samples)
 	{
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}
 	
-	DetailedTimeStore(): TimeStore("hdeem")
+	DetailedTimeStore(): TimeStore ("hdeem")
 	{
 		MERIC_INFO << "Create DetailedTimeStore\n";
 	}

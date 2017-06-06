@@ -4,29 +4,26 @@
 
 using namespace meric;
 
-void TimeStore::addStart(int region)	//OK
+template <class TSystem> void TimeStore<TSystem>::addStart(int region)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(TimeRecord(region, time));
 }
 
-void TimeStore::addEnd(int region)	//OK
+template <class TSystem> void TimeStore<TSystem>::addEnd(int region)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	_records.push_back(TimeRecord(region, time));
 }
 
-void TimeStore::computePeriods()	//OK
+template <class TSystem> void TimeStore<TSystem>::computePeriods()
 {
-	if (wrapperType == JETSON)
-		JETSON::setTimeAdjustment(_start);
-	else if (wrapperType == HDEEM)
-		HDEEM::setTimeAdjustment(_start);
+	TSystem::setTimeAdjustment(_start);
 }
 
-void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//OK
+template <class TSystem> void TimeStore<TSystem>::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -35,20 +32,11 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 	double * max;
 	std::string msg = "";
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	if (wrapperType == HDEEM)
-	{
-		energy = new double [HDEEM::PROBE_NUMBER];
-		min = new double [HDEEM::PROBE_NUMBER];
-		max = new double [HDEEM::PROBE_NUMBER];
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
-	}
-	else if (wrapperType == JETSON)
-	{
-		energy = new double [JETSON::PROBE_NUMBER];
-		min = new double [JETSON::PROBE_NUMBER];
-		max = new double [JETSON::PROBE_NUMBER];
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
-	}
+
+	energy = new double [TSystem::PROBE_NUMBER];
+	min = new double [TSystem::PROBE_NUMBER];
+	max = new double [TSystem::PROBE_NUMBER];
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 
 	if (msg != "")
 		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
@@ -62,7 +50,7 @@ void TimeStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 	delete [] max;
 }
 
-void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
+template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	std::string msg = "";
 	size_t firstBlade, lastBlade;
@@ -71,20 +59,10 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	double * min;
 	double * max;
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	if (wrapperType == HDEEM)
-	{
-		energy = new double [HDEEM::PROBE_NUMBER];
-		min = new double [HDEEM::PROBE_NUMBER];
-		max = new double [HDEEM::PROBE_NUMBER];
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
-	}
-	else if (wrapperType == JETSON)
-	{
-		energy = new double [JETSON::PROBE_NUMBER];
-		min = new double [JETSON::PROBE_NUMBER];
-		max = new double [JETSON::PROBE_NUMBER];
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
-	}
+	energy = new double [TSystem::PROBE_NUMBER];
+	min = new double [TSystem::PROBE_NUMBER];
+	max = new double [TSystem::PROBE_NUMBER];
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts].region]<< std::endl;
@@ -104,13 +82,7 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	//VR
 	if(lastVR > 0 && lastVR > firstVR)
 	{
-		size_t probeNum;
-		if (wrapperType == HDEEM)
-			probeNum = HDEEM::PROBE_NUMBER;
-		else if (wrapperType == JETSON)
-			probeNum = JETSON::PROBE_NUMBER;
-			
-		for (size_t it = 1; it < probeNum; it++)
+		for (size_t it = 1; it < TSystem::PROBE_NUMBER; it++)
 		{
 			stats.energy[it] = stats.duration * energy[it] / (lastVR - firstVR);
 		}
@@ -121,7 +93,7 @@ void TimeStore::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size
 	delete [] max;
 }
 
-void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	timespec time1, time2;
 	clock_gettime(CLOCK_REALTIME, &time1);
@@ -132,10 +104,7 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	}
 	ss << std::endl;
 
-	if (wrapperType == HDEEM)
-		ss << "# Job info - " << HDEEM::storeLabel << std::endl;
-	else if (wrapperType == JETSON)
-		ss << "# Job info - " << JETSON::storeLabel << std::endl;
+	ss << "# Job info - " << TSystem::storeLabel << std::endl;
 	ss << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
@@ -150,20 +119,10 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 
 	std::string msg = "";
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
-	if (wrapperType == HDEEM)
-	{
-		energy = new double [HDEEM::PROBE_NUMBER];
-		minWatts = new double [HDEEM::PROBE_NUMBER];
-		maxWatts = new double [HDEEM::PROBE_NUMBER];
-		msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
-	}
-	else if (wrapperType == JETSON)
-	{
-		energy = new double [JETSON::PROBE_NUMBER];
-		minWatts = new double [JETSON::PROBE_NUMBER];
-		maxWatts = new double [JETSON::PROBE_NUMBER];
-		msg = JETSON::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
-	}
+	energy = new double [TSystem::PROBE_NUMBER];
+	minWatts = new double [TSystem::PROBE_NUMBER];
+	maxWatts = new double [TSystem::PROBE_NUMBER];
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
 	
 	if (msg != "" && msg.find("detailed") == std::string::npos)
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
@@ -183,10 +142,7 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 		{
 			ss << "# Blade samples" << std::endl;
 			std::vector<double> samples;
-			if (wrapperType == HDEEM)
-				HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
-			else if (wrapperType == JETSON)
-				JETSON::getSamplesList(0, firstBlade, lastBlade, samples);
+			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			for (size_t it = firstBlade; it < lastBlade; it++)
 				ss << it << "," << samples[it] << std::endl;
 		}
@@ -213,3 +169,6 @@ void TimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	clock_gettime(CLOCK_REALTIME, &time2);
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 }
+
+template class TimeStore <HDEEM>;
+template class TimeStore <JETSON>;

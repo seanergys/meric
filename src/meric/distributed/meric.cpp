@@ -99,10 +99,10 @@ DistributedMeric::DistributedMeric()
 					if (Meric::AGGREGATE)
 					{
 //						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs, !_MPInodeRank));
-						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs));
+						_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new TimeStore("hdeem", Meric::SAMPLES, !_MPInodeRank));
+						_storeList.push_back(new TimeStore<HDEEM>("hdeem", Meric::SAMPLES, !_MPInodeRank));
 					}
 				}
 			} else {
@@ -138,6 +138,11 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 			_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES, !_MPInodeRank));
+	}
+	
+	if (Meric::MODE == MODE_JETSON)	//TODO Aggregate 
+	{
+		_storeList.push_back(new TimeStore<JETSON>("jetson", Meric::SAMPLES));
 	}
 
 	if (Meric::COUNTERS != "none")

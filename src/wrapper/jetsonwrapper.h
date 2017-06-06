@@ -47,6 +47,7 @@ public:
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
+	static void deleteSamples() {};
 
 private:
 	static std::string filename;

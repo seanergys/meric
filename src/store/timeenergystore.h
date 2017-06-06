@@ -19,7 +19,7 @@ struct TimeEnergyRecord {
 template <class TStore>
 class DebugAggregateStore;
 
-class TimeEnergyStore: public TimeStore {
+class TimeEnergyStore: public TimeStore <HDEEM> {
 
 	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
