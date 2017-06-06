@@ -36,7 +36,7 @@ template <class TSystem> void TimeStore<TSystem>::fillRegionStats(RegionStats &s
 	energy = new double [TSystem::PROBE_NUMBER];
 	min = new double [TSystem::PROBE_NUMBER];
 	max = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 
 	if (msg != "")
 		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
@@ -62,7 +62,7 @@ template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegion
 	energy = new double [TSystem::PROBE_NUMBER];
 	min = new double [TSystem::PROBE_NUMBER];
 	max = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time - _start), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts].region]<< std::endl;
@@ -122,7 +122,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	energy = new double [TSystem::PROBE_NUMBER];
 	minWatts = new double [TSystem::PROBE_NUMBER];
 	maxWatts = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
 	
 	if (msg != "" && msg.find("detailed") == std::string::npos)
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;

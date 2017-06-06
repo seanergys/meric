@@ -9,21 +9,22 @@ using namespace meric;
 hdeem_bmc_data_t HDEEM::bmc;
 hdeem_global_reading_t HDEEM::_samples;
 size_t HDEEM::_timeAdjustment = 0;
+timespec HDEEM::_startTime;
 
-size_t HDEEM::setTimeAdjustment(timespec start)
+void HDEEM::setTimeAdjustment(timespec start)
 {
 	hdeem_status_t status;
 	HDEEM::getStatus(status);
 	_timeAdjustment = FREQUENCY * mutils::timeToDouble(start - status.start_time_blade) -1;
+	_startTime = start;
 	MERIC_INFO << "SAMPLES TIME ADJUSTMENT: " << _timeAdjustment << std::endl;
-	return _timeAdjustment;
 }
 
 std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
 
 	std::string errMessage = "";
-	*firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
+	*firstBlade = std::ceil(startTime-_startTime * FREQUENCY) + _timeAdjustment;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 
 //MERIC_INFO << "FIRST " << *firstBlade << std::endl;

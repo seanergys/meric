@@ -23,7 +23,7 @@ class DetailedAggregateStore;
 
 template <class TSystem> class TimeStore: public Store {
 
-	enum WRAPPERS {HDEEM, JETSON};
+//	enum WRAPPERS {HDEEM, JETSON};
 
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
@@ -65,57 +65,41 @@ public:
 		TSystem::deleteSamples();
 	}
 
-	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)
+/*	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
-
-		if (wrapper == HDEEM::storeLabel)	//TODO
-			wrapperType = HDEEM;
-		else if (wrapper == JETSON::storeLabel)
-		{
-			wrapperType = JETSON;
-			_start.tv_sec=0;
-			_start.tv_nsec=0;
-		}
 	}
 
 	TimeStore(const std::string wrapper, bool samples): Store(samples)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
-
-		if (wrapper == HDEEM::storeLabel)
-			wrapperType = HDEEM;
-		else if (wrapper == JETSON::storeLabel)
-		{
-			wrapperType = JETSON;
-			_start.tv_sec=0;
-			_start.tv_nsec=0;
-		}
 	}
 
 	TimeStore(const std::string wrapper)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
-
-		if (wrapper == HDEEM::storeLabel)
-			wrapperType = HDEEM;
-		else if (wrapper == JETSON::storeLabel)
-		{
-			wrapperType = JETSON;
-			_start.tv_sec=0;
-			_start.tv_nsec=0;
-		}
 	}
-	
+*/
+
+	TimeStore(bool samples, bool write): Store(samples, write)
+	{
+		MERIC_INFO << "Create TimeStore\n";
+		clock_gettime(CLOCK_REALTIME, &_start);
+	}
+		
 	TimeStore(bool samples): Store(samples)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
+	}
 
-		wrapperType = HDEEM; //default
+	TimeStore()
+	{
+		MERIC_INFO << "Create TimeStore\n";
+		clock_gettime(CLOCK_REALTIME, &_start);
 	}
 
 
@@ -129,7 +113,6 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void computePeriods();
 
-	int wrapperType;
 	timespec _start;
 	std::vector<TimeRecord> _records;
 };

@@ -58,17 +58,17 @@ public:
 		HDEEM::deleteSamples();
 	}
 
-	TimeEnergyStore(bool samples, bool write) : TimeStore("hdeem", samples, write)
+	TimeEnergyStore(bool samples, bool write) : TimeStore(samples, write)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
-	TimeEnergyStore(bool samples) : TimeStore("hdeem", samples)
+	TimeEnergyStore(bool samples) : TimeStore(samples)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
-	TimeEnergyStore() : TimeStore("hdeem")
+	TimeEnergyStore()
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
