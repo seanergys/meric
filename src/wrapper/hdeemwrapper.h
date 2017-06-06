@@ -79,7 +79,7 @@ public:
 		hdeem_stats_free(&stats);
 	}
 
-	static size_t setTimeAdjustment(timespec start);
+	static void setTimeAdjustment(timespec start);
 	static void getStatus(hdeem_status_t &status) { checkHDEEM(hdeem_check_status(&bmc, &status), "get_status"); }
 	static int getSamples()
 	{
@@ -115,7 +115,7 @@ private:
 	static hdeem_bmc_data_t bmc;
 	static hdeem_global_reading_t _samples;
 	static size_t _timeAdjustment;
-	static timespec _startTime;
+	static double _startTime;
 
 	static void checkHDEEM(int status, const std::string &function)
 	{

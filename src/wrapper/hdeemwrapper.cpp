@@ -9,14 +9,14 @@ using namespace meric;
 hdeem_bmc_data_t HDEEM::bmc;
 hdeem_global_reading_t HDEEM::_samples;
 size_t HDEEM::_timeAdjustment = 0;
-timespec HDEEM::_startTime;
+double HDEEM::_startTime;
 
 void HDEEM::setTimeAdjustment(timespec start)
 {
 	hdeem_status_t status;
 	HDEEM::getStatus(status);
 	_timeAdjustment = FREQUENCY * mutils::timeToDouble(start - status.start_time_blade) -1;
-	_startTime = start;
+	_startTime = mutils::timeToDouble(start);
 	MERIC_INFO << "SAMPLES TIME ADJUSTMENT: " << _timeAdjustment << std::endl;
 }
 
