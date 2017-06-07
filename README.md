@@ -163,6 +163,7 @@ To find the best settings for each region, you should run your code with all pos
 		1 = rapl - uses rapl counters to measure energy consumtion
 		2 = hdeem & rapl - uses hdeem and rapl at the same time
 		3 = none - doesn't measure energy consumtion, but provides you the option to set parameters for regions
+		4 = jetson - energy measurement on BSC Jetson TX1 system
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
@@ -386,7 +387,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 --------------------------------------------------------------------------------
 #     11] Using MERIC on BSC ARM Jetson                                        #
 --------------------------------------------------------------------------------
-To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. To start it, user must run a script on the background, that you must start before runnig a code and end when the measurement is finished. This energy measurement script effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py.
+To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. To start it, user must run a script on the background, that you must start before runnig a code and end when the measurement is finished. This energy measurement script effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. To activate Meric on Jetson export MERIC_MODE=4.
 
 ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequncies, input values are in kHz. It is remmendet to set frequencies from a list made by administrators, see:
 

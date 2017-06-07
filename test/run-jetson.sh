@@ -25,6 +25,7 @@ sleep 5s
 	# /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
 	# /sys/kernel/debug/clock/emc/possible_rates
 
+export MERIC_MODE=4
 
 for core in 102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
 do
