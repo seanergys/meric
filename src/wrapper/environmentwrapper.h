@@ -63,13 +63,14 @@ public:
 
 		if (systemType == SYS_JETSON)
 		{
-			std::ofstream coreFile;
+			std::ofstream coreFile;	//TODO what if I cannot write to file
 			for (int i=0; i<4; i++)	//TODO 4 cores - how to detect?
 			{
 				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_setspeed");
 				coreFile << freq;
 				coreFile.close();
 			}
+			MERIC_INFO << "JETSON set frequency to: " << freq;
   		}
 		else
 		{
@@ -162,6 +163,7 @@ public:
 			uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
 			uncoreFile << freq << "000";
 			uncoreFile.close();
+			MERIC_INFO << "JETSON set uncore frequency to: "<< freq << std::endl;
   		}
 		else
 		{
