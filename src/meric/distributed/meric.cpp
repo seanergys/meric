@@ -148,7 +148,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
+			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
 
 	if (Meric::COUNTERS != "none")
