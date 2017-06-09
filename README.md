@@ -387,7 +387,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 --------------------------------------------------------------------------------
 #     11] Using MERIC on BSC ARM Jetson                                        #
 --------------------------------------------------------------------------------
-To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. To start it, user must run a script on the background, that you must start before runnig a code and end when the measurement is finished. This energy measurement script effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. To activate Meric on Jetson export MERIC_MODE=4.
+To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. To activate Meric on Jetson export MERIC_MODE=4.
 
 ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequncies, input values are in kHz. It is remmendet to set frequencies from a list made by administrators, see:
 
