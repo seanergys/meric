@@ -51,7 +51,7 @@ do
 		if [ $? -ne 0 ]
 		then
 			mpirun -n 4./test_mpi
-		do
+		fi
 	done
 done
 
