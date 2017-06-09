@@ -21,7 +21,7 @@
 namespace meric {
 
 struct jetsonSample {
-	double timestamp; //timespec
+	double timestamp;
 	double DC;
 	double GPU;
 	double CPU;
@@ -31,22 +31,17 @@ class JETSON {
 
 public:
 
-	static std::string storeLabel;// = "jetson";
+	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel;// = {"GPU", "CPU"}; //"DC",
-	static const int FREQUENCY = 10; //?
+	static int FREQUENCY;
 	static const int PROBE_NUMBER = 3;	//DC + GPU + CPU	//	static const int PROBE_NUMBER = 7; //TODO
-
-
 
 	static void init();
 	static int getSamples();
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
 	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[]);
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
-	static void fillTime(timespec &time)
-	{
-		clock_gettime(CLOCK_REALTIME, &time);
-	};
+	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
 
 private:

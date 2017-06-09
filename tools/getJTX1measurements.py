@@ -7,7 +7,7 @@ import signal,sys,subprocess
 import SDL_INA3221
 import socket
 
-SAMPLES_PER_SECOND = 10	#if changed - edit src/wrapper/jasonwrapper.h - static const int FREQUENCY
+SAMPLES_PER_SECOND = 10	#you may edit the samples rate here <<< <<< <<< <<< <<<
 #10   = 2%  cpu
 #50	  = 4%  cpu
 #100  = 8%  cpu
@@ -15,6 +15,7 @@ SAMPLES_PER_SECOND = 10	#if changed - edit src/wrapper/jasonwrapper.h - static c
 #500  = 23% cpu
 #1000 = 30% cpu
 
+################################################################################
 def ensure_file(filepath):
     d = os.path.dirname(filepath)
     if d != "" and not os.path.exists(d):
@@ -27,20 +28,23 @@ ensure_file(outFile)
 myFile = open(outFile, 'w+')
 
 def signal_handler(signal, frame):
-    print("Energy measurement finished.")
+    sys.stdout.write("Energy measurement finished.\n")
+    sys.stdout.flush()
     myFile.close()
     exit()
 
 signal.signal(signal.SIGINT, signal_handler)
 
-print("\nBarcelona Supercomputing Center (c) 2016")
-print("Starts Jetson energy measurement. For interrupt: sudo pkill -INT $basename")
+sys.stdout.write("\nBarcelona Supercomputing Center (c) 2016\n")
+sys.stdout.write("Starts Jetson energy measurement. For interrupt: sudo pkill -INT $basename\n")
+sys.stdout.flush()
 
 # print("timestamp, bus_V_DC, bus_V_GPU, bus_V_CPU, shunt_mV_DC, shunt_mV_CPU, shunt_mV_GPU, \
 # load_V_DC, load_V_GPU, load_V_CPU, current_mA_DC, current_mA_GPU, current_mA_CPU, \
 # power_consumption_W_DC, power_consumption_W_GPU, power_consumption_CPU", file = myFile)
 
 print("# timestamp, power_consumption_W_DC, power_consumption_W_GPU, power_consumption_CPU", file = myFile)
+myFile.flush()
 
 ina3221 = SDL_INA3221.SDL_INA3221(addr=0x40)
 

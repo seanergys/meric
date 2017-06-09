@@ -58,20 +58,23 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 
 	SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 #else
-	std::string line;
-	std::ifstream jsonFile ("/proc/cpuifo");
-	if (jsonFile.is_open())
+	if (system != SYS_JETSON)	//TODO - this is just fast fix
 	{
-		while (getline(jsonFile,line))
+		std::string line;
+		std::ifstream jsonFile ("/proc/cpuifo");
+		if (jsonFile.is_open())
 		{
-			if (line.find("cpu cores"))
+			while (getline(jsonFile,line))
 			{
-				line = line.substr(line.find(":"));
-				break;
+				if (line.find("cpu cores"))
+				{
+					line = line.substr(line.find(":"));
+					break;
+				}
 			}
+			jsonFile.close();
+			SOCKET_SIZE = std::stoi(line);
 		}
-		jsonFile.close();
-		SOCKET_SIZE = std::stoi(line);
 	}
 #endif	
 	systemType = system;

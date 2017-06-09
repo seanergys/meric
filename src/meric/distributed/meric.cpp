@@ -148,6 +148,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
+
 			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
 
@@ -171,9 +172,14 @@ DistributedMeric::DistributedMeric()
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
-	if (Meric::MODE == MODE_JETSON && (!_MPInodeRank))
-		JETSON::init();
-
+	if (Meric::MODE == MODE_JETSON)
+	{
+		if (!_MPInodeRank)
+			JETSON::init();
+		sleep(5);
+//		MPI_Barrier(MPI_COMM_WORLD);
+	}
+	
 	//wrappers must be initialized after meric instantiation
 	//rapl counter expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")

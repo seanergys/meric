@@ -8,32 +8,76 @@ std::string JETSON::filename="";
 std::string JETSON::storeLabel="jetson";
 std::vector<std::string> JETSON::vrSensorLabel = {"GPU", "CPU"}; //"DC",
 std::vector<jetsonSample> JETSON::_samples;
+int JETSON::FREQUENCY = 10;
 
 
-void JETSON::init()
+void JETSON::init() //int rank = 0)
 {
+	//start energy measurement
+	system((std::string(JETSONMEASUREMENTPATH)+"/getJTX1measurements.py &").c_str());
+	
 	//get name of the file with measurements
 	char hostname[50];
 	gethostname(hostname, 50);
-	filename = std::string(JETSONMEASUREMENTPATH)+"/"+std::string(hostname)+".csv";
-	
-	struct stat buffer;   
-	if (stat(filename.c_str(), &buffer) != 0)
-	{
-		std::cerr << "MERIC ERROR: jetson measurement file "+filename+" doesn't exist\n";
-		//exit
-	}
+	filename = std::string(JETSONMEASUREMENTPATH)+"/jetsonMeasurement/"+std::string(hostname)+".csv";
 }
 
 
 int JETSON::getSamples()					//prejmenovat loadSamples()
 {
+	//wait to load all samples
+	timespec time;
+	clock_gettime(CLOCK_REALTIME, &time);
+	double currentTime = mutils::timeToDouble(time);
+	double timestamp;
+	do
+	{
+		sleep(2);
+		timestamp = 0.0;
+		std::ifstream tFile(filename);
+		if(tFile.is_open())
+		{		
+			tFile.seekg(-2,std::ios_base::end); // seek before the EOF
+			bool keepLooping = true;
+			while(keepLooping)
+			{
+				char ch;
+				tFile.get(ch);
+
+				if((int)tFile.tellg() <= 1) // the first line is the last line
+				{
+					tFile.seekg(0);
+					keepLooping = false;
+				}
+				else if(ch == '\n')
+					keepLooping = false;
+				else
+					tFile.seekg(-2,std::ios_base::cur);
+			}
+
+			std::string lastLine;            
+			getline(tFile,lastLine);
+			size_t space = lastLine.find(',');
+			if (space != std::string::npos)
+			{
+				timestamp = mutils::timeToDouble(mutils::stringToTime(lastLine.substr(0,space)));
+				//MERIC_INFO << currentTime << " vs " << timestamp << std::endl;
+			}
+			tFile.close();
+		}
+	}while(timestamp <= currentTime);
+	
+	//stop energy measurement
+	system("pkill -f -INT getJTX1measurements.py");
+	
+	//load samples
 	std::ifstream iFile(filename);
 	if(iFile.is_open())
 	{
 		int cnt = 0;
 		std::string data;
-		std::getline(iFile, data);
+		std::getline(iFile, data);	//header
+	
 		jetsonSample sample;
 		int state = 0;
 		while(iFile >> data)
@@ -42,7 +86,7 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 			{
 				case 0 : 
 				{
-					sample.timestamp = mutils::timeToDouble(mutils::stringToTime(data));
+					sample.timestamp = std::stod(data);
 					state++;
 					break;
 				}
@@ -63,7 +107,6 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 					sample.CPU = std::stod(data);
 					_samples.push_back(sample);
 					state=0;
-//	MERIC_INFO << "T: "<<int(sample.timestamp) <<"\t("<<++cnt<<")\tE: "<<sample.DC << "\n";
 					break;
 				}
 			}
@@ -75,12 +118,16 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 		std::cerr << "MERIC ERROR: jetson measurement file cannot be open\n";
 	}
 
+	//stats
 	MERIC_INFO <<"JETSON samples #" << _samples.size() << std::endl;
+	MERIC_INFO <<std::setprecision (15) <<"JETSON RUNTIME: " << _samples[0].timestamp << " - " << _samples[_samples.size()-1].timestamp << std::endl;
 	if (_samples.size() == 0)
 	{
 		std::cerr << "MERIC ERROR: no JETSON samples\n";
 		return 1;
 	}
+	FREQUENCY = std::ceil(_samples.size() / (_samples[_samples.size()-1].timestamp-_samples[0].timestamp));
+	MERIC_INFO << "JETSON samples frequency: " << FREQUENCY << std::endl;
 	return 0;
 }
 
@@ -96,8 +143,30 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 		return "";
 
 	*firstBlade = std::ceil((startTime - _samples[0].timestamp) * FREQUENCY);
-	*firstBlade += _samples[*firstBlade].timestamp < startTime ? 1 : 0;
+	if (_samples.size() <= *firstBlade)
+		*firstBlade = _samples.size()-1;
+	while (_samples[*firstBlade].timestamp > startTime)
+	{
+		MERIC_INFO << 1 << std::endl;
+		*firstBlade -= std::ceil(_samples[*firstBlade].timestamp - startTime);
+	}
+	while (_samples[*firstBlade].timestamp < startTime)
+	{
+		MERIC_INFO << 2 << std::endl;
+		*firstBlade += 1;
+	}
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
+	const double endTime = startTime + duration;
+	while (_samples[*lastBlade].timestamp > endTime)
+	{
+		MERIC_INFO << 3 << std::endl;
+		*lastBlade -= std::ceil(_samples[*lastBlade].timestamp - endTime);
+	}
+	while (_samples[*lastBlade].timestamp < endTime)
+	{
+		MERIC_INFO << 4 << std::endl;
+		*lastBlade += 1;
+	}
 
 	if (*lastBlade > _samples.size())
 	{
@@ -110,54 +179,37 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 	{
-/*
-		*maxWatts = _samples[*firstBlade].DC;
-		*minWatts = *maxWatts;
 		for (size_t it = *firstBlade; it < *lastBlade; it++)
 		{
-			double valTmp = _samples[it].DC;
-			if (valTmp > *maxWatts)
-				*maxWatts = valTmp;
-			else if (valTmp < *minWatts)
-				*minWatts = valTmp;
-			*energy += valTmp;
-		}
-*/		
-
-/**/
-			for (size_t it = *firstBlade; it < *lastBlade; it++)						//TODO
+			for (size_t sensorId = 0; sensorId < JETSON::PROBE_NUMBER - 1; sensorId++)
 			{
-				for (size_t sensorId = 0; sensorId < JETSON::PROBE_NUMBER - 1; sensorId++)
+				double valTmp = 0.0;
+				switch(sensorId)
 				{
-					double valTmp = 0.0;
-					switch(sensorId)
+					case 0 :
 					{
-						case 0 :
-						{
-							valTmp = _samples[it].DC;
-							break;
-						}
-						case 1 :
-						{
-							valTmp = _samples[it].GPU;
-							break;
-						}
-						case 2 :
-						{
-							valTmp = _samples[it].CPU;
-							break;
-						}
+						valTmp = _samples[it].DC;
+						break;
 					}
-					
-					if (valTmp > maxWatts[sensorId])	//max[]
-						maxWatts[sensorId] = valTmp;	//max[]
-					else if (valTmp < minWatts[sensorId])	//min[]
-						minWatts[sensorId] = valTmp;	//min[]
-					energy[sensorId] += valTmp;	//energy[sensorId]
+					case 1 :
+					{
+						valTmp = _samples[it].GPU;
+						break;
+					}
+					case 2 :
+					{
+						valTmp = _samples[it].CPU;
+						break;
+					}
 				}
+				
+				if (valTmp > maxWatts[sensorId])
+					maxWatts[sensorId] = valTmp;
+				else if (valTmp < minWatts[sensorId])
+					minWatts[sensorId] = valTmp;
+				energy[sensorId] += valTmp;
 			}
-/**/
-		
+		}
 	}else
 	{
 		*firstBlade = -1;

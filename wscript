@@ -14,7 +14,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
         ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
 
-    ctx.env.append_unique("DEFINES", [ "JETSONMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools/jetsonMeasurement\""])
+    ctx.env.append_unique("DEFINES", [ "JETSONMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools\""])
     
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])

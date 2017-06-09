@@ -70,7 +70,7 @@ public:
 				coreFile << freq;
 				coreFile.close();
 			}
-			MERIC_INFO << "JETSON set frequency to: " << freq;
+			MERIC_INFO << "JETSON set frequency to: " << freq << std::endl;
   		}
 		else
 		{
