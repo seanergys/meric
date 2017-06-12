@@ -10,8 +10,10 @@
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
+#define JETSON_INFO " "
 #else
 #define MERIC_INFO if (true); else std::cout
+#define JETSON_INFO "> /dev/null"
 #endif
 
 namespace meric {

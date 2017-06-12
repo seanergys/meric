@@ -14,7 +14,7 @@ int JETSON::FREQUENCY = 10;
 void JETSON::init() //int rank = 0)
 {
 	//start energy measurement
-	system((std::string(JETSONMEASUREMENTPATH)+"/getJTX1measurements.py &").c_str());
+	system((std::string(JETSONMEASUREMENTPATH)+"/getJTX1measurements.py "+JETSON_INFO+" &").c_str());
 	
 	//get name of the file with measurements
 	char hostname[50];
