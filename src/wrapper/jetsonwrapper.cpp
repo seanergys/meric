@@ -146,27 +146,15 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 	if (_samples.size() <= *firstBlade)
 		*firstBlade = _samples.size()-1;
 	while (_samples[*firstBlade].timestamp > startTime)
-	{
-		MERIC_INFO << 1 << std::endl;
 		*firstBlade -= std::ceil(_samples[*firstBlade].timestamp - startTime);
-	}
 	while (_samples[*firstBlade].timestamp < startTime)
-	{
-		MERIC_INFO << 2 << std::endl;
 		*firstBlade += 1;
-	}
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 	const double endTime = startTime + duration;
 	while (_samples[*lastBlade].timestamp > endTime)
-	{
-		MERIC_INFO << 3 << std::endl;
 		*lastBlade -= std::ceil(_samples[*lastBlade].timestamp - endTime);
-	}
 	while (_samples[*lastBlade].timestamp < endTime)
-	{
-		MERIC_INFO << 4 << std::endl;
 		*lastBlade += 1;
-	}
 
 	if (*lastBlade > _samples.size())
 	{

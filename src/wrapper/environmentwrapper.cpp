@@ -79,24 +79,25 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 #endif	
 	systemType = system;
 	
-	if (systemType == SYS_JETSON)
-	{
-		std::ofstream governorFile;
-		//core
-		for (int i=0; i<4; i++)	//TODO 4 cores - how to detect? test if code will not fall if SOCKET_SIZE will be set to 4
-		{
-			governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-			governorFile << "userspace";
-			governorFile.close();
-		}
-		//uncore
-		governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
-		governorFile << "1";
-		governorFile.close();
-	}
-	
 	if(!rank)
 	{
+		if (systemType == SYS_JETSON)
+		{
+			std::ofstream governorFile;
+			//core
+			for (int i=0; i<4; i++)	//TODO 4 cores - how to detect? test if code will not fall if SOCKET_SIZE will be set to 4
+			{
+				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
+				governorFile << "userspace";
+				governorFile.close();
+			}
+			MERIC_INFO << "CORE FREQUENCY activated\n";
+			//uncore
+			governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
+			governorFile << "1";
+			governorFile.close();
+			MERIC_INFO << "unCORE FREQUENCY activated\n";
+		}
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency);
 	}
