@@ -150,13 +150,17 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 	while (_samples[*firstBlade].timestamp < startTime)
 		*firstBlade += 1;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
+	if (*lastBlade > _samples.size())
+		*lastBlade = _samples.size()-1;
 	const double endTime = startTime + duration;
 	while (_samples[*lastBlade].timestamp > endTime)
-		*lastBlade -= std::ceil(_samples[*lastBlade].timestamp - endTime);
-	while (_samples[*lastBlade].timestamp < endTime)
+		*lastBlade -= std::ceil(_samples[*lastBlade].timestamp - endTime) * FREQUENCY;
+	if (*lastBlade < *firstBlade)
+		*lastBlade = *firstBlade;
+	while (*lastBlade < _samples.size() && _samples[*lastBlade].timestamp < endTime)
 		*lastBlade += 1;
 
-	if (*lastBlade > _samples.size())
+	if (*lastBlade == _samples.size())
 	{
 		*lastBlade = -1;
 		return "MERIC ERROR: missing JETSON samples for region ";
