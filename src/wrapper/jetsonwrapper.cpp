@@ -123,19 +123,19 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 	}
 	else
 	{
-		std::cerr << "MERIC ERROR: jetson measurement file cannot be open\n";
+		std::cerr << "MERIC ERROR: ARM measurement file cannot be open\n";
 	}
 
 	//stats
-	MERIC_INFO <<"JETSON samples #" << _samples.size() << std::endl;
-	MERIC_INFO <<std::setprecision (15) <<"JETSON RUNTIME: " << _samples[0].timestamp << " - " << _samples[_samples.size()-1].timestamp << std::endl;
+	MERIC_INFO <<"ARM samples #" << _samples.size() << std::endl;
+	MERIC_INFO <<std::setprecision (15) <<"ARM RUNTIME: " << _samples[0].timestamp << " - " << _samples[_samples.size()-1].timestamp << std::endl;
 	if (_samples.size() == 0)
 	{
-		std::cerr << "MERIC ERROR: no JETSON samples\n";
+		std::cerr << "MERIC ERROR: no ARM samples\n";
 		return 1;
 	}
 	FREQUENCY = std::ceil(_samples.size() / (_samples[_samples.size()-1].timestamp-_samples[0].timestamp));
-	MERIC_INFO << "JETSON samples frequency: " << FREQUENCY << std::endl;
+	MERIC_INFO << "ARM samples frequency: " << FREQUENCY << std::endl;
 	return 0;
 }
 
@@ -171,7 +171,7 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 	if (*lastBlade == _samples.size())
 	{
 		*lastBlade = -1;
-		return "MERIC ERROR: missing JETSON samples for region ";
+		return "MERIC ERROR: missing ARM samples for region ";
 	}
 	
 	*firstVR = *firstBlade;
@@ -216,7 +216,7 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 		*lastBlade  = -1;
 		*firstVR    = -1;
 		*lastVR     = -1;
-		return "MERIC ERROR: No JETSON samples, probably too short ("+std::to_string(duration)+"s) region ";
+		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	
 	return "";
