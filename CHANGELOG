@@ -1,6 +1,7 @@
 ### XX.XX.XXXX #################################################################
   - updated shared Score-P/Meric header file
-  - RAPL counters adds 70 W baseline                                                                   
+  - Fixes RAPL overflow on Salomon
+  - RAPL counters adds 70 W baseline
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
   - ARM jetson energy measurement and frequency scaling
