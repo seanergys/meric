@@ -119,7 +119,7 @@ void RAPL::getValues(std::map<std::string, long long> & record)
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [itemName+suffix+std::to_string(die)] = dieEnergy*energyUnit[itemName];
+				record [itemName+suffix+std::to_string(die)] = dieEnergy; //*energyUnit[itemName];
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -139,7 +139,7 @@ void RAPL::getValues(std::map<std::string, long long> & record)
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += dieEnergy*energyUnit[iterator->first];
+				record [iterator->first] += dieEnergy; //*energyUnit[iterator->first];
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -159,13 +159,13 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 		}
 		else
 		{
-			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX * energyUnit[counter] <<" " <<counter << std::endl;
-			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << COUNTERMAX * energyUnit[counter] - startValue + stopValue << std::endl;
-			return COUNTERMAX * energyUnit[counter] - startValue + stopValue;
+			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counter] <<" " <<counter << std::endl;
+			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counter] << std::endl;
+			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counter];
 		}
 	}
 	else
-		return stopValue - startValue;
+		return (stopValue - startValue) * energyUnit[counter];
 }
 
 #else
