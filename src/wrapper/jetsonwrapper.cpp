@@ -29,11 +29,19 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	double currentTime = mutils::timeToDouble(time);
-	double timestamp;
+	double timestamp = 1.0;
+	double prevstamp = 0.0;
 	do
 	{
+		if (timestamp == prevstamp)
+		{
+			std::cerr << "MERIC ERROR: missing energy samples, energy measurement has already ended\n";
+			system("pkill -f -INT getJTX1measurements.py 2> /dev/null"); //just to be sure
+			return 1;
+		}
+		prevstamp = timestamp;			
+
 		sleep(2);
-		timestamp = 0.0;
 		std::ifstream tFile(filename);
 		if(tFile.is_open())
 		{		
