@@ -8,3 +8,4 @@ test/hdeemMeasurement/
 test/hdeemMeasurementCounters/
 tools/__pycache__/
 tools/jetsonMeasurement/
+tools/yokogawaMeasurement/
