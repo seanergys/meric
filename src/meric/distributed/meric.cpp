@@ -140,7 +140,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES, !_MPInodeRank));
 	}
 	
-	if (Meric::MODE == MODE_JETSON)
+	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -172,7 +172,7 @@ DistributedMeric::DistributedMeric()
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
-	if (Meric::MODE == MODE_JETSON)
+	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 	{
 		if (!_MPInodeRank)
 			JETSON::init();

@@ -37,7 +37,7 @@ SharedMeric::SharedMeric()
 		_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES));
 	}
 	
-	if (Meric::MODE == MODE_JETSON)
+	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 	{
 		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
 	}
@@ -72,7 +72,7 @@ SharedMeric::SharedMeric()
 			RAPL::detailed();
 		RAPL::init();
 	}
-	if (Meric::MODE == MODE_JETSON)
+	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 		JETSON::init();
 }
 
