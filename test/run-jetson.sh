@@ -17,16 +17,11 @@ hostname
 
 # set test settings
 export MERIC_MODE=4
+export MERIC_CONTINUAL=1
 
 export MERIC_FREQUENCY=1326000
 export MERIC_UNCORE_FREQUENCY=1600000
 export MERIC_NUM_THREADS=0
-
-# one test run
-mkdir delete
-export MERIC_OUTPUT_DIR=delete
-mpirun -n 4 ./test_mpi
-
 
 
 # run the test

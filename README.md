@@ -78,7 +78,7 @@
 		cd test
 		make
 
-	# set the default frequencies outside of the regions, or inside regions where are not set
+	# set static frequencies outside of the regions, or inside regions where are not set
 		export MERIC_FREQUENCY=25
 		export MERIC_UNCORE_FREQUENCY=25
 
@@ -152,10 +152,11 @@ To find the best settings for each region, you should run your code with all pos
 #     6] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
-## SET MERIC DEFAULT PARAMETERS - mandatory parameters ##
+## SET MERIC STATIC PARAMETERS - mandatory parameters ##
 	export MERIC_FREQUENCY=24        # [0.1 GHz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24      # [0 for applications that doesn't use threads]
+		- To run a code in default settings, without MERIC influences, set frequencies to zero
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
@@ -387,7 +388,9 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 --------------------------------------------------------------------------------
 #     11] Using MERIC on BSC ARM Jetson                                        #
 --------------------------------------------------------------------------------
-To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects cpu. 100 samples per second was selected in the measurement script as a compromise - this samples rate takes ~8% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. To activate Meric on Jetson export MERIC_MODE=4.
+To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects cpu. 10 samples per second was selected in the measurement script as a compromise - this samples rate takes ~2% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. 
+
+Export MERIC_MODE=4 to activate MERIC on Jetson - otherwise it isn't possible to change frequencies and measure energy consumtion. Since Jetson doesn't have non-continual energy measurement interface exporting MERIC_CONTINUAL=0 turns off the energy consumption measurement. To measure one must export MERIC_CONTINUAL=1.
 
 ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequncies, input values are in kHz. Deafualt frequencies are 518400 kHz core and 408000 kHz uncore. It is recommended to set frequencies from a list made by administrators, see:
 
@@ -397,7 +400,7 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 	uncore:	/sys/kernel/debug/clock/emc/possible_rates
 	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
-See run-jetson.sh script in the test directory, that shows how to do a test on Jetson.
+Except login node on Jetson nodes is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
 
 
 
