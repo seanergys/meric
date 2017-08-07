@@ -24,7 +24,7 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 {
 
 	std::string errMessage = "";
-	*firstBlade = std::ceil(startTime-_startTime * FREQUENCY) + _timeAdjustment;
+	*firstBlade = std::ceil((startTime-_startTime) * FREQUENCY) + _timeAdjustment;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 
 //MERIC_INFO << "FIRST " << *firstBlade << std::endl;
