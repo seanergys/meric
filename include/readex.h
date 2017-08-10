@@ -11,7 +11,7 @@
 
 #ifdef USE_MERIC
 	#include <meric.h>
-#elif defined USE_SCOREP
+#elif defined USE_SCOREP && defined __cplusplus
 	#include <cstddef>
 #endif
 
