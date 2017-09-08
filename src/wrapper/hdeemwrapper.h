@@ -3,7 +3,11 @@
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
 #include "../basis/utils.h"
-#include "../../hdeem/hdeem.h"
+#ifdef USE_DUMMY
+	#include "../../hdeem/hdeem.h"
+#else
+	#include <hdeem.h>
+#endif
 #include <cstdlib>
 #include <iostream>
 #include <time.h>
