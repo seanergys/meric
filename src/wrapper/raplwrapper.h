@@ -12,7 +12,7 @@ namespace meric {
 class RAPL {
 #ifdef HAVE_X86_ADAPT_H
 public:
-	static const int RAPL_BASELINE = 70; // 70 W
+	static const int RAPL_BASELINE = 0; // ~70 W should be added in the RADAR config file
 	static void init();
 	static void close() {};
 	
