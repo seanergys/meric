@@ -6,24 +6,15 @@ namespace meric {
 template <class TStore>
 void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-    std::cout << "begin" << std::endl;
-
 	DetailedRegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
 
-    std::cout << "bef gather" << std::endl;
-
 	MPI_Gather(&stats, sizeof(DetailedRegionStats), MPI_BYTE, _buffer.data(), sizeof(DetailedRegionStats), MPI_BYTE, 0, this->_comm);
-
-    std::cout << "calltree" << std::endl;
 
     ss << "# CALLTREE;init_" << this->_store->_initCounter;
     for (size_t j = 0; j < iStarts.size()-1; j++) {
         ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
     }
-    ss << '\n';
-
-    std::cout << "job info" << std::endl;
 
     ss << "# Job info - hdeem" << std::endl
        << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
@@ -64,8 +55,6 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     // Blade values //
     //////////////////
 
-    std::cout << "bs" << std::endl;
-
     ss << "# Blade summary" << '\n'
        << "Average energy consumption [J]," << avgEnergy << '\n'
        << "Maximal energy consumption [J]," << maxEnergy << '\n'
@@ -79,7 +68,6 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     unsigned int vrSensorNum = vrSensor.size();
 
     for (unsigned int sensorID = 1; sensorID < vrSensorNum; sensorID++) {
-        std::cout << "VR" << std::endl;
         ss << "# Voltage regulator (" << vrSensor[sensorID-1] << ") summary" << '\n';
     
         avgEnergy = 0;
