@@ -93,7 +93,7 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 }
 
 
-void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples)
+void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double>  & samples)
 {
 	if (sensorId == 0)
 	{
@@ -105,6 +105,7 @@ void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 		for (size_t i = first; i < last; i++)
 			samples.push_back(_samples.vr_power[i].value[sensorId-1]);
 	}
+	std::cerr << "samples_size " <<  samples.size() << std::endl;
 }
 
 

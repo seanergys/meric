@@ -113,7 +113,7 @@ public:
 	}
 	
 	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
-	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
+	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
 
 private:
 	static hdeem_bmc_data_t bmc;

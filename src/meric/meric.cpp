@@ -95,13 +95,6 @@ int Meric::getDefaultParameters()
 		}
 	}
 
-//TMP SECTION
-	if (Meric::SAMPLES == 1)
-	{
-		std::cerr << "MERIC currently doesn't support MERIC_SAMPLES=1\n";
-		return 1;
-	}
-		
 	return 0;
 }
 
