@@ -152,22 +152,28 @@ void RAPL::getValues(std::map<std::string, long long> & record)
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter)
 {
+	std::string counterName;
+	if (detailedMode)
+		counterName = counter.substr(0,counter.length() - suffix.length() - 1);
+	else
+		counterName = counter;
+	
 	if (stopValue < startValue)
 	{	
-		if (!energyUnit.count(counter))
+		if (!energyUnit.count(counterName))
 		{
 			//missing unit modifier
 			return 0;
 		}
 		else
 		{
-			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counter] <<" " <<counter << std::endl;
-			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counter] << std::endl;
-			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counter];
+			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counterName] <<" " <<counterName << std::endl;
+			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName] << std::endl;
+			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
 		}
 	}
 	else
-		return (stopValue - startValue) * energyUnit[counter];
+		return (stopValue - startValue) * energyUnit[counterName];
 }
 
 #else
