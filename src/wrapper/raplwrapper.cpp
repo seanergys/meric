@@ -86,8 +86,10 @@ void RAPL::init()
 //	read counters values
 void RAPL::getValues(std::map<std::string, long long> & record) 
 {
+
 	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
+	record[RAPL_COUNTERS::RAPL_SUM_ENERGY] = 0; //will be filled when the measurement is over
 	
 	if (detailedMode)
 	{

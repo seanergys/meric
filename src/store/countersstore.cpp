@@ -42,6 +42,9 @@ void CountersStore::addEnd(int region)
 
 void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
 {
+	int summaryIndex = -1;
+	unsigned long long int summary = 0;
+	unsigned long long int value;
 	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
@@ -55,8 +58,26 @@ void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, doub
 		}
 		else if (wrapperType == RAPL)
 		{
-			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
+			if (counterIt->first == RAPL_COUNTERS::RAPL_SUM_ENERGY)
+			{
+				summaryIndex = stats.size();
+				stats.push_back(0);
+			}
+			else
+			{
+				value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+				summary += value;
+				stats.push_back(value);
+			}
 		}
+	}
+	
+	if (wrapperType == RAPL)
+	{
+		if (summaryIndex == -1)
+			std::cerr << "MERIC ERROR - missing summary value for RAPLs\n";
+		else
+			stats[summaryIndex] = summary + (*time) * RAPL::RAPL_BASELINE;
 	}
 }
 
@@ -90,6 +111,8 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 		}
 		else if (wrapperType == RAPL)
 		{
+			if (counterIt->first == RAPL_COUNTERS::RAPL_SUM_ENERGY)
+				continue;
 			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 
@@ -100,7 +123,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	
 //TODO - TEMPORARY solution	#19
 	if (wrapperType == RAPL)
-		ss << "Energy summary," << summary + timespec2double(runtime) * RAPL::RAPL_BASELINE << std::endl;
+		ss << RAPL_COUNTERS::RAPL_SUM_ENERGY << "," << summary + timespec2double(runtime) * RAPL::RAPL_BASELINE << std::endl;
 	else if (wrapperType == PAPI)
 	{
 		ss << "# RATIOS: \n";
