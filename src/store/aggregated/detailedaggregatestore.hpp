@@ -20,10 +20,10 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
        << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
        << "Nodelist," << this->_store->_nodelist << '\n';
 
-        double avgEnergy = 0,
+        double sumEnergy = 0,
                maxEnergy = 0,
                minEnergy = _buffer[0].energy[0];
-        double avgDuration = 0,
+        double sumDuration = 0,
                maxDuration = 0,
                minDuration = _buffer[0].duration;
 
@@ -34,7 +34,7 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
                 minEnergy = _buffer[i].energy[0];
             }
 
-            avgEnergy += _buffer[i].energy[0];
+            sumEnergy += _buffer[i].energy[0];
 
             if(maxDuration < _buffer[i].duration) {
                 maxDuration = _buffer[i].duration;
@@ -42,12 +42,11 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
                 minDuration = _buffer[i].duration;
             }
 
-            avgDuration += _buffer[i].duration;
+            sumDuration += _buffer[i].duration;
         }
-        avgEnergy /= this->_size;
-        avgDuration /= this->_size;
 
-    ss << "Average runtime of function [s]," << avgDuration << '\n'
+
+    ss << "Average runtime of function [s]," << sumDuration/this->_size << '\n'
        << "Maximal runtime of function [s]," << maxDuration << '\n'
        << "Minimal runtime of function [s]," << minDuration << '\n';
 
@@ -56,9 +55,10 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     //////////////////
 
     ss << "# Blade summary" << '\n'
-       << "Average energy consumption [J]," << avgEnergy << '\n'
+       << "Average energy consumption [J]," << sumEnergy/this->_size << '\n'
        << "Maximal energy consumption [J]," << maxEnergy << '\n'
-       << "Minimal energy consumption [J]," << minEnergy << '\n';
+       << "Minimal energy consumption [J]," << minEnergy << '\n'
+       << "Summary energy consumption [J]," << sumEnergy << '\n';
 
     ///////////////////////
     // VR sensors values //
@@ -70,7 +70,7 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     for (unsigned int sensorID = 1; sensorID < vrSensorNum; sensorID++) {
         ss << "# Voltage regulator (" << vrSensor[sensorID-1] << ") summary" << '\n';
     
-        avgEnergy = 0;
+        sumEnergy = 0;
         maxEnergy = 0;
         minEnergy = _buffer[sensorID].energy[sensorID];
 
@@ -82,13 +82,13 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
                 minEnergy = _buffer[i].energy[sensorID];
             }
 
-            avgEnergy += _buffer[i].energy[sensorID];
+            sumEnergy += _buffer[i].energy[sensorID];
         }
-        avgEnergy /= this->_size;
            
-        ss << "Average energy consumption [J]," << avgEnergy << '\n'
+        ss << "Average energy consumption [J]," << sumEnergy/this->_size << '\n'
            << "Maximal energy consumption [J]," << maxEnergy << '\n'
-           << "Minimal energy consumption [J]," << minEnergy << '\n';
+           << "Minimal energy consumption [J]," << minEnergy << '\n'
+           << "Summary energy consumption [J]," << sumEnergy << '\n';
     }
 
 
