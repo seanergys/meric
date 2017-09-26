@@ -32,7 +32,7 @@ private:
 
 #else
 public:
-	static const int RAPL_BASELINE = 70; // 70 W
+	static const int RAPL_BASELINE = 0;
 	static void init() {};
 	static void close() {};
 	static void getValues(std::map<std::string, long long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
