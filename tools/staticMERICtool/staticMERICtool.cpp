@@ -8,19 +8,18 @@
  * ondrej.vysocky@vsb.cz
  */
 
-#include <cstdlib>
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
-#include <unistd.h>
-#include "x86_adapt.h"
+#include <x86_adapt.h>
 #include <math.h>
-	#include <map>
-	#include <vector>
-	#include <string>
-	#include <time.h>
-	#include <limits>
+#include <map>
+#include <vector>
+#include <string>
+#include <time.h>
+#include <limits>
+#include <limits.h>
 #include <iomanip>
-
 
 /* RAPL description
  *
@@ -70,30 +69,29 @@ const uint64_t RAPLtimeShift  = 16;
 const std::string suffix = "_";	// set suffix you want
 const int RAPL_BASELINE = 70;   // 70 W
 
-const int CPUFREQ_FREQ_MULT = 100000;
 const int X86ADAPT_FREQ_MULT = 256;
 const int X86ADAPT_MAX_FREQ = 33;
-const int CPUFREQ_MAX_FREQ = 25;
 
 static int SOCKET_SIZE;
+std::string OUTPUT_FILE;
 
-const std::string OUTPUT_FILE = "/tmp/.MERICmeasure.data";
-
-
-
-
-std::string RAPL_suffix = "_";
 int RAPL_numOfDevices = 1;
-bool RAPL_detailedMode = false;
 long long RAPL_COUNTERMAX = pow(2,32);
-
 std::map<std::string, long long> RAPL_counters;
 std::map<std::string, double> RAPL_energyUnit;
-////////////////////////////////////////////////////////////////////////////////
-void RAPL_initMap(std::map<std::string, long long> & dict);
-void RAPL_init();
-double RAPL_getValues(std::map<std::string, long long> & record);
 
+////////////////////////////////////////////////////////////////////////////////
+void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank);
+void EnvironmentClose();
+double timeToDouble(const timespec &time);
+void printHelp();
+
+static void CPUCoreFrequency(uint64_t freq, int socket);
+static void CPUUncoreFrequency(uint64_t freq, int socket);
+
+void RAPL_init();
+void RAPL_initMap(std::map<std::string, long long> & dict);
+double RAPL_getValues(std::map<std::string, long long> & record);
 void RAPL_cleanSystem();
 
 #if defined(START)
@@ -102,18 +100,13 @@ void RAPL_storeValues(std::map<std::string, long long> &record, double time);
 #if defined(STOP)
 double RAPL_readStoredValues(std::map<std::string, long long> &oldRecord);
 void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std::string, long long> &newRecord, double runtime);
+unsigned long long RAPL_getResultValue(long long startValue, long long stopValue, std::string counter);
 #endif
-
-static void CPUCoreFrequency(uint64_t freq, int socket);
-static void CPUUncoreFrequency(uint64_t freq, int socket);
-
-void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank);
-void EnvironmentClose();
 
 //----------------------------------------------------------------------------//
 //--------------------------------------------------- ENERGY MEASUREMENT -----//
 //----------------------------------------------------------------------------//
-static double timeToDouble(const timespec &time)
+double timeToDouble(const timespec &time)
 {
 	return time.tv_sec + time.tv_nsec / 1e9;
 }
@@ -144,8 +137,6 @@ RAPL_COUNTERS::RAPL_DRAM_CH3
 		}
 	}
 }
-
-
 
 // set counters units
 void RAPL_init()
@@ -184,8 +175,7 @@ void RAPL_init()
 
 }
 
-
-//	read counters values
+//	reads counters values
 double RAPL_getValues(std::map<std::string, long long> & record)
 {
 
@@ -236,6 +226,11 @@ double RAPL_getValues(std::map<std::string, long long> & record)
 	return timeToDouble(time);
 }
 
+void RAPL_cleanSystem()
+{
+	std::remove(OUTPUT_FILE.c_str());
+}
+
 #if defined(START)
 void RAPL_storeValues(std::map<std::string, long long> &record, double time)
 {
@@ -256,7 +251,8 @@ void RAPL_storeValues(std::map<std::string, long long> &record, double time)
 }
 #endif
 
-// solve counter overflow and add baseline energy consumption
+#if defined(STOP)
+// solve counter overflow and applies unit modifier
 unsigned long long RAPL_getResultValue(long long startValue, long long stopValue, std::string counter)
 {
 	std::string counterName = counter.substr(0,counter.length() - suffix.length() - 1);
@@ -279,12 +275,6 @@ unsigned long long RAPL_getResultValue(long long startValue, long long stopValue
 		return (stopValue - startValue) * RAPL_energyUnit[counterName];
 }
 
-void RAPL_cleanSystem()
-{
-	std::remove(OUTPUT_FILE.c_str());
-}
-
-#if defined(STOP)
 double RAPL_readStoredValues(std::map<std::string, long long> & oldRecord)
 {
 	std::ifstream ss (OUTPUT_FILE);
@@ -301,13 +291,10 @@ double RAPL_readStoredValues(std::map<std::string, long long> & oldRecord)
 	
 	while (ss >> counter >> value)
 	{
-		oldRecord[counter] = value; //std::stoull (value,nullptr,0);
-		//value;
+		oldRecord[counter] = value;
 	}
 
-	//close file
 	ss.close();
-
 	RAPL_cleanSystem();
 	
 	return time;
@@ -381,7 +368,6 @@ static void CPUCoreFrequency(uint64_t freq, int socket = -1)
 	}
 }
 
-
 static void CPUUncoreFrequency(uint64_t freq, int socket = -1)
 {
 	if (freq == 0)
@@ -439,7 +425,6 @@ static void CPUUncoreFrequency(uint64_t freq, int socket = -1)
 	}
 }
 
-
 void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank = 0) //int system, 
 {
 
@@ -457,6 +442,10 @@ void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank = 0) //int system,
 		CPUCoreFrequency(CoreFreq);
 		CPUUncoreFrequency(UncoreFreq);
 	}
+	
+	char hostname[HOST_NAME_MAX];
+	int result = gethostname(hostname, HOST_NAME_MAX);
+	OUTPUT_FILE = "/tmp/.MERICmeasure-" + std::string(hostname) +"-.data";
 
 }
 
@@ -479,7 +468,6 @@ void printHelp()
 	          << std::endl;
 	exit(1);
 }
-
 
 int main(int argc, char **argv)
 {
