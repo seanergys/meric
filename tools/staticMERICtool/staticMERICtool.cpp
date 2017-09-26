@@ -2,7 +2,12 @@
  * Tool for static CPU frequencies setting and energy measurement using RAPL counters via x86_adapt
  * 
  * This tool is based on MERIC raplwrapper and environmentwarpper
+ *
+ * 26.9.2017
+ * Ondrej Vysocky
+ * ondrej.vysocky@vsb.cz
  */
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -11,6 +16,7 @@
 #include <math.h>
 #include <map>
 #include <vector>
+#include <string>
 
 /* RAPL description
  *
@@ -66,6 +72,7 @@ const int CPUFREQ_MAX_FREQ = 25;
 
 static int SOCKET_SIZE;
 
+const std::string OUTPUT_FILE = "/tmp/.MERICmeasure.data";
 
 
 
@@ -134,8 +141,6 @@ RAPL_COUNTERS::RAPL_DRAM_CH3
 // set counters units
 void RAPL_init()
 {
-	RAPL_cleanSystem();
-	
 	RAPL_numOfDevices = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	RAPL_initMap(RAPL_counters);
 
@@ -222,7 +227,7 @@ void RAPL_getValues(std::map<std::string, long long> & record)
 void RAPL_storeValues(std::map<std::string, long long> &record)
 {
 	//open file
-	std::ofstream ss ("~/.MERICmeasure.data"); //, std::ofstream::out);
+	std::ofstream ss (OUTPUT_FILE, std::ofstream::out);
 
 	//store counters
 	for(std::map<std::string, long long>::iterator iterator = record.begin(); iterator != record.end(); iterator++)
@@ -264,20 +269,27 @@ unsigned long long RAPL_getResultValue(long long startValue, long long stopValue
 
 void RAPL_cleanSystem()
 {
-	std::remove("~/.MERICmeasure.data");
+	std::remove(OUTPUT_FILE.c_str());
 }
 
 #if defined(STOP)
 void RAPL_readStoredValues(std::map<std::string, long long> & oldRecord)
 {
-	std::ifstream ss ("~/.MERICmeasure.data");
-
-	//store counters
-/*	for(std::map<std::string, long long>::iterator iterator = record.begin(); iterator != record.end(); iterator++)
+	std::ifstream ss (OUTPUT_FILE);
+	if (!ss)
 	{
-		ss << iterator->first << '\t' << iterator->second << std::endl;
+		std::cerr << "ERROR: running energyMeasureStop before energyMeasureStart!\n";
+		exit(5);
 	}
-*/	
+
+	std::string counter;
+	unsigned long long value;
+	while (ss >> counter >> value)
+	{
+		oldRecord[counter] = value; //std::stoull (value,nullptr,0);
+		//value;
+	}
+
 	//close file
 	ss.close();
 
@@ -291,10 +303,10 @@ void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std:
 	for(std::map<std::string, long long>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 	{
 		unsigned long long value = RAPL_getResultValue(oldRecord[iterator->first], newRecord[iterator->first], iterator->first);
-		std::cout << iterator->first << "\t=\t" << value << std::endl;
+		std::cout << iterator->first << " =\t" << value << " J\n";
 		summary += value;
 	}
-	std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << "\t=\t" << summary << std::endl;
+	std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << " =\t" << summary << " J\n";
 	
 }
 #endif
@@ -439,21 +451,55 @@ void EnvironmentClose()
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
+void printHelp()
+{
+	std::cerr << "Run energyMeasureStart to start the energy measuremen\n"
+	          << "Run energyMeasureStop to stop it and get the result energy at std::out\n"
+	          << "It is possible tochange CPU core and uncore frequencies using:\n"
+	          << "\t-c = CPU core frequency in range 12 to 33 [0.1 GHz]\n"
+	          << "\t-u = CPU uncore frequency in range 12 to 30 [0.1 GHz]\n";
+	exit(1);
+}
 
 
 int main(int argc, char **argv)
 {
+	unsigned int coreFreq = 0, uncoreFreq = 0;
+	for (int i = 1; i < argc; ++i)
+	{
+		std::string arg = argv[i];
+		if (arg == "-c")
+		{
+			if (i + 1 < argc)
+			{
+				coreFreq = std::stoul (argv[i++],nullptr,0);
+			}else
+			{
+				printHelp();
+			}
+		}else if (arg == "-u")
+		{
+			if (i + 1 < argc)
+			{
+				uncoreFreq = std::stoul (argv[i++],nullptr,0);
+			}else
+			{
+				printHelp();
+			}
+		} else
+		{
+			printHelp();
+		}
+	}
 /*
 TODO
-nacist vstupni parametry
- - core freq
- - uncore freq
-
-nacitani hodnot ze souboru
+ - multinode measuremenet
+ - runtime
 */
-	EnvironmentInit(25, 30);
+	EnvironmentInit(coreFreq, uncoreFreq);
 
 	#if defined(START)
+		RAPL_cleanSystem();
 		RAPL_init();
 		std::map<std::string, long long> record;
 		RAPL_getValues(record);

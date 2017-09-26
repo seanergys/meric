@@ -9,3 +9,6 @@ test/hdeemMeasurementCounters/
 tools/__pycache__/
 tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
+tools/staticMERICtool/energyMeasureStart
+tools/staticMERICtool/energyMeasureStop
+
