@@ -1,6 +1,35 @@
 #!/bin/sh
 # gives support for PBS and SLURM too
 
+################################################################ RAPL or HDEEM #
+
+OPT=`getopt -o h --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
+if [ $? != 0 ]
+then
+	exit 1
+fi
+
+eval set -- "$OPT"
+HDEEM=false
+RAPL=false
+
+while true
+do
+  case "$1" in
+    --hdeem 	) HDEEM=true; shift ;;
+    --rapl   	) RAPL=true; shift ;;
+    -h | --help	) MEMORY="$2"; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+if ( $RAPL && $HDEEM ) || ( ! $RAPL && ! $HDEEM )
+then
+	echo "select only HDEEM (--hdeem) or only RAPL (--rapl)"
+	exit 1
+fi
+
 ######################################################## get the list of nodes #
 if $(printenv | grep -q "SLURM")
 then	# SLURM
@@ -39,14 +68,34 @@ else	# PBS
 fi
 
 ############################# get the results of the measurement for each node #
-pdsh -w $NODE_LIST "module load x86_adapt;$HOME/bin/energyMeasureStop > /dev/null"
+if $RAPL
+then
+	OUTPUT=$(pdsh -w $NODE_LIST 'module load x86_adapt; module load intel; $HOME/bin/energyMeasureStop | tail -1 | awk '\''{ print $NF }'\'' ') 
+else #HDEEM
+	pdsh -w $NODE_LIST "$file=$HOME/hostname; stopHdeem; checkHdeem >> $file"
+fi
+
+
 
 ########################################### get the overall energy consumption #
-SUM=0
-for node in $( echo $NODE_LIST | tr ',' ' ')
-do
-	SUM=$[ SUM + $(cat "/scratch/temp/.MERICmeasure-"$node".data") ]
-done
-
+#echo $OUTPUT
+if $RAPL
+then
+	for VAL in $(grep -o -E ': [0-9]+' <<< $OUTPUT | awk '{ print $NF }' )
+	do 
+		SUM=$[ SUM + VAL ]
+	done
+fi
+#SUM=0
+#for node in $( echo $NODE_LIST | tr ',' ' ')
+#do
+#	SUM=$[ SUM + $(cat "/scratch/temp/.MERICmeasure-"$node".data") ]
+#done
+#
 echo
 echo "Overall energy consumption is" $SUM "J"
+
+
+
+
+

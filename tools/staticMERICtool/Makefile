@@ -20,8 +20,10 @@ X86ADAPT=-lx86_adapt
 default: all
 
 all: 
-	$(CC) -O0 -g -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTART -o $(STARTbinary)
-	$(CC) -O0 -g -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTOP  -o $(STOPbinary)
+	$(CC) -O0 -g -std=c++11 -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTART -o $(STARTbinary)
+	$(CC) -O0 -g -std=c++11 -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTOP  -o $(STOPbinary)
+	cp $(STARTbinary) $(HOME)/bin/
+	cp $(STOPbinary) $(HOME)/bin/
 
 ######
 love:

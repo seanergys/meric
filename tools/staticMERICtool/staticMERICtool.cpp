@@ -304,15 +304,15 @@ void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std:
 {
 	std::map<std::string, long long> record;
 	unsigned long long summary = 0;
-	std::cout << "Runtime =\t" << runtime << " s\n";
+	std::cout << "Runtime [s] =\t" << runtime << std::endl;
 	for(std::map<std::string, long long>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 	{
 		unsigned long long value = RAPL_getResultValue(oldRecord[iterator->first], newRecord[iterator->first], iterator->first);
-		std::cout << iterator->first << " =\t" << value << " J\n";
+		std::cout << iterator->first << " [J] =\t" << value << std::endl;
 		summary += value;
 	}
 	summary += RAPL_BASELINE*runtime;
-	std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << " =\t" << summary << " J\n";
+	std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << " [J] =\t" << summary << std::endl;
 	
 	//print the summary energy also to the file
 	std::ofstream ss (OUTPUT_FILE, std::ofstream::out);
@@ -452,8 +452,12 @@ void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank = 0) //int system,
 	}
 	
 	char hostname[HOST_NAME_MAX];
-	int result = gethostname(hostname, HOST_NAME_MAX);
-	OUTPUT_FILE = "/scratch/temp/.MERICmeasure-" + std::string(hostname) +".data";
+	if (gethostname(hostname, HOST_NAME_MAX) != 0)
+	{
+		std::cerr << "missing machine hostname\n";
+		exit(1);
+	}
+	OUTPUT_FILE = "/tmp/.MERICmeasure-" + std::string(hostname) +".data";
 
 }
 
