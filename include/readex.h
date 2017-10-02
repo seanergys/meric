@@ -29,12 +29,26 @@
 	#define READEX_CLOSE()
 #endif
 
-//READEX_REGION_DEFINE(handle)
-#ifdef USE_SCOREP
+//READEX_REGION_DEFINE(handle) - can be used for PHASE and SIGNIFICANT regions too
+//READEX_PHASE_REGION_DEFINE(handle) - should be used for PHASE only
+//READEX_SIGNIFICANT_REGION_DEFINE(handle) - cannot be used for PHASE region
+#ifdef USE_SCOREP_MANUAL
 	//Score-P 3.0
 	//SCOREP_USER_REGION_DEFINE(handle)
 	#define READEX_REGION_DEFINE( handle ) \
 		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+	#define READEX_PHASE_REGION_DEFINE( handle ) \
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+	#define READEX_SIGNIFICANT_REGION_DEFINE( handle ) \
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+#elif defined USE_SCOREP
+	//Score-P 3.0
+	//SCOREP_USER_REGION_DEFINE(handle)
+	#define READEX_REGION_DEFINE( handle ) \
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+	#define READEX_PHASE_REGION_DEFINE( handle ) \
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+	#define READEX_SIGNIFICANT_REGION_DEFINE( handle )
 #else
 	#define READEX_REGION_DEFINE( handle )
 #endif

@@ -374,8 +374,10 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 		library init
 	READEX_CLOSE()
 		library finish the run
-	READEX_REGION_DEFINE(handle)
-		define region handle
+	READEX_PHASE_REGION_DEFINE(handle)
+		define phase region handle
+	READEX_SIGNIFICANT_REGION_DEFINE(handle)
+		define region handle - except phase region
 	READEX_REGION_START(handle, name, type)
 		region start
 	READEX_REGION_STOP(handle)
