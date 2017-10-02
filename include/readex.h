@@ -36,18 +36,18 @@
 	//Score-P 3.0
 	//SCOREP_USER_REGION_DEFINE(handle)
 	#define READEX_REGION_DEFINE( handle ) \
-		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION;
 	#define READEX_PHASE_REGION_DEFINE( handle ) \
-		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION;
 	#define READEX_SIGNIFICANT_REGION_DEFINE( handle ) \
-		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION;
 #elif defined USE_SCOREP
 	//Score-P 3.0
 	//SCOREP_USER_REGION_DEFINE(handle)
 	#define READEX_REGION_DEFINE( handle ) \
-		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION;
 	#define READEX_PHASE_REGION_DEFINE( handle ) \
-		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION
+		static SCOREP_User_RegionHandle handle = SCOREP_USER_INVALID_REGION;
 	#define READEX_SIGNIFICANT_REGION_DEFINE( handle )
 #else
 	#define READEX_REGION_DEFINE( handle )
@@ -56,7 +56,7 @@
 //READEX_REGION_START(handle, name, type) 
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_START( handle, name, type ) \
-		SCOREP_USER_REGION_BEGIN( handle, name, type )
+		SCOREP_USER_REGION_BEGIN( handle, name, type );
 #elif defined USE_MERIC
 	#define READEX_REGION_START( handle, name, type ) \
 		MERIC_MeasureStart( name );
@@ -67,7 +67,7 @@
 //READEX_REGION_STOP(handle)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP( handle ) \
-		SCOREP_USER_REGION_END( handle )
+		SCOREP_USER_REGION_END( handle );
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
 		MERIC_MeasureStop();
@@ -78,7 +78,7 @@
 //READEX_PHASE_START(handle, name, type)
 #ifdef USE_SCOREP
 	#define READEX_PHASE_START( handle, name, type ) \
-		SCOREP_USER_OA_PHASE_BEGIN( handle, name, type )
+		SCOREP_USER_OA_PHASE_BEGIN( handle, name, type );
 #elif defined USE_MERIC
 	#define READEX_PHASE_START( handle, name, type ) \
 		MERIC_MeasureStart( name );
@@ -89,7 +89,7 @@
 //READEX_PHASE_STOP(handle)
 #ifdef USE_SCOREP
 	#define READEX_PHASE_STOP( handle ) \
-		SCOREP_USER_OA_PHASE_END( handle )
+		SCOREP_USER_OA_PHASE_END( handle );
 #elif defined USE_MERIC
 	#define READEX_PHASE_STOP( handle ) \
 		MERIC_MeasureStop();
