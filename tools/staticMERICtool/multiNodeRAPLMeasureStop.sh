@@ -36,28 +36,28 @@ then	# SLURM
 	# taurusi6605
 	# taurusi[6605-6606]
 	# taurusi[6531-6532,6536,6539]
-
 	if $(grep -q "\[" <<< $SLURM_JOB_NODELIST)
 	then
 		prefix=$(cut -d "[" -f 1 <<< $SLURM_JOB_NODELIST)
 		sufix=$(cut -d "[" -f 2 <<< $SLURM_JOB_NODELIST)
 
-		for id in for i in $(echo "${sufix%?}" | tr ',' ' ')
+		for id in $(echo "${sufix%?}" | tr ',' ' ')
 		do
 			if grep -q '-' <<< $id
 			then
 				first=$(cut -d "-" -f 1 <<< $id)
 				last=$(cut -d "-" -f 2 <<< $id)
-				while [ $first -neq $last ]
+				while [ $first != $last ]
 				do
 					NODE_LIST+=$prefix$first','
 					first=$[ first+1]
 				done
+				NODE_LIST+=$prefix$first','
 			else
 				NODE_LIST+=$prefix$id','
 			fi
-			NODE_LIST="${NODE_LIST%?}"
 		done
+		NODE_LIST="${NODE_LIST%?}"
 	else
 		NODE_LIST=$SLURM_JOB_NODELIST
 	fi
@@ -70,32 +70,19 @@ fi
 ############################# get the results of the measurement for each node #
 if $RAPL
 then
-	OUTPUT=$(pdsh -w $NODE_LIST 'module load x86_adapt; module load intel; $HOME/bin/energyMeasureStop | tail -1 | awk '\''{ print $NF }'\'' ') 
+
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStop -q")
 else #HDEEM
-	pdsh -w $NODE_LIST "$file=$HOME/hostname; stopHdeem; checkHdeem >> $file"
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh; module load hdeem 2> /dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | cut -d ' ' -f 5")
 fi
 
-
-
-########################################### get the overall energy consumption #
-#echo $OUTPUT
-if $RAPL
-then
-	for VAL in $(grep -o -E ': [0-9]+' <<< $OUTPUT | awk '{ print $NF }' )
-	do 
-		SUM=$[ SUM + VAL ]
-	done
-fi
-#SUM=0
-#for node in $( echo $NODE_LIST | tr ',' ' ')
-#do
-#	SUM=$[ SUM + $(cat "/scratch/temp/.MERICmeasure-"$node".data") ]
-#done
-#
-echo
-echo "Overall energy consumption is" $SUM "J"
-
-
-
+############################################## get the overall consumed energy #
+SUM=0.0
+for VAL in $OUTPUT
+do
+	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
+done
+echo "Overall energy consumption [J]:" $SUM
+exit 0
 
 
