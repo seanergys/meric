@@ -4,6 +4,7 @@
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
   - ARM jetson energy measurement and frequency scaling
+  - tool for static energy measurement and CPU frequencies change
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

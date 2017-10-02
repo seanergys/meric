@@ -402,9 +402,12 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 
 Except login node on Jetson nodes is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
 
+--------------------------------------------------------------------------------
+#     12] Tool for static tuning                                               #
+--------------------------------------------------------------------------------
+MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 
-
-
+Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measuement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop script is located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measuremenet interfaces. To select which one should be used, the script takes one argument --rapl or --hdeem.
 
 
 
