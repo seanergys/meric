@@ -99,7 +99,7 @@ void RAPL_storeValues(std::map<std::string, long long> &record, double time);
 #endif
 #if defined(STOP)
 double RAPL_readStoredValues(std::map<std::string, long long> &oldRecord);
-void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std::string, long long> &newRecord, double runtime);
+void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std::string, long long> &newRecord, double runtime, bool verbose);
 unsigned long long RAPL_getResultValue(long long startValue, long long stopValue, std::string counter);
 #endif
 
@@ -300,24 +300,30 @@ double RAPL_readStoredValues(std::map<std::string, long long> & oldRecord)
 	return time;
 }
 
-void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std::string, long long> &newRecord, double runtime)
+void RAPL_printValues(std::map<std::string, long long> &oldRecord, std::map<std::string, long long> &newRecord, double runtime, bool verbose)
 {
 	std::map<std::string, long long> record;
 	unsigned long long summary = 0;
-	std::cout << "Runtime [s] =\t" << runtime << std::endl;
-	for(std::map<std::string, long long>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
-	{
-		unsigned long long value = RAPL_getResultValue(oldRecord[iterator->first], newRecord[iterator->first], iterator->first);
-		std::cout << iterator->first << " [J] =\t" << value << std::endl;
-		summary += value;
-	}
-	summary += RAPL_BASELINE*runtime;
-	std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << " [J] =\t" << summary << std::endl;
 	
-	//print the summary energy also to the file
-	std::ofstream ss (OUTPUT_FILE, std::ofstream::out);
-	ss << summary << std::endl;
-	ss.close();
+	if (verbose)
+	{
+		std::cout << "Runtime [s] =\t" << runtime << std::endl;
+		for(std::map<std::string, long long>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
+		{
+			unsigned long long value = RAPL_getResultValue(oldRecord[iterator->first], newRecord[iterator->first], iterator->first);
+			std::cout << iterator->first << " [J] =\t" << value << std::endl;
+			summary += value;
+		}
+		summary += RAPL_BASELINE*runtime;
+		std::cout << std::endl << RAPL_COUNTERS::RAPL_SUM_ENERGY << " [J] =\t" << summary << std::endl;
+	}else
+	{
+		for(std::map<std::string, long long>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
+		{
+			summary += RAPL_getResultValue(oldRecord[iterator->first], newRecord[iterator->first], iterator->first);
+		}
+		std::cout <<  summary + RAPL_BASELINE*runtime << std::endl;
+	}
 	
 }
 #endif
@@ -457,7 +463,8 @@ void EnvironmentInit(int CoreFreq, int UncoreFreq, int rank = 0) //int system,
 		std::cerr << "missing machine hostname\n";
 		exit(1);
 	}
-	OUTPUT_FILE = "/tmp/.MERICmeasure-" + std::string(hostname) +".data";
+	OUTPUT_FILE = ".MERICmeasure-" + std::string(hostname) +".data";
+//	std::cout << "HOST:" << hostname << std::endl;
 
 }
 
@@ -474,6 +481,7 @@ void printHelp()
 	std::cerr << "\nMERIC static tool help:\n\n"
 	          << "Run energyMeasureStart to start the energy measurement\n"
 	          << "Run energyMeasureStop to stop it and get the result energy at std::out\n"
+	          << "\t-q = Stop prints the overall consumed energy only [J]\n\n"  
 	          << "It is possible to change CPU core and uncore frequencies using:\n"
 	          << "\t-c = CPU core frequency in range 12 to 33 [0.1 GHz]\n"
 	          << "\t-u = CPU uncore frequency in range 12 to 30 [0.1 GHz]\n"
@@ -485,6 +493,7 @@ int main(int argc, char **argv)
 {
 	int coreFreq = 0;
 	int uncoreFreq = 0;
+	bool verbose = true;
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
@@ -517,7 +526,10 @@ int main(int argc, char **argv)
 			{
 				printHelp();
 			}
-		} else
+		}else if (arg == "-q")
+		{
+			verbose = false;
+		}else
 		{
 			printHelp();
 		}
@@ -539,7 +551,7 @@ TODO
 		std::map<std::string, long long> old_record, new_record;
 		double stopTime = RAPL_getValues(new_record);
 		double startTime = RAPL_readStoredValues(old_record);
-		RAPL_printValues(old_record, new_record, stopTime-startTime);
+		RAPL_printValues(old_record, new_record, stopTime-startTime, verbose);
 	#endif
 	
 	EnvironmentClose();
