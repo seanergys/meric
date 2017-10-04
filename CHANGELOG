@@ -1,14 +1,15 @@
 ### XX.XX.XXXX #################################################################
   - updated shared Score-P/Meric header file
-  - Fixes RAPL overflow on Salomon
+  - fixed RAPL overflow on Salomon
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
   - ARM jetson energy measurement and frequency scaling
   - tool for static energy measurement and CPU frequencies change
+  - shared Score-P/Meric interface has new functions for region define (backward compatibility)
 
 ### 10.04.2017 #################################################################
   - added Fortran interface
-  - repaired measurement based on HDEEM samples - no meric warnings about hdeem frequency
+  - repaired measurement based on HDEEM samples - no Meric warnings about hdeem frequency
   - added computational intensity measurement
   - much faster Meric IO
   - new warnings when regions are too short
