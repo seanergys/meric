@@ -1,10 +1,11 @@
 /*
  * Tool for static CPU frequencies setting and energy measurement using RAPL counters via x86_adapt
  * 
- * This tool is based on MERIC raplwrapper and environmentwarpper
+ * This tool is based on MERIC raplwrapper and environmentwrapper
  *
  * 26.9.2017
  * Ondrej Vysocky
+ * IT4Innovations national supercomputing center, Czech Republic
  * ondrej.vysocky@vsb.cz
  */
 
@@ -67,7 +68,7 @@ const uint64_t RAPLtimeMask   = 0xF0000;
 const uint64_t RAPLtimeShift  = 16;
 
 const std::string suffix = "_";	// set suffix you want
-const int RAPL_BASELINE = 70;   // 70 W
+const int RAPL_BASELINE = 70;   // extra 70 W BASELINE
 
 const int X86ADAPT_FREQ_MULT = 256;
 const int X86ADAPT_MAX_FREQ = 33;
@@ -212,7 +213,7 @@ double RAPL_getValues(std::map<std::string, long long> & record)
 				continue;					
 			}
 			x86_adapt_get_setting(fd, itemId, &dieEnergy);
-			record [itemName+suffix+std::to_string(die)] = dieEnergy; // *RAPL_energyUnit[itemName];
+			record [itemName+suffix+std::to_string(die)] = dieEnergy;
 		}
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 		{
@@ -286,7 +287,7 @@ double RAPL_readStoredValues(std::map<std::string, long long> & oldRecord)
 
 	std::string counter;
 	unsigned long long value;
-	double time;	//TODO nacteni casu ze souboru
+	double time;
 	ss >> time ;
 	
 	while (ss >> counter >> value)
@@ -534,10 +535,7 @@ int main(int argc, char **argv)
 			printHelp();
 		}
 	}
-/*
-TODO
- - multinode measuremenet
-*/
+
 	EnvironmentInit(coreFreq, uncoreFreq);
 
 	#if defined(START)
