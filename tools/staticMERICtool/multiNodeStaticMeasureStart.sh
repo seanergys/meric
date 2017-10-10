@@ -4,7 +4,7 @@
 
 ################################################################ RAPL or HDEEM #
 
-OPT=`getopt -o h --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
+OPT=`getopt -o hc:u: --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
 if [ $? != 0 ]
 then
 	exit 1
@@ -13,17 +13,31 @@ fi
 eval set -- "$OPT"
 HDEEM=false
 RAPL=false
+HELP=false
+Cfreq=0
+Ufreq=0
 
 while true
 do
   case "$1" in
     --hdeem 	) HDEEM=true; shift ;;
     --rapl   	) RAPL=true; shift ;;
-    -h | --help	) MEMORY="$2"; shift ;;
+    -c          ) Cfreq=$2; shift; shift;;
+    -u          ) Ufreq=$2; shift; shift;;
+    -h | --help	) HELP=true; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
 done
+
+if $HELP
+then
+	echo "select --hdeem or --rapl to choose energy measurement interface"
+	echo "in case of RAPL it is possible to change CPU core and uncore frequencies"
+	echo " -c = CPU core frequency [12-25]"
+	echo " -u = CPU uncore frequency [12-30]"
+	exit 0
+fi
 
 if ( $RAPL && $HDEEM ) || ( ! $RAPL && ! $HDEEM )
 then
@@ -71,7 +85,7 @@ fi
 #################################################### run the measurement there #
 if $RAPL
 then
-	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStart"
+	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStart -c $Cfreq -u $Ufreq"
 else #HDEEM
 	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh; module load hdeem 2> /dev/null; clearHdeem; startHdeem"
 fi
