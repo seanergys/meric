@@ -42,10 +42,10 @@ do
 
 		export MERIC_OUTPUT_FILENAME=$MERIC_FREQUENCY"_"$MERIC_UNCORE_FREQUENCY
 
-		mpirun -n 4./test_mpi
+		mpirun -n 4 ./test_mpi
 		if [ $? -ne 0 ]
 		then
-			mpirun -n 4./test_mpi
+			mpirun -n 4 ./test_mpi
 		fi
 	done
 done
