@@ -51,6 +51,8 @@
 	#define READEX_SIGNIFICANT_REGION_DEFINE( handle )
 #else
 	#define READEX_REGION_DEFINE( handle )
+	#define READEX_PHASE_REGION_DEFINE( handle )
+	#define READEX_SIGNIFICANT_REGION_DEFINE( handle )
 #endif
 
 //READEX_REGION_START(handle, name, type) 
