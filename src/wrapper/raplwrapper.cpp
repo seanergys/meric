@@ -35,7 +35,6 @@ const uint64_t RAPLtimeShift  = 16;
 
 #include <math.h>
 #include "raplwrapper.h"
-#include "counters.h"
 #include "../basis/utils.h"
 
 using namespace meric;
@@ -44,6 +43,7 @@ std::string RAPL::suffix = "_";
 int RAPL::numOfDevices = 1;
 bool RAPL::detailedMode = false;
 long long RAPL::COUNTERMAX = pow(2,32);
+unsigned long long RAPL::counterSummary = 0;
 
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long long> RAPL::counters;
@@ -84,7 +84,7 @@ void RAPL::init()
 }
 
 //	read counters values
-void RAPL::getValues(std::map<std::string, long long> & record) 
+void RAPL::getCounterValues(std::map<std::string, long long> & record) 
 {
 
 	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -152,6 +152,10 @@ void RAPL::getValues(std::map<std::string, long long> & record)
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter)
 {
+	unsigned long long result = 0;
+	if (counter == RAPL_COUNTERS::RAPL_SUM_ENERGY)
+		return result;
+	
 	std::string counterName;
 	if (detailedMode)
 		counterName = counter.substr(0,counter.length() - suffix.length() - 1);
@@ -160,24 +164,28 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 	
 	if (stopValue < startValue)
 	{	
-		if (!energyUnit.count(counterName))
-		{
-			//missing unit modifier
-			return 0;
-		}
-		else
+		if (energyUnit.count(counterName))
 		{
 			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counterName] <<" " <<counterName << std::endl;
 			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName] << std::endl;
-			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
-		}
+			result = ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
+		} //else: unit modifier is missing, return 0
 	}
 	else
-		return (stopValue - startValue) * energyUnit[counterName];
+		result = (stopValue - startValue) * energyUnit[counterName];
+
+	counterSummary += result;
+	return result;
 }
 
 #else
 #endif
+
+
+unsigned long long RAPL::getSummaryValue(double time)
+{
+	return counterSummary + time * RAPL_BASELINE;
+}
 
 //	set list of counters to measure
 void RAPL::initMap(std::map<std::string, long long> & dict)
@@ -213,6 +221,7 @@ void RAPL::initMap(std::map<std::string, long long> & dict)
 		
 	}
 }
+
 
 
 

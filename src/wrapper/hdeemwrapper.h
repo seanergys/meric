@@ -66,15 +66,14 @@ public:
 		checkHDEEM(hdeem_stop(&bmc), "stop");
 	}
 
-	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
-	static void fillEnergy(double &energy)
+	static void getCounterValues(double &energy)	//HDEEM in counter regime
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy = stats.energy_blade_values.value[0];
 		hdeem_stats_free(&stats);
 	}
-	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy)
+	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
@@ -85,7 +84,7 @@ public:
 
 	static void setTimeAdjustment(timespec start);
 	static void getStatus(hdeem_status_t &status) { checkHDEEM(hdeem_check_status(&bmc, &status), "get_status"); }
-	static int getSamples()
+	static int getSamples()	// HDEEM in continual regime
 	{
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
@@ -103,7 +102,7 @@ public:
 			return 0;
 	}
 	
-	static void deleteSamples()
+	static void deleteSamples()	//HDEEM in continual regime
 	{
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
@@ -142,12 +141,11 @@ private:
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
 
-	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
-	static void fillEnergy(double &energy)
+	static void getCounterValues(double &energy)
 	{
 		energy = HDEEM::energy++;
 	}
-	static void fillDetailedEnergy(std::array<double, PROBE_NUMBER> &energy)
+	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)
 	{
 		for (size_t i = 0; i < PROBE_NUMBER; i++) {
 			energy[i] = HDEEM::energy;

@@ -108,7 +108,7 @@ void PAPI::close()
 }
 
 
-void PAPI::getValues(std::map<std::string, long long> & record) 
+void PAPI::getCounterValues(std::map<std::string, long long> & record) 
 {
 	if (PAPI_read(eventSet, countersValues) != PAPI_OK)
 	{

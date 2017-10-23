@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 
+#include "counters.h"
 
 namespace meric {
 
@@ -16,11 +17,12 @@ public:
 	static void init();
 	static void close() {};
 	
-	static void getValues(std::map<std::string, long long> & record);
+	static void getCounterValues(std::map<std::string, long long> & record);
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
-
+	static unsigned long long getSummaryValue(double time);
+	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -29,16 +31,19 @@ private:
 	static int numOfDevices;
 	static bool detailedMode;
 	static long long COUNTERMAX;
+	static unsigned long long counterSummary;
 
 #else
 public:
 	static const int RAPL_BASELINE = 0;
 	static void init() {};
 	static void close() {};
-	static void getValues(std::map<std::string, long long> & record) {std::cerr << "RAPL::getValues() TODO\n"; };
+	static void getCounterValues(std::map<std::string, long long> & record) {std::cerr << "RAPL::getCounterValues() TODO\n"; };
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter) {return 0;};
+	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
+	static unsigned long long getSummaryValue(double time);
 private:
 	static std::string suffix;
 	static int numOfDevices;

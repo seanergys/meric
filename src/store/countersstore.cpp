@@ -1,5 +1,6 @@
 #include <map>
 #include <time.h>
+#include <climits>
 
 #include "countersstore.h"
 #include "../wrapper/perfeventwrapper.h"
@@ -15,28 +16,32 @@ using namespace meric;
 void CountersStore::addStart(int region)
 {
 	std::map<std::string, long long> record;
-	if (wrapperType == PERFEVENT)
-		PERFEVENT::getValues(record);
-	else if (wrapperType == PAPI)
-		PAPI::getValues(record);
-	else if (wrapperType == RAPL)
-		RAPL::getValues(record);
 	struct timespec time;
+	
+	if (wrapperType == PERFEVENT)
+		PERFEVENT::getCounterValues(record);
+	else if (wrapperType == PAPI)
+		PAPI::getCounterValues(record);
+	else if (wrapperType == RAPL)
+		RAPL::getCounterValues(record);
 	clock_gettime(CLOCK_REALTIME, &time);
+
 	_records.push_back(CountersRecord(region, record, time));
 }
 
 void CountersStore::addEnd(int region)
 {
 	std::map<std::string, long long> record;
-	if (wrapperType == PERFEVENT)
-		PERFEVENT::getValues(record);
-	else if (wrapperType == PAPI)
-		PAPI::getValues(record);
-	else if (wrapperType == RAPL)
-		RAPL::getValues(record);
 	struct timespec time;
+
 	clock_gettime(CLOCK_REALTIME, &time);
+	if (wrapperType == PERFEVENT)
+		PERFEVENT::getCounterValues(record);
+	else if (wrapperType == PAPI)
+		PAPI::getCounterValues(record);
+	else if (wrapperType == RAPL)
+		RAPL::getCounterValues(record);
+
 	_records.push_back(CountersRecord(region, record, time));
 }
 
@@ -58,26 +63,16 @@ void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, doub
 		}
 		else if (wrapperType == RAPL)
 		{
-			if (counterIt->first == RAPL_COUNTERS::RAPL_SUM_ENERGY)
-			{
-				summaryIndex = stats.size();
-				stats.push_back(0);
-			}
-			else
-			{
-				value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-				summary += value;
-				stats.push_back(value);
-			}
+			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
 	}
-	
-	if (wrapperType == RAPL)
+
+	if (wrapperType == RAPL)	//DONE for all counters (y)
 	{
-		if (summaryIndex == -1)
-			std::cerr << "MERIC ERROR - missing summary value for RAPLs\n";
-		else
-			stats[summaryIndex] = summary + (*time) * RAPL::RAPL_BASELINE;
+		if ((summary = RAPL::getSummaryValue(*time)) != ULLONG_MAX)
+		{
+			stats.back() = summary;
+		}
 	}
 }
 
@@ -90,7 +85,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	ss << std::endl;
 
 	timespec runtime = _records[iEnd].time - _records[iStarts.back()].time;
-	ss << "# Job info - "<< counterLabel << std::endl
+	ss << "# Job info - "<< counterLabel << std::endl				//TODO <>counterLabel
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << runtime << std::endl;
@@ -103,27 +98,33 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	{
 		if (wrapperType == PERFEVENT)
 		{
+			if (PERFEVENT::summaryCounter() == counterIt->first)
+				continue;
 			value = PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 		else if (wrapperType == PAPI)
 		{
+			if (PAPI::summaryCounter() == counterIt->first)
+				continue;
 			value = PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 		else if (wrapperType == RAPL)
 		{
-			if (counterIt->first == RAPL_COUNTERS::RAPL_SUM_ENERGY)
+			if (RAPL::summaryCounter() == counterIt->first)
 				continue;
 			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
 
 		ss << counterIt->first << "," << value << std::endl;
-		summary += value;
 	}
 
 	
-//TODO - TEMPORARY solution	#19
 	if (wrapperType == RAPL)
-		ss << RAPL_COUNTERS::RAPL_SUM_ENERGY << "," << summary + timespec2double(runtime) * RAPL::RAPL_BASELINE << std::endl;
+	{
+		if ((summary = RAPL::getSummaryValue(timespec2double(runtime))) != ULLONG_MAX)
+			ss << RAPL::summaryCounter() << "," << summary << std::endl;
+	}
+	//TODO - TEMPORARY solution	#19
 	else if (wrapperType == PAPI)
 	{
 		ss << "# RATIOS: \n";

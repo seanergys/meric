@@ -100,7 +100,7 @@ void PERFEVENT::start()
 	}
 }
 
-void PERFEVENT::getValues(std::map<std::string, long long> & record) 
+void PERFEVENT::getCounterValues(std::map<std::string, long long> & record) 
 {
 	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{

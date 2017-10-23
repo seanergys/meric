@@ -1,3 +1,7 @@
+
+#ifndef SRC_WRAPPER_COUNTERS_H_
+#define SRC_WRAPPER_COUNTERS_H_
+
 /**
  * to add new PAPI counter:
  *	add here counter name
@@ -47,3 +51,6 @@ const std::string RAPL_DRAM_CH2    = "Intel_DRAM_ENERGY_STATUS_CH2";
 const std::string RAPL_DRAM_CH3    = "Intel_DRAM_ENERGY_STATUS_CH3";
 */
 }
+
+
+#endif /* SRC_WRAPPER_COUNTERS_H_ */
