@@ -34,7 +34,7 @@ SharedMeric::SharedMeric()
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES));
+		_storeList.push_back(new CountersStore<RAPL>(Meric::SAMPLES));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -42,9 +42,17 @@ SharedMeric::SharedMeric()
 		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
 	}
 	
-	if (Meric::COUNTERS != "none")
+	if (Meric::COUNTERS == "none")
 	{
-		_storeList.push_back(new CountersStore(Meric::COUNTERS, Meric::SAMPLES));
+
+		if (Meric::COUNTERS == "perfevent")
+			_storeList.push_back(new CountersStore<PERFEVENT>(Meric::SAMPLES));
+		else if (Meric::COUNTERS == "papi")
+			_storeList.push_back(new CountersStore<PAPI>(Meric::SAMPLES));
+		else
+		{
+			std::cerr << "MERIC WARNING: unknown counters name "<< Meric::COUNTERS << " - skipping\n";	//TODO check if there is another place with an error
+		}
 	}
 	
 	for (int i=0; i<_storeList.size(); i++)
@@ -61,7 +69,7 @@ SharedMeric::SharedMeric()
 
 
 	//wrappers must be initialized after meric instantiation
-	//rapl counter expects that environment::init() was already called
+	//RAPL counter expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")
 		PERFEVENT::init();
 	if (Meric::COUNTERS == "papi")

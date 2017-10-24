@@ -128,6 +128,11 @@ void PAPI::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
+std::string PAPI::getCountersLabel()
+{
+	return "PAPI";
+}
+
 // solve counter overflow
 unsigned long long PAPI::getResultValue(long long startValue, long long stopValue, std::string counter)
 {

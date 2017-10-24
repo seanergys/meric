@@ -13,39 +13,48 @@
 
 using namespace meric;
 
-void CountersStore::addStart(int region)
+template <class TCounter> std::string CountersStore<TCounter>::getCountersLabel()
+{
+	return TCounter::getCountersLabel();
+}
+
+template <class TCounter> void CountersStore<TCounter>::addStart(int region)
 {
 	std::map<std::string, long long> record;
 	struct timespec time;
 	
-	if (wrapperType == PERFEVENT)
+/*	if (wrapperType == PERFEVENT)
 		PERFEVENT::getCounterValues(record);
 	else if (wrapperType == PAPI)
 		PAPI::getCounterValues(record);
 	else if (wrapperType == RAPL)
 		RAPL::getCounterValues(record);
+*/
+	TCounter::getCounterValues(record);
 	clock_gettime(CLOCK_REALTIME, &time);
 
 	_records.push_back(CountersRecord(region, record, time));
 }
 
-void CountersStore::addEnd(int region)
+template <class TCounter> void CountersStore<TCounter>::addEnd(int region)
 {
 	std::map<std::string, long long> record;
 	struct timespec time;
 
 	clock_gettime(CLOCK_REALTIME, &time);
-	if (wrapperType == PERFEVENT)
+	TCounter::getCounterValues(record);
+/*	if (wrapperType == PERFEVENT)
 		PERFEVENT::getCounterValues(record);
 	else if (wrapperType == PAPI)
 		PAPI::getCounterValues(record);
 	else if (wrapperType == RAPL)
 		RAPL::getCounterValues(record);
+*/
 
 	_records.push_back(CountersRecord(region, record, time));
 }
 
-void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TCounter> void CountersStore<TCounter>::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	int summaryIndex = -1;
 	unsigned long long int summary = 0;
@@ -53,7 +62,8 @@ void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, doub
 	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		if (wrapperType == PERFEVENT)
+		stats.push_back(TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
+/*		if (wrapperType == PERFEVENT)
 		{
 			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
@@ -65,18 +75,25 @@ void CountersStore::fillRegionStats(std::vector<unsigned long long> &stats, doub
 		{
 			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
 		}
+*/
 	}
 
-	if (wrapperType == RAPL)	//DONE for all counters (y)
+/*	if (wrapperType == RAPL)	//DONE for all counters (y)
 	{
 		if ((summary = RAPL::getSummaryValue(*time)) != ULLONG_MAX)
 		{
 			stats.back() = summary;
 		}
 	}
+*/
+
+	if ((summary = TCounter::getSummaryValue(*time)) != ULLONG_MAX)
+	{
+;//		stats.back() = summary;
+	}
 }
 
-void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
@@ -85,7 +102,7 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 	ss << std::endl;
 
 	timespec runtime = _records[iEnd].time - _records[iStarts.back()].time;
-	ss << "# Job info - "<< counterLabel << std::endl				//TODO <>counterLabel
+	ss << "# Job info - "<< TCounter::getCountersLabel() << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
 	   << "Runtime of function [s]," << runtime << std::endl;
@@ -93,10 +110,14 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 
 	unsigned long long int summary = 0;
 	unsigned long long int value;
-	ss << "# COUNTERS - "<<counterLabel<<": \n";
+	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<": \n";
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		if (wrapperType == PERFEVENT)
+			if (TCounter::getSummaryCounterName() == counterIt->first)
+				continue;
+			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+
+/*		if (wrapperType == PERFEVENT)
 		{
 			if (PERFEVENT::summaryCounter() == counterIt->first)
 				continue;
@@ -114,16 +135,25 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 				continue;
 			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
 		}
-
+*/
 		ss << counterIt->first << "," << value << std::endl;
 	}
 
-	
+
+	if ((summary = TCounter::getSummaryValue(timespec2double(runtime))) != ULLONG_MAX)
+		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
+
+/*	
 	if (wrapperType == RAPL)
 	{
 		if ((summary = RAPL::getSummaryValue(timespec2double(runtime))) != ULLONG_MAX)
 			ss << RAPL::summaryCounter() << "," << summary << std::endl;
 	}
+*/
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*	
 	//TODO - TEMPORARY solution	#19
 	else if (wrapperType == PAPI)
 	{
@@ -169,8 +199,11 @@ void CountersStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts
 				) << std::endl;
 		}
 	}
+*/
 }
 
-
+template class CountersStore <PERFEVENT>;
+template class CountersStore <PAPI>;
+template class CountersStore <RAPL>;
 
 

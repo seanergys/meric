@@ -133,11 +133,11 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore>("rapl", _storingProcs));
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL>>(_storingProcs));
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-			_storeList.push_back(new CountersStore("rapl", Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -154,13 +154,34 @@ DistributedMeric::DistributedMeric()
 
 	if (Meric::COUNTERS != "none")
 	{
-		//_storeList.push_back(new CountersStore(Meric::COUNTERS));
-//		_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _worldCopy, true));
-		if (Meric::AGGREGATE)
-			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _worldCopy));
+		if (Meric::COUNTERS == "perfevent")
+		{
+			if (Meric::AGGREGATE)
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT>>(_worldCopy));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT>>(_currentNode));
+			}
+			_storeList.back()->setMPIWrite(true);
+		}
+		else if (Meric::COUNTERS == "papi")
+		{
+			if (Meric::AGGREGATE)
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI>>(_worldCopy));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI>>(_currentNode));
+			}
+			_storeList.back()->setMPIWrite(true);
+		}
 		else
-			_storeList.push_back(new CountersAggregateStore<CountersStore>(Meric::COUNTERS, _currentNode));
-		_storeList.back()->setMPIWrite(true);
+		{
+			std::cerr << "MERIC WARNING: unknown counters name "<< Meric::COUNTERS << " - skipping\n";	//TODO check if there is another place with an error
+		}
 	}
 
 //INIT

@@ -6,22 +6,22 @@ using namespace meric;
 
 void TimeEnergyStore::addStart(int region)
 {
-	timespec time;
+	struct timespec time;
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
 
-	HDEEM::fillDetailedEnergy(energy);
-	HDEEM::fillTime(time);
+	HDEEM::getDetailedCounterValues(energy);
+	clock_gettime(CLOCK_REALTIME, &time);
 
 	_records.push_back(TimeEnergyRecord(region, time, energy));
 }
 
 void TimeEnergyStore::addEnd(int region)
 {
-	timespec time;
+	struct timespec time;
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
 
-	HDEEM::fillTime(time);
-    HDEEM::fillDetailedEnergy(energy);
+	clock_gettime(CLOCK_REALTIME, &time);
+    HDEEM::getDetailedCounterValues(energy);
 
 	_records.push_back(TimeEnergyRecord(region, time, energy));
 }

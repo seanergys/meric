@@ -12,7 +12,7 @@ class CountersAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
 //	CountersAggregateStore(const std::string wrapper, MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(wrapper, comm, write)
-	CountersAggregateStore(const std::string wrapper, MPI_Comm &comm): AggregateStoreBase<TStore>(wrapper, comm)
+	CountersAggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
 	{
 		_bufferCounters.resize(this->_size);
 		_bufferTime.resize(this->_size);

@@ -181,6 +181,10 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 #else
 #endif
 
+std::string RAPL::getCountersLabel()
+{
+	return "RAPL";
+}
 
 unsigned long long RAPL::getSummaryValue(double time)
 {

@@ -8,24 +8,26 @@ using namespace meric;
 void EnergyStore::addStart(int region)
 {
 	double energy;
-	timespec time;
+	struct timespec time;
 
-	HDEEM::fillEnergy(energy);
-	HDEEM::fillTime(time);
+	HDEEM::getCounterValues(energy);
+	clock_gettime(CLOCK_REALTIME, &time);
+	
 	_records.push_back(EnergyRecord(region, time, energy));
 }
 
 void EnergyStore::addEnd(int region)
 {
 	double energy;
-	timespec time;
-
-	HDEEM::fillTime(time);
-	HDEEM::fillEnergy(energy);
+	struct timespec time;
+	
+	clock_gettime(CLOCK_REALTIME, &time);
+	HDEEM::getCounterValues(energy);
+	
 	_records.push_back(EnergyRecord(region, time, energy));
 }
 
-void EnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
+void EnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//ROZDIL zde neni vektor iStarts
 {
 	stats.energy = _records[iEnd].energy - _records[iStarts].energy;
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);

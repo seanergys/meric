@@ -22,7 +22,8 @@ public:
 	static void initMap(std::map<std::string, long long> & dict);
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
 	static unsigned long long getSummaryValue(double time) {return ULLONG_MAX;};
-	static std::string summaryCounter() {return "";};
+	static std::string getSummaryCounterName() {return "";};
+	static std::string getCountersLabel();
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -43,7 +44,8 @@ public:
 	static void initMap(std::map<std::string, long long> & dict);
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
 	static unsigned long long getSummaryValue(double time) {return ULLONG_MAX;};
-	static std::string summaryCounter() {return "";};	
+	static std::string getSummaryCounterName() {return "";};
+	static std::string getCountersLabel();
 private:
 	static long long COUNTERMAX;
 };

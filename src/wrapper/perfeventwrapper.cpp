@@ -120,6 +120,11 @@ void PERFEVENT::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
+std::string PERFEVENT::getCountersLabel()
+{
+	return "PERFEVENT";
+}
+
 // solve counter overflow
 unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter)
 {

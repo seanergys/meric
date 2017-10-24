@@ -22,7 +22,8 @@ public:
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
 	static unsigned long long getSummaryValue(double time);
-	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
+	static std::string getSummaryCounterName() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
+	static std::string getCountersLabel();
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -44,6 +45,7 @@ public:
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter) {return 0;};
 	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
 	static unsigned long long getSummaryValue(double time);
+	static std::string getCountersLabel();
 private:
 	static std::string suffix;
 	static int numOfDevices;

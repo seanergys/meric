@@ -19,18 +19,17 @@ struct CountersRecord {
 	timespec time;
 };
 
-enum WRAPPERS {PERFEVENT, PAPI, RAPL};
-
 template <class TStore>
 class CountersAggregateStore;
 
-class CountersStore: public Store {
+template <class TCounter> class CountersStore: public Store {
 
 	friend class CountersAggregateStore<CountersStore>;
 public:
 	void addStart(int region);
 	void addEnd(int region);
 	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
+	std::string getCountersLabel();
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
@@ -49,30 +48,14 @@ public:
 		iterate(_records, processInterval);
 	}
 
-//	CountersStore(const std::string wrapper, bool write = true) : Store(write)
-	CountersStore(const std::string wrapper, bool samples) : Store(samples)
+//	CountersStore(bool write = true) : Store(write)
+	CountersStore(bool samples) : Store(samples)
 	{
-		if (wrapper == "perfevent")
-			wrapperType = PERFEVENT;
-		else if (wrapper == "papi")
-			wrapperType = PAPI;
-		else if (wrapper == "rapl")
-			wrapperType = RAPL;
-
-		counterLabel = wrapper;
-		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
+		MERIC_INFO << "Create CountersStore - " << TCounter::getCountersLabel() << std::endl;
 	}
-	CountersStore(const std::string wrapper, bool samples, bool write) : Store(samples, write)
+	CountersStore(bool samples, bool write) : Store(samples, write)
 	{
-		if (wrapper == "perfevent")
-			wrapperType = PERFEVENT;
-		else if (wrapper == "papi")
-			wrapperType = PAPI;
-		else if (wrapper == "rapl")
-			wrapperType = RAPL;
-
-		counterLabel = wrapper;
-		MERIC_INFO << "Create CountersStore - " << wrapper << std::endl;
+		MERIC_INFO << "Create CountersStore - " << TCounter::getCountersLabel() << std::endl;
 	}
 	
 //	CountersStore(bool write) : Store(write) {wrapperType = RAPL;};
@@ -81,12 +64,8 @@ public:
 
 protected:
 	int wrapperType;
-	std::string counterLabel;
-
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
-
 	double timespec2double(timespec time) {return time.tv_sec + (double)time.tv_nsec/1e9;};
-
 	std::vector<CountersRecord> _records;
 };
 
