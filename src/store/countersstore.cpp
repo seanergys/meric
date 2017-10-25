@@ -62,7 +62,17 @@ template <class TCounter> void CountersStore<TCounter>::fillRegionStats(std::vec
 	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-		stats.push_back(TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
+		if (TCounter::getSummaryCounterName() == counterIt->first)
+		{
+			summaryIndex = summaryIndex = stats.size();
+			stats.push_back(0);
+		}
+		else
+		{
+			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+			stats.push_back(value);
+			summary += value;
+		}
 /*		if (wrapperType == PERFEVENT)
 		{
 			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
@@ -87,9 +97,10 @@ template <class TCounter> void CountersStore<TCounter>::fillRegionStats(std::vec
 	}
 */
 
-	if ((summary = TCounter::getSummaryValue(*time)) != ULLONG_MAX)
+	if (summaryIndex != -1)
 	{
-;//		stats.back() = summary;
+		TCounter::getSummaryValue(*time, &summary);
+		stats[summaryIndex] = summary;
 	}
 }
 
@@ -116,7 +127,7 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 			if (TCounter::getSummaryCounterName() == counterIt->first)
 				continue;
 			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-
+			summary += value;
 /*		if (wrapperType == PERFEVENT)
 		{
 			if (PERFEVENT::summaryCounter() == counterIt->first)
@@ -139,8 +150,8 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 		ss << counterIt->first << "," << value << std::endl;
 	}
 
-
-	if ((summary = TCounter::getSummaryValue(timespec2double(runtime))) != ULLONG_MAX)
+	TCounter::getSummaryValue(timespec2double(runtime), &summary);
+	if (summary != ULLONG_MAX)
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
 
 /*	

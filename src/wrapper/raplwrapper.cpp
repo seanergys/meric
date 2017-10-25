@@ -43,7 +43,6 @@ std::string RAPL::suffix = "_";
 int RAPL::numOfDevices = 1;
 bool RAPL::detailedMode = false;
 long long RAPL::COUNTERMAX = pow(2,32);
-unsigned long long RAPL::counterSummary = 0;
 
 #ifdef HAVE_X86_ADAPT_H
 std::map<std::string, long long> RAPL::counters;
@@ -174,7 +173,7 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 	else
 		result = (stopValue - startValue) * energyUnit[counterName];
 
-	counterSummary += result;
+//counterSummary += result; // error dela sumu opres vsechy regiony :D
 	return result;
 }
 
@@ -186,9 +185,9 @@ std::string RAPL::getCountersLabel()
 	return "RAPL";
 }
 
-unsigned long long RAPL::getSummaryValue(double time)
+void RAPL::getSummaryValue(double time, unsigned long long int * counterSummary)
 {
-	return counterSummary + time * RAPL_BASELINE;
+	*counterSummary += time * RAPL_BASELINE;
 }
 
 //	set list of counters to measure

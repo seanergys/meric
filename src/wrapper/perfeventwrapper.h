@@ -24,7 +24,7 @@ public:
 	static void getCounterValues(std::map<std::string, long long> & record);
 	static void initMap(std::map<std::string, long long> & dict);
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
-	static unsigned long long getSummaryValue(double time) {return ULLONG_MAX;};
+	static void getSummaryValue(double time, unsigned long long int * counterSummary) {*counterSummary = ULLONG_MAX;};
 	static std::string getSummaryCounterName() {return "";};
 	static std::string getCountersLabel();
 private:
@@ -46,7 +46,7 @@ public:
 	static void getCounterValues(std::map<std::string, long long> & record) {std::cerr << "PERFEVENT::getCounterValues() TODO\n"; };
 	static void initMap(std::map<std::string, long long> & dict);
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
-	static unsigned long long getSummaryValue(double time) {return ULLONG_MAX;};
+	static void getSummaryValue(double time, unsigned long long int * counterSummary) {*counterSummary = ULLONG_MAX;};
 	static std::string getSummaryCounterName() {return "";};
 	static std::string getCountersLabel();
 private:

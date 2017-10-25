@@ -21,7 +21,7 @@ public:
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
-	static unsigned long long getSummaryValue(double time);
+	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
 	static std::string getCountersLabel();
 private:
@@ -32,8 +32,6 @@ private:
 	static int numOfDevices;
 	static bool detailedMode;
 	static long long COUNTERMAX;
-	static unsigned long long counterSummary;
-
 #else
 public:
 	static const int RAPL_BASELINE = 0;
@@ -44,7 +42,7 @@ public:
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter) {return 0;};
 	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
-	static unsigned long long getSummaryValue(double time);
+	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getCountersLabel();
 private:
 	static std::string suffix;
