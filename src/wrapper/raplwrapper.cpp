@@ -99,7 +99,7 @@ void RAPL::getCounterValues(std::map<std::string, long long> & record)
 			if (fd < 0)
 			{
 				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
-	//			exit(2);
+//				exit(2);
 			}
 		
 			for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -120,7 +120,7 @@ void RAPL::getCounterValues(std::map<std::string, long long> & record)
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [itemName+suffix+std::to_string(die)] = dieEnergy; //*energyUnit[itemName];
+				record [itemName+suffix+std::to_string(die)] = dieEnergy;
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -134,13 +134,13 @@ void RAPL::getCounterValues(std::map<std::string, long long> & record)
 			if (fd < 0)
 			{
 				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
-		//			exit(2);
+//				exit(2);
 			}
 			for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += dieEnergy; //*energyUnit[iterator->first];
+				record [iterator->first] += dieEnergy;
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -151,9 +151,8 @@ void RAPL::getCounterValues(std::map<std::string, long long> & record)
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter)
 {
-	unsigned long long result = 0;
 	if (counter == RAPL_COUNTERS::RAPL_SUM_ENERGY)
-		return result;
+		return 0;
 	
 	std::string counterName;
 	if (detailedMode)
@@ -167,14 +166,12 @@ unsigned long long RAPL::getResultValue(long long startValue, long long stopValu
 		{
 			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counterName] <<" " <<counterName << std::endl;
 			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName] << std::endl;
-			result = ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
-		} //else: unit modifier is missing, return 0
+			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
+		} //else: unit modifier is missing
+		return 0;
 	}
 	else
-		result = (stopValue - startValue) * energyUnit[counterName];
-
-//counterSummary += result; // error dela sumu opres vsechy regiony :D
-	return result;
+		return (stopValue - startValue) * energyUnit[counterName];
 }
 
 #else

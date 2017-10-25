@@ -22,14 +22,7 @@ template <class TCounter> void CountersStore<TCounter>::addStart(int region)
 {
 	std::map<std::string, long long> record;
 	struct timespec time;
-	
-/*	if (wrapperType == PERFEVENT)
-		PERFEVENT::getCounterValues(record);
-	else if (wrapperType == PAPI)
-		PAPI::getCounterValues(record);
-	else if (wrapperType == RAPL)
-		RAPL::getCounterValues(record);
-*/
+
 	TCounter::getCounterValues(record);
 	clock_gettime(CLOCK_REALTIME, &time);
 
@@ -43,13 +36,6 @@ template <class TCounter> void CountersStore<TCounter>::addEnd(int region)
 
 	clock_gettime(CLOCK_REALTIME, &time);
 	TCounter::getCounterValues(record);
-/*	if (wrapperType == PERFEVENT)
-		PERFEVENT::getCounterValues(record);
-	else if (wrapperType == PAPI)
-		PAPI::getCounterValues(record);
-	else if (wrapperType == RAPL)
-		RAPL::getCounterValues(record);
-*/
 
 	_records.push_back(CountersRecord(region, record, time));
 }
@@ -73,29 +59,7 @@ template <class TCounter> void CountersStore<TCounter>::fillRegionStats(std::vec
 			stats.push_back(value);
 			summary += value;
 		}
-/*		if (wrapperType == PERFEVENT)
-		{
-			stats.push_back(PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
-		}
-		else if (wrapperType == PAPI)
-		{
-			stats.push_back(PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
-		}
-		else if (wrapperType == RAPL)
-		{
-			stats.push_back(RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first));
-		}
-*/
 	}
-
-/*	if (wrapperType == RAPL)	//DONE for all counters (y)
-	{
-		if ((summary = RAPL::getSummaryValue(*time)) != ULLONG_MAX)
-		{
-			stats.back() = summary;
-		}
-	}
-*/
 
 	if (summaryIndex != -1)
 	{
@@ -124,29 +88,10 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<": \n";
 	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
 	{
-			if (TCounter::getSummaryCounterName() == counterIt->first)
-				continue;
-			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			summary += value;
-/*		if (wrapperType == PERFEVENT)
-		{
-			if (PERFEVENT::summaryCounter() == counterIt->first)
-				continue;
-			value = PERFEVENT::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-		}
-		else if (wrapperType == PAPI)
-		{
-			if (PAPI::summaryCounter() == counterIt->first)
-				continue;
-			value = PAPI::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-		}
-		else if (wrapperType == RAPL)
-		{
-			if (RAPL::summaryCounter() == counterIt->first)
-				continue;
-			value = RAPL::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-		}
-*/
+		if (TCounter::getSummaryCounterName() == counterIt->first)
+			continue;
+		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+		summary += value;
 		ss << counterIt->first << "," << value << std::endl;
 	}
 
@@ -154,13 +99,7 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 	if (summary != ULLONG_MAX)
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
 
-/*	
-	if (wrapperType == RAPL)
-	{
-		if ((summary = RAPL::getSummaryValue(timespec2double(runtime))) != ULLONG_MAX)
-			ss << RAPL::summaryCounter() << "," << summary << std::endl;
-	}
-*/
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

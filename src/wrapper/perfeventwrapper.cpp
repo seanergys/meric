@@ -124,6 +124,14 @@ std::string PERFEVENT::getCountersLabel()
 {
 	return "PERFEVENT";
 }
+std::string PERFEVENT::getSummaryCounterName()
+{
+	return "";
+}
+void PERFEVENT::getSummaryValue(double time, unsigned long long int * counterSummary)
+{
+	*counterSummary = ULLONG_MAX;
+}
 
 // solve counter overflow
 unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter)
