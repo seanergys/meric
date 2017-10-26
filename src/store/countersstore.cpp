@@ -18,6 +18,11 @@ template <class TCounter> std::string CountersStore<TCounter>::getCountersLabel(
 	return TCounter::getCountersLabel();
 }
 
+template <class TCounter> void CountersStore<TCounter>::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+{
+	TCounter::getRatios(start, stop, runtime, ratios);
+}
+
 template <class TCounter> void CountersStore<TCounter>::addStart(int region)
 {
 	std::map<std::string, long long> record;
@@ -100,56 +105,15 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
 
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*	
-	//TODO - TEMPORARY solution	#19
-	else if (wrapperType == PAPI)
+// Counters ratios
+	std::map <std::string, double> ratios;
+	TCounter::getRatios(_records[iStarts.back()], _records[iEnd], timespec2double(runtime), ratios);
+	if (ratios.size())
 	{
 		ss << "# RATIOS: \n";
-		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_AVX))
-		{
-			ss << "GLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
-				_records[iEnd].record[PAPI_COUNTERS::COUNTER_AVX] - 
-				_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_AVX], 
-				timespec2double(runtime)
-				) << std::endl;
-		}
-		if (_records[iEnd].record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
-		{
-			ss << "Computational Intensity," << 
-				std::fixed << std::setprecision(5) << CountersRates::computationalIntensity(
-					_records[iEnd].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
-					_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
-					_records[iEnd].record[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
-					_records[iStarts.back()].record[PAPI_COUNTERS::COUNTER_CACHE_MISSES]
-				) << std::endl;
-		}
+		for(auto const &element : ratios)
+			ss << element.first<<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
 	}
-	else if (wrapperType == PERFEVENT)
-	{
-		ss << "# RATIOS: \n";
-		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
-		{
-			ss << "GFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(
-				_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_AVX] - 
-				_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_AVX], 
-				timespec2double(runtime)
-				) << std::endl;
-		}
-		if (_records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && _records[iEnd].record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
-		{
-			ss << "Computational Intensity," << 
-				std::fixed << std::setprecision(5) << CountersRates::computationalIntensity(
-					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
-					_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
-					_records[iEnd].record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
-					_records[iStarts.back()].record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
-				) << std::endl;
-		}
-	}
-*/
 }
 
 template class CountersStore <PERFEVENT>;

@@ -33,7 +33,6 @@ const uint64_t RAPLtimeShift  = 16;
 
 #endif
 
-#include <math.h>
 #include "raplwrapper.h"
 #include "../basis/utils.h"
 
@@ -181,7 +180,10 @@ std::string RAPL::getCountersLabel()
 {
 	return "RAPL";
 }
-
+std::string RAPL::getSummaryCounterName()
+{
+	return RAPL_COUNTERS::RAPL_SUM_ENERGY;
+}
 void RAPL::getSummaryValue(double time, unsigned long long int * counterSummary)
 {
 	*counterSummary += time * RAPL_BASELINE;

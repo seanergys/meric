@@ -42,17 +42,13 @@ SharedMeric::SharedMeric()
 		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
 	}
 	
-	if (Meric::COUNTERS == "none")
+	if (Meric::COUNTERS != "none")
 	{
 
 		if (Meric::COUNTERS == "perfevent")
 			_storeList.push_back(new CountersStore<PERFEVENT>(Meric::SAMPLES));
 		else if (Meric::COUNTERS == "papi")
 			_storeList.push_back(new CountersStore<PAPI>(Meric::SAMPLES));
-		else
-		{
-			std::cerr << "MERIC WARNING: unknown counters name "<< Meric::COUNTERS << " - skipping\n";	//TODO check if there is another place with an error
-		}
 	}
 	
 	for (int i=0; i<_storeList.size(); i++)

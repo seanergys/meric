@@ -5,14 +5,13 @@
 #include <iomanip>
 
 #include "store.h"
-#include "countersrates.h"
-#include "../wrapper/counters.h"
 
 namespace meric {
 
 struct CountersRecord {
 	CountersRecord(int region, std::map <std::string, long long> record, timespec time)
 	: region(region), record(record), time(time){};
+	CountersRecord() : region(-1){};
 	
 	int region;
 	std::map <std::string, long long> record;
@@ -30,6 +29,7 @@ public:
 	void addEnd(int region);
 	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
 	std::string getCountersLabel();
+	void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
@@ -58,12 +58,9 @@ public:
 		MERIC_INFO << "Create CountersStore - " << TCounter::getCountersLabel() << std::endl;
 	}
 	
-//	CountersStore(bool write) : Store(write) {wrapperType = RAPL;};
-//	CountersStore() {wrapperType = RAPL;};
 //	~CountersStore() {};
 
 protected:
-	int wrapperType;
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	double timespec2double(timespec time) {return time.tv_sec + (double)time.tv_nsec/1e9;};
 	std::vector<CountersRecord> _records;

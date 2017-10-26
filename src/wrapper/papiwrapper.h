@@ -5,6 +5,12 @@
 #include <map>
 #include <iostream>
 #include <climits>
+#include <vector>
+#include <omp.h>
+
+#include "counters.h"
+#include "countersrates.h"
+#include "../store/countersstore.h"
 
 
 namespace meric {
@@ -24,6 +30,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -46,6 +53,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
 private:
 	static long long COUNTERMAX;
 };

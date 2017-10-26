@@ -9,6 +9,9 @@
 #include <iostream>
 #include <climits>
 
+#include "counters.h"
+#include "countersrates.h"
+#include "../store/countersstore.h"
 
 namespace meric {
 
@@ -27,6 +30,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
 private:
 	static void start();
 	static long openCounter(perf_event_attr attr);
@@ -49,6 +53,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
 private:
 	static long long COUNTERMAX;
 };

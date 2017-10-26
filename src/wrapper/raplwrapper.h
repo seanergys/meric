@@ -5,8 +5,11 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <math.h>
 
 #include "counters.h"
+#include "countersrates.h"
+#include "../store/countersstore.h"
 
 namespace meric {
 
@@ -22,8 +25,9 @@ public:
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
-	static std::string getSummaryCounterName() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
+	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios) {};
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -41,9 +45,10 @@ public:
 	static void initMap(std::map<std::string, long long> & dict);
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter) {return 0;};
-	static std::string summaryCounter() {return RAPL_COUNTERS::RAPL_SUM_ENERGY;};
+	static std::string summaryCounter();
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getCountersLabel();
+	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios) {};
 private:
 	static std::string suffix;
 	static int numOfDevices;

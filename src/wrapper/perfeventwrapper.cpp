@@ -11,7 +11,6 @@
 // #include <errno.h>
 
 #include "perfeventwrapper.h"
-#include "counters.h"
 #include "../basis/utils.h"
 
 using namespace meric;
@@ -120,6 +119,27 @@ void PERFEVENT::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
+void PERFEVENT::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+{
+	if (stop.record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
+	{
+		ratios["GFLOPs"] = CountersRates::FLOPS(
+			stop.record[PERFEVENT_COUNTERS::COUNTER_AVX] - 
+			start.record[PERFEVENT_COUNTERS::COUNTER_AVX], 
+			runtime
+			);			
+	}
+	if (stop.record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && stop.record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+	{
+		ratios["Computational Intensity"] = CountersRates::computationalIntensity(
+				stop.record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+				start.record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+				stop.record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
+				start.record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
+			);
+	}
+}
+
 std::string PERFEVENT::getCountersLabel()
 {
 	return "PERFEVENT";
@@ -149,7 +169,7 @@ unsigned long long PERFEVENT::getResultValue(long long startValue, long long sto
 
 void PERFEVENT::initMap(std::map<std::string, long long> & dict)
 {
-//	dict[PERFEVENT_COUNTERS::] = 0;
+//	dict[PERFEVENT_PERFEVENT_COUNTERS::] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX_ALL] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] = 0;

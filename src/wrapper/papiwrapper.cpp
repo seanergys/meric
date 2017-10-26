@@ -7,12 +7,7 @@
 #include <cilk/cilk_api.h> 
 #endif
 
-#include <vector>
-#include <limits.h>
-#include <omp.h>
-
 #include "papiwrapper.h"
-#include "counters.h"
 #include "../basis/utils.h"
 
 using namespace meric;
@@ -127,6 +122,27 @@ void PAPI::getCounterValues(std::map<std::string, long long> & record)
 
 #else
 #endif
+
+void PAPI::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+{
+	if (stop.record.count(PAPI_COUNTERS::COUNTER_AVX))
+	{
+		ratios["GFLOPs"] = CountersRates::FLOPS(
+			stop.record[PAPI_COUNTERS::COUNTER_AVX] - 
+			start.record[PAPI_COUNTERS::COUNTER_AVX], 
+			runtime
+			);			
+	}
+	if (stop.record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && stop.record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+	{
+		ratios["Computational Intensity"] = CountersRates::computationalIntensity(
+				stop.record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+				start.record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+				stop.record[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
+				start.record[PAPI_COUNTERS::COUNTER_CACHE_MISSES]
+			);
+	}
+}
 
 std::string PAPI::getCountersLabel()
 {

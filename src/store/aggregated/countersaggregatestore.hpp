@@ -7,8 +7,7 @@ namespace meric {
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	double AVGtime = 0.0; unsigned long long AVGavx = 0;	//#19
-	
+
 	std::vector<unsigned long long> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts, iEnd);
@@ -37,7 +36,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		   << "MIN "<< description << "," << min << std::endl;
 		if (storeSum)
 			ss << "SUM "<< description << "," << sum << std::endl;
-		return avg;	// #19
+		return avg;
 	};
 
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
@@ -49,23 +48,26 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	ss << "# Job info - " << this->_store->getCountersLabel() << std::endl
 	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
 	   << "Nodelist," << this->_store->_nodelist << std::endl;
-	AVGtime = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false);	//#19
+	time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false);
 
 	ss << "# COUNTERS - "<<this->_store->getCountersLabel() << ": \n";
 	int j = 0;
+	CountersRecord averageRecord;
 	for(std::map<std::string, long long>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
-		if (counterIt->first == PAPI_COUNTERS::COUNTER_AVX || (counterIt->first == PERFEVENT_COUNTERS::COUNTER_AVX)) 	//#19
-			AVGavx = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
-		else 
-			printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
+		averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
 	}
 
-//TODO TEMP SOLUTION - REMOVE	#19
-//TODO - TEMPORARY solution
-	if (AVGavx != 0)
-		ss << "# RATIOS: \nGFLOPs," << std::fixed << std::setprecision(5) << CountersRates::FLOPS(AVGavx, AVGtime) << std::endl;
-
+// Counters ratios
+	CountersRecord startRecord;
+	std::map <std::string, double> ratios;
+	this->_store->getRatios(startRecord, averageRecord, time, ratios);
+	if (ratios.size())
+	{
+		ss << "# RATIOS: \n";
+		for(auto const &element : ratios)
+			ss << element.first<<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
+	}
 }
 
 template <class TStore>

@@ -178,10 +178,6 @@ DistributedMeric::DistributedMeric()
 			}
 			_storeList.back()->setMPIWrite(true);
 		}
-		else
-		{
-			std::cerr << "MERIC WARNING: unknown counters name "<< Meric::COUNTERS << " - skipping\n";	//TODO check if there is another place with an error
-		}
 	}
 
 //INIT
