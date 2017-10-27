@@ -13,15 +13,15 @@ void MERIC_Init()
 	MPI_Initialized(&initialized);
 	MPI_Finalized(&finalized);
 	if (!initialized) {
-		std::cerr << "MERIC ERROR: call MERIC_Init() before MPI_Init()\n";
+		std::cerr << "MERIC ERROR: MERIC_Init() called before MPI_Init()\n";
 		exit(EXIT_FAILURE);
 	}
 	if (finalized) {
-		std::cerr << "MERIC ERROR: call MERIC_Init() after MPI_Finalize()\n";
+		std::cerr << "MERIC ERROR: MERIC_Init() called after MPI_Finalize()\n";
 		exit(EXIT_FAILURE);
 	}
 	if (holder != NULL) {
-		std::cerr << "MERIC ERROR: call MERIC_Init() before MERIC_Close()\n";
+		std::cerr << "MERIC ERROR: MERIC_Init() called before MERIC_Close()\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -35,11 +35,11 @@ void MERIC_Close()
 	int finalized;
 	MPI_Finalized(&finalized);
 	if (finalized) {
-		std::cerr << "MERIC ERROR: call MERIC_Close() after MPI_Finalize()\n";
+		std::cerr << "MERIC ERROR: MERIC_Close() called after MPI_Finalize()\n";
 		exit(EXIT_FAILURE);
 	}
 	if (holder == NULL) {
-		std::cerr << "MERIC ERROR: call MERIC_Close() before MERIC_Init()\n";
+		std::cerr << "MERIC ERROR: MERIC_Close() called before MERIC_Init()\n";
 		exit(EXIT_FAILURE);
 	}
 	MERIC_INFO << "SAVEing\n";
