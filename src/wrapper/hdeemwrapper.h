@@ -68,7 +68,7 @@ public:
 		checkHDEEM(hdeem_stop(&bmc), "stop");
 	}
 
-	static void getCounterValues(std::map<std::string, long long> & record)	//HDEEM in counter regime
+	static void getCounterValues(std::map<std::string, double> & record)	//HDEEM in counter regime
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
