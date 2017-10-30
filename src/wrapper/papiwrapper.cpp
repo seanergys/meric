@@ -123,23 +123,23 @@ void PAPI::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
-void PAPI::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+void PAPI::getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios)
 {
-	if (stop.record.count(PAPI_COUNTERS::COUNTER_AVX))
+	if (stop.count(PAPI_COUNTERS::COUNTER_AVX))
 	{
 		ratios["GFLOPs"] = CountersRates::FLOPS(
-			stop.record[PAPI_COUNTERS::COUNTER_AVX] - 
-			start.record[PAPI_COUNTERS::COUNTER_AVX], 
+			stop[PAPI_COUNTERS::COUNTER_AVX] - 
+			start[PAPI_COUNTERS::COUNTER_AVX], 
 			runtime
 			);			
 	}
-	if (stop.record.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && stop.record.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+	if (stop.count(PAPI_COUNTERS::COUNTER_CACHE_MISSES) && stop.count(PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS))
 	{
 		ratios["Computational Intensity"] = CountersRates::computationalIntensity(
-				stop.record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
-				start.record[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
-				stop.record[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
-				start.record[PAPI_COUNTERS::COUNTER_CACHE_MISSES]
+				stop[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+				start[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+				stop[PAPI_COUNTERS::COUNTER_CACHE_MISSES] - 
+				start[PAPI_COUNTERS::COUNTER_CACHE_MISSES]
 			);
 	}
 }
@@ -158,7 +158,7 @@ void PAPI::getSummaryValue(double time, unsigned long long int * counterSummary)
 }
 
 // solve counter overflow
-unsigned long long PAPI::getResultValue(long long startValue, long long stopValue, std::string counter)
+unsigned long long PAPI::getResultValue(long long startValue, long long stopValue, double runtime, std::string counter)
 {
 	if (stopValue < startValue)
 	{

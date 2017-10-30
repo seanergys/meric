@@ -148,7 +148,7 @@ void RAPL::getCounterValues(std::map<std::string, long long> & record)
 }
 
 // solve counter overflow and add baseline energy consumption
-unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, std::string counter)
+unsigned long long RAPL::getResultValue(long long startValue, long long stopValue, double runtime, std::string counter)
 {
 	if (counter == RAPL_COUNTERS::RAPL_SUM_ENERGY)
 		return 0;

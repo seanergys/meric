@@ -14,8 +14,10 @@
 #include <ctime>
 #include <array>
 #include <vector>
+#include <map>
 #include <unistd.h>
 #include <cmath>
+#include <climits>
 
 //#define PROBE_NUMBER 7
 
@@ -66,6 +68,14 @@ public:
 		checkHDEEM(hdeem_stop(&bmc), "stop");
 	}
 
+	static void getCounterValues(std::map<std::string, long long> & record)	//HDEEM in counter regime
+	{
+		hdeem_stats_reading_t stats;
+		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
+		record["Energy consumption [J] (Stats structure)"] = stats.energy_blade_values.value[0];
+		hdeem_stats_free(&stats);
+	}
+
 	static void getCounterValues(double &energy)	//HDEEM in counter regime
 	{
 		hdeem_stats_reading_t stats;
@@ -113,6 +123,12 @@ public:
 	
 	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
+	
+	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
+	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter);
+	static void getSummaryValue(double time, unsigned long long int * counterSummary) {*counterSummary = ULLONG_MAX;};
+	static std::string getSummaryCounterName() { return "";};
+	static std::string getCountersLabel() {	return "HDEEM";};
 
 private:
 	static hdeem_bmc_data_t bmc;
@@ -141,6 +157,10 @@ private:
 		clock_gettime(CLOCK_REALTIME, &time);
 	};
 
+	static void getCounterValues(std::map<std::string, double>& record)
+	{
+		record["Energy consumption [J] (Stats structure)"] = HDEEM::energy++;
+	}
 	static void getCounterValues(double &energy)
 	{
 		energy = HDEEM::energy++;
@@ -170,6 +190,12 @@ private:
 	static void setTimeAdjustment(timespec start) {};
 	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]) { return "";};	//TODO mozna bude potreba inicializovat zde vstupni parametry
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};
+
+	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
+	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter) {return stopValue - startValue;};
+	static void getSummaryValue(double time, unsigned long long int * counterSummary) {*counterSummary = ULLONG_MAX;};
+	static std::string getSummaryCounterName() { return "";};
+	static std::string getCountersLabel() {	return "HDEEM";};
 
 private:
 	static size_t energy;

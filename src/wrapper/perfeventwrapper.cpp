@@ -119,23 +119,23 @@ void PERFEVENT::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
-void PERFEVENT::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+void PERFEVENT::getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios)
 {
-	if (stop.record.count(PERFEVENT_COUNTERS::COUNTER_AVX))
+	if (stop.count(PERFEVENT_COUNTERS::COUNTER_AVX))
 	{
 		ratios["GFLOPs"] = CountersRates::FLOPS(
-			stop.record[PERFEVENT_COUNTERS::COUNTER_AVX] - 
-			start.record[PERFEVENT_COUNTERS::COUNTER_AVX], 
+			stop[PERFEVENT_COUNTERS::COUNTER_AVX] - 
+			start[PERFEVENT_COUNTERS::COUNTER_AVX], 
 			runtime
 			);			
 	}
-	if (stop.record.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && stop.record.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
+	if (stop.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && stop.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
 	{
 		ratios["Computational Intensity"] = CountersRates::computationalIntensity(
-				stop.record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
-				start.record[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
-				stop.record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
-				start.record[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
+				stop[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
+				start[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
+				stop[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
+				start[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
 			);
 	}
 }
@@ -154,7 +154,7 @@ void PERFEVENT::getSummaryValue(double time, unsigned long long int * counterSum
 }
 
 // solve counter overflow
-unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, std::string counter)
+unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, double runtime, std::string counter)
 {
 	if (stopValue < startValue)
 	{
@@ -169,7 +169,7 @@ unsigned long long PERFEVENT::getResultValue(long long startValue, long long sto
 
 void PERFEVENT::initMap(std::map<std::string, long long> & dict)
 {
-//	dict[PERFEVENT_PERFEVENT_COUNTERS::] = 0;
+//	dict[PERFEVENT_COUNTERS::] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX_ALL] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] = 0;

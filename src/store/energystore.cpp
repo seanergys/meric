@@ -27,7 +27,7 @@ void EnergyStore::addEnd(int region)
 	_records.push_back(EnergyRecord(region, time, energy));
 }
 
-void EnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)	//ROZDIL zde neni vektor iStarts
+void EnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	stats.energy = _records[iEnd].energy - _records[iStarts].energy;
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);

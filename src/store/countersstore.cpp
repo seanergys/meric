@@ -13,67 +13,58 @@
 
 using namespace meric;
 
-template <class TCounter> std::string CountersStore<TCounter>::getCountersLabel()
+template <class TCounter, typename TType> std::string CountersStore<TCounter, TType>::getCountersLabel()
 {
 	return TCounter::getCountersLabel();
 }
 
-template <class TCounter> void CountersStore<TCounter>::getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::getRatios(std::map<std::string, TType>& start, std::map<std::string, TType>& stop, double runtime, std::map <std::string, double> & ratios)
 {
 	TCounter::getRatios(start, stop, runtime, ratios);
 }
 
-template <class TCounter> void CountersStore<TCounter>::addStart(int region)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addStart(int region)
 {
-	std::map<std::string, long long> record;
+	std::map<std::string, TType> record;
 	struct timespec time;
 
 	TCounter::getCounterValues(record);
 	clock_gettime(CLOCK_REALTIME, &time);
 
-	_records.push_back(CountersRecord(region, record, time));
+	_records.push_back(CountersRecord<TType>(region, record, time));
 }
 
-template <class TCounter> void CountersStore<TCounter>::addEnd(int region)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addEnd(int region)
 {
-	std::map<std::string, long long> record;
+	std::map<std::string, TType> record;
 	struct timespec time;
 
 	clock_gettime(CLOCK_REALTIME, &time);
 	TCounter::getCounterValues(record);
 
-	_records.push_back(CountersRecord(region, record, time));
+	_records.push_back(CountersRecord<TType>(region, record, time));
 }
 
-template <class TCounter> void CountersStore<TCounter>::fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<unsigned long long> &stats, double *time, size_t iStarts, size_t iEnd)
 {
-	int summaryIndex = -1;
 	unsigned long long int summary = 0;
-	unsigned long long int value;
-	*time = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
-	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
+	long long int value; //unsigned long long int
+	*time = timespec2double(_records[iEnd].time - _records[iStarts].time);
+	for(auto const &counterIt : _records[iEnd].record)
 	{
-		if (TCounter::getSummaryCounterName() == counterIt->first)
-		{
-			summaryIndex = summaryIndex = stats.size();
-			stats.push_back(0);
-		}
-		else
-		{
-			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
-			stats.push_back(value);
-			summary += value;
-		}
+		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, *time, counterIt.first);
+		stats.push_back(value);
+		summary += value;
 	}
 
-	if (summaryIndex != -1)
+	if (TCounter::getSummaryCounterName() != "")
 	{
 		TCounter::getSummaryValue(*time, &summary);
-		stats[summaryIndex] = summary;
+		stats[distance(_records[iEnd].record.begin(),_records[iEnd].record.find(TCounter::getSummaryCounterName()))] = summary;
 	}
 }
 
-template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
@@ -81,7 +72,7 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 	}
 	ss << std::endl;
 
-	timespec runtime = _records[iEnd].time - _records[iStarts.back()].time;
+	double runtime = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
 	ss << "# Job info - "<< TCounter::getCountersLabel() << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl
@@ -89,25 +80,25 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 
 
 	unsigned long long int summary = 0;
-	unsigned long long int value;
+	long long int value; //unsigned long long int
 	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<": \n";
-	for(std::map<std::string, long long>::iterator counterIt = _records[iEnd].record.begin(); counterIt != _records[iEnd].record.end(); ++counterIt)
+	for(auto const &counterIt : _records[iEnd].record)
 	{
-		if (TCounter::getSummaryCounterName() == counterIt->first)
+		if (TCounter::getSummaryCounterName() == counterIt.first)
 			continue;
-		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt->first], counterIt->second, counterIt->first);
+		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
 		summary += value;
-		ss << counterIt->first << "," << value << std::endl;
+		ss << counterIt.first << "," << value << std::endl;
 	}
 
-	TCounter::getSummaryValue(timespec2double(runtime), &summary);
+	TCounter::getSummaryValue(runtime, &summary);
 	if (summary != ULLONG_MAX)
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
 
 
 // Counters ratios
 	std::map <std::string, double> ratios;
-	TCounter::getRatios(_records[iStarts.back()], _records[iEnd], timespec2double(runtime), ratios);
+	TCounter::getRatios(_records[iStarts.back()].record, _records[iEnd].record, runtime, ratios);
 	if (ratios.size())
 	{
 		ss << "# RATIOS: \n";
@@ -116,8 +107,8 @@ template <class TCounter> void CountersStore<TCounter>::saveInterval(std::ofstre
 	}
 }
 
-template class CountersStore <PERFEVENT>;
-template class CountersStore <PAPI>;
-template class CountersStore <RAPL>;
-
+template class CountersStore <PERFEVENT, long long>;
+template class CountersStore <PAPI, long long>;
+template class CountersStore <RAPL, long long>;
+template class CountersStore <HDEEM, double>;
 

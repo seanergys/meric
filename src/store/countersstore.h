@@ -8,28 +8,29 @@
 
 namespace meric {
 
+template <typename TType>
 struct CountersRecord {
-	CountersRecord(int region, std::map <std::string, long long> record, timespec time)
+	CountersRecord(int region, std::map <std::string, TType> record, timespec time)
 	: region(region), record(record), time(time){};
 	CountersRecord() : region(-1){};
 	
 	int region;
-	std::map <std::string, long long> record;
+	std::map <std::string, TType> record;
 	timespec time;
 };
 
 template <class TStore>
 class CountersAggregateStore;
 
-template <class TCounter> class CountersStore: public Store {
+template <class TCounter, typename TType> class CountersStore: public Store {
 
 	friend class CountersAggregateStore<CountersStore>;
 public:
 	void addStart(int region);
 	void addEnd(int region);
-	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, std::vector<size_t> &iStarts, size_t iEnd);
+	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, size_t iStarts, size_t iEnd);
 	std::string getCountersLabel();
-	void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
+	void getRatios(std::map<std::string, TType>& start, std::map<std::string, TType>& stop, double runtime, std::map <std::string, double> & ratios);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
@@ -63,7 +64,7 @@ public:
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	double timespec2double(timespec time) {return time.tv_sec + (double)time.tv_nsec/1e9;};
-	std::vector<CountersRecord> _records;
+	std::vector<CountersRecord<TType>> _records;
 };
 
 }

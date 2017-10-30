@@ -122,7 +122,8 @@ DistributedMeric::DistributedMeric()
 						_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
-						_storeList.push_back(new EnergyStore(Meric::SAMPLES, !_MPInodeRank));
+						//_storeList.push_back(new EnergyStore(Meric::SAMPLES, !_MPInodeRank));
+						_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES, !_MPInodeRank));
 					}
 				}
 			}
@@ -133,11 +134,11 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL>>(_storingProcs));
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, long long>>(_storingProcs));
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-			_storeList.push_back(new CountersStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL, long long>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -158,11 +159,11 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, long long>>(_worldCopy));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, long long>>(_currentNode));
 			}
 			_storeList.back()->setMPIWrite(true);
 		}
@@ -170,11 +171,11 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, long long>>(_worldCopy));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, long long>>(_currentNode));
 			}
 			_storeList.back()->setMPIWrite(true);
 		}

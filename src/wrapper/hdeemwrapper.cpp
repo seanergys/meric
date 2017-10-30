@@ -108,6 +108,25 @@ void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 	std::cerr << "samples_size " <<  samples.size() << std::endl;
 }
 
+double HDEEM::getResultValue(double startValue, double stopValue, double runtime, std::string counter)
+{
+	double energy = stopValue - startValue;
+
+	if (energy <= 0)
+	{
+		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<runtime<<"s) region "<< counter<<"\n";
+	}
+	else if (runtime < 0.01)
+	{
+		std::string info;
+		if (runtime > 0.001)	// too short region in all cases
+			info = "";
+		else
+			info = " detailed";
+		std::cerr << "MERIC WARNING: very short ("<<runtime<< "s)"<< info <<" region" << counter << " results might be skewed\n";
+	}
+	return energy;
+}
 
 #else
 

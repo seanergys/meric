@@ -10,7 +10,6 @@
 
 #include "counters.h"
 #include "countersrates.h"
-#include "../store/countersstore.h"
 
 
 namespace meric {
@@ -26,11 +25,11 @@ public:
 	
 	static void getCounterValues(std::map<std::string, long long> & record);
 	static void initMap(std::map<std::string, long long> & dict);
-	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
+	static unsigned long long getResultValue(long long startValue, long long stopValue, double runtime, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
-	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
+	static void getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios);
 private:
 		//list of counters
 	static std::map<std::string, long long> counters;
@@ -49,11 +48,11 @@ public:
 	static void close() {};
 	static void getCounterValues(std::map<std::string, long long> & record) {std::cerr << "PAPI::getCounterValues() TODO\n"; };
 	static void initMap(std::map<std::string, long long> & dict);
-	static unsigned long long getResultValue(long long startValue, long long stopValue, std::string counter);
+	static unsigned long long getResultValue(long long startValue, long long stopValue, double runtime, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
-	static void getRatios(CountersRecord start, CountersRecord stop, double runtime, std::map <std::string, double> & ratios);
+	static void getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios);
 private:
 	static long long COUNTERMAX;
 };

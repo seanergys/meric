@@ -26,7 +26,8 @@ SharedMeric::SharedMeric()
 				{
 					_storeList.push_back(new DetailedEnergyStore(Meric::SAMPLES));
 				} else {
-					_storeList.push_back(new EnergyStore(Meric::SAMPLES));
+					//_storeList.push_back(new EnergyStore(Meric::SAMPLES));
+					_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES));
 				}
 			}
 		}
@@ -34,7 +35,7 @@ SharedMeric::SharedMeric()
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore<RAPL>(Meric::SAMPLES));
+		_storeList.push_back(new CountersStore<RAPL, long long>(Meric::SAMPLES));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -46,9 +47,9 @@ SharedMeric::SharedMeric()
 	{
 
 		if (Meric::COUNTERS == "perfevent")
-			_storeList.push_back(new CountersStore<PERFEVENT>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PERFEVENT, long long>(Meric::SAMPLES));
 		else if (Meric::COUNTERS == "papi")
-			_storeList.push_back(new CountersStore<PAPI>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PAPI, long long>(Meric::SAMPLES));
 	}
 	
 	for (int i=0; i<_storeList.size(); i++)
