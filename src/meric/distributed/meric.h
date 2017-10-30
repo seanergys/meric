@@ -27,6 +27,10 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
+			#pragma omp barrier
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(region))
 			{
 				#pragma omp master
@@ -35,7 +39,7 @@ public:
 			}
 			else
 			{
-				#pragma omp barrier
+//				#pragma omp barrier
 				#pragma omp master
 				{
 					startRegion(region);
@@ -45,6 +49,9 @@ public:
 		else
 #endif
 		{
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(region))
 			{
 				if (!_MPInodeRank)
@@ -61,6 +68,10 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
+			#pragma omp barrier
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				#pragma omp master
@@ -69,7 +80,7 @@ public:
 			}
 			else
 			{		
-				#pragma omp barrier
+//				#pragma omp barrier
 				#pragma omp master
 				{
 					stopRegion();
@@ -79,6 +90,9 @@ public:
 		else
 #endif
 		{
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				if (!_MPInodeRank)
@@ -88,7 +102,17 @@ public:
 				stopRegion();
 		}
 	}
+
+	void startIgnore()
+	{
+		Meric::startIgnore();
+	}
 	
+	void stopIgnore()
+	{
+		Meric::stopIgnore();
+	}	
+
 	void save()
 	{
 		MPI_Barrier(_currentNode);

@@ -24,6 +24,7 @@ SocketsRegionParameters Meric::currentState;
 std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;
+bool Meric::IGNORE = false;
 
 
 void Meric::readRegionParameters()

@@ -14,10 +14,15 @@ public:
 	
 	void start(const std::string &region)
 	{
+
 		MERIC_INFO << "region '" << region << "' starting\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
+			#pragma omp barrier
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(region))
 			{
 				#pragma omp master
@@ -25,7 +30,7 @@ public:
 			}
 			else
 			{
-				#pragma omp barrier
+//				#pragma omp barrier
 				#pragma omp master
 				{
 					startRegion(region);
@@ -35,6 +40,8 @@ public:
 		else
 #endif
 		{
+			if (Meric::IGNORE)
+				return;
 			if (ignoreRegion(region))
 					_stack.push_back(getRegionID(region));
 			else
@@ -44,10 +51,15 @@ public:
 	
 	void stop()
 	{
+
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
+			#pragma omp barrier
+			if (Meric::IGNORE)
+				return;
+
 			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				#pragma omp master
@@ -55,7 +67,7 @@ public:
 			}
 			else
 			{
-				#pragma omp barrier
+//				#pragma omp barrier
 				#pragma omp master
 				{
 					stopRegion();
@@ -65,11 +77,23 @@ public:
 		else
 #endif
 		{
+			if (Meric::IGNORE)
+				return;
 			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 					_stack.pop_back();
 			else
 				stopRegion();
 		}
+	}
+	
+	void startIgnore()
+	{
+		Meric::startIgnore();
+	}
+	
+	void stopIgnore()
+	{
+		Meric::stopIgnore();
 	}
 	
 	void save()

@@ -45,6 +45,13 @@ void MERIC_MeasureStop()
 	holder->stop();
 }
 
+void MERIC_IgnoreStart()
+{
+	holder->startIgnore();
+}
 
-
+void MERIC_IgnoreStop()
+{
+	holder->stopIgnore();
+}
 

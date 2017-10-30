@@ -47,6 +47,7 @@ public:
 	static bool AGGREGATE;
 	static bool DEBUG;
 	static bool SAMPLES;
+	static bool IGNORE;
 	static int MODE;
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
@@ -74,6 +75,50 @@ public:
 				_storeList[i]->addEnd(_stack.back());
 		}
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
+	}
+	
+	virtual void startIgnore()
+	{
+#ifdef HAVE_OMP_H
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp single
+			{
+				if (IGNORE)
+					std::cerr << "MERIC WARNING: starting nested MERIC ignore sections not supported\n";
+				IGNORE=true;
+			}
+		}
+		else
+#endif
+		{
+			if (IGNORE)
+				std::cerr << "MERIC WARNING: starting nested MERIC ignore sections not supported\n";
+			IGNORE=true;
+		}
+	}
+	
+	virtual void stopIgnore()
+	{
+#ifdef HAVE_OMP_H
+		if (omp_in_parallel())
+		{
+			#pragma omp barrier
+			#pragma omp single
+			{
+				if (!IGNORE)
+					std::cerr << "MERIC WARNING: stopping already stopped MERIC ignore section\n";
+				IGNORE=false;
+			}
+		}
+		else
+#endif
+		{
+			if (!IGNORE)
+				std::cerr << "MERIC WARNING: stopping already stopped MERIC ignore section\n";
+			IGNORE=false;
+		}
 	}
 
 	virtual void save()
