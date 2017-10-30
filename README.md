@@ -62,94 +62,72 @@
 	* Make a copy of this script and edit it to suit your needs.
 
 --------------------------------------------------------------------------------
-#    3] Compile and run basic example                                          #
+#     3] MERIC interface and Shared Score-P/MERIC api                          #
 --------------------------------------------------------------------------------
-	# in the interactive job load necessary modules
-		module load intel/2016.1.150
-		module load mpirt/5.1.2.150
-		module load hdeem/2.2.20ms
-		module load papi/5.4.1
+## MERIC interface ##
+If you want to use Meric with a parallel application, keep in mind, that all processes and all running threads 
+must call every Meric function, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node (or socket) and each region settings allows not to follow this restriction. Because of this, each measurement start and stop beginns with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
 
-	# compile MERIC
-		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
-		make
-	
-	# compile test code
-		cd test
-		make
+	MERIC_Init()
+		Initialization of the library
+	MERIC_Close()
+		Finalization of the library run to store the measurement results
+	MERIC_MeasureStart("A")
+		Starting measurement of a reagion A
+		Please, do not use **#** and **@** in names of regions
+	MERIC_MeasureStop()
+		End of the measurement of the last called region
+	MERIC_IgnoreStart()
+		From this point all phase and regions start/stop calles are ignored
+		It is not possible to nest ignore sections of the code
+	MERIC_IgnoreStop()
+		Cancels the ignore section of the code
 
-	# set static frequencies outside of the regions, or inside regions where are not set
-		export MERIC_FREQUENCY=25
-		export MERIC_UNCORE_FREQUENCY=25
+If you want to insert Meric regions into code you don't know, instead of Meric probes insert into the code MPI and openMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
 
-	# run the example
-		./test
+There is one more restriction in placing probes into the code. In current version Meric does not support recursively nested regions and regions with at least three starts where first and third calls are at the same level, but second call is at higher level. This case is shown in example:
 
-To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one C). For each region you can set cpu core, uncore frequency and number of threads. How to do so, you will find in section MERIC input parameters.
+```
+	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in thi example
+		MERIC_MeasureStart("A")	//first call of region A
+		MERIC_MeasureStop()
+
+		MERIC_MeasureStart("B")
+			MERIC_MeasureStart("A")	//region A called at higher nested level
+			MERIC_MeasureStop()
+		MERIC_MeasureStop()
+
+		MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
+			MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
+			MERIC_MeasureStop()	//region C will cause defect in its call tree
+		MERIC_MeasureStop()
+	MERIC_MeasureStop()
+```
+
+## Shared MERIC/Score-P interface ##
+Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use Meric and Score-P simultaneously. As an example of the api use, test.cpp example code has this interface.
+
+Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
+
+| Shared api                                | MERIC function           | Score-P function                               |
+| ----------------------------------------- | ------------------------ | ---------------------------------------------- |
+| READEX_INIT()                             | MERIC_Init()             |                                                |
+| READEX_CLOSE()                            | MERIC_Close()            |                                                |
+| READEX_PHASE_REGION_DEFINE(handle)        |                          | SCOREP_USER_REGION_DEFINE(handle)              |
+| READEX_SIGNIFICANT_REGION_DEFINE(handle)* |                          | SCOREP_USER_REGION_DEFINE(handle)              |
+| READEX_REGION_START(handle, name, type)   | MERIC_MeasureStart(name) | SCOREP_USER_REGION_BEGIN(handle, name, type)   |
+| READEX_REGION_STOP(handle)                | MERIC_MeasureStop()      | SCOREP_USER_REGION_END(handle)                 |
+| READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
+| READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
+| READEX_IGNORE_START()**                   | MERIC_IgnoreStart()      |                                                |
+| READEX_IGNORE_STOP()**                    | MERIC_IgnoreStop()       |                                                |
+```
+*  Defines region handle except of phase region
+** Score-P doesn't have a support for ignore section of a code
+```
 
 --------------------------------------------------------------------------------
-#     4] Measurement results                                                   #
---------------------------------------------------------------------------------
-	# CODE OUTPUT:
-	* hdeemMeasurement
-	 	# contains result files in folders with names of the regions
-	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
-		# 3 types of data in CSV files:
-			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
-			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
-			# Data - tuples (mostly pairs) structured like a hash map: key, value
-	* hdeemMeasurementCounters
-		# Program start counters, strored in .tmp files.
-	
-	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
-		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
-		# Job info
-		JOB ID,8786406.0
-		Nodelist,taurusi6125
-		Runtime of function [s],0.005079696
-		# Blade samples
-		15635,135.75
-		15636,135.5
-		15637,136.125
-		15638,136.5
-		# Blade summary
-		Energy consumption [J] (Stats structure),0.68
-		Energy consumption [J] (Samples),0.69068
-		Maximal power [W] (Samples),136.5
-		Minimal power [W] (Samples),135.5
-		Average power [W] (Samples),135.969
-		ID of first blade sample,15635
-		ID of last blade sample,15638
-	
-	# To process the results use RADAR tool
-	# Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
-		1) Set variables in config.py file (description is included in the file)
-		2) Launch python3 ./printFullReport.py	
-
---------------------------------------------------------------------------------
-#      5] Code dynamism investigation                                          #
---------------------------------------------------------------------------------
-To find the best settings for each region, you should run your code with all possible settings. To do so, there is a script run.sh in the test folder. In default the script is set to run a segment of all settings for test_mpi.cpp and visualise the result in the RADAR tool.
-	
-	# Erase previous results to avoid mixing them
-		make cleanAll
-	
-	# Run the script
-		sbatch run.sh 
-	
-	# Provide correct configuration file to RADAR
-	# Check inside the cofiguration file if the path to your results is correct
-		mv config.py.TEST config.py
-	
-	# Run RADAR tool
-		./printFullReport.py
-	
-	# cd to directory with measurement results
-	# Compile output LaTeX source file and investigate the results
-		pdflatex --shell-escape results.tex
-	
---------------------------------------------------------------------------------
-#     6] MERIC input parameters                                                #
+#     4] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
@@ -243,34 +221,96 @@ To define ignore settings, write a object with the key "@IGNORE", and value is a
 Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
-#      7] Measure energy consumption of your code at Taurus                    #
+#    5] Compile and run basic example                                          #
 --------------------------------------------------------------------------------
-## BEFORE WE START ##
-If you want to use Meric with a parallel application, keep in mind, that all processes and all running threads 
-must call every Meric region, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node and each region settings allows not to follow this restriction. Because of this, each MeasureStart and MeasureStop starts with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
+	# in the interactive job load necessary modules
+		module load intel	#if GCC is used use "make gcc" instead of "make" to compile MERIC
+		module load mpi
+		module load hdeem
+		module load papi
 
-If you want to insert Meric regions into code you don't know, instead of Meric probes insert into the code MPI and openMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
+	# compile MERIC
+		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
+		make
+	
+	# compile test code
+		cd test
+		make
 
-There is one more restriction in placing probes into the code. In current version Meric does not support recursively nested regions and regions with at least three starts where fist and third calls are at the same level, but second call is at higher level. This case is shown in example:
+	# set static frequencies outside of the regions, or inside regions where are not set
+		export MERIC_FREQUENCY=25
+		export MERIC_UNCORE_FREQUENCY=25
+		export MERIC_NUM_THREADS=0
 
-	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in thi example
-		MERIC_MeasureStart("A")	//first call of region A
-		MERIC_MeasureStop()
+	# run the example
+		./test
 
-		MERIC_MeasureStart("B")
-			MERIC_MeasureStart("A")	//region A called at higher nested level
-			MERIC_MeasureStop()
-		MERIC_MeasureStop()
+To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set cpu core, uncore frequency and number of threads. How to do so, you will find in section MERIC input parameters.
 
-		MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
-			MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
-			MERIC_MeasureStop()	//region C will has defect in call tree
-		MERIC_MeasureStop()
-	MERIC_MeasureStop()
+--------------------------------------------------------------------------------
+#     6] Measurement results                                                   #
+--------------------------------------------------------------------------------
+	# CODE OUTPUT:
+	* hdeemMeasurement
+	 	# contains result files in folders with names of the regions
+	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
+		# 3 types of data in CSV files:
+			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
+			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
+			# Data - tuples (mostly pairs) structured like a hash map: key, value
+	* hdeemMeasurementCounters
+		# Program start counters, strored in .tmp files.
+	
+	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
+		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
+		# Job info
+		JOB ID,8786406.0
+		Nodelist,taurusi6125
+		Runtime of function [s],0.005079696
+		# Blade samples
+		15635,135.75
+		15636,135.5
+		15637,136.125
+		15638,136.5
+		# Blade summary
+		Energy consumption [J] (Stats structure),0.68
+		Energy consumption [J] (Samples),0.69068
+		Maximal power [W] (Samples),136.5
+		Minimal power [W] (Samples),135.5
+		Average power [W] (Samples),135.969
+		ID of first blade sample,15635
+		ID of last blade sample,15638
+	
+	# To process the results use RADAR tool
+	# Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
+		1) Set variables in config.py file (description is included in the file)
+		2) Launch python3 ./printFullReport.py	
 
-
-
-
+--------------------------------------------------------------------------------
+#      7] Code dynamism investigation                                          #
+--------------------------------------------------------------------------------
+To find the best settings for each region, you should run your code with all possible settings. To do so, there is a script run.sh in the test folder. In default the script is set to run a segment of all settings for test_mpi.cpp and visualise the result in the RADAR tool.
+	
+	# Erase previous results to avoid mixing them
+		make cleanAll
+	
+	# Run the script
+		sbatch run.sh 
+	
+	# Provide correct configuration file to RADAR
+	# Check inside the cofiguration file if the path to your results is correct
+		mv config.py.TEST config.py
+	
+	# Run RADAR tool
+		./printFullReport.py
+	
+	# cd to directory with measurement results
+	# Compile output LaTeX source file and investigate the results
+		pdflatex --shell-escape results.tex
+		
+--------------------------------------------------------------------------------
+#      8] Measure energy consumption of your code at Taurus                    #
+--------------------------------------------------------------------------------
 ## COMPILE MERIC ##
 	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
 	module load intel/2016.1.150
@@ -298,7 +338,6 @@ There is one more restriction in placing probes into the code. In current versio
 		MERIC_MeasureStart("A");
 		//region A
 		MERIC_MeasureStop();
-	# please, do not use **#** and **@** in names of regions
 
 ## COMPILE YOUR CODE ##
 	# edit Makefile
@@ -337,7 +376,7 @@ There is one more restriction in placing probes into the code. In current versio
 		pdflatex --shell-escape results.tex
 
 --------------------------------------------------------------------------------
-#     8] MERIC compilation on a machine without the hdeem                      #
+#     9] MERIC compilation on a machine without the HDEEM                      #
 --------------------------------------------------------------------------------
 	# optionaly install libraries that Meric uses
 		# x86_adapt, cpufreq, papi, freeipmi, hdeem
@@ -355,37 +394,13 @@ There is one more restriction in placing probes into the code. In current versio
 	# export MERIC_COUNTERS variable to measure real data
 
 --------------------------------------------------------------------------------
-#     9] MERIC with a fortran code                                             #
+#     10] MERIC with a fortran code                                            #
 --------------------------------------------------------------------------------
 There are fortran module and interface in the include directory. 
 When calling MERIC_MeasureStart keep in mind that string parameter must end with //char(0).
 
 	CALL MERIC_MeasureStart("region_name"//char(0))
 
---------------------------------------------------------------------------------
-#     10] Shared Score-P/MERIC api                                             #
---------------------------------------------------------------------------------
-Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library to measure, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use Meric and Score-P simultaneously. As an example of the api use, test.cpp example code has this interface.
-
-## LIST OF FUNCTIONS ##
-Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
-
-	READEX_INIT()
-		library init
-	READEX_CLOSE()
-		library finish the run
-	READEX_PHASE_REGION_DEFINE(handle)
-		define phase region handle
-	READEX_SIGNIFICANT_REGION_DEFINE(handle)
-		define region handle - except phase region
-	READEX_REGION_START(handle, name, type)
-		region start
-	READEX_REGION_STOP(handle)
-		region stop
-	READEX_PHASE_START(handle, name, type)
-		phase region start
-	READEX_PHASE_STOP(handle)
-		phase region stop
 	
 --------------------------------------------------------------------------------
 #     11] Using MERIC on BSC ARM Jetson                                        #

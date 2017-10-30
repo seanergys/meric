@@ -6,7 +6,8 @@
   - ARM jetson energy measurement and frequency scaling
   - tool for static energy measurement and CPU frequencies change
   - shared Score-P/Meric interface has new functions for region define (backward compatibility)
-  - new templated version of store classes
+  - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files
+  - added ignore regions
 
 ### 10.04.2017 #################################################################
   - added Fortran interface
