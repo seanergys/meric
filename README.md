@@ -121,10 +121,8 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
 | READEX_IGNORE_START()**                   | MERIC_IgnoreStart()      |                                                |
 | READEX_IGNORE_STOP()**                    | MERIC_IgnoreStop()       |                                                |
-```
-*  Defines region handle except of phase region
-** Score-P doesn't have a support for ignore section of a code
-```
+    *  Defines region handle except of phase region
+    ** Score-P doesn't have a support for ignore section of a code
 
 --------------------------------------------------------------------------------
 #     4] MERIC input parameters                                                #
