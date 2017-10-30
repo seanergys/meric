@@ -48,7 +48,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<unsigned long long> &stats, double *time, size_t iStarts, size_t iEnd)
 {
 	unsigned long long int summary = 0;
-	long long int value; //unsigned long long int
+	TType value;
 	*time = timespec2double(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
 	{
@@ -80,7 +80,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 
 
 	unsigned long long int summary = 0;
-	long long int value; //unsigned long long int
+	TType value;
 	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<": \n";
 	for(auto const &counterIt : _records[iEnd].record)
 	{
