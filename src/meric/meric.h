@@ -173,20 +173,23 @@ protected:
 		
 		auto cmpSettings = [&] (SocketsRegionParameters & prev, RegionParameters & next, int socket)
 		{
+			uint64_t paramChange;
 			//core frequency
 			if (next.frequency)
 			{
-				if (abs(prev.socket[socket].frequency-next.frequency) > ignoreSettings.frequency)
+				paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency-next.frequency : next.frequency-prev.socket[socket].frequency;
+				if (paramChange > ignoreSettings.frequency)
 				{
-					change.socket[socket].frequency = abs( prev.socket[socket].frequency - next.frequency);
+					change.socket[socket].frequency = paramChange;
 					prev.socket[socket].frequency = next.frequency;
 				}
 			}
 			else
 			{
-				if (abs(prev.socket[socket].frequency-defaultParameter.frequency) > ignoreSettings.frequency)
+				paramChange = prev.socket[socket].frequency > defaultParameter.frequency ? prev.socket[socket].frequency-defaultParameter.frequency : defaultParameter.frequency-prev.socket[socket].frequency;
+				if (paramChange > ignoreSettings.frequency)
 				{
-					change.socket[socket].frequency = abs( prev.socket[socket].frequency - defaultParameter.frequency);
+					change.socket[socket].frequency = paramChange;
 					prev.socket[socket].frequency = defaultParameter.frequency;
 				}
 			}
@@ -194,17 +197,19 @@ protected:
 			//uncore frequency
 			if(next.uncoreFrequency)
 			{
-				if (abs(prev.socket[socket].uncoreFrequency - next.uncoreFrequency) > ignoreSettings.uncoreFrequency)
+				paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency-next.uncoreFrequency : next.uncoreFrequency-prev.socket[socket].uncoreFrequency;
+				if (paramChange > ignoreSettings.uncoreFrequency)
 				{
-					change.socket[socket].uncoreFrequency = abs(prev.socket[socket].uncoreFrequency - next.uncoreFrequency);
+					change.socket[socket].uncoreFrequency = paramChange;
 					prev.socket[socket].uncoreFrequency = next.uncoreFrequency;
 				}
 			}
 			else
 			{
-				if (abs(prev.socket[socket].uncoreFrequency-defaultParameter.uncoreFrequency) > ignoreSettings.uncoreFrequency)
+				paramChange = prev.socket[socket].uncoreFrequency > defaultParameter.uncoreFrequency ? prev.socket[socket].uncoreFrequency-defaultParameter.uncoreFrequency : defaultParameter.uncoreFrequency-prev.socket[socket].uncoreFrequency;
+				if (paramChange > ignoreSettings.uncoreFrequency)
 				{
-					change.socket[socket].uncoreFrequency = abs( prev.socket[socket].uncoreFrequency - defaultParameter.uncoreFrequency);
+					change.socket[socket].uncoreFrequency = paramChange;
 					prev.socket[socket].uncoreFrequency = defaultParameter.uncoreFrequency;
 				}			
 			}
@@ -212,17 +217,19 @@ protected:
 			//threads
 			if(next.nthreads)
 			{
-				if (abs(prev.socket[socket].nthreads - next.nthreads) > ignoreSettings.nthreads)
+				paramChange = paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads-next.nthreads : next.nthreads-prev.socket[socket].nthreads;
+				if (paramChange > ignoreSettings.nthreads)
 				{
-					change.socket[socket].nthreads = abs(prev.socket[socket].nthreads - next.nthreads);
+					change.socket[socket].nthreads = paramChange;
 					prev.socket[socket].nthreads = next.nthreads;
 				}
 			}
 			else
 			{
-				if (abs(prev.socket[socket].nthreads-defaultParameter.nthreads) > ignoreSettings.nthreads)
+				paramChange = paramChange = prev.socket[socket].nthreads > defaultParameter.nthreads ? prev.socket[socket].nthreads-defaultParameter.nthreads : defaultParameter.nthreads-prev.socket[socket].nthreads;
+				if (paramChange > ignoreSettings.nthreads)
 				{
-					change.socket[socket].nthreads = abs( prev.socket[socket].nthreads - defaultParameter.nthreads);
+					change.socket[socket].nthreads = paramChange;
 					prev.socket[socket].nthreads = defaultParameter.nthreads;
 				}			
 			}
