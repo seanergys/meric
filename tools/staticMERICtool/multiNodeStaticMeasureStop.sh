@@ -82,13 +82,20 @@ else	# PBS
 fi
 
 ############################# get the results of the measurement for each node #
-if $RAPL
+if $RAPL	
 then
-
-	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStop -q")
+	# source /etc/profile.d/10_modules.sh necessary for Taurus slurm
+	# loading modules necessary for Salomon cluster
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStop")
+	
+	TIME=$(grep -oP "(?<=Runtime \[s\] = )\d+\.\d+"  <<< $OUTPUT | head -1)
+	OUTPUT=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
+	echo "Runtime [s]:" $TIME
 else #HDEEM
-	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh; module load hdeem 2> /dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | cut -d ' ' -f 5")
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load hdeem 2> /dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | cut -d ' ' -f 5")
 fi
+
+#echo $OUTPUT
 
 ############################################## get the overall consumed energy #
 SUM=0.0
