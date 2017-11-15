@@ -46,6 +46,7 @@ public:
 	static unsigned long long getResultValue(long long startValue, long long stopValue, double runtime, std::string counter) {return 0;};
 	static std::string summaryCounter();
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
+	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
 	static void getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 private:
