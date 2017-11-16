@@ -154,7 +154,14 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 	if (_samples.size() <= *firstBlade)
 		*firstBlade = _samples.size()-1;
 	while (_samples[*firstBlade].timestamp > startTime)
+	{
 		*firstBlade -= std::ceil(_samples[*firstBlade].timestamp - startTime);
+		if (*firstBlade <= 0)
+		{
+			*firstBlade = 0;
+			break;
+		}
+	}
 	while (_samples[*firstBlade].timestamp < startTime)
 		*firstBlade += 1;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
@@ -218,7 +225,6 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 		*lastVR     = -1;
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
-	
 	return "";
 }
 
