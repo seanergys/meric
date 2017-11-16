@@ -10,7 +10,7 @@ bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , false);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
 bool        Meric::SAMPLES    = mutils::getenv("MERIC_SAMPLES"   , false);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
-std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("hdeemMeasurement"));
+std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("mericMeasurement"));
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
 
