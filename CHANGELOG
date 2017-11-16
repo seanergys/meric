@@ -3,7 +3,8 @@
   - fixed RAPL overflow on Salomon
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
-  - ARM jetson energy measurement and frequency scaling
+  - ARM Jetson/TX1 energy measurement and frequency scaling
+  - ARM ThunderX energy measument support (DVFS not available)
   - tool for static energy measurement and CPU frequencies change
   - shared Score-P/Meric interface has new functions for region define (backward compatibility)
   - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files

@@ -141,6 +141,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 		2 = hdeem & rapl - uses hdeem and rapl at the same time
 		3 = none - doesn't measure energy consumtion, but provides you the option to set parameters for regions
 		4 = jetson - energy measurement on BSC Jetson TX1 system
+		5 = thunder - energy measurement on BSC ThunderX system
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
@@ -415,7 +416,9 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 	uncore:	/sys/kernel/debug/clock/emc/possible_rates
 	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
-Except login node on Jetson nodes is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
+Another supported ARM system is ThunderX. This system has its cons and pros. ThunderX is much more powrfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the cpus. The measurement system measure the energy consumed by all available nodes (one must alocate all four nodes), and its energy measurement samples frequancy is ~4 saples per second. Unfortunately, the frequency scaling is not supported. To run Meric on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
+
+Except login nodes it is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
 
 --------------------------------------------------------------------------------
 #     12] Tool for static tuning                                               #
