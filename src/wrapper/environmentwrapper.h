@@ -47,12 +47,15 @@ static int SOCKET_SIZE;
 class Environment {
 
 public:
-	static systemLimits FreqLimits [2];
+	static systemLimits FreqLimits [3];
 	static int systemType;
 
 	static void frequency(uint64_t freq, int socket = -1)
 	{
 		if (freq == 0)
+			return;
+
+		if (systemType == SYS_THUNDER)
 			return;
 
 		if (freq > FreqLimits[systemType].maxCoreFreq || freq < FreqLimits[systemType].minCoreFreq)
@@ -150,7 +153,10 @@ public:
 	{
 		if (freq == 0)
 			return;
-	
+
+		if (systemType == SYS_THUNDER)
+			return;
+			
 		if (freq > FreqLimits[systemType].maxUncoreFreq || freq < FreqLimits[systemType].minUncoreFreq)
 		{
 			std::cerr << "Uncore frequency has not changed to invalid value: " << freq << std::endl;

@@ -42,6 +42,10 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
 	}
+	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	{
+		_storeList.push_back(new TimeStore<THUNDER>(Meric::SAMPLES));
+	}
 	
 	if (Meric::COUNTERS != "none")
 	{
@@ -56,9 +60,12 @@ SharedMeric::SharedMeric()
 		_storeList[i]->setMPIWrite(true);
 
 	if (Meric::MODE == MODE_JETSON)
-		Environment::init(SYS_JETSON, defaultParameter, 0);
+		Environment::init(SYS_JETSON,  defaultParameter, 0);
+	else if (Meric::MODE == MODE_THUNDER)
+		Environment::init(SYS_THUNDER, defaultParameter, 0);
 	else
 		Environment::init(SYS_HASWELL, defaultParameter, 0);
+
 	
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
@@ -79,6 +86,8 @@ SharedMeric::SharedMeric()
 	}
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 		JETSON::init();
+	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+		THUNDER::init();
 }
 
 SharedMeric::~SharedMeric()

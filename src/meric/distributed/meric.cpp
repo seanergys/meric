@@ -149,8 +149,13 @@ DistributedMeric::DistributedMeric()
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-
 			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
+	}
+	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	{
+		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);	//_supportComm currently used by THUNDER only, so the split is here to make it obvious
+		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm));
+		_storeList.back()->setMPIWrite(!_MPIglobalRank);
 	}
 
 	if (Meric::COUNTERS != "none")
@@ -183,19 +188,27 @@ DistributedMeric::DistributedMeric()
 
 //INIT
 	if (Meric::MODE == MODE_JETSON)
-		Environment::init(SYS_JETSON, defaultParameter, _MPInodeRank);
+		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank);
+	else if (Meric::MODE == MODE_THUNDER)
+		Environment::init(SYS_THUNDER, defaultParameter, _MPInodeRank);
 	else
 		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
 
 	for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		currentState.socket[socket] = defaultParameter;
 
+	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 	{
 		if (!_MPInodeRank)
 			JETSON::init();
 		sleep(5);
-//		MPI_Barrier(MPI_COMM_WORLD);
+	}
+	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	{
+		if (!_MPIglobalRank)
+			THUNDER::init();
+		sleep(5);
 	}
 	
 	//wrappers must be initialized after meric instantiation

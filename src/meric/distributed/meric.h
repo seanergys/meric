@@ -183,6 +183,7 @@ protected:
 	std::string _nodeName;
 	MPI_Comm _currentNode;
 	MPI_Comm _storingProcs;
+	MPI_Comm _supportComm;
 	MPI_Comm _worldCopy;
 
 private:

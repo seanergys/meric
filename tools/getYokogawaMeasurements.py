@@ -14,6 +14,7 @@ def ensure_file(filepath):
     f = open(filepath, 'w+')
     f.close()
 
+print "THUNDER START"
 
 # adjustable by the meter, but lets keep it for sake of it.
 # This is well-known CR+LF
@@ -53,7 +54,7 @@ if meter.isOpen():
         meter.flushInput()
         meter.flushOutput()
 
-        meter.write(GIMME_MEASUREMENT)#+TERMINATOR)
+        meter.write(GIMME_MEASUREMENT)
         numOfLines = 0
 
         #f1.write("timestamp (s), power_consumption (W), voltage (V), current (A)\n")
@@ -61,28 +62,14 @@ if meter.isOpen():
 
         while True:
             while (numOfLines < 5):
-                if(numOfLines < 3):
-#                    if (numOfLines == 0):
-#                        volts = \
-#                            float(meter.readline().split(",")[0].split(" ")[-1])
-#                    elif (numOfLines == 1):
-#                        amps = \
-#                            float(meter.readline().split(",")[0].split(" ")[-1])
-#                    elif (numOfLines == 2):
-                    if (numOfLines == 2):
-                        watts = \
-                            float(meter.readline().split(",")[0].split(" ")[-1])
-                    else:
-                    	meter.readline()
-                    numOfLines += 1
+                if(numOfLines == 2):
+                    watts = float(meter.readline().split(",")[0].split(" ")[-1])
                 else:
                     meter.readline()
-                    numOfLines += 1
+                numOfLines += 1
 
             f1.write("{:.4f}".format(time.time()) + ", " +
-                     "{:.4f}".format(watts) + "\n") #", " +
-#                     "{:.4f}".format(volts) + ", " +
-#                     "{:.4f}".format(amps) + "\n")
+                     "{:.4f}".format(watts) + "\n")
             f1.flush()
             meter.write(GIMME_MEASUREMENT)#+TERMINATOR)
             numOfLines = 0

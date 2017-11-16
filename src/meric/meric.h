@@ -25,8 +25,8 @@
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON};
-enum system {SYS_HASWELL, SYS_JETSON, SYS_OTHER};
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER};
+enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_OTHER};
 
 struct RegionParameters {
 	double frequency;

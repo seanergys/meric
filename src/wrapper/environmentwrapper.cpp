@@ -11,7 +11,8 @@ using namespace meric;
 
 systemLimits Environment::FreqLimits [] = {
 	[SYS_HASWELL] = { 33, 25, 12, 30, 30, 12 },
-	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800}
+	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800},
+	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1} //DVFS not supported
 };
 
 int Environment::systemType = SYS_HASWELL;
@@ -58,7 +59,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 
 	SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 #else
-	if (system != SYS_JETSON)	//TODO - this is just fast fix
+	if (system == SYS_HASWELL)	//TODO - this is just fast fix, other architectures are not considered
 	{
 		std::string line;
 		std::ifstream jsonFile ("/proc/cpuifo");
