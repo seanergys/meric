@@ -250,17 +250,17 @@ To understand this example, explore the source file **test.cpp** to see that thi
 #     6] Measurement results                                                   #
 --------------------------------------------------------------------------------
 	# CODE OUTPUT:
-	* hdeemMeasurement
+	* mericMeasurement
 	 	# contains result files in folders with names of the regions
 	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
 		# 3 types of data in CSV files:
 			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
 			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
 			# Data - tuples (mostly pairs) structured like a hash map: key, value
-	* hdeemMeasurementCounters
+	* mericMeasurementCounters
 		# Program start counters, strored in .tmp files.
 	
-	# EXAMPLE of CSV file contained in hdeemMeasurement folder:
+	# EXAMPLE of CSV file contained in mericMeasurement folder:
 		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
 		# Job info
 		JOB ID,8786406.0

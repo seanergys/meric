@@ -9,6 +9,7 @@
   - shared Score-P/Meric interface has new functions for region define (backward compatibility)
   - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files
   - added ignore regions
+  - default output directory name changed from hdeemMeasurement to mericMeasurement
 
 ### 10.04.2017 #################################################################
   - added Fortran interface
