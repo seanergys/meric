@@ -44,7 +44,7 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 		sleep(2);
 		std::ifstream tFile(filename);
 		if(tFile.is_open())
-		{		
+		{	
 			tFile.seekg(-2,std::ios_base::end); // seek before the EOF
 			bool keepLooping = true;
 			while(keepLooping)
@@ -72,6 +72,11 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 				//MERIC_INFO << currentTime << " vs " << timestamp << std::endl;
 			}
 			tFile.close();
+		}
+		else
+		{
+			std::cerr << "MERIC ERROR: output file with samples cannot be open - " << filename << std::endl;
+				return 1;
 		}
 	}while(timestamp <= currentTime);
 	
@@ -128,12 +133,12 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 
 	//stats
 	MERIC_INFO <<"ARM samples #" << _samples.size() << std::endl;
-	MERIC_INFO <<std::setprecision (15) <<"ARM RUNTIME: " << _samples[0].timestamp << " - " << _samples[_samples.size()-1].timestamp << std::endl;
 	if (_samples.size() == 0)
 	{
 		std::cerr << "MERIC ERROR: no ARM samples\n";
 		return 1;
 	}
+	MERIC_INFO <<std::setprecision (15) <<"ARM RUNTIME: " << _samples[0].timestamp << " - " << _samples[_samples.size()-1].timestamp << std::endl;
 	FREQUENCY = std::ceil(_samples.size() / (_samples[_samples.size()-1].timestamp-_samples[0].timestamp));
 	MERIC_INFO << "ARM samples frequency: " << FREQUENCY << std::endl;
 	return 0;
