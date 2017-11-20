@@ -4,8 +4,10 @@
 
 #include <vector>
 #include <map>
+#include <list>
 #include <string>
 #include <functional>
+#include <numeric>
 
 #include <iostream>
 #include <sstream>
@@ -55,11 +57,11 @@ public:
 	virtual int storeCounter(std::string counterFileName) = 0;
 	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 	
+	virtual void loadSchedulerEnvironment() = 0;
+	
 	int initStore(	int counter)
 	{
-		_jobID = mutils::getenv("SLURM_JOBID", -1);
-		_stepID = mutils::getenv("SLURM_STEPID", -1);
-		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+		loadSchedulerEnvironment();
 		_initCounter = counter;
 	};
 	
@@ -68,9 +70,7 @@ public:
 					const std::string outputFilename,
 					const std::string prefix = "")
 	{
-		_jobID = mutils::getenv("SLURM_JOBID", -1);
-		_stepID = mutils::getenv("SLURM_STEPID", -1);
-		_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+		loadSchedulerEnvironment();
 		
 		if(counter >= 0)
 		{
@@ -227,6 +227,48 @@ public:
 			oFile.close();
 		}
 	}
+	
+	void loadSchedulerEnvironment()
+	{
+		_jobID = mutils::getenv("SLURM_JOBID", -1);
+		if (_jobID == -1)
+		{
+			_jobID = mutils::getenv("PBS_JOBID", -1);
+			if (_jobID != -1)
+			{
+				_stepID = mutils::getenv("PBS_TASKNUM", -1);
+				_nodelist = mutils::getenv("PBS_NODEFILE", std::string(""));
+				if (_nodelist != "")
+				{
+					std::list<std::string> nodes;
+					std::ifstream iFile(_nodelist);
+					if(iFile.is_open())
+					{
+						std::string data;
+						for(std::string data; std::getline(iFile, data);)
+						{
+							nodes.push_back(data);
+						}
+						iFile.close();
+					}
+
+					nodes.unique();
+					_nodelist = "";
+					_nodelist = std::accumulate(std::begin(nodes), std::end(nodes),
+					            std::string(),
+					            [](std::string &a, std::string &b) {
+									return a.empty() ? b : a + ';' + b;
+								});
+				}
+			}
+		}
+		else
+		{
+			_stepID = mutils::getenv("SLURM_STEPID", -1);
+			_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+		}
+	}
+
 	
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;

@@ -97,6 +97,51 @@ public:
 			}
 		}
 	}
+	
+	void loadSchedulerEnvironment()
+	{
+		if (_rank)
+		{
+			_jobID = mutils::getenv("SLURM_JOBID", -1);
+			if (_jobID == -1)
+			{
+				_jobID = mutils::getenv("PBS_JOBID", -1);
+				if (_jobID != -1)
+				{
+					_stepID = mutils::getenv("PBS_TASKNUM", -1);
+					_nodelist = mutils::getenv("PBS_NODEFILE", std::string(""));
+					if (_nodelist != "")
+					{
+						std::list<std::string> nodes;
+						std::ifstream iFile(_nodelist);
+						if(iFile.is_open())
+						{
+							std::string data;
+							for(std::string data; std::getline(iFile, data);)
+							{
+								nodes.push_back(data);
+							}
+							iFile.close();
+						}
+
+						nodes.unique();
+						_nodelist = "";
+						_nodelist = std::accumulate(std::begin(nodes), std::end(nodes),
+							        std::string(),
+							        [](std::string &a, std::string &b) {
+										return a.empty() ? b : a + ';' + b;
+									});
+
+					}
+				}
+			}
+			else
+			{
+				_stepID = mutils::getenv("SLURM_STEPID", -1);
+				_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
+			}
+		}
+	}
 
 
 	~AggregateStoreBase()
