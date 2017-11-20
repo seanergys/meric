@@ -49,7 +49,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::f
 {
 	unsigned long long int summary = 0;
 	TType value;
-	*time = timespec2double(_records[iEnd].time - _records[iStarts].time);
+	*time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
 	{
 		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, *time, counterIt.first);
@@ -72,7 +72,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 	}
 	ss << std::endl;
 
-	double runtime = timespec2double(_records[iEnd].time - _records[iStarts.back()].time);
+	double runtime = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	ss << "# Job info - "<< TCounter::getCountersLabel() << std::endl
 	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
 	   << "Nodelist," << _nodelist << std::endl

@@ -63,7 +63,6 @@ public:
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
-	double timespec2double(timespec time) {return time.tv_sec + (double)time.tv_nsec/1e9;};
 	std::vector<CountersRecord<TType>> _records;
 };
 
