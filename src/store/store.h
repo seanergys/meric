@@ -52,6 +52,9 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 	
+	virtual int storeCounter(std::string counterFileName) = 0;
+	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
+	
 	int initStore(	int counter)
 	{
 		_jobID = mutils::getenv("SLURM_JOBID", -1);
@@ -77,44 +80,10 @@ public:
 		
 		//CALLTREE init counter
 		mutils::createDir(outputDir + "Counters");
-        std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
-
-		std::ifstream iFile(startCounterFile);
-		if(iFile.is_open())
-		{
-			std::string numOfStartsStr;
-			std::getline(iFile, numOfStartsStr);
-			_initCounter = std::stoi(numOfStartsStr) + 1;
-			iFile.close();
-
-		}else
-		{
-			_initCounter = 0;
-		}
-		std::ofstream oFile(startCounterFile);
-		oFile << _initCounter;
-		oFile.close();
-		return _initCounter;
+		return storeCounter(outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp");
 	};
 	
-	void restoreCounter(int counter,
-					const std::string outputDir,
-					const std::string outputFilename,
-					const std::string prefix = "")
-	{
-		std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
-		
-		if(counter == 0)
-		{
-			remove(startCounterFile.c_str());
-		}
-		else
-		{
-			std::ofstream oFile(startCounterFile);
-			oFile << _initCounter-1;
-			oFile.close();
-		}		
-	};
+
 
 	
 protected:
@@ -220,6 +189,45 @@ protected:
 class Store: public StoreBase {
 
 public:
+	int storeCounter(std::string counterFileName)
+	{
+		std::ifstream iFile(counterFileName);
+		if(iFile.is_open())
+		{
+			std::string numOfStartsStr;
+			std::getline(iFile, numOfStartsStr);
+			_initCounter = std::stoi(numOfStartsStr) + 1;
+			iFile.close();
+
+		}else
+		{
+			_initCounter = 0;
+		}
+		std::ofstream oFile(counterFileName);
+		oFile << _initCounter;
+		oFile.close();
+		return _initCounter;
+	}
+
+	void restoreCounter(int counter,
+					const std::string outputDir,
+					const std::string outputFilename,
+					const std::string prefix = "")
+	{
+		std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
+		
+		if(counter == 0)
+		{
+			remove(startCounterFile.c_str());
+		}
+		else
+		{
+			std::ofstream oFile(startCounterFile);
+			oFile << _initCounter-1;
+			oFile.close();
+		}
+	}
+	
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;

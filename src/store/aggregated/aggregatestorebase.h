@@ -50,6 +50,55 @@ public:
 			});
 		}
 	}
+
+	int storeCounter(std::string counterFileName)
+	{
+		if (_rank)
+		{
+			std::ifstream iFile(counterFileName);
+			if(iFile.is_open())
+			{
+				std::string numOfStartsStr;
+				std::getline(iFile, numOfStartsStr);
+				_initCounter = std::stoi(numOfStartsStr) + 1;
+				iFile.close();
+
+			}else
+			{
+				_initCounter = 0;
+			}
+			std::ofstream oFile(counterFileName);
+			oFile << _initCounter;
+			oFile.close();
+			return _initCounter;
+		}
+		else
+			return -1;
+	}
+	
+	void restoreCounter(int counter,
+					const std::string outputDir,
+					const std::string outputFilename,
+					const std::string prefix = "")
+	{
+		if (_rank)
+		{
+			std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
+		
+			if(counter == 0)
+			{
+				remove(startCounterFile.c_str());
+			}
+			else
+			{
+				std::ofstream oFile(startCounterFile);
+				oFile << _initCounter-1;
+				oFile.close();
+			}
+		}
+	}
+
+
 	~AggregateStoreBase()
 	{
 		delete _store;
