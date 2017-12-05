@@ -31,7 +31,7 @@ void Environment::threadNumber(int nthreads)
 		}
 		else
 		{
-			MERIC_INFO << "MERIC WARNING: paralel region, num threads did not change to: " << nthreads << std::endl;
+			MERIC_INFO << "MERIC WARNING: parallel region, num threads did not change to: " << nthreads << std::endl;
 		}
 	}
 #endif
