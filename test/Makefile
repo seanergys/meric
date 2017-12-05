@@ -17,22 +17,30 @@ HDEEM=-L../hdeem -lhdeem
 FREEIPMI=-lfreeipmi
 X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
-PAPI=-L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
-#PAPI=-L/apps/papi/5.4.3/lib/ -lpapi
+PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi
+#PAPI=-L/apps/papi/5.5.1/lib/ -lpapi
 
 BINARIES=test test_mpi blasTest samples
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest blasTest
+all: samplesTest mpiTest basicTest blasTest sleepTest
 
  ######
+sleepTest: sleeptest.cpp
+	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleeptest -DUSE_MERIC
+#	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(PAPI) -o sleeptest -DUSE_MERIC
+
+	
 mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
 	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test -DUSE_MERIC
+
+scorepTest: test.cpp
+	scorep --online-access --user --thread=none g++ -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
 
 samplesTest: samples_test.cpp
 	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples
