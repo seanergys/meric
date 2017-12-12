@@ -152,6 +152,7 @@ void Environment::frequency(uint64_t freq, int socket)
 			{
 				nodeSize = SOCKET_SIZE*(socket+1);
 				cpu = SOCKET_SIZE*socket;
+				MERIC_INFO << "; socket: " << socket;
 			}
 			MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
