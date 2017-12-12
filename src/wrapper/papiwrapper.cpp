@@ -176,6 +176,7 @@ void PAPI::initMap(std::map<std::string, long long> & dict)
 	dict[PAPI_COUNTERS::COUNTER_CACHE_MISSES] = 0;
 	dict[PAPI_COUNTERS::COUNTER_CACHE_ACCESS] = 0;
 	dict[PAPI_COUNTERS::COUNTER_HW_INSTRUCTIONS] = 0;
+	dict[PAPI_COUNTERS::COUNTER_FREQ] = 0;
 }
 
 

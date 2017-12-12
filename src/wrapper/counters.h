@@ -13,6 +13,7 @@ const std::string COUNTER_AVX = "perf_raw::r04C6";
 const std::string COUNTER_CACHE_MISSES = "PAPI_L3_TCM";
 const std::string COUNTER_CACHE_ACCESS = "PAPI_L3_TCA";
 const std::string COUNTER_HW_INSTRUCTIONS = "PAPI_TOT_INS";
+const std::string COUNTER_FREQ = "PAPI_TOT_CYC";
 
 }
 
@@ -28,6 +29,7 @@ const std::string COUNTER_AVX = "COUNTER_AVX";
 const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
 const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
 const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
+const std::string COUNTER_FREQ = "PERF_COUNT_HW_CPU_CYCLES";
 
 }
 
