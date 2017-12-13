@@ -11,6 +11,7 @@
   - added ignore regions
   - default output directory name changed from hdeemMeasurement to mericMeasurement
   - fixed cpu frequency setting in case of using region options
+  - if x86adapt is not available, compilation with -lnuma is required
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

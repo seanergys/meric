@@ -20,24 +20,27 @@ CPUFREQ=-lcpufreq
 PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi
 #PAPI=-L/apps/papi/5.5.1/lib/ -lpapi
 
-BINARIES=test test_mpi blasTest samples
+#if x86_adapt is missing, numa library is required
+ifeq ($(X86ADAPT),)
+	X86ADAPT=-lnuma
+endif
+
+BINARIES=test test_mpi blasTest samples sleepTest
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest blasTest sleepTest
+all: samplesTest mpiTest basicTest sleepTest blasTestInfo
 
  ######
 sleepTest: sleeptest.cpp
 	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleeptest -DUSE_MERIC
-#	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(PAPI) -o sleeptest -DUSE_MERIC
-
 	
 mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test -DUSE_MERIC
+	$(CC)    -O0 -g test.cpp -o test -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI)
 
 scorepTest: test.cpp
 	scorep --online-access --user --thread=none g++ -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
@@ -46,11 +49,12 @@ samplesTest: samples_test.cpp
 	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples
 
 blasTest: blas_test.c
-	$(info )
-	$(info WARNING: Makefile loads mkl module that is necessary for BLAS test )
-	$(info )
-	module load mkl;
 	$(CC) -O0 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o blasTest
+
+blasTestInfo:
+	$(info )
+	$(info INFO: to compile blas_test.c load mkl module and compile using "make blasTest" )
+	$(info )
 
 
  ######

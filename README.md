@@ -232,7 +232,7 @@ Examples of region.options files are in test/config directory. The region.option
 		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
 		make
 	
-	# compile test code
+	# compile test code or compile your own test code - see the Makefile in the test directory
 		cd test
 		make
 
@@ -383,7 +383,7 @@ To find the best settings for each region, you should run your code with all pos
 	# add path to Meric in $LD_LIBRARAY_PATH
 	# load modules or install libraries that Meric uses
 		# compiler
-		# optionaly papi, x86_adapt, cpufreq
+		# optionaly papi, x86_adapt (if missing, numa library is required), cpufreq
 	# compile Meric in dummy mode
 		# all modules works the same as with hdeem, only hdeemwrapper class is replaced with basic access counter
 		# if there is a problem with compiler, set --cpp and --mpi options in Makefile

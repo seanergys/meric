@@ -4,21 +4,23 @@
 #include "../meric/meric.h"
 
 #ifdef HAVE_CPUFREQ_H
-#include "cpufreq.h"
+	#include "cpufreq.h"
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
-#include <stdint.h>
-#include <memory>
-#include "x86_adapt.h"
+	#include <stdint.h>
+	#include <memory>
+	#include "x86_adapt.h"
+#else
+	#include <numa.h>
 #endif
 
 #ifdef HAVE_CILK_CILK_API_H
-#include <cilk/cilk_api.h> 
+	#include <cilk/cilk_api.h> 
 #endif
 
 #ifdef HAVE_OMP_H
-#include <omp.h>
+	#include <omp.h>
 #endif
 
 #include <unistd.h>

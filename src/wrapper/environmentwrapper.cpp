@@ -1,8 +1,6 @@
 
 #include "environmentwrapper.h"
 
-#include <sys/sysinfo.h>
-
 using namespace meric;
 
 // LIST OF POSSIBLE frequencies for JETSON CPUs (kHz)
@@ -62,24 +60,10 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 
 	SOCKET_SIZE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 #else
-	if (system == SYS_HASWELL)	//TODO - this is just fast fix, other architectures are not considered
-	{
-		std::string line;
-		std::ifstream jsonFile ("/proc/cpuifo");
-		if (jsonFile.is_open())
-		{
-			while (getline(jsonFile,line))
-			{
-				if (line.find("cpu cores"))
-				{
-					line = line.substr(line.find(":"));
-					break;
-				}
-			}
-			jsonFile.close();
-			SOCKET_SIZE = std::stoi(line);
-		}
-	}
+
+	SOCKET_SIZE = sysconf(_SC_NPROCESSORS_ONLN);
+	SOCKET_SIZE = SOCKET_SIZE/(numa_node_of_cpu(SOCKET_SIZE-1)+1); //requires compilation with -lnuma
+	MERIC_INFO << "SOCKET SIZE is " << SOCKET_SIZE <<std::endl;
 #endif	
 	systemType = system;
 	
