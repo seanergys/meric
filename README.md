@@ -416,10 +416,12 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 	uncore:	/sys/kernel/debug/clock/emc/possible_rates
 	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
-Another supported ARM system is ThunderX. This system has its cons and pros. ThunderX is much more powrfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the cpus. The measurement system measure the energy consumed by all available nodes (one must alocate all four nodes), and its energy measurement samples frequancy is ~4 saples per second. Unfortunately, the frequency scaling is not supported. To run Meric on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
+Another supported ARM system is ThunderX. This system has its cons and pros. ThunderX is much more powrfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the cpus. The measurement system measure the energy consumed by all available nodes (one must alocate all four nodes), and its energy measurement samples frequency is approximately 4 saples per second. Unfortunately, the frequency scaling is not supported. To run Meric on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
 
 Except login nodes it is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
 
+ \* On jetson-tx is currnetly problem with paths to numa library, it is necesary to set path to /usr/lib/aarch64-linux-gnu/libnuma.so.1 and make a copy of the header file.
+ 
 --------------------------------------------------------------------------------
 #     12] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
