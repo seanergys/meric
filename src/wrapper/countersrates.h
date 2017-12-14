@@ -24,6 +24,7 @@ public:
 	
 	static double computationalIntensity(long long instructions, long long miss) {return miss ? instructions/miss : instructions; };
 
+	static double REAL_CPU_FREQUENCY(long long cycles, double time) {return cycles/time;};
 };
 
 }

@@ -139,6 +139,15 @@ void PERFEVENT::getRatios(std::map<std::string, long long>& start, std::map<std:
 				start[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
 			);
 	}
+
+	if (stop.count(PERFEVENT_COUNTERS::COUNTER_FREQ))
+	{
+		ratios["CPU frequency"] = CountersRates::REAL_CPU_FREQUENCY(
+				stop[PERFEVENT_COUNTERS::COUNTER_FREQ] -
+				start[PERFEVENT_COUNTERS::COUNTER_FREQ],
+				runtime
+			);
+	}
 }
 
 std::string PERFEVENT::getCountersLabel()
