@@ -18,7 +18,7 @@ FREEIPMI=-lfreeipmi
 X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
 PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi
-#PAPI=-L/apps/papi/5.5.1/lib/ -lpapi
+#PAPI=-L/apps/papi/5.4.3/lib/ -lpapi # PAPI on BSC ARM machines
 
 #if x86_adapt is missing, numa library is required
 ifeq ($(X86ADAPT),)
