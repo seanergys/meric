@@ -7,6 +7,8 @@
 #include <ctime>
 #include <math.h>
 
+#include <omp.h>
+
 double timespec2double(timespec time) 
 {
 	return time.tv_sec + (double)time.tv_nsec/1e9;
@@ -27,7 +29,7 @@ int main(int argc, char **argv)
 	READEX_REGION_START(RUN, "RUN", SCOREP_USER_REGION_TYPE_COMMON);
 		clock_gettime(CLOCK_REALTIME, &spectime1);
 		time1 = timespec2double(spectime1);
-		#pragma omp parallel
+		#pragma omp parallel private(spectime2)
 			do
 			{
 				random = time1*1095 + log(random);
