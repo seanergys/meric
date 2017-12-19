@@ -23,7 +23,6 @@
 	
 	- papiwrapper
 		= Hardware counters provided by papi.
-		- NOT SUITABLE FOR THREADED APPLICATIONS!
 		+ http://icl.cs.utk.edu/papi/
 		
 	- raplwrapper
@@ -175,10 +174,13 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 
 	export MERIC_COUNTERS=papi or perfevent
 		- If set you can read HW counters using papi or perfevent
+		- Perfevent is set to measure all threads on a process, it results 
+		  in gathered values of the counters
 		- When using counters, there is not only counter value but also an information 
-		  about computional and arithmetic intensity (if possible to measure)
+		  about average CPU core frequency during the region runtime, computional
+		  and arithmetic intensity (if possible to measure)
 		- To add a counter you want to measure it is necessary to follow 
-		  the instructions in wrapper/counters.h.
+		  the instructions in wrapper/counters.h
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"

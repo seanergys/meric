@@ -22,7 +22,7 @@ long long PERFEVENT::COUNTERMAX = LLONG_MAX;
 long PERFEVENT::openCounter(perf_event_attr attr)
 {
 	//(struct perf_event_attr, pid, cpu, group_fd, flags);
-	long fd = syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0);
+	long fd = syscall(__NR_perf_event_open, &attr, syscall(__NR_gettid), -1, -1, 0);
 /*
 pid == 0 and cpu == -1
     This measures the calling process/thread on any CPU. 
@@ -142,7 +142,7 @@ void PERFEVENT::getRatios(std::map<std::string, long long>& start, std::map<std:
 
 	if (stop.count(PERFEVENT_COUNTERS::COUNTER_FREQ))
 	{
-		ratios["CPU frequency"] = CountersRates::REAL_CPU_FREQUENCY(
+		ratios["CPU frequency [GHz]"] = CountersRates::REAL_CPU_FREQUENCY(
 				stop[PERFEVENT_COUNTERS::COUNTER_FREQ] -
 				start[PERFEVENT_COUNTERS::COUNTER_FREQ],
 				runtime

@@ -24,7 +24,8 @@ public:
 	
 	static double computationalIntensity(long long instructions, long long miss) {return miss ? instructions/miss : instructions; };
 
-	static double REAL_CPU_FREQUENCY(long long cycles, double time) {return cycles/time;};
+	//average CPU core frequency in GHz for a specific time range
+	static double REAL_CPU_FREQUENCY(long long cycles, double time) {return 1.0E-09*(cycles/time);};
 };
 
 }
