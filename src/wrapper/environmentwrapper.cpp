@@ -74,7 +74,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 			std::ofstream governorFile;
 			if (defaultParameter.frequency != 0) //core
 			{
-				for (int i=0; i<4; i++)	//TODO 4 cores - how to detect? test if code will not fall if SOCKET_SIZE will be set to 4
+				for (int i=0; i<sysconf(_SC_NPROCESSORS_ONLN); i++)
 				{
 					governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
 					governorFile << "userspace";
@@ -115,7 +115,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (systemType == SYS_JETSON)
 	{
 		std::ofstream coreFile;	//TODO what if I cannot write to file
-		for (int i=0; i<4; i++)	//TODO 4 cores - how to detect?
+		for (int i=0; i<sysconf(_SC_NPROCESSORS_ONLN); i++)
 		{
 			coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_setspeed");
 			coreFile << freq;
@@ -252,7 +252,7 @@ void Environment::uncoreFrequency(uint64_t freq, int socket)
 			{
 				if(x86_adapt_set_setting(fd, x86_adapt_lookup_ci_name(X86_ADAPT_DIE, description),freq ) != 8)
 				{
-					std::cerr << "X86ADAPT ERROR: error while setting uncore frequecy\n";
+					std::cerr << "X86ADAPT ERROR: error while setting uncore frequency\n";
 //					exit(3);
 				}
 			};
@@ -277,7 +277,7 @@ void Environment::setDefaultFrequencies()
 	{
 		std::ofstream governorFile;
 		//core
-		for (int i=0; i<4; i++)	//TODO 4 cores - how to detect?
+		for (int i=0; i<sysconf(_SC_NPROCESSORS_ONLN); i++)
 		{
 			governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
 			governorFile << "ondemand";
