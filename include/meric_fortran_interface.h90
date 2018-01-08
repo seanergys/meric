@@ -21,5 +21,13 @@ INTERFACE
         BIND(c,NAME='MERIC_MeasureStop')
   END SUBROUTINE MERIC_MeasureStop
 
+  SUBROUTINE MERIC_IgnoreStart() &
+        BIND(c,NAME='MERIC_IgnoreStart')
+  END SUBROUTINE MERIC_IgnoreStart
+
+  SUBROUTINE MERIC_IgnoreStop() &
+        BIND(c,NAME='MERIC_IgnoreStop')
+  END SUBROUTINE MERIC_IgnoreStop
+  
 END INTERFACE
 
