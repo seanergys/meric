@@ -2,8 +2,8 @@
 # INCLUDES_MECHINE and LIBPATH_MACHINE
 
 ## TAURUS ######################################################################
-PAPI_INC_TAURUS=-I/sw/taurus/libraries/papi/5.4.1/include/
-PAPI_LIB_TAURUS=-L/sw/taurus/libraries/papi/5.4.1/lib/
+PAPI_INC_TAURUS=-I/sw/taurus/libraries/papi/5.5.1/include/
+PAPI_LIB_TAURUS=-L/sw/taurus/libraries/papi/5.5.1/lib/
 CPUFREQ_INC_TAURUS=-I/projects/p_readex/cpufrequtils-icc/lib/
 CPUFREQ_LIB_TAURUS=-L/projects/p_readex/cpufrequtils-icc
 
