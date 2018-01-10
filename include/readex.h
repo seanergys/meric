@@ -1,8 +1,8 @@
 /**
  * Shared intarface for MERIC and Score-P libraries
  *
- * version 3.0
- * 30.10.2017
+ * version 3.1
+ * 09.01.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
  **/
@@ -45,8 +45,10 @@
 	#define READEX_IGNORE_STOP() \
 		MERIC_IgnoreStop();
 #else
-	#define READEX_IGNORE_START()
-	#define READEX_IGNORE_STOP()
+	#define READEX_IGNORE_START() \
+		SCOREP_RECORDING_OFF();
+	#define READEX_IGNORE_STOP() \
+		SCOREP_RECORDING_ON();
 #endif
 
 //READEX_REGION_DEFINE(handle) - can be used for PHASE and SIGNIFICANT regions too
@@ -104,8 +106,8 @@
 #elif defined USE_MERIC
 	#define READEX_PHASE_START( handle, name, type ) \
 		MERIC_MeasureStart( name );
-	#else
-		#define READEX_PHASE_START( handle, name, type )
+#else
+	#define READEX_PHASE_START( handle, name, type )
 #endif
 
 //READEX_PHASE_STOP(handle)
