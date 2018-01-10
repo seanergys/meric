@@ -4,10 +4,12 @@ COMPILER=INTEL
 ifeq ($(COMPILER),INTEL)
 	CC=icpc
 	MPICC=mpiicpc
+	FCC=ifort
 	OPENMP=-qopenmp
 else #ifeq($(COMPILER),GCC)
 	CC=g++
 	MPICC=mpic++
+	FCC=gfortran
 	OPENMP=-fopenmp
 endif
 
@@ -25,12 +27,12 @@ ifeq ($(X86ADAPT),)
 	X86ADAPT=-lnuma
 endif
 
-BINARIES=test test_mpi blasTest samples sleepTest
+BINARIES=test test_mpi blasTest samples sleepTest fortTest
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest blasTestInfo
+all: samplesTest mpiTest basicTest sleepTest fortTest blasTestInfo
 
  ######
 sleepTest: sleeptest.cpp
@@ -55,6 +57,9 @@ blasTestInfo:
 	$(info )
 	$(info INFO: to compile blas_test.c load mkl module and compile using "make blasTest" )
 	$(info )
+
+fortTest:
+	$(FCC) fort_test.f90 -cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o fortTest -DUSE_MERIC
 
 
  ######
