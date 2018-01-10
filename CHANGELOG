@@ -1,17 +1,19 @@
 ### XX.XX.XXXX #################################################################
-  - updated shared Score-P/Meric header file
   - fixed RAPL overflow on Salomon
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
   - ARM Jetson/TX1 energy measurement and frequency scaling
   - ARM ThunderX energy measument support (DVFS not available)
   - tool for static energy measurement and CPU frequencies change
-  - shared Score-P/Meric interface has new functions for region define (backward compatibility)
+  - updated shared Score-P/Meric header file
+		+ readex.h has new functions for region define (with backward compatibility)
+		+ added Fortran version readex.inc
   - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files
   - added ignore regions
   - default output directory name changed from hdeemMeasurement to mericMeasurement
   - fixed cpu frequency setting in case of using region options
   - if x86adapt is not available, compilation with -lnuma is required
+  - Fortran meric_fortran_interface.h90 renamed to meric.inc
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

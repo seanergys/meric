@@ -104,7 +104,7 @@ There is one more restriction in placing probes into the code. In current versio
 ```
 
 ## Shared MERIC/Score-P interface ##
-Into include folder the header readex.h was added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use Meric and Score-P simultaneously. As an example of the api use, test.cpp example code has this interface.
+Into include folder the C header file readex.h and Fortran readex.inc were added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use Meric and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
@@ -118,10 +118,9 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_REGION_STOP(handle)                | MERIC_MeasureStop()      | SCOREP_USER_REGION_END(handle)                 |
 | READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
 | READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
-| READEX_IGNORE_START()**                   | MERIC_IgnoreStart()      |                                                |
-| READEX_IGNORE_STOP()**                    | MERIC_IgnoreStop()       |                                                |
+| READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |
+| READEX_IGNORE_STOP()                      | MERIC_IgnoreStop()       | SCOREP_RECORDING_ON()                          |
     *  Defines region handle except of phase region
-    ** Score-P doesn't have a support for ignore section of a code
 
 --------------------------------------------------------------------------------
 #     4] MERIC input parameters                                                #
@@ -395,13 +394,9 @@ To find the best settings for each region, you should run your code with all pos
 	# export MERIC_COUNTERS variable to measure real data
 
 --------------------------------------------------------------------------------
-#     10] MERIC with a fortran code                                            #
+#     10] MERIC with a Fortran code                                            #
 --------------------------------------------------------------------------------
-There are fortran module and interface in the include directory. 
-When calling MERIC_MeasureStart keep in mind that string parameter must end with //char(0).
-
-	CALL MERIC_MeasureStart("region_name"//char(0))
-
+There are Fortran module and interface in the include directory. One can use shared READEX interface `(#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example test/fort_test.f90 to show how the interfaces can be used.
 	
 --------------------------------------------------------------------------------
 #     11] Using MERIC on BSC ARM Jetson                                        #
