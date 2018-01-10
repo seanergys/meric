@@ -1,0 +1,34 @@
+ ! Fortran interface to bind MERIC functions
+ 
+USE, INTRINSIC :: ISO_C_BINDING
+IMPLICIT NONE
+
+INTERFACE
+
+	SUBROUTINE MERIC_Init() &
+		BIND(c,NAME='MERIC_Init')
+	END SUBROUTINE MERIC_Init
+
+	SUBROUTINE MERIC_Close() &
+		BIND(c,NAME='MERIC_Close')
+	END SUBROUTINE MERIC_Close
+
+	SUBROUTINE MERIC_IgnoreStart() &
+		BIND(c,NAME='MERIC_IgnoreStart')
+	END SUBROUTINE MERIC_IgnoreStart
+
+	SUBROUTINE MERIC_IgnoreStop() &
+		BIND(c,NAME='MERIC_IgnoreStop')
+	END SUBROUTINE MERIC_IgnoreStop
+
+	SUBROUTINE MERIC_MeasureStart(reg_name) &
+		BIND(c,NAME='MERIC_MeasureStart')
+		IMPORT C_CHAR
+	CHARACTER(KIND=C_CHAR) :: reg_name(*)
+	END SUBROUTINE MERIC_MeasureStart
+
+	SUBROUTINE MERIC_MeasureStop() &
+		BIND(c,NAME='MERIC_MeasureStop')
+	END SUBROUTINE MERIC_MeasureStop
+
+END INTERFACE
