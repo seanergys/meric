@@ -37,12 +37,17 @@
 		* This test has shared Score-P/MERIC api. See section 10 of this README.
 	* test_mpi.cpp
 		* Same test as test.c, only extended with mpi.
+	* fort_test.f90
+		* Fortran version of test.cpp to show the MERIC and READEX Fortran interface.
 	* blas_test.cpp
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all resources.
-		* WARNING: This test requires mkl module. When make is called, module is loaded.
+		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if Meric detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
+	* sleeptest.cpp
+		* A test with RUN (muximum load) and SLEEP (minimum load) regions, both with the same runtime.
+		* Originaly made to control real CPU frequency of the machine.
 * config direcory
 	* region.options
 		* File that sets exact settings for regions inside your code.
@@ -50,6 +55,8 @@
 	* region.options.extra
 		* Configuration file, that shows what all possible ways how to specify the settings.
 * Makefile
+	* Command `make` compiles all test codes except blas_test.cpp
+	* To compile blas_test.cpp use `make blasTest` command
 * run.sh and run-mpi.sh
 	* Scripts that runs the code with all possible settings.
 	* Ready to do the basic test with test and test_mpi.cpp on Taurus.

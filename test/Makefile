@@ -36,7 +36,7 @@ all: samplesTest mpiTest basicTest sleepTest fortTest blasTestInfo
 
  ######
 sleepTest: sleeptest.cpp
-	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleeptest -DUSE_MERIC
+	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleepTest -DUSE_MERIC
 	
 mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
@@ -63,7 +63,7 @@ fortTest:
 
 
  ######
-MeasurementDIRS=hdeemMeasurement* TEST* TESTMPI*
+MeasurementDIRS=hdeemMeasurement* mericMeasurement* TEST* TESTMPI*
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
