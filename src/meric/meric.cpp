@@ -6,7 +6,7 @@ using namespace meric;
 int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_HDEEM);
 bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , false);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
-bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , false);
+bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
 bool        Meric::SAMPLES    = mutils::getenv("MERIC_SAMPLES"   , false);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
