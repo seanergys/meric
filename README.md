@@ -130,7 +130,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 	export MERIC_FREQUENCY=24        # [0.1 GHz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24      # [0 for applications that doesn't use threads]
-		- To run a code in default settings, without MERIC influences, set frequencies to zero
+		- To run a code in the default settings, without MERIC influenc, set this three environment variables to zero.
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
@@ -166,10 +166,9 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 		  each sample to the output file, if MERIC_SAMPLES is set
 		- Files can become very big when measured regions run for a long time
 
-	export MERIC_AGGREGATE=1
-		- ONLY for distributed applications!
-		- Aggregates data from all nodes - there are both average values and sums
-		included in the output 
+	export MERIC_AGGREGATE=0
+		- When running an MPI application, MERIC aggregate the data from all the processes and stores the agregated results. There are both average values and summary included in the output files.
+		- Exporting the zero value turns off this behavior and MERIC will store the results for each node separately.
 
 	export MERIC_COUNTERS=papi or perfevent
 		- If set you can read HW counters using papi or perfevent
