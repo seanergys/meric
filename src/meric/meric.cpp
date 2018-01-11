@@ -67,10 +67,6 @@ int Meric::getDefaultParameters()
 				  << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
 		ret = 1;
 	}
-	if (mutils::getenv("OMP_NUM_THREADS", 0))
-	{
-		std::cerr << "MERIC WARNIG: do not use OMP_NUM_THREADS\n";
-	}
 #endif
 
 	if (ret)
