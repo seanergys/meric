@@ -53,7 +53,7 @@ public:
 
 	int storeCounter(std::string counterFileName)
 	{
-		if (_rank)
+		if (!_rank)
 		{
 			std::ifstream iFile(counterFileName);
 			if(iFile.is_open())
@@ -81,7 +81,7 @@ public:
 					const std::string outputFilename,
 					const std::string prefix = "")
 	{
-		if (_rank)
+		if (!_rank)
 		{
 			std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
 		
