@@ -5,11 +5,11 @@
 namespace meric {
 
 template <class TStore>
-auto CountersAggregateStore<TStore>::printStats (const std::string description, const auto& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
+long long CountersAggregateStore<TStore>::printStats (const std::string description, const long long * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
 {
-	auto max = data[0];
-	auto min = data[0];
-	auto sum = data[0];
+	long long max = data[0];
+	long long min = data[0];
+	long long sum = data[0];
 	for(int i=stride; i<dataSize; i+=stride)
 	{
 		if (max < data[i])
@@ -18,7 +18,30 @@ auto CountersAggregateStore<TStore>::printStats (const std::string description, 
 			min = data[i];
 		sum += data[i];
 	}
-	auto avg = sum/(dataSize/stride);
+	long long avg = sum/(dataSize/stride);
+	ss << "AVG "<< description << "," << avg << std::endl
+	   << "MAX "<< description << "," << max << std::endl
+	   << "MIN "<< description << "," << min << std::endl;
+	if (storeSum)
+		ss << "SUM "<< description << "," << sum << std::endl;
+	return avg;
+}
+
+template <class TStore>
+double CountersAggregateStore<TStore>::printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
+{
+	double max = data[0];
+	double min = data[0];
+	double sum = data[0];
+	for(int i=stride; i<dataSize; i+=stride)
+	{
+		if (max < data[i])
+			max = data[i];
+		else if (min > data[i])
+			min = data[i];
+		sum += data[i];
+	}
+	double avg = sum/(dataSize/stride);
 	ss << "AVG "<< description << "," << avg << std::endl
 	   << "MAX "<< description << "," << max << std::endl
 	   << "MIN "<< description << "," << min << std::endl;
@@ -81,7 +104,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	for(std::map<std::string, long long>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
 		//averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
-		averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
+		averageRecord.record[counterIt->first] = printStats(counterIt->first, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
 	}
 
 // Counters ratios

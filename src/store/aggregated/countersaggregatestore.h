@@ -23,7 +23,8 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void saveInterval(std::vector<size_t> &iStarts, size_t iEnd);
 
-	auto printStats (const std::string description, const auto& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
+	double printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
+	long long printStats (const std::string description, const long long * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
 
 	
 	std::vector <long long>   _bufferCounters;
