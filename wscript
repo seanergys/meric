@@ -6,7 +6,7 @@ def configure(ctx):
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-fPIC"])                 #no openMP
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
     if ctx.options.withgcc:
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
         ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
