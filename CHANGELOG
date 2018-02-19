@@ -15,6 +15,7 @@
   - if x86adapt is not available, compilation with -lnuma is required
   - Fortran meric_fortran_interface.h90 renamed to meric.inc
   - MERIC now works in MERIC_AGGREGATE mode as default
+  - removed duty for c++14 standart
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

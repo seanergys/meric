@@ -251,7 +251,7 @@ Examples of region.options files are in test/config directory. The region.option
 	# run the example
 		./test
 
-To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set cpu core, uncore frequency and number of threads. How to do so, you will find in section MERIC input parameters.
+To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set cpu core, uncore frequencies and number of threads. How to do so, you will find in section MERIC input parameters.
 
 --------------------------------------------------------------------------------
 #     6] Measurement results                                                   #
@@ -428,7 +428,7 @@ Except login nodes it is not possible to load modules - it is necessary to load 
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 
-Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measuement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop script is located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measuremenet interfaces. To select which one should be used, the script takes one argument --rapl or --hdeem.
+Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measurement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop script is located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument --rapl or --hdeem.
 
 
 
