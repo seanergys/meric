@@ -9,7 +9,7 @@
 		+ readex.h has new functions for region define (with backward compatibility)
 		+ added Fortran version readex.inc
   - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files
-  - added ignore regions
+  - added ignore functions to turn off measurement
   - default output directory name changed from hdeemMeasurement to mericMeasurement
   - fixed cpu frequency setting in case of using region options
   - if x86adapt is not available, compilation with -lnuma is required

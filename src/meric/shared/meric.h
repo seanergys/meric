@@ -14,75 +14,77 @@ public:
 	
 	void start(const std::string &region)
 	{
-
 		MERIC_INFO << "region '" << region << "' starting\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
+			#pragma omp master
+			startRegionEnvironment(region);
 			if (Meric::IGNORE)
 				return;
-
-			if (ignoreRegion(region))
+			#pragma omp master
 			{
-				#pragma omp master
+				if (!ignoreRegion(region))
+					Meric::start(region);
 				_stack.push_back(getRegionID(region));
-			}
-			else
-			{
-//				#pragma omp barrier
-				#pragma omp master
-				{
-					startRegion(region);
-				}
 			}
 		}
 		else
 #endif
 		{
+			startRegionEnvironment(region);
 			if (Meric::IGNORE)
 				return;
-			if (ignoreRegion(region))
-					_stack.push_back(getRegionID(region));
-			else
-				startRegion(region);
+			if (!ignoreRegion(region))
+				Meric::start(region);
+			_stack.push_back(getRegionID(region));
 		}
 	}
 	
 	void stop()
 	{
-
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
+			#pragma omp master
+			stopRegionEnvironment();
 			if (Meric::IGNORE)
 				return;
-
-			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
+			#pragma omp master
 			{
-				#pragma omp master
-				_stack.pop_back();
-			}
-			else
-			{
-//				#pragma omp barrier
-				#pragma omp master
+				if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 				{
-					stopRegion();
+					if (!_stack.size())
+					{
+						std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+					}
+					else
+					{
+						Meric::stop();
+						_stack.pop_back();
+					}
 				}
+				else
+					_stack.pop_back();
 			}
 		}
-		else
+		else		
 #endif
 		{
+			stopRegionEnvironment();
 			if (Meric::IGNORE)
 				return;
-			if (ignoreRegion(getRegionName(_stack.size(), _stack.back())))
-					_stack.pop_back();
-			else
-				stopRegion();
+			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
+			{
+				if (!_stack.size())
+				{
+					std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+					return;
+				}
+				Meric::stop();
+			}
+			_stack.pop_back();
 		}
 	}
 	
@@ -133,7 +135,7 @@ public:
 	SharedMeric();
 	~SharedMeric();
 private:
-	void startRegion(const std::string &region)
+	void startRegionEnvironment(const std::string &region)
 	{
 		SocketsRegionParameters change = regionValue(currentState, region);
 		for (int socket=0; socket < NUMOFSOCKETS; socket++)
@@ -145,24 +147,10 @@ private:
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);
-
-		Meric::start(region);
-		_stack.push_back(getRegionID(region));
 	}
 	
-	void stopRegion()
+	void stopRegionEnvironment()
 	{
-		if (_stack.size())
-		{
-			Meric::stop();
-			_stack.pop_back();
-		}
-		else
-		{
-			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			return;
-		}
-		
 		SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
 		for (int socket=0; socket < NUMOFSOCKETS; socket++)
 		{

@@ -84,7 +84,7 @@ must call every Meric function, otherwise Meric behavior is undefined. It is not
 	MERIC_MeasureStop()
 		End of the measurement of the last called region
 	MERIC_IgnoreStart()
-		From this point all phase and regions start/stop calles are ignored
+		From this point MERIC doesn't store resources consumption of the following regions but the optimal settings of the nested regions is set 
 		It is not possible to nest ignore sections of the code
 	MERIC_IgnoreStop()
 		Cancels the ignore section of the code
@@ -193,7 +193,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 
 ## SET MORE SETTINGS ##
 Settings throught the exprorted envoronment variable should fullfil your need when manualy searching the optimal settings. To set more complex settings the configuration file must be define.
-In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are not applied and no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
+In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are applied but no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
 	
 To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
 
