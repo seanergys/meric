@@ -118,7 +118,7 @@ Into include folder the C header file readex.h and Fortran readex.inc were added
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
-| Shared api                                | MERIC function           | Score-P function                               |
+| Shared API                                | MERIC function           | Score-P function                               |
 | ----------------------------------------- | ------------------------ | ---------------------------------------------- |
 | READEX_INIT()                             | MERIC_Init()             |                                                |
 | READEX_CLOSE()                            | MERIC_Close()            |                                                |
@@ -126,7 +126,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_SIGNIFICANT_REGION_DEFINE(handle)* |                          | SCOREP_USER_REGION_DEFINE(handle)              |
 | READEX_REGION_START(handle, name, type)   | MERIC_MeasureStart(name) | SCOREP_USER_REGION_BEGIN(handle, name, type)   |
 | READEX_REGION_STOP(handle)                | MERIC_MeasureStop()      | SCOREP_USER_REGION_END(handle)                 |
-| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart(start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN(start_handle, start_name, start_type) |
+| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart (start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN (start_handle, start_name, start_type) |
 | READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
 | READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
 | READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |
