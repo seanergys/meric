@@ -11,6 +11,7 @@ void MERIC_Close();
 
 void MERIC_MeasureStart(const char* region);
 void MERIC_MeasureStop();
+void MERIC_MeasureStopStart(const char* region);
 
 void MERIC_IgnoreStart();
 void MERIC_IgnoreStop();

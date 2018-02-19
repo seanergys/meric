@@ -16,6 +16,7 @@
   - Fortran meric_fortran_interface.h90 renamed to meric.inc
   - MERIC now works in MERIC_AGGREGATE mode as default
   - removed duty for c++14 standart
+  - new MERIC function MERIC_MeasureStopStart to avoid extra environment swithing
 
 ### 10.04.2017 #################################################################
   - added Fortran interface

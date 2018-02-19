@@ -1,8 +1,8 @@
  !
  ! Shared fortran intarface for MERIC and Score-P libraries
  !
- ! version 1.0
- ! 09.01.2018
+ ! version 1.1
+ ! 19.02.2018
  ! Martin Beseda and Ondrej Vysocky, martin.beseda@vsb.cz, ondrej.vysocky@vsb.cz
  ! IT4Innovations national supercomputing center, Czech Republic
  !
@@ -34,6 +34,7 @@
 
 #define READEX_REGION_START( reg_handle, reg_name, reg_type ) SCOREP_USER_REGION_BEGIN( reg_handle, reg_name, reg_type )
 #define READEX_REGION_STOP( reg_handle ) SCOREP_USER_REGION_END( reg_handle )
+#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) SCOREP_USER_REGION_END( stop_handle ); SCOREP_USER_REGION_BEGIN( start_handle, start_name, start_type )
 
 #define READEX_REGION_DEFINE( reg_handle ) SCOREP_USER_REGION_DEFINE(reg_handle)
 #define READEX_PHASE_REGION_DEFINE( reg_handle ) SCOREP_USER_REGION_DEFINE(reg_handle)
@@ -45,6 +46,7 @@
 
 #define READEX_REGION_START( reg_handle, reg_name, reg_type )
 #define READEX_REGION_STOP( reg_handle )
+#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type )
 
 #define READEX_REGION_DEFINE( reg_handle ) SCOREP_USER_REGION_DEFINE(reg_handle)
 #define READEX_PHASE_REGION_DEFINE( reg_handle ) SCOREP_USER_REGION_DEFINE(reg_handle)
@@ -66,6 +68,7 @@
 
 #define READEX_REGION_START( reg_handle, reg_name, reg_type ) call MERIC_MeasureStart(reg_name)
 #define READEX_REGION_STOP( reg_handle ) call MERIC_MeasureStop()
+#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) call MERIC_MeasureStopStart(start_name)
 
 #define READEX_REGION_DEFINE( reg_handle )
 #define READEX_PHASE_REGION_DEFINE( reg_handle )
@@ -86,6 +89,7 @@
 #define READEX_IGNORE_STOP()
 #define READEX_REGION_START( reg_handle, reg_name, reg_type )
 #define READEX_REGION_STOP( reg_handle )
+#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type )
 #define READEX_PHASE_START( reg_handle, reg_name, reg_type )
 #define READEX_PHASE_STOP( reg_handle )
 

@@ -1,8 +1,8 @@
 /**
  * Shared intarface for MERIC and Score-P libraries
  *
- * version 3.1
- * 09.01.2018
+ * version 3.2
+ * 19.02.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
  **/
@@ -98,6 +98,20 @@
 #else
 	#define READEX_REGION_STOP( handle )
 #endif
+
+//READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type)
+#ifdef USE_SCOREP_MANUAL
+	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		SCOREP_USER_REGION_END( stop_handle ); \
+		SCOREP_USER_REGION_BEGIN( start_handle, start_name, start_type );
+#elif defined USE_MERIC
+	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		MERIC_MeasureStopStart( start_name );
+#else
+	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type )
+#endif
+
+
 
 //READEX_PHASE_START(handle, name, type)
 #ifdef USE_SCOREP

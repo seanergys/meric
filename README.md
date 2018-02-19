@@ -83,6 +83,9 @@ must call every Meric function, otherwise Meric behavior is undefined. It is not
 		Please, do not use **#** and **@** in names of regions
 	MERIC_MeasureStop()
 		End of the measurement of the last called region
+	MERIC_MeasureStopStart("B")
+		End of the measurement of the last called region and start of measurment region B
+		Removes environment switching to configuration of the region we are nested in
 	MERIC_IgnoreStart()
 		From this point MERIC doesn't store resources consumption of the following regions but the optimal settings of the nested regions is set 
 		It is not possible to nest ignore sections of the code
@@ -123,6 +126,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_SIGNIFICANT_REGION_DEFINE(handle)* |                          | SCOREP_USER_REGION_DEFINE(handle)              |
 | READEX_REGION_START(handle, name, type)   | MERIC_MeasureStart(name) | SCOREP_USER_REGION_BEGIN(handle, name, type)   |
 | READEX_REGION_STOP(handle)                | MERIC_MeasureStop()      | SCOREP_USER_REGION_END(handle)                 |
+| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart(start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN(start_handle, start_name, start_type) |
 | READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
 | READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
 | READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |

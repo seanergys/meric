@@ -88,6 +88,33 @@ public:
 		}
 	}
 	
+	void stopStart(const std::string &region)
+	{
+		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
+
+		#pragma omp master
+		startRegionEnvironment(region);
+		
+		if (Meric::IGNORE)
+			return;
+		if (!_stack.size())
+		{
+			#pragma omp single
+			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+			return;
+		}
+		#pragma omp master
+		{
+			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
+				Meric::stop();
+			_stack.pop_back();
+
+			if (!ignoreRegion(region))
+				Meric::start(region);
+			_stack.push_back(getRegionID(region));
+		}
+	}
+	
 	void startIgnore()
 	{
 		Meric::startIgnore();
