@@ -19,7 +19,11 @@ public:
 		if (omp_in_parallel())
 		{
 			#pragma omp master
-			startRegionEnvironment(region);
+			{
+				SocketsRegionParameters change = regionValue(currentState, region);
+				setRegionEnvironment(change);
+			}
+			//startRegionEnvironment(region);
 			if (Meric::IGNORE)
 				return;
 			#pragma omp master
@@ -32,7 +36,10 @@ public:
 		else
 #endif
 		{
-			startRegionEnvironment(region);
+						{
+			SocketsRegionParameters change = regionValue(currentState, region);
+			setRegionEnvironment(change);
+			//startRegionEnvironment(region);
 			if (Meric::IGNORE)
 				return;
 			if (!ignoreRegion(region))
@@ -48,7 +55,11 @@ public:
 		if (omp_in_parallel())
 		{
 			#pragma omp master
-			stopRegionEnvironment();
+			{
+				SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
+				setRegionEnvironment(change);
+			}
+			//stopRegionEnvironment();
 			if (Meric::IGNORE)
 				return;
 			#pragma omp master
@@ -72,7 +83,9 @@ public:
 		else		
 #endif
 		{
-			stopRegionEnvironment();
+			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
+			setRegionEnvironment(change);
+			//stopRegionEnvironment();
 			if (Meric::IGNORE)
 				return;
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
@@ -93,7 +106,11 @@ public:
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
 
 		#pragma omp master
-		startRegionEnvironment(region);
+		{
+			SocketsRegionParameters change = regionValue(currentState, region);
+			setRegionEnvironment(change);
+		}
+		//startRegionEnvironment(region);
 		
 		if (Meric::IGNORE)
 			return;
@@ -188,6 +205,19 @@ private:
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);
+	}
+	
+	void setRegionEnvironment(SocketsRegionParameters change)
+	{
+		for (int socket=0; socket < NUMOFSOCKETS; socket++)
+		{
+			if(change.socket[socket].uncoreFrequency)
+				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+			if(change.socket[socket].frequency)
+				Environment::frequency(currentState.socket[socket].frequency, socket);
+		}
+		if(change.socket[0].nthreads)
+			Environment::threadNumber(currentState.socket[0].nthreads);	
 	}
 };
 
