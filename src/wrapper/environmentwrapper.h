@@ -1,7 +1,7 @@
 #ifndef SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 #define SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 
-#include "../meric/meric.h"
+#include "../basis/utils.h"
 
 #ifdef HAVE_CPUFREQ_H
 	#include "cpufreq.h"
@@ -29,6 +29,19 @@
 
 
 namespace meric {
+
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
+enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_OTHER};
+
+struct RegionParameters {
+	double frequency;
+	uint64_t uncoreFrequency;
+	int nthreads;
+};
+
+struct SocketsRegionParameters {
+	RegionParameters socket [2];
+};
 
 struct systemLimits{
 	int maxCoreFreq;

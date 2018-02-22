@@ -4,7 +4,6 @@
 
 #include "../meric.h"
 
-#include "../../wrapper/environmentwrapper.h"
 
 namespace meric {
 
@@ -15,33 +14,16 @@ public:
 	void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-#ifdef HAVE_OMP_H
-		if (omp_in_parallel())
+		#pragma omp master
 		{
-			#pragma omp master
-			{
-				SocketsRegionParameters change = regionValue(currentState, region);
-				setRegionEnvironment(change);
-			}
-			//startRegionEnvironment(region);
-			if (Meric::IGNORE)
-				return;
-			#pragma omp master
-			{
-				if (!ignoreRegion(region))
-					Meric::start(region);
-				_stack.push_back(getRegionID(region));
-			}
-		}
-		else
-#endif
-		{
-						{
 			SocketsRegionParameters change = regionValue(currentState, region);
 			setRegionEnvironment(change);
-			//startRegionEnvironment(region);
-			if (Meric::IGNORE)
-				return;
+		}
+		//startRegionEnvironment(region);
+		if (Meric::IGNORE)
+			return;
+		#pragma omp master
+		{
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
@@ -51,53 +33,30 @@ public:
 	void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-#ifdef HAVE_OMP_H
-		if (omp_in_parallel())
-		{
-			#pragma omp master
-			{
-				SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
-				setRegionEnvironment(change);
-			}
-			//stopRegionEnvironment();
-			if (Meric::IGNORE)
-				return;
-			#pragma omp master
-			{
-				if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
-				{
-					if (!_stack.size())
-					{
-						std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-					}
-					else
-					{
-						Meric::stop();
-						_stack.pop_back();
-					}
-				}
-				else
-					_stack.pop_back();
-			}
-		}
-		else		
-#endif
+		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
 			setRegionEnvironment(change);
-			//stopRegionEnvironment();
-			if (Meric::IGNORE)
-				return;
+		}
+		//stopRegionEnvironment();
+		if (Meric::IGNORE)
+			return;
+		#pragma omp master
+		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				if (!_stack.size())
 				{
 					std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-					return;
 				}
-				Meric::stop();
+				else
+				{
+					Meric::stop();
+					_stack.pop_back();
+				}
 			}
-			_stack.pop_back();
+			else
+				_stack.pop_back();
 		}
 	}
 	
@@ -110,7 +69,6 @@ public:
 			SocketsRegionParameters change = regionValue(currentState, region);
 			setRegionEnvironment(change);
 		}
-		//startRegionEnvironment(region);
 		
 		if (Meric::IGNORE)
 			return;
@@ -179,46 +137,7 @@ public:
 	SharedMeric();
 	~SharedMeric();
 private:
-	void startRegionEnvironment(const std::string &region)
-	{
-		SocketsRegionParameters change = regionValue(currentState, region);
-		for (int socket=0; socket < NUMOFSOCKETS; socket++)
-		{
-			if(change.socket[socket].uncoreFrequency)
-				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-			if(change.socket[socket].frequency)
-				Environment::frequency(currentState.socket[socket].frequency, socket);
-		}
-		if(change.socket[0].nthreads)
-			Environment::threadNumber(currentState.socket[0].nthreads);
-	}
-	
-	void stopRegionEnvironment()
-	{
-		SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
-		for (int socket=0; socket < NUMOFSOCKETS; socket++)
-		{
-			if(change.socket[socket].uncoreFrequency)
-				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-			if(change.socket[socket].frequency)
-				Environment::frequency(currentState.socket[socket].frequency, socket);
-		}
-		if(change.socket[0].nthreads)
-			Environment::threadNumber(currentState.socket[0].nthreads);
-	}
-	
-	void setRegionEnvironment(SocketsRegionParameters change)
-	{
-		for (int socket=0; socket < NUMOFSOCKETS; socket++)
-		{
-			if(change.socket[socket].uncoreFrequency)
-				Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-			if(change.socket[socket].frequency)
-				Environment::frequency(currentState.socket[socket].frequency, socket);
-		}
-		if(change.socket[0].nthreads)
-			Environment::threadNumber(currentState.socket[0].nthreads);	
-	}
+
 };
 
 }

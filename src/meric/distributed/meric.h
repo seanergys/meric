@@ -2,7 +2,7 @@
 #ifndef SRC_MERIC_DISTRIBUTED_DISTRIBUTEDMERIC_H_
 #define SRC_MERIC_DISTRIBUTED_DISTRIBUTEDMERIC_H_
 
-#include "mpi.h"
+#include <mpi.h>
 
 #include "../meric.h"
 
@@ -10,8 +10,6 @@
 #include "../../store/aggregated/detailedaggregatestore.h"
 #include "../../store/aggregated/debugaggregatestore.h"
 #include "../../store/aggregated/countersaggregatestore.h"
-
-#include "../../wrapper/environmentwrapper.h"
 
 namespace meric {
 
@@ -24,26 +22,17 @@ public:
 	void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-#ifdef HAVE_OMP_H
-		if (omp_in_parallel())
+
+		#pragma omp master
 		{
-			#pragma omp master
-			startRegionEnvironment(region);
-			if (Meric::IGNORE)
-				return;
-			#pragma omp master
-			{
-				if (!ignoreRegion(region))
-					Meric::start(region);
-				_stack.push_back(getRegionID(region));
-			}
+			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
+			MPI_Barrier(_currentNode);
+			setRegionEnvironment(change, !_MPInodeRank);
 		}
-		else
-#endif
+		if (Meric::IGNORE)
+			return;
+		#pragma omp master
 		{
-			startRegionEnvironment(region);
-			if (Meric::IGNORE)
-				return;
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
@@ -53,55 +42,44 @@ public:
 	void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-#ifdef HAVE_OMP_H
-		if (omp_in_parallel())
+
+		#pragma omp master
 		{
-			#pragma omp master
-			stopRegionEnvironment();
-			if (Meric::IGNORE)
-				return;
-			#pragma omp master
-			{
-				if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
-				{
-					if (!_stack.size())
-					{
-						std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-					}
-					else
-					{
-						Meric::stop();
-						_stack.pop_back();
-					}
-				}
-				else
-					_stack.pop_back();
-			}
+			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()), _nodeId);
+			MPI_Barrier(_currentNode);
+			setRegionEnvironment(change, !_MPInodeRank);
 		}
-		else		
-#endif
+		if (Meric::IGNORE)
+			return;
+		#pragma omp master
 		{
-			stopRegionEnvironment();
-			if (Meric::IGNORE)
-				return;
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				if (!_stack.size())
 				{
 					std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-					return;
 				}
-				Meric::stop();
+				else
+				{
+					Meric::stop();
+					_stack.pop_back();
+				}
 			}
-			_stack.pop_back();
+			else
+				_stack.pop_back();
 		}
 	}
 
 	void stopStart(const std::string &region)
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
+
 		#pragma omp master
-		startRegionEnvironment(region);
+		{
+			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
+			MPI_Barrier(_currentNode);
+			setRegionEnvironment(change, !_MPInodeRank);
+		}
 		
 		if (Meric::IGNORE)
 			return;
@@ -207,41 +185,6 @@ protected:
 	MPI_Comm _worldCopy;
 
 private:
-	void startRegionEnvironment(const std::string &region)
-	{
-		MPI_Barrier(_currentNode);
-		SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
-		if (!_MPInodeRank)
-		{
-			for (int socket=0; socket < NUMOFSOCKETS; socket++)
-			{
-				if (change.socket[socket].frequency)
-					Environment::frequency(currentState.socket[socket].frequency, socket);
-				if (change.socket[socket].uncoreFrequency)
-					Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-			}
-		}
-		if (change.socket[0].nthreads)
-			Environment::threadNumber(currentState.socket[0].nthreads);
-	}
-
-	void stopRegionEnvironment()
-	{
-		MPI_Barrier(_currentNode);
-		SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()), _nodeId);
-		if (!_MPInodeRank) 
-		{
-			for (int socket=0; socket < NUMOFSOCKETS; socket++)
-			{
-				if (change.socket[socket].frequency)
-					Environment::frequency(currentState.socket[socket].frequency, socket);
-				if (change.socket[socket].uncoreFrequency)
-					Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-			}
-		}
-		if (change.socket[0].nthreads)
-			Environment::threadNumber(currentState.socket[0].nthreads);
-	}
 
 };
 

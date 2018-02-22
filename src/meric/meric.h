@@ -19,24 +19,12 @@
 #include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
 
+#include "../wrapper/environmentwrapper.h"
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
 
 namespace meric {
-
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
-enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_OTHER};
-
-struct RegionParameters {
-	double frequency;
-	uint64_t uncoreFrequency;
-	int nthreads;
-};
-
-struct SocketsRegionParameters {
-	RegionParameters socket [2];
-};
 
 class Meric {
 public:
@@ -138,7 +126,6 @@ public:
 		// close() is not needed for RAPL
 //		if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
 //			meric::RAPL::close();
-
 	}
 
 	virtual ~Meric() {};
@@ -149,6 +136,9 @@ protected:
 	static RegionParameters getRegionSettings(json_object_element_s * data);
 	static int getDefaultParameters();
 	
+	/**
+	 * searching for region name in a list of regions that should be ignored
+	 **/
 	bool ignoreRegion(const std::string &region)
 	{
 		for (std::vector<std::string>::iterator it=ignoreRegions.begin(); it!=ignoreRegions.end(); it++)
@@ -157,7 +147,6 @@ protected:
 				return true;
 		}
 		return false;
-			
 	}
 	
 	/**
@@ -262,6 +251,27 @@ protected:
 			<< "\tTHR "<< change.socket[0].nthreads	<< std::endl;
 */
 		return change;
+	}
+	
+	/**
+	 * Function sets the environment settings at the region start/stop
+	 * change - change size in each parameter
+	 * MPISelection - frequencies are set by one process per node
+	 **/
+	void setRegionEnvironment(SocketsRegionParameters change, bool MPIselection=true)
+	{
+		if (MPIselection)
+		{
+			for (int socket=0; socket < NUMOFSOCKETS; socket++)
+			{
+				if(change.socket[socket].uncoreFrequency)
+					Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+				if(change.socket[socket].frequency)
+					Environment::frequency(currentState.socket[socket].frequency, socket);
+			}
+		}
+		if(change.socket[0].nthreads)
+			Environment::threadNumber(currentState.socket[0].nthreads);	
 	}
 	
 	const std::string& getRegionName(int size, int last)
