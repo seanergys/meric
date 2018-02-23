@@ -1,7 +1,7 @@
 /**
  * Shared intarface for MERIC and Score-P libraries
  *
- * version 3.2
+ * version 3.3
  * 19.02.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
@@ -10,11 +10,13 @@
 #ifndef READEX_H_
 #define READEX_H_
 
-#include "scorep/SCOREP_User.h"
-#include "scorep/SCOREP_User_Types.h"
-
 #ifdef USE_SCOREP_MANUAL
 	#define USE_SCOREP
+#endif
+
+#ifdef USE_SCOREP
+#include "scorep/SCOREP_User.h"
+#include "scorep/SCOREP_User_Types.h"
 #endif
 
 #ifdef USE_MERIC
