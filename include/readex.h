@@ -46,11 +46,14 @@
 		MERIC_IgnoreStart();
 	#define READEX_IGNORE_STOP() \
 		MERIC_IgnoreStop();
-#else
+#elif defined USE_SCOREP
 	#define READEX_IGNORE_START() \
 		SCOREP_RECORDING_OFF();
 	#define READEX_IGNORE_STOP() \
 		SCOREP_RECORDING_ON();
+#else
+	#define READEX_IGNORE_START()
+	#define READEX_IGNORE_STOP()
 #endif
 
 //READEX_REGION_DEFINE(handle) - can be used for PHASE and SIGNIFICANT regions too
