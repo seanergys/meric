@@ -304,8 +304,18 @@ To find the best settings for each region, you should run your code with all pos
 	# Erase previous results to avoid mixing them
 		make cleanAll
 	
-	# Run the script
-		sbatch run.sh 
+	# Run a script that will run an application in several configurationt you want to test
+		sbatch run.sh
+	
+	# Add a description file `measurementInfo.json` to your output data folder. This step is not compulsory but this file helps us for data analaysis.
+		```
+		{
+			"Timestamp" : "13.6. 2017 14:59",
+			"System"	: "IT4I Salomon",
+			"DataFormat": "node_CF_UnCF_config",
+			"Note"  	: ""
+		}
+		```		
 	
 	# Provide correct configuration file to RADAR
 	# Check inside the cofiguration file if the path to your results is correct

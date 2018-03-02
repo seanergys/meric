@@ -17,6 +17,7 @@
   - MERIC now works in MERIC_AGGREGATE mode as default
   - removed duty for c++14 standart
   - new MERIC function MERIC_MeasureStopStart to avoid extra environment swithing
+  - analysis data directory should contain file measurementInfo.json that describes the test
 
 ### 10.04.2017 #################################################################
   - added Fortran interface
