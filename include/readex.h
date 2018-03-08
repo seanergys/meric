@@ -1,7 +1,7 @@
 /**
  * Shared intarface for MERIC and Score-P libraries
  *
- * version 3.3
+ * version 3.4
  * 19.02.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
@@ -140,5 +140,38 @@
 	#define READEX_PHASE_STOP( handle )
 #endif
 
+//List of Score-P API functions (SCOREP_User.h) that will be ignored if the code is not compiled with Score-P
+#ifndef USE_SCOREP
+	#define SCOREP_USER_REGION( name, type )
+	//#define SCOREP_USER_REGION_DEFINE( handle )
+	#define SCOREP_USER_REWIND_DEFINE( handle )
+	//#define SCOREP_USER_OA_PHASE_BEGIN( handle, name, type )
+	//#define SCOREP_USER_OA_PHASE_END( handle )
+	#define SCOREP_USER_REWIND_POINT( handle, name )
+	//#define SCOREP_USER_REGION_BEGIN( handle, name, type )
+	#define SCOREP_USER_REGION_BY_NAME_BEGIN( name, type )
+	#define SCOREP_USER_REGION_INIT( handle, name, type )
+	//#define SCOREP_USER_REGION_END( handle )
+	#define SCOREP_USER_REGION_BY_NAME_END( name )
+	#define SCOREP_USER_REWIND_CHECK( handle, value )
+	#define SCOREP_USER_REGION_ENTER( handle )
+	#define SCOREP_USER_FUNC_BEGIN()
+	#define SCOREP_USER_FUNC_END()
+	#define SCOREP_USER_GLOBAL_REGION_DEFINE( handle )
+	#define SCOREP_USER_GLOBAL_REGION_EXTERNAL( handle )
+	#define SCOREP_USER_PARAMETER_INT64( name, value )
+	#define SCOREP_USER_PARAMETER_UINT64( name, value )
+	#define SCOREP_USER_PARAMETER_STRING( name, value )
+	#define SCOREP_USER_METRIC_GLOBAL( metricHandle )
+	#define SCOREP_USER_METRIC_EXTERNAL( metricHandle )
+	#define SCOREP_USER_METRIC_LOCAL( metricHandle )
+	#define SCOREP_USER_METRIC_INIT( metricHandle, name, unit, type, context )
+	#define SCOREP_USER_METRIC_INT64( metricHandle, value )
+	#define SCOREP_USER_METRIC_UINT64( metricHandle, value )
+	#define SCOREP_USER_METRIC_DOUBLE( metricHandle, value )
+	//#define SCOREP_RECORDING_ON()
+	//#define SCOREP_RECORDING_OFF()
+	#define SCOREP_RECORDING_IS_ON() 0
+#endif
 
 #endif /* READEX_H_ */
