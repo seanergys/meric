@@ -67,4 +67,30 @@
 #define READEX_PHASE_START( reg_handle, reg_name, reg_type )
 #define READEX_PHASE_STOP( reg_handle )
 #endif
+#ifndef USE_SCOREP
+#define SCOREP_USER_REWIND_DEFINE( handle )
+#define SCOREP_USER_REWIND_POINT( handle, name )
+#define SCOREP_USER_REGION_INIT( handle, name, type )
+#define SCOREP_USER_REGION_BY_NAME_BEGIN( name, type )
+#define SCOREP_USER_REGION_BY_NAME_END( name )
+#define SCOREP_USER_REWIND_CHECK( handle, value )
+#define SCOREP_USER_REGION_ENTER( handle )
+#define SCOREP_USER_FUNC_DEFINE()
+#define SCOREP_USER_FUNC_BEGIN( name )
+#define SCOREP_USER_FUNC_END()
+#define SCOREP_USER_GLOBAL_REGION_DEFINE( handle )
+#define SCOREP_USER_GLOBAL_REGION_EXTERNAL( handle )
+#define SCOREP_USER_PARAMETER_DEFINE( handle )
+#define SCOREP_USER_PARAMETER_INT64( handle, name, value )
+#define SCOREP_USER_PARAMETER_UINT64( handle, name, value )
+#define SCOREP_USER_PARAMETER_STRING( handle, name, value )
+#define SCOREP_USER_METRIC_GLOBAL( metricHandle )
+#define SCOREP_USER_METRIC_EXTERNAL( metricHandle )
+#define SCOREP_USER_METRIC_LOCAL( metricHandle )
+#define SCOREP_USER_METRIC_INIT( metricHandle, name, unit, type, context )
+#define SCOREP_USER_METRIC_INT64( metricHandle, value )
+#define SCOREP_USER_METRIC_UINT64( metricHandle, value )
+#define SCOREP_USER_METRIC_DOUBLE( metricHandle, value )
+#define SCOREP_RECORDING_IS_ON( isOn ) isOn = .false.
+#endif
 #endif
