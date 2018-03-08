@@ -7,6 +7,7 @@
   - tool for static energy measurement and CPU frequencies change
   - updated shared Score-P/Meric header file
 		+ readex.h has new functions for region define (with backward compatibility)
+		+ support for the rest of Score-P API
 		+ added Fortran version readex.inc
   - new templated version of store classes - please check your RADAR configuration files for changes in labels in MERIC output files
   - added ignore functions to turn off measurement

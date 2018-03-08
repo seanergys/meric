@@ -114,7 +114,7 @@ There is one more restriction in placing probes into the code. In current versio
 ```
 
 ## Shared MERIC/Score-P interface ##
-Into include folder the C header file readex.h and Fortran readex.inc were added. Instead of Meric functions call you may use following functions, that are shared with Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use Meric and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
+Into include folder the C header file readex.h and Fortran readex.inc were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
@@ -132,6 +132,8 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |
 | READEX_IGNORE_STOP()                      | MERIC_IgnoreStop()       | SCOREP_RECORDING_ON()                          |
     *  Defines region handle except of phase region
+
+READEX interface doesn't contain all Score-P API functions, because there is no support for these in MERIC. For the rest functionality user may use usual Score-P API, the functions will be ignored if the code will be compiled without Score-P.
 
 --------------------------------------------------------------------------------
 #     4] MERIC input parameters                                                #
