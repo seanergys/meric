@@ -19,6 +19,7 @@ int Environment::systemType = SYS_HASWELL;
 
 void Environment::threadNumber(int nthreads)
 {
+	double time = omp_get_wtime();
 	if (nthreads <= 0)
 		return;
 #ifdef HAVE_OMP_H
@@ -42,6 +43,8 @@ void Environment::threadNumber(int nthreads)
 	__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
 #endif
 */
+	time = omp_get_wtime()-time;
+	MERIC_INFO << "MERIC number of OpenMP threads changed in " << time*1000 << " ms\n";
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
@@ -100,6 +103,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 
 void Environment::frequency(uint64_t freq, int socket)
 {
+	double time = omp_get_wtime();
 	if (freq == 0)
 		return;
 
@@ -196,10 +200,13 @@ void Environment::frequency(uint64_t freq, int socket)
 		}
 #endif
 	}
+	time = omp_get_wtime()-time;
+	MERIC_INFO << "MERIC core frequncy changed in " << time*1000 << " ms\n";
 }
 
 void Environment::uncoreFrequency(uint64_t freq, int socket)
 {
+	double time = omp_get_wtime();
 	if (freq == 0)
 		return;
 
@@ -266,6 +273,8 @@ void Environment::uncoreFrequency(uint64_t freq, int socket)
 #else
 #endif
 	}
+	time = omp_get_wtime()-time;
+	MERIC_INFO << "MERIC uncore frequncy changed in " << time*1000 << " ms\n";
 }
 
 void Environment::setDefaultFrequencies()
