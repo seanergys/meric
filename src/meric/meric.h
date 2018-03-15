@@ -262,13 +262,45 @@ protected:
 	{
 		if (MPIselection)
 		{
-			for (int socket=0; socket < NUMOFSOCKETS; socket++)
+			//set core frequency
+			differentSettingsForSockets = false;
+			double diffCore = change.socket[0].frequency;
+			for (int socket=1; socket < NUMOFSOCKETS; socket++)
 			{
-				if(change.socket[socket].uncoreFrequency)
-					Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
-				if(change.socket[socket].frequency)
-					Environment::frequency(currentState.socket[socket].frequency, socket);
+				if (diffCore != change.socket[socket].frequency)
+					differentSettingsForSockets = true;
 			}
+			
+			if (differentSettingsForSockets)
+			{
+				for (int socket=0; socket < NUMOFSOCKETS; socket++)
+				{
+					if(change.socket[socket].frequency)
+						Environment::frequency(currentState.socket[socket].frequency, socket);
+				}
+			}
+			else if (diffCore)
+				Environment::frequency(currentState.socket[0].frequency);
+		
+			//set uncore frequncy
+			bool differentSettingsForSockets = false;
+			uint64_t diffUncore = change.socket[0].uncoreFrequency;
+			for (int socket=1; socket < NUMOFSOCKETS; socket++)
+			{
+				if (diffUncore != change.socket[socket].uncoreFrequency)
+					differentSettingsForSockets = true;
+			}
+			
+			if (differentSettingsForSockets)
+			{
+				for (int socket=0; socket < NUMOFSOCKETS; socket++)
+				{
+					if(change.socket[socket].uncoreFrequency)
+						Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+				}
+			}
+			else if (diffUncore)
+				Environment::uncoreFrequency(currentState.socket[0].uncoreFrequency);
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);	
