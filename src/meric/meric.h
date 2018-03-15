@@ -263,7 +263,7 @@ protected:
 		if (MPIselection)
 		{
 			//set core frequency
-			differentSettingsForSockets = false;
+			bool differentSettingsForSockets = false;
 			double diffCore = change.socket[0].frequency;
 			for (int socket=1; socket < NUMOFSOCKETS; socket++)
 			{
@@ -283,7 +283,7 @@ protected:
 				Environment::frequency(currentState.socket[0].frequency);
 		
 			//set uncore frequncy
-			bool differentSettingsForSockets = false;
+			differentSettingsForSockets = false;
 			uint64_t diffUncore = change.socket[0].uncoreFrequency;
 			for (int socket=1; socket < NUMOFSOCKETS; socket++)
 			{
