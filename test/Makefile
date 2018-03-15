@@ -32,7 +32,7 @@ BINARIES=test test_mpi blasTest samples sleepTest fortTest
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest fortTest blasTestInfo
+all: samplesTest mpiTest basicTest sleepTest fortTest blasTestInfo overheadTest
 
  ######
 sleepTest: sleeptest.cpp
@@ -47,11 +47,14 @@ basicTest: test.cpp
 scorepTest: test.cpp
 	scorep --online-access --user --thread=none g++ -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
 
+overhead: overheadTest.cpp
+	$(CC)   -g overheadTest.cpp -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o overHead -DLOAD_MAX
+
 samplesTest: samples_test.cpp
 	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples
 
 blasTest: blas_test.c
-	$(CC) -O0 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o blasTest
+	$(CC) -O3 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o blasTest
 
 blasTestInfo:
 	$(info )
