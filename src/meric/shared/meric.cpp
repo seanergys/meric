@@ -67,9 +67,8 @@ SharedMeric::SharedMeric()
 		Environment::init(SYS_HASWELL, defaultParameter, 0);
 
 	
-	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+	for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 		currentState.socket[socket] = defaultParameter;
-
 
 
 	//wrappers must be initialized after meric instantiation

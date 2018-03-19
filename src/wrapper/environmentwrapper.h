@@ -39,9 +39,7 @@ struct RegionParameters {
 	int nthreads;
 };
 
-struct SocketsRegionParameters {
-	RegionParameters socket [2];
-};
+
 
 struct systemLimits{
 	int maxCoreFreq;
@@ -54,28 +52,53 @@ struct systemLimits{
 
 const int CPUFREQ_FREQ_MULT = 100000;
 const int X86ADAPT_FREQ_MULT = 256;
-const int X86ADAPT_MAX_FREQ = 33;
 const int CPUFREQ_MAX_FREQ = 25;
-
-static int SOCKET_SIZE;
+const int X86ADAPT_MAX_FREQ = 33;
 
 class Environment {
 
 public:
-	static systemLimits FreqLimits [3];
-	static int systemType;
+	static int NODE_SIZE_CPU;
+	static int NODE_SIZE_SOCKET;
+	static int SOCKET_SIZE_CPU;
 
+	static systemLimits FreqLimits [4];
+	static int systemType;
 
 	static void frequency(uint64_t freq, int socket = -1);
 	static void uncoreFrequency(uint64_t freq, int socket = -1);	
 	static void threadNumber(int nthreads);
 	static void init(int system, RegionParameters defaultParameter, int rank);
+	static void initHWSizes();
 	static void setDefaultFrequencies();
 	static void close();
 
 private:
 
 };
+
+
+struct SocketsRegionParameters {
+	RegionParameters socket [2];	//TODO remove this constant
+/*
+	RegionParameters * socket;
+
+	SocketsRegionParameters()
+	{
+		if (Environment::SOCKET_SIZE_CPU == 0)
+		{
+			Environment::initHWSizes();
+		}
+		socket = (RegionParameters*) malloc (sizeof(RegionParameters) * Environment::SOCKET_SIZE_CPU);
+	}
+	
+	~SocketsRegionParameters()
+	{
+		free(socket);
+	}
+//*/
+};
+
 
 }
 

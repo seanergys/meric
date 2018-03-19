@@ -194,7 +194,7 @@ DistributedMeric::DistributedMeric()
 	else
 		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
 
-	for (int socket=0; socket < NUMOFSOCKETS; socket++)
+	for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 		currentState.socket[socket] = defaultParameter;
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)

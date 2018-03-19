@@ -41,7 +41,6 @@ public:
 	static std::string OUTPUT_DIR;
 	static std::string OUTPUT_FILENAME;
 	static std::string REGION_OPTIONS;
-	const int NUMOFSOCKETS = 2;	//TODO get this number from a source
 
 	virtual void start(const std::string &region)
 	{
@@ -225,12 +224,12 @@ protected:
 		};
 	
 		if (parameter.find(region) == parameter.end())	//region name not in list
-			for (int socket=0; socket<NUMOFSOCKETS; socket++)
+			for (int socket=0; socket<Environment::NODE_SIZE_SOCKET; socket++)
 				cmpSettings(settings, defaultParameter, socket);
 		else
 		{
 			std::map<std::pair<int, int>, struct RegionParameters>::iterator it;
-			for (int socket=0; socket<NUMOFSOCKETS; socket++)
+			for (int socket=0; socket<Environment::NODE_SIZE_SOCKET; socket++)
 			{	
 				if (node != -1 && (it = parameter[region].find(std::make_pair(node, socket))) != parameter[region].end())
 					cmpSettings(settings, it->second, socket);
@@ -265,7 +264,7 @@ protected:
 			//set core frequency
 			bool differentSettingsForSockets = false;
 			double diffCore = change.socket[0].frequency;
-			for (int socket=1; socket < NUMOFSOCKETS; socket++)
+			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
 			{
 				if (diffCore != change.socket[socket].frequency)
 					differentSettingsForSockets = true;
@@ -273,7 +272,7 @@ protected:
 			
 			if (differentSettingsForSockets)
 			{
-				for (int socket=0; socket < NUMOFSOCKETS; socket++)
+				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 				{
 					if(change.socket[socket].frequency)
 						Environment::frequency(currentState.socket[socket].frequency, socket);
@@ -285,7 +284,7 @@ protected:
 			//set uncore frequncy
 			differentSettingsForSockets = false;
 			uint64_t diffUncore = change.socket[0].uncoreFrequency;
-			for (int socket=1; socket < NUMOFSOCKETS; socket++)
+			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
 			{
 				if (diffUncore != change.socket[socket].uncoreFrequency)
 					differentSettingsForSockets = true;
@@ -293,7 +292,7 @@ protected:
 			
 			if (differentSettingsForSockets)
 			{
-				for (int socket=0; socket < NUMOFSOCKETS; socket++)
+				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 				{
 					if(change.socket[socket].uncoreFrequency)
 						Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
