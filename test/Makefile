@@ -27,16 +27,16 @@ ifeq ($(X86ADAPT),)
 	X86ADAPT=-lnuma
 endif
 
-BINARIES=test test_mpi blasTest samples sleepTest fortTest
+BINARIES=test test_mpi blasTest samples sleepTest fortTest overHead
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest fortTest blasTestInfo overheadTest
+all: samplesTest mpiTest basicTest sleepTest fortTest overhead blasTestInfo
 
  ######
-sleepTest: sleeptest.cpp
-	$(CC) -O0 -g sleeptest.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleepTest -DUSE_MERIC
+sleepTest: sleep_test.cpp
+	$(CC) -O0 -g sleep_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleepTest -DUSE_MERIC
 	
 mpiTest: test_mpi.cpp
 	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
@@ -47,8 +47,8 @@ basicTest: test.cpp
 scorepTest: test.cpp
 	scorep --online-access --user --thread=none g++ -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
 
-overhead: overheadTest.cpp
-	$(CC)   -g overheadTest.cpp -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o overHead -DLOAD_MAX
+overhead: overhead_test.cpp
+	$(CC)   -g overhead_test.cpp -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o overHead
 
 samplesTest: samples_test.cpp
 	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples

@@ -45,9 +45,11 @@
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if Meric detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
-	* sleeptest.cpp
+	* sleep_test.cpp
 		* A test with RUN (muximum load) and SLEEP (minimum load) regions, both with the same runtime.
 		* Originaly made to control real CPU frequency of the machine.
+	* overhead_test.cpp
+		* Test to measure MERIC overhead and overhead of libraries to change environemt parameters
 * config direcory
 	* region.options
 		* File that sets exact settings for regions inside your code.
