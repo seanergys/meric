@@ -12,3 +12,10 @@ tools/yokogawaMeasurement/
 tools/staticMERICtool/energyMeasureStart
 tools/staticMERICtool/energyMeasureStop
 
+test/sleepTest
+test/test_mpi
+test/test
+test/overHead
+test/samples
+test/blasTest
+test/fortTest
