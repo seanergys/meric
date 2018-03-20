@@ -63,7 +63,7 @@ void Environment::initHWSizes()
 	NODE_SIZE_SOCKET = numa_node_of_cpu(NODE_SIZE_CPU-1)+1;
 #endif
 	SOCKET_SIZE_CPU = NODE_SIZE_SOCKET == 0 ? 0 : NODE_SIZE_CPU / NODE_SIZE_SOCKET;
-	std::cout << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
+//	std::cout << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
 }
 
 

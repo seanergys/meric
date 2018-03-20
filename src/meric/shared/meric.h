@@ -14,11 +14,15 @@ public:
 	void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
+		timespec spectime1, spectime2;
+		clock_gettime(CLOCK_REALTIME, &spectime1);
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region);
 			setRegionEnvironment(change);
 		}
+		clock_gettime(CLOCK_REALTIME, &spectime2);
+		MERIC_INFO << "MERIC settings changed in " << mutils::timeToDouble(spectime2 - spectime1)*1000 << " ms\n";
 		//startRegionEnvironment(region);
 		if (Meric::IGNORE)
 			return;
@@ -28,6 +32,8 @@ public:
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
+		clock_gettime(CLOCK_REALTIME, &spectime1);
+		MERIC_INFO << "MERIC status recorded in " << mutils::timeToDouble(spectime1 - spectime2)*1000 << " ms\n";
 	}
 	
 	void stop()
