@@ -50,10 +50,14 @@ int main(int argc, char **argv)
 			clock_gettime(CLOCK_REALTIME, &spectime1);
 			READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
 				clock_gettime(CLOCK_REALTIME, &spectime2);
-				std::cout << "MERIC totaltime " << (timespec2double(spectime2)-timespec2double(spectime1)) << " ms\n";
+				std::cout << "MERIC start time " << (timespec2double(spectime2)-timespec2double(spectime1)) << " ms\n";
 				doSomeJobForMe(random);
+				clock_gettime(CLOCK_REALTIME, &spectime1);
 			READEX_REGION_STOP(B);
+			clock_gettime(CLOCK_REALTIME, &spectime2);
+			std::cout << "MERIC stop time " << (timespec2double(spectime2)-timespec2double(spectime1)) << " ms\n";
 		READEX_REGION_STOP(A);
+		doSomeJobForMe(random);
 	}
 
 	READEX_CLOSE();
