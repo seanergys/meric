@@ -1,0 +1,11 @@
+{
+	"A" : {
+		"FREQUENCY" : 25,
+		"UNCORE_FREQUENCY" : 12
+	}
+	,
+	"B" : { 
+		"FREQUENCY" : 25, 
+		"UNCORE_FREQUENCY" : 30
+	}
+}

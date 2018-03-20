@@ -5,7 +5,7 @@
 #SBATCH --exclusive
 #SBATCH -p haswell
 #SBATCH -A p_readex
-#SBATCH --mem 62000
+#SBATCH --mem-per-cpu=2500M
 #SBATCH -t 0-0:15
 #SBATCH --comment="cpufreqchown"
 #SBATCH --mail-type=ALL
@@ -21,9 +21,8 @@
 ################################################################################
 
 #cd $PATH_TO_MERIC
-cd /home/vys0053/readex/meric
-
-. set_env_*
+ 
+. set_env*
 cd test/
 
 export MERIC_FREQUENCY=25
@@ -33,19 +32,19 @@ export MERIC_CONTINUAL=1
 export MERIC_MODE=3	# 3 = no energy measurement
 
 
-export MERIC_REGION_OPTIONS=region.options-UnCF
+export MERIC_REGION_OPTIONS=config/region.options-UnCF
 ./overHead > TRACK-UnCF.txt
 grep "MERIC uncore " TRACK-UnCF.txt | awk 'NR % 2 == 0' | grep -oE "[0-9].[0-9]+" > DOWN_UnCF.txt
 grep "MERIC uncore " TRACK-UnCF.txt | awk 'NR % 2 == 1' | grep -oE "[0-9].[0-9]+" > UP_UnCF.txt
-grep "MERIC start "  TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > MB_UnCF.txt
-grep "MERIC stop "   TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > MA_UnCF.txt
+grep "MERIC start "  TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > M_UP_UnCF.txt
+grep "MERIC stop "   TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > M_DOWN_UnCF.txt
 
 
-export MERIC_REGION_OPTIONS=region.options-CF
+export MERIC_REGION_OPTIONS=config/region.options-CF
 ./overHead > TRACK-CF.txt
 grep "MERIC core " TRACK-CF.txt | awk 'NR % 2 == 0' | grep -oE "[0-9].[0-9]+" > DOWN_CF.txt
 grep "MERIC core " TRACK-CF.txt | awk 'NR % 2 == 1' | grep -oE "[0-9].[0-9]+" > UP_CF.txt
-grep "MERIC start "  TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > MB_CF.txt
-grep "MERIC stop "   TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > MA_CF.txt
+grep "MERIC start "  TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > M_UP_CF.txt
+grep "MERIC stop "   TRACK-UnCF.txt | grep -oE "[0-9].[0-9]+" > M_DOWN_CF.txt
 
 
