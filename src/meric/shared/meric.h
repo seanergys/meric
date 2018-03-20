@@ -41,7 +41,7 @@ public:
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 		#pragma omp master
 		{
-			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()));
+			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1));
 			setRegionEnvironment(change);
 		}
 		//stopRegionEnvironment();

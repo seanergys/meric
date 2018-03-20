@@ -45,7 +45,7 @@ public:
 
 		#pragma omp master
 		{
-			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size(), _stack.back()), _nodeId);
+			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
