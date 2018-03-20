@@ -4,8 +4,8 @@ build
 *.so
 *.o
 *.a
-test/hdeemMeasurement/
-test/hdeemMeasurementCounters/
+test/mericMeasurement*
+test/hdeemMeasurement*
 tools/__pycache__/
 tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
