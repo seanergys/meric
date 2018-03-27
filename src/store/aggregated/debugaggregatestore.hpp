@@ -83,25 +83,25 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
         avgDuration /= this->_size;
         avgHdeemDuration /= this->_size;
 
-    ss << "Average runtime of function [s] (clockTime)," << avgDuration << '\n'
-       << "Maximal runtime of function [s] (clockTime)," << maxDuration << '\n'
-       << "Minimal runtime of function [s] (clockTime)," << minDuration << '\n'
-       << "Sum of runtime of function across all nodes [s] (clockTime)," << sumDuration << '\n'
-       << "Average runtime of function [s] (hdeemTime)," << avgHdeemDuration << '\n'
-       << "Maximal runtime of function [s] (hdeemTime)," << maxHdeemDuration << '\n'
-       << "Minimal runtime of function [s] (hdeemTime)," << minHdeemDuration << '\n'
-       << "Sum of runtime of function across all nodes [s] (hdeemTime)," << sumHdeemDuration << '\n';
+    ss << "Average runtime of function (clockTime) [s]," << avgDuration << '\n'
+       << "Maximal runtime of function (clockTime) [s]," << maxDuration << '\n'
+       << "Minimal runtime of function (clockTime) [s]," << minDuration << '\n'
+       << "Sum of runtime of function across all nodes (clockTime) [s]," << sumDuration << '\n'
+       << "Average runtime of function (hdeemTime) [s]," << avgHdeemDuration << '\n'
+       << "Maximal runtime of function (hdeemTime) [s]," << maxHdeemDuration << '\n'
+       << "Minimal runtime of function (hdeemTime) [s]," << minHdeemDuration << '\n'
+       << "Sum of runtime of function across all nodes (hdeemTime) [s]," << sumHdeemDuration << '\n';
 
     //////////////////
     // Blade values //
     //////////////////
     ss << "# Blade summary" << '\n'
-       << "Average energy consumption [J] (Samples)," << avgEnergy << '\n'
-       << "Maximal energy consumption [J] (Samples)," << maxEnergy << '\n'
-       << "Minimal energy consumption [J] (Samples)," << minEnergy << '\n'
-       << "Average energy consumption [J] (Stats structure)," << avgEnergyStatsStruct << '\n'
-       << "Maximal energy consumption [J] (Stats structure)," << maxEnergyStatsStruct << '\n'
-       << "Minimal energy consumption [J] (Stats structure)," << minEnergyStatsStruct << '\n';
+       << "Average energy consumption (Samples) [J]," << avgEnergy << '\n'
+       << "Maximal energy consumption (Samples) [J]," << maxEnergy << '\n'
+       << "Minimal energy consumption (Samples) [J]," << minEnergy << '\n'
+       << "Average energy consumption (Stats structure) [J]," << avgEnergyStatsStruct << '\n'
+       << "Maximal energy consumption (Stats structure) [J]," << maxEnergyStatsStruct << '\n'
+       << "Minimal energy consumption (Stats structure) [J]," << minEnergyStatsStruct << '\n';
 
 
     ///////////////////////
@@ -142,12 +142,12 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
         avgEnergy /= this->_size;
         avgEnergyStatsStruct /= this->_size;
 
-        ss << "Average energy consumption [J] (Samples)," << avgEnergy << '\n'
-           << "Maximal energy consumption [J] (Samples)," << maxEnergy << '\n'
-           << "Minimal energy consumption [J] (Samples)," << minEnergy << '\n'
-           << "Average energy consumption [J] (Stats structure)," << avgEnergyStatsStruct << '\n'
-           << "Maximal energy consumption [J] (Stats structure)," << maxEnergyStatsStruct << '\n'
-           << "Minimal energy consumption [J] (Stats structure)," << minEnergyStatsStruct << '\n';
+        ss << "Average energy consumption (Samples) [J]," << avgEnergy << '\n'
+           << "Maximal energy consumption (Samples) [J]," << maxEnergy << '\n'
+           << "Minimal energy consumption (Samples) [J]," << minEnergy << '\n'
+           << "Average energy consumption (Stats structure) [J]," << avgEnergyStatsStruct << '\n'
+           << "Maximal energy consumption (Stats structure) [J]," << maxEnergyStatsStruct << '\n'
+           << "Minimal energy consumption (Stats structure) [J]," << minEnergyStatsStruct << '\n';
     }
 
 }

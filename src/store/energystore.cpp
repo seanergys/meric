@@ -61,7 +61,7 @@ void EnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, 
 
 	ss << "# Store CONTINUAL 0" << std::endl;
 	ss << "# Blade summary" << std::endl
-	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy - _records[iStarts.back()].energy << std::endl;
+	   << "Energy consumption [J]" << "," << _records[iEnd].energy - _records[iStarts.back()].energy << std::endl;
 	   
 	if (_records[iEnd].energy - _records[iStarts.back()].energy <= 0)
 	{

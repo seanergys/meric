@@ -62,10 +62,10 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	}
 	
 	ss << "# Blade summary" << std::endl
-	   << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl
-       << "Maximal power [W] (Samples)" << "," << maxWatts[0] << std::endl
-       << "Minimal power [W] (Samples)" << "," << minWatts[0] << std::endl
-       << "Average power [W] (Samples)" << "," << avgWatts << std::endl
+	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
+       << "Maximal power [W]" << "," << maxWatts[0] << std::endl
+       << "Minimal power [W]" << "," << minWatts[0] << std::endl
+       << "Average power [W]" << "," << avgWatts << std::endl
        << "ID of first blade sample" << "," << firstBlade << std::endl
        << "ID of last blade sample" << "," << lastBlade-1 << std::endl;
 
@@ -89,10 +89,10 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	        energyConsumption = duration * avgWatts;
 
 		    ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") summary" <<std::endl
-		       << "Energy consumption [J] (Samples)" << "," << energyConsumption << std::endl
-		       << "Maximal power [W] (Samples)" << "," << maxWatts[sensorID] << std::endl
-		       << "Minimal power [W] (Samples)" << "," << minWatts[sensorID] << std::endl
-		       << "Average power [W] (Samples)" << "," << avgWatts << std::endl
+		       << "Energy consumption [J]" << "," << energyConsumption << std::endl
+		       << "Maximal power [W]" << "," << maxWatts[sensorID] << std::endl
+		       << "Minimal power [W]" << "," << minWatts[sensorID] << std::endl
+		       << "Average power [W]" << "," << avgWatts << std::endl
 		       << "ID of first VR sample" << "," << firstVR << std::endl
 		       << "ID of last VR sample" << "," << lastVR-1 << std::endl;
 		}

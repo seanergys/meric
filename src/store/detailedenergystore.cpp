@@ -44,7 +44,7 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
     //////////////////
     ss << "# Store CONTINUAL 0" << std::endl;
 	ss << "# Blade summary" << std::endl
-	   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;
+	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;
 
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
 	{
@@ -68,7 +68,7 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
     for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++)
     {
 		ss << "# Voltage regulator (" << vrSensor[sensorID] << ") summary" << std::endl
-		   << "Energy consumption [J] (Stats structure)" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl;
+		   << "Energy consumption [J]" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl;
 		
 		if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
 		{

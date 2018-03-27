@@ -44,7 +44,7 @@ namespace RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
 const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
-const std::string RAPL_SUM_ENERGY  = "Energy summary";	//PCKG+RAM = not a counter to measure
+const std::string RAPL_SUM_ENERGY  = "Energy summary [J]";	//PCKG+RAM = not a counter to measure
 /*
 const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";	//Taurus doesn't support
 const std::string RAPL_DRAM_CH0    = "Intel_DRAM_ENERGY_STATUS_CH0";

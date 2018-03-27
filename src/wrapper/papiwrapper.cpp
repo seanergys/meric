@@ -127,7 +127,7 @@ void PAPI::getRatios(std::map<std::string, long long>& start, std::map<std::stri
 {
 	if (stop.count(PAPI_COUNTERS::COUNTER_AVX))
 	{
-		ratios["GFLOPs"] = CountersRates::FLOPS(
+		ratios["Performance [GFLOPs]"] = CountersRates::FLOPS(
 			stop[PAPI_COUNTERS::COUNTER_AVX] - 
 			start[PAPI_COUNTERS::COUNTER_AVX], 
 			runtime

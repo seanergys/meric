@@ -124,7 +124,7 @@ void PERFEVENT::getRatios(std::map<std::string, long long>& start, std::map<std:
 {
 	if (stop.count(PERFEVENT_COUNTERS::COUNTER_AVX))
 	{
-		ratios["GFLOPs"] = CountersRates::FLOPS(
+		ratios["Performance [GFLOPs]"] = CountersRates::FLOPS(
 			stop[PERFEVENT_COUNTERS::COUNTER_AVX] - 
 			start[PERFEVENT_COUNTERS::COUNTER_AVX], 
 			runtime
