@@ -75,6 +75,10 @@ const std::string RAPL_DRAM_CH3    = "Intel_DRAM_ENERGY_STATUS_CH3";
 static std::map<std::string, std::string> counterLabel = {
 	{ "Intel_RAPL_Pckg_Energy", "RAPL_PCKG [J]" },
 	{ "Intel_RAPL_RAM_Energy", "RAPL_RAM [J]" },
+	{ "Intel_RAPL_Pckg_Energy_0", "RAPL_PCKG_0 [J]" },
+	{ "Intel_RAPL_Pckg_Energy_1", "RAPL_PCKG_1 [J]" },
+	{ "Intel_RAPL_RAM_Energy_0", "RAPL_RAM_0 [J]" },
+	{ "Intel_RAPL_RAM_Energy_1", "RAPL_RAM_1 [J]" },
 	{ "Energy summary [J]", "Energy summary [J]" }
 };
 }
