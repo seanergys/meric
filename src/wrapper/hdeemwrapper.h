@@ -33,6 +33,7 @@ public:
 	static const int PROBE_NUMBER = 7;	//BLADE + {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
 	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
+	static std::string getCounterLabel(std::string counter) { return counter; };
 
 #ifndef USE_DUMMY
 	static void init()

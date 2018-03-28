@@ -26,6 +26,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 private:
 		//list of counters
@@ -48,6 +49,7 @@ public:
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
+	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 private:
 	static std::string suffix;

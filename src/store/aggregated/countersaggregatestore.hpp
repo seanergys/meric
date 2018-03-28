@@ -115,7 +115,8 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	{
 		ss << "# RATIOS: \n";
 		for(auto const &element : ratios)
-			ss << element.first<<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
+			ss << this->_store->getCounterLabel(element.first) <<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
+					//element.first
 	}
 }
 

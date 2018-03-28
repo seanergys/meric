@@ -157,6 +157,16 @@ std::string PAPI::getCountersLabel()
 {
 	return "PAPI";
 }
+
+std::string PAPI::getCounterLabel(std::string counter)
+{
+	std::map<std::string, std::string>::iterator it = PAPI_COUNTERS::counterLabel.find(counter);
+	if (it != PAPI_COUNTERS::counterLabel.end())
+		return it->second;
+	else
+		return counter;
+}
+
 std::string PAPI::getSummaryCounterName()
 {
 	return "";

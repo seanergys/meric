@@ -18,6 +18,11 @@ template <class TCounter, typename TType> std::string CountersStore<TCounter, TT
 	return TCounter::getCountersLabel();
 }
 
+template <class TCounter, typename TType> std::string CountersStore<TCounter, TType>::getCounterLabel(std::string counter)
+{
+	return TCounter::getCounterLabel(counter);
+}
+
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::getRatios(std::map<std::string, TType>& start, std::map<std::string, TType>& stop, double runtime, std::map <std::string, double> & ratios)
 {
 	TCounter::getRatios(start, stop, runtime, ratios);
@@ -88,7 +93,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 			continue;
 		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
 		summary += value;
-		ss << counterIt.first << "," << value << std::endl;
+		ss << TCounter::getCounterLabel(counterIt.first) << "," << value << std::endl;
 	}
 
 	TCounter::getSummaryValue(runtime, &summary);

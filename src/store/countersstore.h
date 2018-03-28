@@ -30,6 +30,7 @@ public:
 	void addEnd(int region);
 	void fillRegionStats(std::vector<unsigned long long> &stats, double *time, size_t iStarts, size_t iEnd);
 	std::string getCountersLabel();
+	std::string getCounterLabel(std::string);
 	void getRatios(std::map<std::string, TType>& start, std::map<std::string, TType>& stop, double runtime, std::map <std::string, double> & ratios);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
