@@ -22,13 +22,12 @@ void HDEEM::setTimeAdjustment(timespec start)
 
 std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
-
 	std::string errMessage = "";
 	*firstBlade = std::ceil((startTime-_startTime) * FREQUENCY) + _timeAdjustment;
 	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 
-//MERIC_INFO << "FIRST " << *firstBlade << std::endl;
-//MERIC_INFO << "LAST " << *lastBlade << std::endl;
+	MERIC_INFO << "FIRST " << *firstBlade << std::endl;
+	MERIC_INFO << "LAST " << *lastBlade << std::endl;
 
 	if (*lastBlade > _samples.nb_blade_values)	//TODO
 	{
@@ -50,7 +49,10 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 
 	auto getEnergySamples = [&] (size_t firstSample, size_t lastSample, size_t sensorID)
 	{
-		maxWatts[sensorID] = _samples.blade_power[firstSample].value[sensorID];
+		if (sensorID == 0)
+			maxWatts[sensorID] = _samples.blade_power[firstSample].value[sensorID];
+		else
+			maxWatts[sensorID] = _samples.vr_power[firstSample].value[sensorID-1];
 		minWatts[sensorID] = maxWatts[sensorID];
 		double valTmp;
 		for (size_t it = firstSample; it < lastSample; it++)
@@ -58,7 +60,7 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 			if (sensorID == 0)
 				valTmp = _samples.blade_power[it].value[sensorID];
 			else
-				valTmp = _samples.vr_power[it].value[sensorID];
+				valTmp = _samples.vr_power[it].value[sensorID-1];
 			if (valTmp > maxWatts[sensorID])
 				maxWatts[sensorID] = valTmp;
 			else if (valTmp < minWatts[sensorID])
@@ -105,7 +107,6 @@ void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 		for (size_t i = first; i < last; i++)
 			samples.push_back(_samples.vr_power[i].value[sensorId-1]);
 	}
-	std::cerr << "samples_size " <<  samples.size() << std::endl;
 }
 
 double HDEEM::getResultValue(double startValue, double stopValue, double runtime, std::string counter)
@@ -136,7 +137,7 @@ size_t HDEEM::energy = 0;
 
 	//TODO spojit tyto 3 polozky v jednu
 std::string HDEEM::storeLabel = "hdeem";
-std::vector<std::string> HDEEM::vrSensorLabel = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
+std::vector<std::string> HDEEM::vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
 //const int HDEEM::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 
 

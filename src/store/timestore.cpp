@@ -143,8 +143,9 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 			ss << "# Blade samples" << std::endl;
 			std::vector<double> samples;
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
-			for (size_t it = firstBlade; it < lastBlade; it++)
-				ss << it << "," << samples[it] << std::endl;
+			size_t it = firstBlade;
+			for (size_t i = 0; i < samples.size(); i++)
+				ss << it++ << "," << samples[i] << std::endl;
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;

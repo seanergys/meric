@@ -31,7 +31,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	energy   = new double [HDEEM::PROBE_NUMBER];
 	minWatts = new double [HDEEM::PROBE_NUMBER];
 	maxWatts = new double [HDEEM::PROBE_NUMBER];
-	msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].time - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
+	msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
@@ -49,8 +49,9 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 			ss << "# Blade samples" << std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
-			for (size_t it = firstBlade; it < lastBlade; it++)
-				ss << it << "," << samples[it] << std::endl;
+			size_t it = firstBlade;
+			for (size_t i = 0; i < samples.size(); i++)
+				ss << it++ << "," << samples[i] << std::endl;
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
@@ -82,8 +83,10 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples" << std::endl;
 				std::vector<double> samples;
 				HDEEM::getSamplesList(sensorID, firstVR, lastVR, samples);
-				for (size_t it = firstVR; it < lastVR; it++)
-					ss << it << "," << samples[it] << std::endl;
+				size_t it = firstVR;
+				for (size_t i = 0; i < samples.size(); i++)
+					ss << it++ << "," << samples[i] << std::endl;
+
 			}
 	        avgWatts = energy[sensorID]/(lastVR-firstVR);
 	        energyConsumption = duration * avgWatts;
