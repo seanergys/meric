@@ -35,7 +35,7 @@ SharedMeric::SharedMeric()
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore<RAPL, long long>(Meric::SAMPLES));
+		_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -51,9 +51,9 @@ SharedMeric::SharedMeric()
 	{
 
 		if (Meric::COUNTERS == "perfevent")
-			_storeList.push_back(new CountersStore<PERFEVENT, long long>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PERFEVENT, unsigned long long int>(Meric::SAMPLES));
 		else if (Meric::COUNTERS == "papi")
-			_storeList.push_back(new CountersStore<PAPI, long long>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PAPI, unsigned long long int>(Meric::SAMPLES));
 	}
 	
 	for (int i=0; i<_storeList.size(); i++)

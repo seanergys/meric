@@ -112,8 +112,8 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 	}
 }
 
-template class CountersStore <PERFEVENT, long long>;
-template class CountersStore <PAPI, long long>;
-template class CountersStore <RAPL, long long>;
+template class CountersStore <PERFEVENT, unsigned long long int>;
+template class CountersStore <PAPI, unsigned long long int>;
+template class CountersStore <RAPL, unsigned long long int>;
 template class CountersStore <HDEEM, double>;
 

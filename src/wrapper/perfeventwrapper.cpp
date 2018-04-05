@@ -16,8 +16,8 @@
 using namespace meric;
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
-std::map<std::string, long long> PERFEVENT::counters;
-long long PERFEVENT::COUNTERMAX = LLONG_MAX;
+std::map<std::string, unsigned long long int> PERFEVENT::counters;
+unsigned long long int PERFEVENT::COUNTERMAX = LLONG_MAX;
 
 long PERFEVENT::openCounter(perf_event_attr attr)
 {
@@ -74,13 +74,13 @@ void PERFEVENT::init()
 
 void PERFEVENT::close()
 {
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_DISABLE, 0) != 0)
 			std::cerr << "PREFEVENT error when stoping counting\n";
 	}
 	
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (::close(iterator->second) != 0)
 			std::cerr << "PREFEVENT error when closing file descriptor\n"; 
@@ -91,7 +91,7 @@ void PERFEVENT::close()
 
 void PERFEVENT::start()
 {
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
 			std::cerr << "PREFEVENT error when reseting counter\n";
@@ -100,12 +100,12 @@ void PERFEVENT::start()
 	}
 }
 
-void PERFEVENT::getCounterValues(std::map<std::string, long long> & record) 
+void PERFEVENT::getCounterValues(std::map<std::string, unsigned long long int> & record) 
 {
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
-		long long result = 0;
-		if ((read(iterator->second, &result, sizeof(long long))) != sizeof(long long))
+		unsigned long long int result = 0;
+		if ((read(iterator->second, &result, sizeof(unsigned long long int))) != sizeof(unsigned long long int))
 		{
 			//int errn = errno;
 			std::cerr << "PREFEVENT error. Failed to read counter "<< iterator->first << std::endl;		//TODO ? 0
@@ -120,7 +120,7 @@ void PERFEVENT::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
-void PERFEVENT::getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios)
+void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios)
 {
 	if (stop.count(PERFEVENT_COUNTERS::COUNTER_AVX))
 	{
@@ -174,7 +174,7 @@ void PERFEVENT::getSummaryValue(double time, unsigned long long int * counterSum
 }
 
 // solve counter overflow
-unsigned long long PERFEVENT::getResultValue(long long startValue, long long stopValue, double runtime, std::string counter)
+unsigned long long PERFEVENT::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
 	if (stopValue < startValue)
 	{
@@ -187,7 +187,7 @@ unsigned long long PERFEVENT::getResultValue(long long startValue, long long sto
 }
 
 
-void PERFEVENT::initMap(std::map<std::string, long long> & dict)
+void PERFEVENT::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 //	dict[PERFEVENT_COUNTERS::] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;

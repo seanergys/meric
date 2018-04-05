@@ -134,11 +134,11 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, long long>>(_storingProcs));
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int>>(_storingProcs));
 			_storeList.back()->setMPIWrite(!_MPInodeRank);
 		}
 		else
-			_storeList.push_back(new CountersStore<RAPL, long long>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
@@ -164,11 +164,11 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, long long>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_worldCopy));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, long long>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_currentNode));
 			}
 			_storeList.back()->setMPIWrite(true);
 		}
@@ -176,11 +176,11 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, long long>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_worldCopy));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, long long>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_currentNode));
 			}
 			_storeList.back()->setMPIWrite(true);
 		}

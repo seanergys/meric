@@ -5,11 +5,11 @@
 namespace meric {
 
 template <class TStore>
-long long CountersAggregateStore<TStore>::printStats (const std::string description, const long long * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
+unsigned long long int CountersAggregateStore<TStore>::printStats (const std::string description, const unsigned long long int * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
 {
-	long long max = data[0];
-	long long min = data[0];
-	long long sum = data[0];
+	unsigned long long int max = data[0];
+	unsigned long long int min = data[0];
+	unsigned long long int sum = data[0];
 	for(int i=stride; i<dataSize; i+=stride)
 	{
 		if (max < data[i])
@@ -18,7 +18,7 @@ long long CountersAggregateStore<TStore>::printStats (const std::string descript
 			min = data[i];
 		sum += data[i];
 	}
-	long long avg = sum/(dataSize/stride);
+	unsigned long long int avg = sum/(dataSize/stride);
 	ss << "AVG "<< description << "," << avg << std::endl
 	   << "MAX "<< description << "," << max << std::endl
 	   << "MIN "<< description << "," << min << std::endl;
@@ -100,15 +100,15 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 
 	ss << "# COUNTERS - "<<this->_store->getCountersLabel() << ": \n";
 	int j = 0;
-	CountersRecord<long long> averageRecord;
-	for(std::map<std::string, long long>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
+	CountersRecord<unsigned long long int> averageRecord;
+	for(std::map<std::string, unsigned long long int>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
 		//averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
 		averageRecord.record[counterIt->first] = printStats(counterIt->first, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
 	}
 
 // Counters ratios
-	CountersRecord<long long> startRecord;
+	CountersRecord<unsigned long long int> startRecord;
 	std::map <std::string, double> ratios;
 	this->_store->getRatios(startRecord.record, averageRecord.record, time, ratios);
 	if (ratios.size())
@@ -123,7 +123,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
-	std::vector<unsigned long long> stats;
+	std::vector<unsigned long long int> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
 

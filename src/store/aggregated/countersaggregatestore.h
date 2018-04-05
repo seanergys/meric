@@ -24,10 +24,10 @@ protected:
 	void saveInterval(std::vector<size_t> &iStarts, size_t iEnd);
 
 	double printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
-	long long printStats (const std::string description, const long long * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
+	unsigned long long int printStats (const std::string description, const unsigned long long int * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
 
 	
-	std::vector <long long>   _bufferCounters;
+	std::vector <unsigned long long int>   _bufferCounters;
 	std::vector <double> _bufferTime;
 	MPI_Datatype consolidate;
 };

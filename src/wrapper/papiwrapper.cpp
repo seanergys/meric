@@ -13,10 +13,10 @@
 using namespace meric;
 
 
-long long PAPI::COUNTERMAX = LLONG_MAX;
+unsigned long long int PAPI::COUNTERMAX = LLONG_MAX;
 
 #ifdef HAVE_PAPI_H
-std::map<std::string, long long> PAPI::counters;
+std::map<std::string, unsigned long long int> PAPI::counters;
 int PAPI::eventSet = PAPI_NULL;
 long long * PAPI::countersValues = NULL;
 
@@ -57,7 +57,7 @@ void PAPI::init()
 
 	std::vector<int> eventList;
 
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		int eventCode;
 		if (PAPI_event_name_to_code((char *)iterator->first.c_str(), &eventCode) != PAPI_OK)
@@ -103,7 +103,7 @@ void PAPI::close()
 }
 
 
-void PAPI::getCounterValues(std::map<std::string, long long> & record) 
+void PAPI::getCounterValues(std::map<std::string, unsigned long long int> & record) 
 {
 	if (PAPI_read(eventSet, countersValues) != PAPI_OK)
 	{
@@ -112,7 +112,7 @@ void PAPI::getCounterValues(std::map<std::string, long long> & record)
 	}
 	
 	int i = 0;
-	for(std::map<std::string, long long>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		record[iterator->first] = countersValues[i];
 		i++;
@@ -123,7 +123,7 @@ void PAPI::getCounterValues(std::map<std::string, long long> & record)
 #else
 #endif
 
-void PAPI::getRatios(std::map<std::string, long long>& start, std::map<std::string, long long>& stop, double runtime, std::map <std::string, double> & ratios)
+void PAPI::getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios)
 {
 	if (stop.count(PAPI_COUNTERS::COUNTER_AVX))
 	{
@@ -177,7 +177,7 @@ void PAPI::getSummaryValue(double time, unsigned long long int * counterSummary)
 }
 
 // solve counter overflow
-unsigned long long PAPI::getResultValue(long long startValue, long long stopValue, double runtime, std::string counter)
+unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
 	if (stopValue < startValue)
 	{
@@ -189,7 +189,7 @@ unsigned long long PAPI::getResultValue(long long startValue, long long stopValu
 		return stopValue - startValue;
 }
 
-void PAPI::initMap(std::map<std::string, long long> & dict)
+void PAPI::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 	dict[PAPI_COUNTERS::COUNTER_AVX] = 0;
 	dict[PAPI_COUNTERS::COUNTER_CACHE_MISSES] = 0;
