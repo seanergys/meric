@@ -90,9 +90,8 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
-	ss << std::endl;
 
-	ss << "# Job info - " << this->_store->getCountersLabel() << std::endl
+	ss << "\n# Job info - " << this->_store->getCountersLabel() << std::endl
 	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
 	   << "Nodelist," << this->_store->_nodelist << std::endl;
 	//time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false);

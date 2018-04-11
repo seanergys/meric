@@ -16,7 +16,7 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
         ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
     }
 
-    ss << "# Job info - hdeem" << std::endl
+    ss << "\n# Job info - hdeem" << std::endl
        << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
        << "Nodelist," << this->_store->_nodelist << '\n';
 
