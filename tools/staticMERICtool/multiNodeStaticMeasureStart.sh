@@ -87,7 +87,7 @@ if $RAPL
 then
 	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStart -c $Cfreq -u $Ufreq"
 else #HDEEM
-	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; module load hdeem 2> /dev/null; clearHdeem; startHdeem"
+	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; stopHdeem; sleep 2; clearHdeem; startHdeem"
 fi
 
 
