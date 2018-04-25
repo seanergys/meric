@@ -124,7 +124,7 @@ double HDEEM::getResultValue(double startValue, double stopValue, double runtime
 			info = "";
 		else
 			info = " detailed";
-		std::cerr << "MERIC WARNING: very short ("<<runtime<< "s)"<< info <<" region" << counter << " results might be skewed\n";
+		std::cerr << "MERIC WARNING: very short ("<<runtime<< "s)"<< info <<" region " << counter << " results might be skewed\n";
 	}
 	return energy;
 }
