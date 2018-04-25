@@ -21,7 +21,7 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 	if (holder != NULL) {
-		std::cerr << "MERIC ERROR: MERIC_Init() called before MERIC_Close()\n";
+		std::cerr << "MERIC ERROR: multiple initializations of the MERIC library\n";
 		exit(EXIT_FAILURE);
 	}
 
