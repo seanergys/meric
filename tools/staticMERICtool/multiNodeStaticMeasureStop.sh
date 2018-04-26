@@ -82,11 +82,17 @@ else	# PBS
 fi
 
 ############################# get the results of the measurement for each node #
+LOCATION=$( dirname "${BASH_SOURCE[0]}" )
+if [ "$LOCATION" == "." ]
+then
+        export $LOCATION=$(pwd)
+fi
+
 if $RAPL	
 then
 	# source /etc/profile.d/10_modules.sh necessary for Taurus slurm
 	# loading modules necessary for Salomon cluster
-	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $HOME/bin/energyMeasureStop")
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $LOCATION/energyMeasureStop")
 	
 	TIME=$(grep -oP "(?<=Runtime \[s\] = )\d+\.\d+"  <<< $OUTPUT | head -1)
 	OUTPUT=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
