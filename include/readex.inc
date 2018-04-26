@@ -37,11 +37,11 @@
 #define READEX_CLOSE() call MERIC_Close() ;
 #define READEX_IGNORE_START() call MERIC_IgnoreStart() ;
 #define READEX_IGNORE_STOP() call MERIC_IgnoreStop() ;
-#define READEX_PHASE_START( reg_handle, reg_name, reg_type ) call MERIC_MeasureStart(reg_name) ;
+#define READEX_PHASE_START( reg_handle, reg_name, reg_type ) call MERIC_MeasureStart( reg_name//char(0) ) ;
 #define READEX_PHASE_STOP( reg_handle ) call MERIC_MeasureStop() ;
-#define READEX_REGION_START( reg_handle, reg_name, reg_type ) call MERIC_MeasureStart(reg_name) ;
+#define READEX_REGION_START( reg_handle, reg_name, reg_type ) call MERIC_MeasureStart( reg_name//char(0) ) ;
 #define READEX_REGION_STOP( reg_handle ) call MERIC_MeasureStop() ;
-#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) call MERIC_MeasureStopStart(start_name) ;
+#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) call MERIC_MeasureStopStart( start_name//char(0) ) ;
 #define READEX_REGION_DEFINE( reg_handle ) ;
 #define READEX_PHASE_REGION_DEFINE( reg_handle ) ;
 #define READEX_SIGNIFICANT_REGION_DEFINE( reg_handle ) ;
