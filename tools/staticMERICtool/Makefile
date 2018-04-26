@@ -22,9 +22,7 @@ default: all
 all: 
 	$(CC) -O0 -g -std=c++11 -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTART -o $(STARTbinary)
 	$(CC) -O0 -g -std=c++11 -Wall -lrt -pedantic staticMERICtool.cpp $(X86ADAPT) -DSTOP  -o $(STOPbinary)
-	mkdir -p $(HOME)/bin
-	cp $(STARTbinary) $(HOME)/bin/
-	cp $(STOPbinary) $(HOME)/bin/
+
 
 ######
 love:
