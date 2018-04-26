@@ -295,11 +295,11 @@ protected:
 				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 				{
 					if(change.socket[socket].uncoreFrequency)
-						Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, socket);
+						Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, currentState.socket[socket].uncoreFrequency, socket);
 				}
 			}
 			else if (diffUncore)
-				Environment::uncoreFrequency(currentState.socket[0].uncoreFrequency);
+				Environment::uncoreFrequency(currentState.socket[0].uncoreFrequency, currentState.socket[0].uncoreFrequency);
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);	

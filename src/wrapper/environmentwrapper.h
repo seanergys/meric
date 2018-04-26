@@ -66,7 +66,7 @@ public:
 	static int systemType;
 
 	static void frequency(uint64_t freq, int socket = -1);
-	static void uncoreFrequency(uint64_t freq, int socket = -1);	
+	static void uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket = -1);	
 	static void threadNumber(int nthreads);
 	static void init(int system, RegionParameters defaultParameter, int rank);
 	static void initHWSizes();
