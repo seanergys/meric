@@ -74,6 +74,7 @@ public:
 	static void close();
 
 private:
+	static void getFrequenciesLimits();
 
 };
 

@@ -66,6 +66,38 @@ void Environment::initHWSizes()
 //	std::cout << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
 }
 
+void Environment::getFrequenciesLimits()
+{
+	//CORE freq
+	if (systemType != SYS_JETSON)
+	{
+		std::ifstream frequencyBounderyFile;
+		std::string freqBound;
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		FreqLimits[SYS_OTHER][0] = std::stoi(freqBound) / CPUFREQ_FREQ_MULT;
+		FreqLimits[SYS_OTHER][1] = FreqLimits[SYS_OTHER][0];
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		FreqLimits[SYS_OTHER][2] = std::stoi(freqBound) / CPUFREQ_FREQ_MULT;
+	}
+
+	//UnCORE freq
+#ifdef HAVE_X86_ADAPT_H
+	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+	int adaptHandlerUncoreMax = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
+	uint64_t setting;
+	x86_adapt_get_setting(fd, adaptHandlerUncoreMax, *setting);
+	FreqLimits[SYS_OTHER][3] = (int)settings;
+	FreqLimits[SYS_OTHER][4] = FreqLimits[SYS_OTHER][3];
+	adaptHandlerUncoreMin = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
+	x86_adapt_get_setting(fd, adaptHandlerUncoreMax, *setting);
+	FreqLimits[SYS_OTHER][5] = (int)settings;
+#endif	
+
+}
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
 {
@@ -84,6 +116,8 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	
 	if(!rank)
 	{
+		getFrequenciesLimits();
+		//activate userspace governor
 		if (systemType == SYS_JETSON)
 		{
 			std::ofstream governorFile;
@@ -106,6 +140,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 			}
 		}
 
+	//set the settings that user want to apply for the application
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency);
 	}
@@ -124,10 +159,14 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (systemType == SYS_THUNDER)
 		return;
 
-	if (freq > FreqLimits[systemType].maxCoreFreq || freq < FreqLimits[systemType].minCoreFreq)
+	if (freq < FreqLimits[systemType].minCoreFreq)
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
 		return;
+	}
+	else if (freq > FreqLimits[systemType].maxCoreFreq)
+	{
+		MERIC_INFO << "Trying to apply turbo CPU frequency\n";
 	}
 
 	if (systemType == SYS_JETSON)
@@ -144,74 +183,62 @@ void Environment::frequency(uint64_t freq, int socket)
 	else
 	{
 #ifdef HAVE_CPUFREQ_H
-		if (freq <= CPUFREQ_MAX_FREQ)
+		MERIC_INFO << "CPUFREQ set frequency to: " << freq;
+		int ret;
+		int nodeSize = NODE_SIZE_CPU;
+		int cpu = 0;
+		if(socket != -1)
 		{
-			MERIC_INFO << "CPUFREQ set frequency to: " << freq;
-			int ret;
-			int nodeSize = NODE_SIZE_CPU;
-			int cpu = 0;
-			if(socket != -1)
-			{
-				nodeSize = SOCKET_SIZE_CPU*(socket+1);
-				cpu = SOCKET_SIZE_CPU*socket;
-				MERIC_INFO << "; socket: " << socket;
-			}
-			MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
+			nodeSize = SOCKET_SIZE_CPU*(socket+1);
+			cpu = SOCKET_SIZE_CPU*socket;
+			MERIC_INFO << "; socket: " << socket;
+		}
+		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
-			for (; cpu < nodeSize; cpu++)
-			{
-				ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
+		for (; cpu < nodeSize; cpu++)
+		{
+			ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
 
-				if(ret != 0 || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))
-				{
-					std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
-//					MPI_Abort(MPI_COMM_WORLD, 1);
-				}
+			if(ret != 0) // || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))	//TODO test turbo freq setting
+			{
+				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
 			}
 		}
-		else
-#endif
-#ifdef HAVE_X86_ADAPT_H
-		{	//x86adapt allows to set cpu frequency up to 3.3 GHz
-			int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
-			if (adaptHandler < 0)
-			{
-				std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
-				return;
-			}
-			MERIC_INFO << "X86ADAPT set frequency to: " << freq;
+#elif defined HAVE_X86_ADAPT_H
+		int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
+		if (adaptHandler < 0)
+		{
+			std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
+			return;
+		}
+		MERIC_INFO << "X86ADAPT set frequency to: " << freq;
 
-			int nodeSize = NODE_SIZE_CPU;
-			int cpu=0;
-			if(socket != -1)
-			{
-				nodeSize = SOCKET_SIZE_CPU*(socket+1);
-				cpu = SOCKET_SIZE_CPU*socket;
-			}
-			MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
-			
-			for (; cpu<nodeSize; cpu++)
-			{
-				int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-				if (fd < 0)
-				{
-					std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//					exit(2);
-				}
-
-				if(x86_adapt_set_setting(fd, adaptHandler, freq*X86ADAPT_FREQ_MULT) != 8)
-				{
-					std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-//					exit(3);
-				}
+		int nodeSize = NODE_SIZE_CPU;
+		int cpu=0;
+		if(socket != -1)
+		{
+			nodeSize = SOCKET_SIZE_CPU*(socket+1);
+			cpu = SOCKET_SIZE_CPU*socket;
+		}
+		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 		
-				if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-					std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-			}
-		}
-#else
+		for (; cpu<nodeSize; cpu++)
 		{
-			std::cerr << "CPU frequency has not changed to value: " << freq << std::endl;
+			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+			if (fd < 0)
+			{
+				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//				exit(2);
+			}
+
+			if(x86_adapt_set_setting(fd, adaptHandler, freq*X86ADAPT_FREQ_MULT) != 8)
+			{
+				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+//				exit(3);
+			}
+	
+			if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 		}
 #endif
 	}
@@ -298,8 +325,8 @@ void Environment::uncoreFrequency(uint64_t freq, int socket)
 
 void Environment::setDefaultFrequencies()
 {
-	frequency(FreqLimits[systemType].defaultCoreFreq);
-	uncoreFrequency(FreqLimits[systemType].defaultUncoreFreq);
+	frequency(FreqLimits[SYS_OTHER].defaultCoreFreq);
+	uncoreFrequency(FreqLimits[SYS_OTHER].defaultUncoreFreq);
 
 	if (systemType == SYS_JETSON)
 	{
