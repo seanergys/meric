@@ -96,8 +96,8 @@ void Environment::getFrequenciesLimits()
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	FreqLimits[SYS_OTHER].minUncoreFreq = (int)setting;
 #endif	
-	std::cout << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq<< std::endl;
-	std::cout << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
+	MERIC_INFO << "CORE FREQ limits: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq<< std::endl;
+	MERIC_INFO << "UNCORE FREQ limits: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
