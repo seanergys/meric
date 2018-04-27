@@ -20,6 +20,8 @@ int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
 int Environment::systemType = SYS_HASWELL;
+bool Environment::usedDVFS = false;
+bool Environment::usedUFS = false;
 
 void Environment::threadNumber(int nthreads)
 {
@@ -168,6 +170,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		MERIC_INFO << "Trying to apply turbo CPU frequency\n";
 	}
+	usedDVFS = true;
 
 	if (systemType == SYS_JETSON)
 	{
@@ -264,6 +267,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		MERIC_INFO << FreqLimits[systemType].maxUncoreFreq << " - " << FreqLimits[systemType].minUncoreFreq << std::endl;
 		return;
 	}
+	usedUFS = true;
 
 	if (systemType == SYS_JETSON)
 	{
@@ -327,7 +331,8 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 
 void Environment::setDefaultFrequencies()
 {
-	frequency(FreqLimits[systemType].defaultCoreFreq);
+	if (usedDVFS)
+		frequency(FreqLimits[systemType].defaultCoreFreq);
 	if (systemType == SYS_JETSON)
 	{
 		uncoreFrequency(FreqLimits[SYS_JETSON].defaultUncoreFreq, FreqLimits[SYS_JETSON].defaultUncoreFreq);
@@ -347,7 +352,8 @@ void Environment::setDefaultFrequencies()
 	}
 	else
 	{
-		uncoreFrequency(FreqLimits[systemType].maxUncoreFreq, FreqLimits[systemType].minUncoreFreq);
+		if(usedUFS)
+			uncoreFrequency(FreqLimits[systemType].maxUncoreFreq, FreqLimits[systemType].minUncoreFreq);
 	}
 }
 

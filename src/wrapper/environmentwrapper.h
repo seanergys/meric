@@ -75,6 +75,8 @@ public:
 
 private:
 	static void getFrequenciesLimits();
+	static bool usedDVFS;
+	static bool usedUFS;
 
 };
 
