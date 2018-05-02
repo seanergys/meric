@@ -49,7 +49,7 @@ void PAPI::init()
 #endif		
 	if (ret != PAPI_OK)
 	{
-		printf("PAPI thread init error\n");
+		std::cerr << "PAPI thread init error\n";
 		exit(1);
 	}
 	
@@ -62,10 +62,18 @@ void PAPI::init()
 		int eventCode;
 		if (PAPI_event_name_to_code((char *)iterator->first.c_str(), &eventCode) != PAPI_OK)
 		{
-				std::cerr << "PAPI error - requested event "<< iterator->first <<" not available\n"; 
-				exit(6);
+				std::cerr << "PAPI WARNING - event "<< iterator->first <<" not available\n"; 
 		}
-		eventList.push_back(eventCode);
+
+		if (PAPI_query_event(eventCode) == PAPI_OK)
+		{
+			eventList.push_back(eventCode);
+		}
+		else
+		{
+			std::cerr << "PAPI WARNING - event " << iterator->first << " not available\n";
+			counters.erase(iterator->first);
+		}
 	}
 	
 	if (PAPI_add_events(eventSet, &eventList[0], eventList.size()) != PAPI_OK)
