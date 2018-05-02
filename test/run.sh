@@ -36,6 +36,8 @@ module load papi/5.4.1
 make
 
 # RUN FIRST TEST TO AVOID HDEEM ERROR ##########################################
+# to prevent HDEEM error use static measurement tool to reset HDEEM
+#../tools/staticMERICtool/multiNodeStaticMeasureStart.sh --hdeem
 export MERIC_FREQUENCY=25
 export MERIC_UNCORE_FREQUENCY=25
 export MERIC_OUTPUT_DIR="DELETEME"
