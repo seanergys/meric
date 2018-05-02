@@ -77,8 +77,9 @@ void Environment::getFrequenciesLimits()
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	FreqLimits[SYS_OTHER].maxCoreFreq = std::stoi(freqBound) / CPUFREQ_FREQ_MULT;
-	FreqLimits[SYS_OTHER].defaultCoreFreq = FreqLimits[SYS_OTHER].maxCoreFreq;
+	FreqLimits[SYS_OTHER].maxCoreFreq = std::stoi(freqBound);
+	FreqLimits[SYS_OTHER].defaultCoreFreq = FreqLimits[SYS_OTHER].maxCoreFreq / CPUFREQ_FREQ_MULT;
+	FreqLimits[SYS_OTHER].maxCoreFreq = FreqLimits[SYS_OTHER].defaultCoreFreq + (FreqLimits[SYS_OTHER].maxCoreFreq % CPUFREQ_FREQ_MULT ? 1 : 0);
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
@@ -287,6 +288,8 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		}
 
 		MERIC_INFO << "X86ADAPT set uncore frequency to: "<< maxFreq;
+		if (maxFreq != minFreq)
+			MERIC_INFO << " - " << minFreq;
 		int max = NODE_SIZE_SOCKET;
 		int die=0;
 		if (socket != -1 && socket < max)
