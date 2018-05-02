@@ -1,9 +1,10 @@
 ### XX.XX.XXXX #################################################################
-  - fixed RAPL overflow on Salomon
+  - fixed single RAPL overflow
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
   - ARM Jetson/TX1 energy measurement and frequency scaling
   - ARM ThunderX energy measument support (DVFS not available)
+  - tested and adapted for Intel KNL
   - tool for static energy measurement and CPU frequencies change
   - updated shared Score-P/Meric header file
 		+ readex.h has new functions for region define (with backward compatibility)
@@ -15,12 +16,13 @@
   - fixed cpu frequency setting in case of using region options
   - if x86adapt is not available, compilation with -lnuma is required
   - Fortran meric_fortran_interface.h90 renamed to meric.inc
-  - MERIC now works in MERIC_AGGREGATE mode as default
+  - MERIC MPI now works in MERIC_AGGREGATE mode as default
   - removed duty for c++14 standart
   - reduced MERIC overhead
   - new MERIC function MERIC_MeasureStopStart to avoid extra environment swithing
   - analysis data directory should contain file measurementInfo.json that describes the test
   - updated labels in output files
+  - updated README
 
 ### 10.04.2017 #################################################################
   - added Fortran interface
