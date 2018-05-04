@@ -10,6 +10,7 @@ bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
 bool        Meric::SAMPLES    = mutils::getenv("MERIC_SAMPLES"   , false);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
+std::string Meric::BARRIERS   = mutils::getenv("MERIC_BARRIERS"  , std::string("all"));
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("mericMeasurement"));
 std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
@@ -25,6 +26,9 @@ std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;
 bool Meric::IGNORE = false;
+bool Meric::MPIbarriers = true;
+bool Meric::OMPbarriers = true;
+
 
 
 void Meric::readRegionParameters()
@@ -81,6 +85,26 @@ int Meric::getDefaultParameters()
 	{
 		std::cerr << "MERIC WARNING: MERIC MODE unknown value - default "<< MODE_HDEEM <<std::endl;
 		Meric::MODE = MODE_HDEEM;
+	}
+	
+	if (Meric::MODE == MODE_RUN && Meric::BARRIERS != "all")
+	{
+		if (Meric::BARRIERS == "mpi")
+		{
+			Meric::OMPbarriers = false;
+			MERIC_INFO << "MERIC WARNING: OpenMP BARRIERS turned off\n";
+		}
+		else if (Meric::BARRIERS == "omp")
+		{
+			Meric::MPIbarriers = false;
+			MERIC_INFO << "MERIC WARNING: MPI BARRIERS turned off\n";
+		}
+		else if (Meric::BARRIERS == "none")
+		{
+			Meric::OMPbarriers = false;
+			Meric::MPIbarriers = false;
+			MERIC_INFO << "MERIC WARNING: BARRIERS turned off\n";
+		}
 	}
 	
 	if (Meric::COUNTERS != "none")

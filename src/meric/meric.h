@@ -41,6 +41,7 @@ public:
 	static std::string OUTPUT_DIR;
 	static std::string OUTPUT_FILENAME;
 	static std::string REGION_OPTIONS;
+	static std::string BARRIERS;
 
 	virtual void start(const std::string &region)
 	{
@@ -69,7 +70,10 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
+			if (OMPbarriers)
+			{
+				#pragma omp barrier
+			}
 			#pragma omp single
 			{
 				if (IGNORE)
@@ -91,7 +95,10 @@ public:
 #ifdef HAVE_OMP_H
 		if (omp_in_parallel())
 		{
-			#pragma omp barrier
+			if (OMPbarriers)
+			{
+				#pragma omp barrier
+			}
 			#pragma omp single
 			{
 				if (!IGNORE)
@@ -334,6 +341,8 @@ protected:
 	std::vector<StoreBase *> _storeList;
 	static std::string _mainRegion;
 	static timespec _startTime, _stopTime;
+	static bool MPIbarriers;
+	static bool OMPbarriers;
 };
 
 }

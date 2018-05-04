@@ -26,7 +26,8 @@ public:
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
-			MPI_Barrier(_currentNode);
+			if (MPIbarriers)
+				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
 		if (Meric::IGNORE)
@@ -46,7 +47,8 @@ public:
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
-			MPI_Barrier(_currentNode);
+			if (MPIbarriers)
+				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
 		if (Meric::IGNORE)
@@ -77,7 +79,8 @@ public:
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
-			MPI_Barrier(_currentNode);
+			if (MPIbarriers)
+				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
 		
@@ -113,7 +116,8 @@ public:
 
 	void save()
 	{
-		MPI_Barrier(_currentNode);
+		if (MPIbarriers)
+			MPI_Barrier(_currentNode);
 
 		if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
 		{
@@ -167,7 +171,8 @@ public:
 				}
 			}
 		}
-		MPI_Barrier(_currentNode);
+		if (MPIbarriers)
+			MPI_Barrier(_currentNode);
 	}
 
 protected:
