@@ -208,7 +208,7 @@ void Environment::frequency(uint64_t freq, int socket)
 				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
 			}
 		}
-		MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(cpu) << std::endl;
+		MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
 #elif defined HAVE_X86_ADAPT_H
 		int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
 		if (adaptHandler < 0)
