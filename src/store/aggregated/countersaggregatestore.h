@@ -11,6 +11,8 @@ template <class TStore>
 class CountersAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
+	typedef typename TStore::dataType StoreDataType;
+	typedef typename TStore::counterType StoreCounterType;
 //	CountersAggregateStore(const std::string wrapper, MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(wrapper, comm, write)
 	CountersAggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
 	{
@@ -25,9 +27,10 @@ protected:
 
 	double printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
 	unsigned long long int printStats (const std::string description, const unsigned long long int * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
+	double printStats (const std::string description, const double * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
 
 	
-	std::vector <unsigned long long int>   _bufferCounters;
+	std::vector <StoreDataType>   _bufferCounters;
 	std::vector <double> _bufferTime;
 	MPI_Datatype consolidate;
 };

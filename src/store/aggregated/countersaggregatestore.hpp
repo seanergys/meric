@@ -28,7 +28,7 @@ unsigned long long int CountersAggregateStore<TStore>::printStats (const std::st
 }
 
 template <class TStore>
-double CountersAggregateStore<TStore>::printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
+double CountersAggregateStore<TStore>::printStats (const std::string description, const double * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
 {
 	double max = data[0];
 	double min = data[0];
@@ -50,12 +50,11 @@ double CountersAggregateStore<TStore>::printStats (const std::string description
 	return avg;
 }
 
-
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 
-	std::vector<unsigned long long> stats;
+	std::vector<StoreDataType> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
 	_bufferCounters.resize(this->_size * stats.size());
@@ -91,38 +90,38 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	ss << "\n# Job info - " << this->_store->getCountersLabel() << std::endl
+	ss << "\n# Job info - " << StoreCounterType::getCountersLabel() << std::endl
 	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
 	   << "Nodelist," << this->_store->_nodelist << std::endl;
 	//time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false);
 	time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false, ss);
 
-	ss << "# COUNTERS - "<<this->_store->getCountersLabel() << ": \n";
+	ss << "# COUNTERS - "<<StoreCounterType::getCountersLabel() << ": \n";
 	int j = 0;
-	CountersRecord<unsigned long long int> averageRecord;
-	for(std::map<std::string, unsigned long long int>::iterator counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
+	CountersRecord<StoreDataType> averageRecord;
+	//for(std::map<std::string, StoreDataType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)
+	for(auto counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
 		//averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
 		averageRecord.record[counterIt->first] = printStats(counterIt->first, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
 	}
 
 // Counters ratios
-	CountersRecord<unsigned long long int> startRecord;
+	CountersRecord<StoreDataType> startRecord;
 	std::map <std::string, double> ratios;
-	this->_store->getRatios(startRecord.record, averageRecord.record, time, ratios);
+	StoreCounterType::getRatios(startRecord.record, averageRecord.record, time, ratios);
 	if (ratios.size())
 	{
 		ss << "# RATIOS: \n";
 		for(auto const &element : ratios)
-			ss << this->_store->getCounterLabel(element.first) <<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
-					//element.first
+			ss << StoreCounterType::getCounterLabel(element.first) <<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
 	}
 }
 
 template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
-	std::vector<unsigned long long int> stats;
+	std::vector<StoreDataType> stats;
 	double time;
 	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
 

@@ -119,7 +119,8 @@ DistributedMeric::DistributedMeric()
 				} else {
 					if (Meric::AGGREGATE)
 					{
-						_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+						//_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
+						_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs));
 						_storeList.back()->setMPIWrite(!_MPInodeRank);
 					} else {
 						//_storeList.push_back(new EnergyStore(Meric::SAMPLES, !_MPInodeRank));

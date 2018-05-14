@@ -13,21 +13,6 @@
 
 using namespace meric;
 
-template <class TCounter, typename TType> std::string CountersStore<TCounter, TType>::getCountersLabel()
-{
-	return TCounter::getCountersLabel();
-}
-
-template <class TCounter, typename TType> std::string CountersStore<TCounter, TType>::getCounterLabel(std::string counter)
-{
-	return TCounter::getCounterLabel(counter);
-}
-
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::getRatios(std::map<std::string, TType>& start, std::map<std::string, TType>& stop, double runtime, std::map <std::string, double> & ratios)
-{
-	TCounter::getRatios(start, stop, runtime, ratios);
-}
-
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addStart(int region)
 {
 	std::map<std::string, TType> record;
@@ -50,7 +35,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	_records.push_back(CountersRecord<TType>(region, record, time));
 }
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<unsigned long long> &stats, double *time, size_t iStarts, size_t iEnd)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd)
 {
 	unsigned long long int summary = 0;
 	TType value;
