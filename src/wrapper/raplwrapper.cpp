@@ -147,16 +147,6 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 	}
 }
 
-
-std::string RAPL::getCounterLabel(std::string counter)
-{
-	std::map<std::string, std::string>::iterator it = RAPL_COUNTERS::counterLabel.find(counter);
-	if (it != RAPL_COUNTERS::counterLabel.end())
-		return it->second;
-	else
-		return counter;
-}
-
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
@@ -190,6 +180,16 @@ std::string RAPL::getCountersLabel()
 {
 	return "RAPL";
 }
+
+std::string RAPL::getCounterLabel(std::string counter)
+{
+	std::map<std::string, std::string>::iterator it = RAPL_COUNTERS::counterLabel.find(counter);
+	if (it != RAPL_COUNTERS::counterLabel.end())
+		return it->second;
+	else
+		return counter;
+}
+
 std::string RAPL::getSummaryCounterName()
 {
 	return RAPL_COUNTERS::RAPL_SUM_ENERGY;
