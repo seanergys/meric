@@ -98,10 +98,10 @@ then
 	OUTPUT=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
 	echo "Runtime [s]:" $TIME
 else #HDEEM
-	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | cut -d ' ' -f 5")
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | sed 's/  */ /g' | cut -d ' ' -f 5")
 fi
 
-#echo $OUTPUT
+echo $OUTPUT
 
 ############################################## get the overall consumed energy #
 SUM=0.0
