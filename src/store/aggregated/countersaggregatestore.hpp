@@ -51,6 +51,30 @@ double CountersAggregateStore<TStore>::printStats (const std::string description
 }
 
 template <class TStore>
+double CountersAggregateStore<TStore>::printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
+{
+	double max = data[0];
+	double min = data[0];
+	double sum = data[0];
+	for(int i=stride; i<dataSize; i+=stride)
+	{
+		if (max < data[i])
+			max = data[i];
+		else if (min > data[i])
+			min = data[i];
+		sum += data[i];
+	}
+	double avg = sum/(dataSize/stride);
+	ss << "AVG "<< description << "," << avg << std::endl
+	   << "MAX "<< description << "," << max << std::endl
+	   << "MIN "<< description << "," << min << std::endl;
+	if (storeSum)
+		ss << "SUM "<< description << "," << sum << std::endl;
+	return avg;
+}
+
+
+template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 
