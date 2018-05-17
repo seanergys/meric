@@ -84,9 +84,9 @@ fi
 
 #################################################### run the measurement there #
 LOCATION=$( dirname "${BASH_SOURCE[0]}" )
-if [ "$LOCATION" == "." ]
+if [ $LOCATION == "." ]
 then
-        export $LOCATION=$(pwd)
+        export LOCATION=$(pwd)
 fi
 
 if $RAPL

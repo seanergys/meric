@@ -83,9 +83,9 @@ fi
 
 ############################# get the results of the measurement for each node #
 LOCATION=$( dirname "${BASH_SOURCE[0]}" )
-if [ "$LOCATION" == "." ]
+if [ $LOCATION == "." ]
 then
-        export $LOCATION=$(pwd)
+        export LOCATION=$(pwd)
 fi
 
 if $RAPL	
