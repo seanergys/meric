@@ -15,8 +15,8 @@
 #endif
 
 #ifdef USE_SCOREP
-#include "scorep/SCOREP_User.h"
-#include "scorep/SCOREP_User_Types.h"
+#include <scorep/SCOREP_User.h>
+#include <scorep/SCOREP_User_Types.h>
 #endif
 
 #ifdef USE_MERIC
