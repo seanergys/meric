@@ -11,11 +11,11 @@ INCLUDES_TAURUS= $(PAPI_INC_TAURUS) $(X86A_INC_TAURUS) $(CPUFREQ_INC_TAURUS) $(F
 LIBPATH_TAURUS=  $(PAPI_LIB_TAURUS) $(X86A_LIB_TAURUS) $(CPUFREQ_LIB_TAURUS) $(FREEIPMI_LIB_TAURUS)
 
 ## SALOMON #####################################################################
-X86A_INC_SALOMON=-I$(HOME)/readex/x86adapt/x86_adapt/library/include/
-X86A_LIB_SALOMON=-L$(HOME)/readex/x86adapt/x86_adapt/build/
+#X86A_INC_SALOMON=-I$(HOME)/readex/x86adapt/x86_adapt/library/include/
+#X86A_LIB_SALOMON=-L$(HOME)/readex/x86adapt/x86_adapt/build/
 
-INCLUDES_SALOMON= $(PAPI_INC_SALOMON) $(X86A_INC_SALOMON) $(CPUFREQ_INC_SALOMON) $(FREEIPMI_INC_SALOMON)
-LIBPATH_SALOMON=  $(PAPI_LIB_SALOMON) $(X86A_LIB_SALOMON) $(CPUFREQ_LIB_SALOMON) $(FREEIPMI_LIB_SALOMON)
+INCLUDES_SALOMON= $(PAPI_INC_SALOMON) $(X86A_INC_SALOMON) $(CPUFREQ_INC_SALOMON)
+LIBPATH_SALOMON=  $(PAPI_LIB_SALOMON) $(X86A_LIB_SALOMON) $(CPUFREQ_LIB_SALOMON)
 
 ## JETSON ######################################################################
 PAPI_INC_JETSON=-I/apps/papi/5.4.3/include
@@ -49,8 +49,13 @@ gcc:
 	make install
 
 dummy:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_SALOMON) $(INCLUDES_SALOMON) -g" --dummy
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_SALOMON) $(INCLUDES_SALOMON)" --dummy
 	make install
+
+dummyGCC:
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_SALOMON) $(INCLUDES_SALOMON)" --dummy
+	make install
+
 
 arm:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_JETSON) $(INCLUDES_JETSON)" --dummy
