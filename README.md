@@ -1,5 +1,9 @@
 # README #
 
+MERIC: C/C++ lightweight library for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying READEX approach (www.readex.eu).
+
+The library was developed for x86 systems (tested on HSW-EP and KNL) but additionally supports selected BSC ARM systems.
+
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
 --------------------------------------------------------------------------------
@@ -9,7 +13,7 @@
           new class inherited from class StoreBase (store.h) is required.
 * wrapper
 	- environmentwrapper
-		= CPU core frequency and uncore frequency settings.
+		= Thread switching, CPU core and uncore frequencies settings.
 		+ http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils
 		+ https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/X86Adapt
 
@@ -22,11 +26,17 @@
 		+ http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 	
 	- papiwrapper
-		= Hardware counters provided by papi.
+		= Hardware counters provided by PAPI.
 		+ http://icl.cs.utk.edu/papi/
 		
 	- raplwrapper
-		= Intel RAPL counters read by x86_adapt
+		= Intel RAPL counters read by x86_adapt.
+	
+	- jetsonwrapper and thunderwrapper
+		= Support for ARM machines.
+	
+	- counters
+		= List of supported HW counters (PAPI, perfevent, RAPL).
 
 --------------------------------------------------------------------------------
 #     2] Content of test folder                                                #
@@ -34,72 +44,70 @@
 * source codes
 	* test.cpp
 		* One region, with two another regions inside.
-		* This test has shared Score-P/MERIC api. See section 10 of this README.
+		* This test uses shared Score-P/MERIC API. See section 3 of this README.
 	* test_mpi.cpp
-		* Same test as test.c, only extended with mpi.
+		* Same test as test.c, only extended with MPI.
 	* fort_test.f90
 		* Fortran version of test.cpp to show the MERIC and READEX Fortran interface.
-	* blas_test.cpp
-		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all resources.
-		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests
 	* samples_test.cpp
-		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if Meric detects this sample as a first one of this region.
+		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
 	* sleep_test.cpp
-		* A test with RUN (muximum load) and SLEEP (minimum load) regions, both with the same runtime.
-		* Originaly made to control real CPU frequency of the machine.
+		* A test with RUN (maximum load) and SLEEP (minimum load) regions, both with the same runtime.
+		* Originally made to control real CPU frequency of the machine.
 	* overhead_test.cpp
-		* Test to measure MERIC overhead and overhead of libraries to change environemt parameters
-* config direcory
-	* region.options
-		* File that sets exact settings for regions inside your code.
-		* In default it is set for blas test.
-	* region.options.extra
-		* Configuration file, that shows what all possible ways how to specify the settings.
+		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
+	* blas_test.cpp
+		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
+		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests.
 * Makefile
 	* Command `make` compiles all test codes except blas_test.cpp
 	* To compile blas_test.cpp use `make blasTest` command
+* environment_taurus
+	* Basic script that sets chosen MERIC environment variables and informs you which varibles are set
+	* When run with argument `-t`, the script just prints list of set variables.
+	* Make a copy of this script and edit it to suits your needs.
+* config direcory
+	* region.options
+		* File that sets exact settings for regions inside your code.
+		* In default it is set for blas_test.
+	* region.options.extra
+		* Configuration file, that shows all available ways how to specify MERIC settings.
 * run.sh and run-mpi.sh
-	* Scripts that runs the code with all possible settings.
-	* Ready to do the basic test with test and test_mpi.cpp on Taurus.
+	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
 * run-jetson.sh
 	* Template script to submit a job on BSC ARM Jetson platform.
-* environment_taurus
-	* Basic script that sets chosen MERIC environment variables and informs you about values of set varibles
-	* When runed with argument -t, just prints list of set variables.
-	* Make a copy of this script and edit it to suit your needs.
 
 --------------------------------------------------------------------------------
-#     3] MERIC interface and Shared Score-P/MERIC api                          #
+#     3] MERIC interface and Shared Score-P/MERIC API                          #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
-If you want to use Meric with a parallel application, keep in mind, that all processes and all running threads 
-must call every Meric function, otherwise Meric behavior is undefined. It is not possible to set runtime environment for each process separately, because Meric settings impress whole node (or socket) and each region settings allows not to follow this restriction. Because of this, each measurement start and stop beginns with a MPI and openmp barrier, that guarantee, that the environment settings is set for its region.
+If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
 
 	MERIC_Init()
-		Initialization of the library
+		Initialization of the library. Insert directly after MPI_Init().
 	MERIC_Close()
-		Finalization of the library run to store the measurement results
+		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
 	MERIC_MeasureStart("A")
-		Starting measurement of a reagion A
-		Please, do not use **#** and **@** in names of regions
+		Starting measurement of a reagion A.
+		Please, do not use **#** and **@** in names of regions.
 	MERIC_MeasureStop()
-		End of the measurement of the last called region
+		End of the measurement of the last started region.
 	MERIC_MeasureStopStart("B")
-		End of the measurement of the last called region and start of measurment region B
-		Removes environment switching to configuration of the region we are nested in
+		End of the measurement of the last started region and start of region B.
+		Removes environment switching to configuration of the region we are nested in.
 	MERIC_IgnoreStart()
-		From this point MERIC doesn't store resources consumption of the following regions but the optimal settings of the nested regions is set 
-		It is not possible to nest ignore sections of the code
+		From this point MERIC doesn't store resources consumption of the following regions but the requested settings of the nested regions is set.
+		It is not possible to nest ignore sections of the code.
 	MERIC_IgnoreStop()
-		Cancels the ignore section of the code
+		Cancels the ignore section of the code.
 
-If you want to insert Meric regions into code you don't know, instead of Meric probes insert into the code MPI and openMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
+If you want to insert MERIC regions into code you don't know, instead of MERIC probes insert into the code MPI and OpenMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
 
-There is one more restriction in placing probes into the code. In current version Meric does not support recursively nested regions and regions with at least three starts where first and third calls are at the same level, but second call is at higher level. This case is shown in example:
+There is one more restriction in placing probes into the code. In current version MERIC does not support recursively nested regions and regions with at least three starts where the first and the third calls are at the same level, but second call is at higher level. This case is shown in example:
 
 ```
-	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in thi example
+	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in this example
 		MERIC_MeasureStart("A")	//first call of region A
 		MERIC_MeasureStop()
 
@@ -116,7 +124,7 @@ There is one more restriction in placing probes into the code. In current versio
 ```
 
 ## Shared MERIC/Score-P interface ##
-Into include folder the C header file readex.h and Fortran readex.inc were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
+Into include folder the C header file `readex.h` and Fortran `readex.inc` were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
@@ -145,14 +153,14 @@ READEX interface doesn't contain all Score-P API functions, because there is no 
 	export MERIC_FREQUENCY=24        # [0.1 GHz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24      # [0 for applications that doesn't use threads]
-		- To run a code in the default settings, without MERIC influenc, set this three environment variables to zero.
+		- To run a code in the default settings, without MERIC influence, set this three environment variables to zero.
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
-		0 = hdeem - uses hdeem to measure energy consumtion
-		1 = rapl - uses rapl counters to measure energy consumtion
+		0 = hdeem - uses hdeem to measure energy consumption
+		1 = rapl - uses rapl counters to measure energy consumption
 		2 = hdeem & rapl - uses hdeem and rapl at the same time
-		3 = none - doesn't measure energy consumtion, but provides you the option to set parameters for regions
+		3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
 		4 = jetson - energy measurement on BSC Jetson TX1 system
 		5 = thunder - energy measurement on BSC ThunderX system
 	export MERIC_BARRIERS=all
@@ -160,63 +168,60 @@ READEX interface doesn't contain all Score-P API functions, because there is no 
 		mpi  = use MPI barriers only
 		omp  = use OpenMP barriers only
 		none = do not use barriers
-		- This settings can by used in MERIC_MODE=3 only
+		- This settings can by used in MERIC_MODE=3 only.
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
 		- Single samples are stored in HDEEM internal memory and read at the end of the runtime
-		  (with frequency 1000 samples per 1 second for a blade and 100 samples in detailed mode for VRs)
+		  (with frequency 1000 samples per 1 second for blade and 100 samples in detailed mode for VRs).
 		- Minimal overhead - only times of the beginning and the end of measurement
-		  are stored (samples are processed after the measurement)
+		  are stored (samples are processed after the measurement).
 		- in noncontinual mode (MERIC_CONTINUAL=0) energy consumption measured directly 
-		  (with HDEEM internal delay) at each region start and end
+		  (with HDEEM internal delay) at each region start and end.
 
 	export MERIC_DETAILED=1
-		- Hdeem gives us not only data from blade, but data from Voltage Regulators (VR-CPU1,
-		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too
-		- RAPL returns values for each cpu, but without detailed mode, it is summarized per node
+		- HDEEM gives us not only data from blade, but data from Voltage Regulators (VR-CPU1,
+		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too.
+		- In detailed mode RAPL returns values also for each CPU, not only energy consumption for a node.
 
 	export MERIC_DEBUG=1
-		- Data are taken both from samples and Stats structure, so we can compare them
-		- Data are taken from blade and Voltage Regulators too
+		- Data are taken both from samples and Stats structure, so we can compare them.
+		- Data are taken from blade and Voltage Regulators too.
 		- Only for measurement check - there can be larger overhead because of two
-		  types of data processing performed simultaneously
+		  types of data processing performed simultaneously.
 
 	export MERIC_SAMPLES=1
-		- When using HDEEM samples to read the energy consumtion, MERIC prints 
-		  each sample to the output file, if MERIC_SAMPLES is set
-		- Files can become very big when measured regions run for a long time
+		- When using HDEEM samples to read the energy consumption, MERIC prints 
+		  each sample to the output file, if MERIC_SAMPLES is set.
+		- Files can become very big when measured regions run for a long time.
 
 	export MERIC_AGGREGATE=0
-		- When running an MPI application, MERIC aggregate the data from all the processes and stores the agregated results. There are both average values and summary included in the output files.
-		- Exporting the zero value turns off this behavior and MERIC will store the results for each node separately.
+		- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
+		- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
 
 	export MERIC_COUNTERS=papi or perfevent
-		- If set you can read HW counters using papi or perfevent
-		- Perfevent is set to measure all threads on a process, it results 
-		  in gathered values of the counters
-		- When using counters, there is not only counter value but also an information 
-		  about average CPU core frequency during the region runtime, computional
-		  and arithmetic intensity (if possible to measure)
+		- If set you can read HW counters using PAPI or perfevent.
+		- When using counters, there is not only counter value but also an information.
+		  about average CPU core frequency during the region runtime, computational
+		  and arithmetic intensity (if possible to measure).
 		- To add a counter you want to measure it is necessary to follow 
-		  the instructions in wrapper/counters.h
+		  the instructions in wrapper/counters.h.
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
 	export MERIC_OUTPUT_FILENAME="log"
 
-## SET MORE SETTINGS ##
-Settings throught the exprorted envoronment variable should fullfil your need when manualy searching the optimal settings. To set more complex settings the configuration file must be define.
-In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are applied but no consumptions are measured), and size of change in settings, that should be ignored, beacuse it is too small to apply.
+## ADVANCED SETTINGS ##
+Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.
+In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are applied but no consumptions are measured), and size of change in settings, that should be ignored, because it is too small to apply.
 	
 To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
 
-The basic settings via configuration file is settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the prefix "MERIC_".
+The basic settings via configuration file is HW settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the "MERIC_" prefix.
 	
-In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object that specify the settings for each region.
+In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object specify the settings for each region.
 
-It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket.
-If any region of your code or any parameter is missing, the default setting is set.
+It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket. If any region of your code or any parameter is missing, the default setting is set.
 
 	"@SOCKET" : {
 		"0" : {
@@ -227,7 +232,7 @@ If any region of your code or any parameter is missing, the default setting is s
 		}
 	}
 	
-To define ignore settings, write a object with the key "@IGNORE", and value is another object, that might contain "@REGIONS" with array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
+To define ignore settings, write a object with the keyword "@IGNORE", and value is another object, that might contain "@REGIONS" with an array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
@@ -241,31 +246,38 @@ To define ignore settings, write a object with the key "@IGNORE", and value is a
 Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
-#    5] Compile and run basic example                                          #
+#    5] Compile MERIC and run an instrumented application                      #
 --------------------------------------------------------------------------------
-	# in the interactive job load necessary modules
-		module load intel	#if GCC is used use "make gcc" instead of "make" to compile MERIC
-		module load mpi
-		module load hdeem
-		module load papi
-
-	# compile MERIC
+	# install/load libraries
+		mandatory - intel compiler	#if GCC is used use "make gcc" instead of "make" to compile MERIC
+		optionaly - MPI - mandatory for MPI version of the library
+		optionaly - HDEEM + freeipmi
+		optionaly - PAPI
+		optionaly - cpufreq
+		optionaly - x86_adapt
+		optionaly - numa - mandatory if x86_adapt is missing
+		
+	# edit Makefile to specify correct paths and compile MERIC
 		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
-		make
+		make # or make gcc
+
+	# instrument an application according a section 3 and link with the same libraries as meric
+		use -lmeric OR FOR MPI APPS -lmericmpi
 	
-	# compile test code or compile your own test code - see the Makefile in the test directory
+	# or edit test/Makefile and compile a test application
 		cd test
 		make
-
+	
 	# set static frequencies outside of the regions, or inside regions where are not set
 		export MERIC_FREQUENCY=25
 		export MERIC_UNCORE_FREQUENCY=25
 		export MERIC_NUM_THREADS=0
+		export MERIC_MODE=3 # no energy measurement
 
-	# run the example
+	# run the application as usual
 		./test
 
-To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set cpu core, uncore frequencies and number of threads. How to do so, you will find in section MERIC input parameters.
+To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set CPU core and uncore frequencies and number of threads. How to do so, you will find in section MERIC input parameters.
 
 --------------------------------------------------------------------------------
 #     6] Measurement results                                                   #
@@ -279,7 +291,7 @@ To understand this example, explore the source file **test.cpp** to see that thi
 			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
 			# Data - tuples (mostly pairs) structured like a hash map: key, value
 	* mericMeasurementCounters
-		# Program start counters, strored in .tmp files.
+		# Program start counters, stored in .tmp files.
 	
 	# EXAMPLE of CSV file contained in mericMeasurement folder:
 		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
@@ -301,23 +313,31 @@ To understand this example, explore the source file **test.cpp** to see that thi
 		ID of first blade sample,15635
 		ID of last blade sample,15638
 	
-	# To process the results use RADAR tool
-	# Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
-		1) Set variables in config.py file (description is included in the file)
-		2) Launch python3 ./printFullReport.py	
-
 --------------------------------------------------------------------------------
 #      7] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-To find the best settings for each region, you should run your code with all possible settings. To do so, there is a script run.sh in the test folder. In default the script is set to run a segment of all settings for test_mpi.cpp and visualise the result in the RADAR tool.
+To find the best settings for each region, you should run your code with several possible settings. The measurement results are stored in two directories, that can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
+
+	# Run an application in several configurations you want to test - in test directory are provided example scripts `run.sh` or `run-mpi.sh`
+		```
+		export MERIC_MODE=1
+		for thread in {24..1..1}
+		do
+			for cpu_freq in {25..12..1}
+			do
+				for uncore_freq in {30..12..1} # or {30..12..2}
+				do
+					export MERIC_OUTPUT_FILENAME=$thread"_"$cpu_freq"_"$uncore_freq
+					export MERIC_NUM_THREADS=$thread
+					export MERIC_FREQUENCY=$cpu_freq
+					export MERIC_UNCORE_FREQUENCY=$uncore_freq
+					./test
+				done
+			done
+		done
+		```
 	
-	# Erase previous results to avoid mixing them
-		make cleanAll
-	
-	# Run a script that will run an application in several configurationt you want to test
-		sbatch run.sh
-	
-	# Add a description file `measurementInfo.json` to your output data folder. This step is not compulsory but this file helps us for data analaysis.
+	# Add a description file `measurementInfo.json` to your output data folder. This step is not compulsory but this file helps us for data analysis.
 		```
 		{
 			"Timestamp" : "13.6. 2017 14:59",
@@ -325,117 +345,27 @@ To find the best settings for each region, you should run your code with all pos
 			"DataFormat": "node_CF_UnCF_config",
 			"Note"  	: ""
 		}
-		```		
-	
-	# Provide correct configuration file to RADAR
-	# Check inside the cofiguration file if the path to your results is correct
-		mv config.py.TEST config.py
-	
-	# Run RADAR tool
-		./printFullReport.py
-	
-	# cd to directory with measurement results
-	# Compile output LaTeX source file and investigate the results
-		pdflatex --shell-escape results.tex
-		
---------------------------------------------------------------------------------
-#      8] Measure energy consumption of your code at Taurus                    #
---------------------------------------------------------------------------------
-## COMPILE MERIC ##
-	export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
-	module load intel/2016.1.150
-	module load mpirt/5.1.2.150
-	module load hdeem/2.2.20ms
-	module load papi/5.4.1
-	make
+		```
 
-## EDIT YOUR CODE TO INSERT MEASUREMENT REGIONS ##
-	# edit main function
-		#include <meric.h>
-		...
-		MPI_Init(&argc, &argv);
-		MERIC_Init();
-		...
-		MERIC_Close();
-		MPI_Finalize();
+	# Process the results using RADAR tool
+		Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
+		1) Set variables in config.py file (description is included in the file)
+		2) Launch python3 ./printFullReport.py -configFile path/to/config.py
 
-	# edit file with a region
-	# insert Start probe at the beginning of the region with a unique name
-	# intert Stop probe at the end of the region - no name needed, ends the last started region
-	# for the visualisation with Radar tool, there must be one region, that wraps other regions
-		#include <meric.h>
-		...
-		MERIC_MeasureStart("A");
-		//region A
-		MERIC_MeasureStop();
-
-## COMPILE YOUR CODE ##
-	# edit Makefile
-		-I$(PATH_TO_MERIC)/include
-		-L$(PATH_TO_MERIC)/lib
-		-L../hdeem -lhdeem -lfreeipmi -lcpufreq -lx86_adapt -L/sw/taurus/libraries/papi/5.4.1/lib/ -lpapi
-		-lmeric OR FOR MPI APPS -lmericmpi 
-
-	# of if application is compiled using waf (such as ESPRESO Solver)
-		# * build.config
-			INCLUDES = $PATH_TO_MERIC/include
-			LIBPATH =  $PATH_TO_MERIC/lib /sw/taurus/libraries/papi/5.4.1/lib/
-		# * src/app/wscript
-			def configure(ctx):
-			    ctx.env.append_unique("LIB", "meric")  # OR "mericmpi"
-			    ctx.env.append_unique("LIB", "hdeem")
-			    ctx.env.append_unique("LIB", "freeipmi")
-			    ctx.env.append_unique("LIB", "cpufreq")
-			    ctx.env.append_unique("LIB", "x86_adapt")
-			    ctx.env.append_unique("LIB", "papi")
-
-	# compile and run your code as usual
-		make
-		make run
-
-## TEST YOUR CODE ##
-	# edit run.sh and run it
-		sbatch run.sh
-	
-	# edit Radar config.py - follow the instructions inside
-	# GENERATE RADAR OUTPUT 
-		module load python
-		./printFullReport.py
-
-	# compile LaTeX source file that is inside the folder with measurement results
-		pdflatex --shell-escape results.tex
 
 --------------------------------------------------------------------------------
-#     9] MERIC compilation on a machine without the HDEEM                      #
+#     8] MERIC with a Fortran code                                             #
 --------------------------------------------------------------------------------
-	# optionaly install libraries that Meric uses
-		# x86_adapt, cpufreq, papi, freeipmi, hdeem
-	# set library paths in Meric Makefile
-	# add path to Meric in $LD_LIBRARAY_PATH
-	# load modules or install libraries that Meric uses
-		# compiler
-		# optionaly papi, x86_adapt (if missing, numa library is required), cpufreq
-	# compile Meric in dummy mode
-		# all modules works the same as with hdeem, only hdeemwrapper class is replaced with basic access counter
-		# if there is a problem with compiler, set --cpp and --mpi options in Makefile
-		make dummy
-	# remove unused libraries in test/Makefile
-	# compile examples in test directory
-	# export MERIC_COUNTERS variable to measure real data
-
---------------------------------------------------------------------------------
-#     10] MERIC with a Fortran code                                            #
---------------------------------------------------------------------------------
-There are Fortran module and interface in the include directory. One can use shared READEX interface `(#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example test/fort_test.f90 to show how the interfaces can be used.
+There are Fortran module and interface in the include directory. One can use shared READEX interface `(#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
 	
 --------------------------------------------------------------------------------
-#     11] Using MERIC on BSC ARM Jetson                                        #
+#     9] Using MERIC on BSC ARM systems                                        #
 --------------------------------------------------------------------------------
-To compile MERIC on Jetson, use gcc/6.1.0 and Papi modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects cpu. 10 samples per second was selected in the measurement script as a compromise - this samples rate takes ~2% of the cpu core. It is possible to change the rate in tools/getJTX1measurements.py. 
+To compile MERIC on Jetson, use gcc and PAPI modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects CPU. 10 samples per second was selected in the measurement script as a compromise - this samples rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py. 
 
-Export MERIC_MODE=4 to activate MERIC on Jetson - otherwise it isn't possible to change frequencies and measure energy consumtion. Since Jetson doesn't have non-continual energy measurement interface exporting MERIC_CONTINUAL=0 turns off the energy consumption measurement. To measure one must export MERIC_CONTINUAL=1.
+Export MERIC_MODE=4 to activate MERIC on Jetson - otherwise it isn't possible to change frequencies and measure energy consumption. Since Jetson doesn't have non-continual energy measurement interface exporting MERIC_CONTINUAL=0 turns off the energy consumption measurement. To start energy measurement one must export MERIC_CONTINUAL=1.
 
-ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequncies, input values are in kHz. Deafualt frequencies are 518400 kHz core and 408000 kHz uncore. It is recommended to set frequencies from a list made by administrators, see:
+ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequencies, input values are in kHz. Default frequencies are 518400 kHz core and 408000 kHz uncore. It is recommended to set frequencies from a list made by administrators, see:
 
 	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
 	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
@@ -443,12 +373,12 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 	uncore:	/sys/kernel/debug/clock/emc/possible_rates
 	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
-Another supported ARM system is ThunderX. This system has its cons and pros. ThunderX is much more powrfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the cpus. The measurement system measure the energy consumed by all available nodes (one must alocate all four nodes), and its energy measurement samples frequency is approximately 4 saples per second. Unfortunately, the frequency scaling is not supported. To run Meric on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
+Another supported ARM system is ThunderX. This system is much more powerfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the CPUs. Its measurement system measure the energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Unfortunately, the frequency scaling is not supported. To run MERIC on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
 
-Except login nodes it is not possible to load modules - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
+At BSC ARM systems it is possible to load modules at login node only - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
  
 --------------------------------------------------------------------------------
-#     12] Tool for static tuning                                               #
+#     10] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 

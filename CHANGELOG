@@ -1,4 +1,4 @@
-### XX.XX.XXXX #################################################################
+### 05.06.2018 #################################################################
   - fixed single RAPL overflow
   - HDEEM error handled without writing zero values into output files
   - MERIC_FREQUENCY and MERIC_UNCORE_FREQUENCY should be set to zero for default run
@@ -23,6 +23,7 @@
   - analysis data directory should contain file measurementInfo.json that describes the test
   - new possibility to turn off MPI or OpenMP barriers for production runs
   - updated labels in output files
+  - removed dummy compilation without HDEEM
   - updated README
 
 ### 10.04.2017 #################################################################
