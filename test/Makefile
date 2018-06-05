@@ -15,8 +15,7 @@ endif
 
 ################################################################################
 MERIC=-L../lib -I../include
-HDEEM=-L../hdeem -lhdeem
-FREEIPMI=-lfreeipmi
+HDEEM=-L../hdeem -lhdeem -lfreeipmi
 X86ADAPT=-L/usr/local/lib -lx86_adapt
 CPUFREQ=-lcpufreq
 PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi

@@ -12,10 +12,10 @@
 modules() 
 {
         module purge
-        module load intel/2016.1.150
-        module load mpirt/5.1.2.150
-        module load hdeem/2.2.20ms
-        module load papi/5.4.1
+        module load intel
+        module load mpirt
+        module load papi
+        module load cpufrequtils
 }
 
 ###############################################################################
@@ -38,7 +38,7 @@ variables()
 # test if script is in interactive mode
 if [[ $- != *i* ]]
 then
-	echo "WARNING: source this script to set environment. Test only."
+	echo "WARNING: source this script to set environment. List of set variables only."
 	echo
 	variables
 	exit 1
@@ -51,16 +51,14 @@ then
 	return 0
 fi
 
-# load modules
-modules
 
  ### ENVIRONMENT VARIABLES ###
 export MERIC_FREQUENCY=25
-export MERIC_UNCORE_FREQUENCY=25 
+export MERIC_UNCORE_FREQUENCY=30
 export MERIC_NUM_THREADS=0
-export MERIC_COUNTERS=perfevent	#perfevent, papi
-export MERIC_MODE=2	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4}
-export MERIC_AGGREGATE=0
+export MERIC_COUNTERS=papi	#perfevent, papi
+export MERIC_MODE=3	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5}
+export MERIC_AGGREGATE=1
 export MERIC_CONTINUAL=1
 # export MERIC_DETAILED=1
 # export MERIC_DEBUG=1
