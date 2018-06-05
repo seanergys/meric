@@ -4,7 +4,7 @@
 
 using namespace meric;
 
-#ifndef USE_DUMMY
+#ifdef HAVE_HDEEM_H
 
 hdeem_bmc_data_t HDEEM::bmc;
 hdeem_global_reading_t HDEEM::_samples;

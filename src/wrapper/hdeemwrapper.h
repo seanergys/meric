@@ -3,10 +3,10 @@
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
 #include "../basis/utils.h"
-#ifdef USE_DUMMY
-	#include "../../hdeem/hdeem.h"
-#else
+#ifdef HAVE_HDEEM_H
 	#include <hdeem.h>
+#else
+	#include "../../hdeem/hdeem.h"
 #endif
 #include <cstdlib>
 #include <iostream>
@@ -35,7 +35,7 @@ public:
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 	static std::string getCounterLabel(std::string counter) { return counter; };
 
-#ifndef USE_DUMMY
+#ifdef HAVE_HDEEM_H
 	static void init()
 	{
 		checkHDEEM(hdeem_init(&bmc), "init");

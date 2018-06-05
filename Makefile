@@ -4,8 +4,6 @@
 ## TAURUS ######################################################################
 PAPI_INC_TAURUS=-I/sw/taurus/libraries/papi/5.5.1/include/
 PAPI_LIB_TAURUS=-L/sw/taurus/libraries/papi/5.5.1/lib/
-CPUFREQ_INC_TAURUS=-I/projects/p_readex/cpufrequtils-icc/lib/
-CPUFREQ_LIB_TAURUS=-L/projects/p_readex/cpufrequtils-icc
 
 INCLUDES_TAURUS= $(PAPI_INC_TAURUS) $(X86A_INC_TAURUS) $(CPUFREQ_INC_TAURUS) $(FREEIPMI_INC_TAURUS)
 LIBPATH_TAURUS=  $(PAPI_LIB_TAURUS) $(X86A_LIB_TAURUS) $(CPUFREQ_LIB_TAURUS) $(FREEIPMI_LIB_TAURUS)
@@ -25,13 +23,16 @@ INCLUDES_JETSON= $(PAPI_INC_JETSON) $(X86A_INC_JETSON) $(CPUFREQ_INC_JETSON) $(F
 LIBPATH_JETSON=  $(PAPI_LIB_JETSON) $(X86A_LIB_JETSON) $(CPUFREQ_LIB_JETSON) $(FREEIPMI_LIB_JETSON)
 
 ################################################################################
+INCLUDES_MERIC= $(INCLUDES_TAURUS)
+LIBPATH_MERIC= $(LIBPATH_TAURUS)
 unexport CXX
+
 all:
 	make configure
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_TAURUS) $(INCLUDES_TAURUS)" # -DVERBOSE"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)" # -DVERBOSE"
 
 install:
 	./waf install #-v
@@ -41,21 +42,12 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_TAURUS) $(INCLUDES_TAURUS) -O0 -g" --verbose
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -O0 -g" --verbose
 	make install
 
 gcc:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_TAURUS) $(INCLUDES_TAURUS)"
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
 	make install
-
-dummy:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_SALOMON) $(INCLUDES_SALOMON)" --dummy
-	make install
-
-dummyGCC:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_SALOMON) $(INCLUDES_SALOMON)" --dummy
-	make install
-
 
 arm:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_JETSON) $(INCLUDES_JETSON)" --dummy
@@ -66,3 +58,4 @@ love:
 
 clean:
 	make love
+

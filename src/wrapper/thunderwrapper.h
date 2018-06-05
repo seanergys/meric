@@ -3,11 +3,6 @@
 #define SRC_WRAPPER_THUNDERWRAPPER_H_
 
 #include "../basis/utils.h"
-#ifdef USE_DUMMY
-        #include "../../hdeem/hdeem.h"
-#else
-        #include <hdeem.h>
-#endif
 #include <cstdlib>
 #include <iostream>
 #include <fstream>

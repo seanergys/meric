@@ -20,12 +20,8 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.verbose:
         ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
-    if ctx.options.dummy:
-        ctx.env.append_unique("DEFINES", [ "USE_DUMMY" ])
+    if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
         ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
-    else:
-#        ctx.env.append_unique("DEFINES", [ "HAVE_HDEEM_H" ])	# if problem with searching
-        ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=True)
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
@@ -34,7 +30,6 @@ def configure(ctx):
 
 #    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching
 #    ctx.env.append_unique("DEFINES", [ "HAVE_X86_ADAPT_H" ])	#if problem with searching
-    
     ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
