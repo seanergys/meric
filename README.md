@@ -1,8 +1,8 @@
-# README #
+# MERIC #
 
-MERIC: C/C++ lightweight library for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying READEX approach (www.readex.eu).
+Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was developed for x86 systems (tested on HSW-EP and KNL) but additionally supports selected BSC ARM systems.
+The library originally developed for x86 systems (tested on HSW-EP and KNL) but additionally supports selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
