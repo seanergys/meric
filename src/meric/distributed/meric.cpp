@@ -193,8 +193,8 @@ DistributedMeric::DistributedMeric()
 	else if (Meric::MODE == MODE_THUNDER)
 		Environment::init(SYS_THUNDER, defaultParameter, _MPInodeRank);
 	else
-		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
-		//Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
+		//Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
+		Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
 
 	for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 		currentState.socket[socket] = defaultParameter;
