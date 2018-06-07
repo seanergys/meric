@@ -65,7 +65,7 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
     ///////////////////////
 
     std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
-    unsigned int vrSensorNum = vrSensor.size();
+    unsigned int vrSensorNum = vrSensor.size()+1;
 
     for (unsigned int sensorID = 1; sensorID < vrSensorNum; sensorID++) {
         ss << "# Voltage regulator (" << vrSensor[sensorID-1] << ") summary" << '\n';
