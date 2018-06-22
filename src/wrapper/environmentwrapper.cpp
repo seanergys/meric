@@ -9,13 +9,14 @@ using namespace meric;
 //	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
 
-systemLimits Environment::FreqLimits [] = {
+systemLimits Environment::FreqLimits [4];
+/* [] = {
 	[SYS_HASWELL] = { 33, 25, 12, 30, 30, 12 },
 	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800},
 	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1}, //DVFS not supported
 	[SYS_OTHER] = { -1, -1, -1, -1, -1, -1}
 };
-
+*/
 int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;

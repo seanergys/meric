@@ -36,11 +36,13 @@ class DAVIDE {
 
 public:
 
-	static const int FREQUENCY = //1000;
+	static const int FREQUENCY = 1000;
 	static const int PROBE_NUMBER = 1;	//BLADE + {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"}; kolik zarizeni merime
+	static std::string storeLabel;
+	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 
-	static void init()
-	{
+	static void init();
+/*	{
 		node_n = "davide43"; 
 		metric = "power";
 		// initialize RestClient
@@ -57,32 +59,34 @@ public:
 		// set connection timeout to 5s
 		conn_samples->SetTimeout(30);
 	}
-	
+*/	
 	static void close() { RestClient::disable(); }
 
 	static void start(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_startTime = (long long) timeToDouble(time)*1000;
+		_startTime = (long long) mutils::timeToDouble(time)*1000;
 	}
 	
 	static void stop(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_stopTime = (long long)timeToDouble(time)*1000;
+		_stopTime = (long long)mutils::timeToDouble(time)*1000;
 	}
-	static void setTimeAdjustment() = {};
+	static void setTimeAdjustment(timespec start) {};
 	static int getSamples()
 	{
 		MERIC_INFO << "Start time is : "  << _startTime << " ms\n";
 		MERIC_INFO << "Stop time is  : "  << _stopTime << " ms\n";
 
-		string stop_t  = std::to_string(_stopTime);    
-		string start_t = std::to_string(_startTime);  
+		std::string stop_t  = std::to_string(_stopTime);    
+		std::string start_t = std::to_string(_startTime);  
 
-		string querry = "{\"cache_time\":0,\"end_absolute\":" + stop_t+ ",\"metrics\":[{\"group_by\":[{\"name\":\"tag\",\"tags\":[\"node\",\"cluster\",\"org\",\"plugin\"]}],\"name\":\""+metric+"\",\"tags\":{\"node\":[\""+node_n+"\"],\"plugin\":[\"bbb_pub\"],\"ts\":[\"1ms\"],\"chnl\":[\"data\"],\"cluster\":[\"davide\"],\"org\":[\"e4\"]}}],\"time_zone\":\"Europe/Rome\",\"start_absolute\":" +start_t+ "}";
+		std::string querry = "{\"cache_time\":0,\"end_absolute\":" + stop_t+ ",\"metrics\":[{\"group_by\":[{\"name\":\"tag\",\"tags\":[\"node\",\"cluster\",\"org\",\"plugin\"]}],\"name\":\""+metric+"\",\"tags\":{\"node\":[\""+node_n+"\"],\"plugin\":[\"bbb_pub\"],\"ts\":[\"1ms\"],\"chnl\":[\"data\"],\"cluster\":[\"davide\"],\"org\":[\"e4\"]}}],\"time_zone\":\"Europe/Rome\",\"start_absolute\":" +start_t+ "}";
 
 		MERIC_INFO << "Querry is : "  << querry << "\n";
+		
+		sleep(10); //wait for smaples to be loaded into DB
 
 		RestClient::Response r = conn_samples->post("", querry);
 
@@ -112,6 +116,7 @@ public:
 		// *** END - array parsing *********************************************
 
 	}
+	static void deleteSamples() {};
 	
 
 	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
@@ -121,6 +126,8 @@ public:
 private:
 	static std::string node_n;
 	static std::string metric;
+	static std::string url_samples;
+	static RestClient::Connection* conn_samples;
 //	static size_t _timeAdjustment;
 	static unsigned long long _startTime, _stopTime;
 	static std::vector<long long> time_samples;  // vector will contain all time stamps from the specified interval 
