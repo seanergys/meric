@@ -116,6 +116,9 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	MERIC_INFO << "SOCKET SIZE is " << SOCKET_SIZE_CPU <<std::endl;
 	systemType = system;
 	
+	if (systemType == SYS_DAVIDE)
+		return; //temporary solution when HW parameters tuning not supported
+	
 	if(!rank)
 	{
 		if (systemType == SYS_OTHER)
@@ -159,7 +162,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (freq == 0)
 		return;
 
-	if (systemType == SYS_THUNDER)
+	if (systemType == SYS_THUNDER || systemType == SYS_DAVIDE)
 		return;
 
 	if (freq < FreqLimits[systemType].minCoreFreq)
@@ -259,7 +262,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	if (maxFreq == 0 || minFreq == 0)
 		return;
 	
-	if (systemType == SYS_THUNDER)
+	if (systemType == SYS_THUNDER || systemType == SYS_DAVIDE)
 		return;
 		
 	if (maxFreq > FreqLimits[systemType].maxUncoreFreq || minFreq < FreqLimits[systemType].minUncoreFreq || maxFreq < minFreq)

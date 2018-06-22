@@ -19,6 +19,7 @@
 #include "../wrapper/hdeemwrapper.h"
 #include "../wrapper/jetsonwrapper.h"
 #include "../wrapper/thunderwrapper.h"
+#include "../wrapper/davidewrapper.h"
 #include "../basis/utils.h"
 
 namespace meric {

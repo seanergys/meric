@@ -174,3 +174,4 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 template class TimeStore <HDEEM>;
 template class TimeStore <JETSON>;
 template class TimeStore <THUNDER>;
+template class TimeStore <DAVIDE>;

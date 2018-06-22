@@ -30,8 +30,8 @@
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
-enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_OTHER};
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
+enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
 
 struct RegionParameters {
 	double frequency;
