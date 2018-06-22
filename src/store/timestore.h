@@ -51,6 +51,7 @@ public:
 		if(TSystem::getSamples())
 			throw 1;
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
+
 		TSystem::deleteSamples();
 
 	}

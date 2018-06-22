@@ -24,26 +24,27 @@ int main(int argc, char **argv)
 	timespec spectime1, spectime2;
 
 	READEX_REGION_DEFINE(SLEEP);
-	READEX_REGION_DEFINE(RUN);
+	// READEX_REGION_DEFINE(RUN);
 
-	READEX_REGION_START(RUN, "RUN", SCOREP_USER_REGION_TYPE_COMMON);
-		clock_gettime(CLOCK_REALTIME, &spectime1);
-		time1 = timespec2double(spectime1);
-		#pragma omp parallel private(spectime2)
-			do
-			{
-				random = time1*1095 + log(random);
-				clock_gettime(CLOCK_REALTIME, &spectime2);
-			}while(timespec2double(spectime2)-time1 < 5.0);
-	READEX_REGION_STOP(RUN);
+	// READEX_REGION_START(RUN, "RUN", SCOREP_USER_REGION_TYPE_COMMON);
+	// 	clock_gettime(CLOCK_REALTIME, &spectime1);
+	// 	time1 = timespec2double(spectime1);
+	// 	#pragma omp parallel private(spectime2)
+	// 		do
+	// 		{
+	// 			random = time1*1095 + log(random);
+	// 			clock_gettime(CLOCK_REALTIME, &spectime2);
+	// 		}while(timespec2double(spectime2)-time1 < 5.0);
+	// READEX_REGION_STOP(RUN);
 
 	
-	#pragma omp parallel
-	{
+	// #pragma omp parallel
+	// {
 		READEX_REGION_START(SLEEP, "SLEEP", SCOREP_USER_REGION_TYPE_COMMON);
-			sleep(5);
+			//sleep(1);
+			usleep(50000);
 		READEX_REGION_STOP(SLEEP);
-	}
+	// }
 	
 	READEX_CLOSE();
 	return 0;

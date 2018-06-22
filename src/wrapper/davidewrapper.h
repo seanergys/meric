@@ -60,43 +60,57 @@ public:
 		conn_samples->SetTimeout(30);
 	}
 */	
+
+
+
 	static void close() { RestClient::disable(); }
+
+	// long long TimeSpecToMiliSec(struct timespec time) {
+		// return time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0;
+	// }
 
 	static void start(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_startTime = (long long) mutils::timeToDouble(time)*1000;
+		_startTime =  time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0; //(long long) mutils::timeToDouble(time)*1000.0;
+		MERIC_INFO << "Setting start time \n";
 	}
 	
 	static void stop(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_stopTime = (long long)mutils::timeToDouble(time)*1000;
+		_stopTime = time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0; //(long long)mutils::timeToDouble(time)*1000.0;
+		MERIC_INFO << "Setting stop time \n";
 	}
 	static void setTimeAdjustment(timespec start) {};
+	
 	static int getSamples()
 	{
+		
 		MERIC_INFO << "Start time is : "  << _startTime << " ms\n";
 		MERIC_INFO << "Stop time is  : "  << _stopTime << " ms\n";
+		MERIC_INFO << "Duration  is  : "  << _stopTime - _startTime << " ms\n";
+
 
 		std::string stop_t  = std::to_string(_stopTime);    
 		std::string start_t = std::to_string(_startTime);  
 
 		std::string querry = "{\"cache_time\":0,\"end_absolute\":" + stop_t+ ",\"metrics\":[{\"group_by\":[{\"name\":\"tag\",\"tags\":[\"node\",\"cluster\",\"org\",\"plugin\"]}],\"name\":\""+metric+"\",\"tags\":{\"node\":[\""+node_n+"\"],\"plugin\":[\"bbb_pub\"],\"ts\":[\"1ms\"],\"chnl\":[\"data\"],\"cluster\":[\"davide\"],\"org\":[\"e4\"]}}],\"time_zone\":\"Europe/Rome\",\"start_absolute\":" +start_t+ "}";
 
+		int slt = 5; 
+		MERIC_INFO << "Waiting " << slt<<"s for KairosDB to get all samples." << "\n";		
+		sleep(slt); //wait for smaples to be loaded into DB
 		MERIC_INFO << "Querry is : "  << querry << "\n";
-		
-		sleep(10); //wait for smaples to be loaded into DB
 
 		RestClient::Response r = conn_samples->post("", querry);
 
-		MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
-		MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
+		//MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
+		//MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
 
 		json j = json::parse(r.body);
 		json v = j["/queries/0/results/0/values"_json_pointer];
 
-		MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
+		// MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
 
 		// *** array parsing ***************************************************
 		// std::vector<long long> time_samples  (v.size(),0);
@@ -109,12 +123,9 @@ public:
 			power_samples[ts] = (double) v[ts][1];
 
 			MERIC_INFO << "Index : " << ts << "\tTime s: " << time_samples[ts] << " ms\tPower s: " << power_samples[ts] << " W \n";
-			// for (int vs = 0; vs < v[ts].size(); vs++) {
-			// 	std::cout << v[ts][vs] << " : "; 
-			// }		
 		}
 		// *** END - array parsing *********************************************
-
+		return 0;
 	}
 	static void deleteSamples() {};
 	

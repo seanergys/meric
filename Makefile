@@ -22,9 +22,13 @@ PAPI_LIB_JETSON=-L/apps/papi/5.4.3/lib
 INCLUDES_JETSON= $(PAPI_INC_JETSON) $(X86A_INC_JETSON) $(CPUFREQ_INC_JETSON) $(FREEIPMI_INC_JETSON)
 LIBPATH_JETSON=  $(PAPI_LIB_JETSON) $(X86A_LIB_JETSON) $(CPUFREQ_LIB_JETSON) $(FREEIPMI_LIB_JETSON)
 
+
+INCLUDES_DAVIDE=-I/davide/home/userexternal/lriha000/json/single_include/ -I/davide/home/userexternal/lriha000/rest-client/include/
+LIBPATH_DAVIDE=-L/davide/home/userexternal/lriha000/rest-client/libs/ -lrestclient-cpp
+
 ################################################################################
-INCLUDES_MERIC= $(INCLUDES_TAURUS)
-LIBPATH_MERIC= $(LIBPATH_TAURUS)
+INCLUDES_MERIC= $(INCLUDES_DAVIDE)
+LIBPATH_MERIC= $(LIBPATH_DAVIDE)
 unexport CXX
 
 all:
@@ -35,7 +39,7 @@ configure:
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)" # -DVERBOSE"
 
 install:
-	./waf install #-v
+	./waf install  #-v
 
 i:
 	make install
@@ -46,7 +50,7 @@ ddt:
 	make install
 
 gcc:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -DVERBOSE"
 	make install
 
 arm:

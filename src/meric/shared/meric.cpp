@@ -69,7 +69,7 @@ SharedMeric::SharedMeric()
 		Environment::init(SYS_THUNDER, defaultParameter, 0);
 	else if (Meric::MODE == MODE_DAVIDE)
 		Environment::init(SYS_DAVIDE, defaultParameter, 0);
-	else
+	else 
 		//Environment::init(SYS_OTHER, defaultParameter, 0);
 		Environment::init(SYS_HASWELL, defaultParameter, 0); //this default settings must persist due to many nodes with min uncore frequency limit set to maximum - now it is fixed
 
@@ -94,8 +94,10 @@ SharedMeric::SharedMeric()
 		JETSON::init();
 	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
 		THUNDER::init();
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL) {
 		DAVIDE::init();
+		DAVIDE::start(_startTime);
+	}
 }
 
 SharedMeric::~SharedMeric()

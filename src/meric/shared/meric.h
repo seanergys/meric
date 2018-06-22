@@ -112,6 +112,10 @@ public:
 		{
 			HDEEM::stop(_stopTime);
 		}
+		else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL) {
+			DAVIDE::stop(_stopTime);
+		}
+
 		Meric::close();
 		Environment::setDefaultFrequencies();
 

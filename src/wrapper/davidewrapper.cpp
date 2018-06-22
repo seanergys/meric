@@ -20,7 +20,12 @@ RestClient::Connection* DAVIDE::conn_samples;
 
 void DAVIDE::init()
 {
-	node_n = "davide43"; 
+
+	char hostname[50];
+   	gethostname(hostname, 50);
+	node_n = std::string(hostname); //"davide43"; 
+	MERIC_INFO << "Hostname : " << node_n << "\n";
+
 	metric = "power";
 	url_samples = std::string("http://") + std::string(KAIROSDB_SERVER) + std::string(":") + std::string(KAIROSDB_PORT) + std::string("/api/v1/") + std::string("datapoints/query");
 	// initialize RestClient
@@ -44,15 +49,29 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 {
 	std::string errMessage = "";
 
-//	*firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
-//	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
+
+	long long t0 = time_samples[0]; 
+	long long ts = (long long)(FREQUENCY*startTime);
+	long long dur_t = (long long)(FREQUENCY*duration);
+	*firstBlade = (size_t)(ts - t0); 
+	*lastBlade = (size_t)((ts - t0) + dur_t);  
+	size_t n_samples = *lastBlade - *firstBlade;
+
+	MERIC_INFO << "StartTime  : " << t0 << "\n";
+	MERIC_INFO << "Duration   : " << dur_t << "\n";
+	MERIC_INFO << "firstBlade : " << *firstBlade << "\n";
+	MERIC_INFO << "lastBlade  : " << *lastBlade  << "\n";
+	MERIC_INFO << "Samples    : " << n_samples << "\n";
+
+	// *firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
+	// *lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
 
 	MERIC_INFO << "FIRST " << *firstBlade << std::endl;
 	MERIC_INFO << "LAST " << *lastBlade << std::endl;
 
 	energy[0]   = 0.0;
-	maxWatts[0] = 0.0;
-	minWatts[0] = 0.0;
+	maxWatts[0] = power_samples[*firstBlade];
+	minWatts[0] = power_samples[*firstBlade];
 
 	double valTmp = 0.0;
 	for (size_t it=*firstBlade; it <*lastBlade; it++)
@@ -65,6 +84,12 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 			minWatts[0] = valTmp;
 		energy[0] += valTmp;
 	}
+	energy[0] = energy[0] / ((double)(n_samples)) * duration;
+
+	MERIC_INFO << "minWatts : " << minWatts[0] << "\n";
+	MERIC_INFO << "maxWatts : " << maxWatts[0] << "\n";
+	MERIC_INFO << "avgWatts : " << energy[0] / ((double)(n_samples)) << "\n";	
+	MERIC_INFO << "energy   : " << energy[0] << "\n";
 
 	return errMessage;	
 }
