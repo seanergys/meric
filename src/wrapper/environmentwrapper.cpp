@@ -68,7 +68,7 @@ void Environment::initHWSizes()
 		NODE_SIZE_SOCKET=1;
 #endif
 	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
-	MERIC << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
+	MERIC_INFO << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
 }
 
 void Environment::getFrequenciesLimits()
