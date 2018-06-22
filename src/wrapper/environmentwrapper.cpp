@@ -64,9 +64,11 @@ void Environment::initHWSizes()
 #else
 	NODE_SIZE_CPU = sysconf(_SC_NPROCESSORS_ONLN);
 	NODE_SIZE_SOCKET = numa_node_of_cpu(NODE_SIZE_CPU-1)+1;
+	if (NODE_SIZE_SOCKET <= 0)
+		NODE_SIZE_SOCKET=1;
 #endif
-	SOCKET_SIZE_CPU = NODE_SIZE_SOCKET == 0 ? 0 : NODE_SIZE_CPU / NODE_SIZE_SOCKET;
-//	std::cout << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
+	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
+	MERIC << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
 }
 
 void Environment::getFrequenciesLimits()
