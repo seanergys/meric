@@ -119,11 +119,18 @@ public:
 		if (MPIbarriers)
 			MPI_Barrier(_currentNode);
 
-		if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
+		if (!_MPInodeRank)
 		{
-			HDEEM::stop(_stopTime);
+			if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+			{
+				HDEEM::stop(_stopTime);
+			}
+			else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+			{
+				DAVIDE::stop(_stopTime);
+			}
 		}
-
+	
 		Meric::close();
 		
 		if (!_MPInodeRank)

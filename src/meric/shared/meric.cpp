@@ -94,7 +94,8 @@ SharedMeric::SharedMeric()
 		JETSON::init();
 	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
 		THUNDER::init();
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL) {
+	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	{
 		DAVIDE::init();
 		DAVIDE::start(_startTime);
 	}

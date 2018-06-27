@@ -158,6 +158,16 @@ DistributedMeric::DistributedMeric()
 		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm));
 		_storeList.back()->setMPIWrite(!_MPIglobalRank);
 	}
+	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	{
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new AggregateStore<TimeStore<DAVIDE>>(_storingProcs));
+			_storeList.back()->setMPIWrite(!_MPInodeRank);
+		}
+		else
+			_storeList.push_back(new TimeStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
+	}
 
 	if (Meric::COUNTERS != "none")
 	{
@@ -192,6 +202,8 @@ DistributedMeric::DistributedMeric()
 		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank);
 	else if (Meric::MODE == MODE_THUNDER)
 		Environment::init(SYS_THUNDER, defaultParameter, _MPInodeRank);
+	else if (Meric::MODE == MODE_DAVIDE)
+		Environment::init(SYS_DAVIDE,  defaultParameter, _MPInodeRank);
 	else
 		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
 		//Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
@@ -211,6 +223,12 @@ DistributedMeric::DistributedMeric()
 		if (!_MPIglobalRank)
 			THUNDER::init();
 		sleep(5);
+	}
+	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	{
+		if (!_MPIglobalRank)
+			DAVIDE::init();
+		DAVIDE::start(_startTime);	//TODO << test if it is neccessary to have a start here, also for all procs?
 	}
 	
 	//wrappers must be initialized after meric instantiation
@@ -233,6 +251,10 @@ DistributedMeric::~DistributedMeric()
 	if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
 	{
 		HDEEM::close();
+	}
+	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL && (!_MPInodeRank))
+	{
+		DAVIDE::close();
 	}
 	Environment::close();
 	MPI_Comm_free(&_currentNode);
