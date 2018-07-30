@@ -110,7 +110,7 @@ do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
 echo "Overall CPUs energy consumption [J]:" $SUM
-echo "Overall nodes energy consumption [J]:" $[ $SUM + $TIME * 70 ]
+echo "Overall nodes energy consumption [J]:" $( awk "BEGIN {print $SUM + $TIME * 70 }" )
 exit 0
 
 
