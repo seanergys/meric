@@ -68,7 +68,7 @@ const uint64_t RAPLtimeMask   = 0xF0000;
 const uint64_t RAPLtimeShift  = 16;
 
 const std::string suffix = "_";	// set suffix you want
-const int RAPL_BASELINE = 0;   // extra 70 W BASELINE
+const int RAPL_BASELINE = 70;   // extra 70 W BASELINE
 
 const int X86ADAPT_FREQ_MULT = 256;
 const int X86ADAPT_MAX_FREQ = 33;

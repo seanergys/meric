@@ -95,7 +95,9 @@ then
 	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $LOCATION/energyMeasureStop")
 	
 	TIME=$(grep -oP "(?<=Runtime \[s\] = )\d+\.\d+"  <<< $OUTPUT | head -1)
-	OUTPUT=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
+	NODES=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
+	CPU0=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_0 \[J\] = )\d+"  <<< $OUTPUT )
+	CPU1=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_1 \[J\] = )\d+"  <<< $OUTPUT )
 	echo "Runtime [s]:" $TIME
 else #HDEEM
 	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | sed 's/  */ /g' | cut -d ' ' -f 5")
@@ -105,12 +107,20 @@ fi
 
 ############################################## get the overall consumed energy #
 SUM=0.0
-for VAL in $OUTPUT
+for VAL in $NODES
+do
+	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
+done
+echo "Overall nodes energy consumption [J]:" $SUM
+
+SUM=0.0
+for VAL in $CPU0 $CPU1
 do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
 echo "Overall CPUs energy consumption [J]:" $SUM
-echo "Overall nodes energy consumption [J]:" $( awk "BEGIN {print $SUM + $TIME * 70 }" )
+
 exit 0
+
 
 
