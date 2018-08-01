@@ -98,7 +98,7 @@ then
 	NODES=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
 	CPU0=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_0 \[J\] = )\d+"  <<< $OUTPUT )
 	CPU1=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_1 \[J\] = )\d+"  <<< $OUTPUT )
-	echo "Runtime [s]:" $TIME
+	echo "Runtime [s] =" $TIME
 else #HDEEM
 	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | sed 's/  */ /g' | cut -d ' ' -f 5")
 fi
@@ -111,14 +111,14 @@ for VAL in $NODES
 do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
-echo "Overall nodes energy consumption [J]:" $SUM
+echo "Overall nodes energy consumption [J] =" $SUM
 
 SUM=0.0
 for VAL in $CPU0 $CPU1
 do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
-echo "Overall CPUs energy consumption [J]:" $SUM
+echo "Overall CPUs energy consumption [J] =" $SUM
 
 exit 0
 
