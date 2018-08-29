@@ -27,6 +27,12 @@ INCLUDES_MERIC= $(INCLUDES_TAURUS)
 LIBPATH_MERIC= $(LIBPATH_TAURUS)
 unexport CXX
 
+ifeq ($(FC),ifort)
+	FORTFLAGS=-module
+else
+	FORTFLAGS=-J
+endif
+
 all:
 	make configure
 	make install
@@ -48,6 +54,9 @@ ddt:
 gcc:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
 	make install
+
+fortran:
+	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
 arm:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_JETSON) $(INCLUDES_JETSON)" --dummy
