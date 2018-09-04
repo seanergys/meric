@@ -21,7 +21,8 @@ public:
 
 	void start(const std::string &region)
 	{
-		MERIC_INFO << "region '" << region << "' starting\n";
+		if (_storeList[0]->getMPIWrite())
+			MERIC_INFO << "region '" << region << "' starting\n";
 
 		#pragma omp master
 		{
@@ -42,7 +43,9 @@ public:
 	
 	void stop()
 	{
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
+		
+		if (_storeList[0]->getMPIWrite())
+			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 
 		#pragma omp master
 		{

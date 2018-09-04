@@ -50,7 +50,8 @@ public:
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addStart(getRegionID(region));
 		}
-		MERIC_INFO << "region '" << region << "' started\n";
+		if (_storeList[0]->getMPIWrite())
+			MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual void stop()
@@ -62,7 +63,9 @@ public:
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addEnd(_stack.back());
 		}
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
+		
+		if (_storeList[0]->getMPIWrite())
+			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 	}
 	
 	virtual void startIgnore()

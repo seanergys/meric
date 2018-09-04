@@ -22,9 +22,12 @@ PAPI_LIB_JETSON=-L/apps/papi/5.4.3/lib
 INCLUDES_JETSON= $(PAPI_INC_JETSON) $(X86A_INC_JETSON) $(CPUFREQ_INC_JETSON) $(FREEIPMI_INC_JETSON)
 LIBPATH_JETSON=  $(PAPI_LIB_JETSON) $(X86A_LIB_JETSON) $(CPUFREQ_LIB_JETSON) $(FREEIPMI_LIB_JETSON)
 
+## DAVIDE ######################################################################
+CPUFREQ_INC_DAVIDE=-I/davide/home/userexternal/lriha000/cpufrequtils-008/lib/
+CPUFREQ_LIB_DAVIDE=-L/davide/home/userexternal/lriha000/cpufrequtils-008/
 
-INCLUDES_DAVIDE=-I/davide/home/userexternal/lriha000/json/single_include/ -I/davide/home/userexternal/lriha000/rest-client/include/
-LIBPATH_DAVIDE=-L/davide/home/userexternal/lriha000/rest-client/libs/ -lrestclient-cpp
+INCLUDES_DAVIDE=-I/davide/home/userexternal/lriha000/json/single_include/ -I/davide/home/userexternal/lriha000/rest-client/include/ $(CPUFREQ_INC_DAVIDE)
+LIBPATH_DAVIDE=-L/davide/home/userexternal/lriha000/rest-client/libs/ -lrestclient-cpp $(CPUFREQ_LIB_DAVIDE)
 
 ################################################################################
 INCLUDES_MERIC= $(INCLUDES_DAVIDE)
@@ -39,7 +42,7 @@ configure:
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)" # -DVERBOSE"
 
 install:
-	./waf install  #-v
+	./waf install 
 
 i:
 	make install

@@ -1,5 +1,5 @@
 
-
+#include "../basis/spline.h"
 #include "davidewrapper.h"
 
 using namespace meric;
@@ -23,7 +23,9 @@ void DAVIDE::init()
 
 	char hostname[50];
    	gethostname(hostname, 50);
-	node_n = std::string(hostname); //"davide43"; 
+	std::cout << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
+	//node_n = std::string(hostname); //"davide43";
+	node_n = std::string("davide1");
 	MERIC_INFO << "Hostname : " << node_n << "\n";
 
 	metric = "power";
@@ -49,6 +51,7 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 {
 	std::string errMessage = "";
 
+	double GPU_offset = 120.0; 
 
 	long long t0 = time_samples[0]; 
 	long long ts = (long long)(FREQUENCY*startTime);
@@ -57,39 +60,124 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	*lastBlade = (size_t)((ts - t0) + dur_t);  
 	size_t n_samples = *lastBlade - *firstBlade;
 
-	MERIC_INFO << "StartTime  : " << t0 << "\n";
-	MERIC_INFO << "Duration   : " << dur_t << "\n";
+	MERIC_INFO << " ***************************************************************************\n";
+	MERIC_INFO << "StartTime  : " << ts << "\n";
+	if (dur_t == 0) {	
+		MERIC_INFO << "Duration   : < 1 sample\n";
+	} else {
+		MERIC_INFO << "Duration   : " << dur_t << " samples\n";
+	}
 	MERIC_INFO << "firstBlade : " << *firstBlade << "\n";
 	MERIC_INFO << "lastBlade  : " << *lastBlade  << "\n";
-	MERIC_INFO << "Samples    : " << n_samples << "\n";
+	MERIC_INFO << "# of Samples:" << n_samples << "\n";
 
-	// *firstBlade = std::ceil(startTime * FREQUENCY) + _timeAdjustment;
-	// *lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
+	// sub-sample measurement 
+	
+	std::vector <double> tmp_t, tmp_w;
 
-	MERIC_INFO << "FIRST " << *firstBlade << std::endl;
-	MERIC_INFO << "LAST " << *lastBlade << std::endl;
+	if (dur_t < 10) {	
 
-	energy[0]   = 0.0;
-	maxWatts[0] = power_samples[*firstBlade];
-	minWatts[0] = power_samples[*firstBlade];
+		// Sub sampling setup
+		int  n_subsamples 			  = dur_t*20;
+		int  hallo_size   			  = 10;  
+		bool use_linear_interpolation = false; // if false spline interpolation is used 
+		// END - Sub sampling setup
 
-	double valTmp = 0.0;
-	for (size_t it=*firstBlade; it <*lastBlade; it++)
-	{
-		valTmp = power_samples[it];
 
-		if (valTmp > maxWatts[0])
-			maxWatts[0] = valTmp;
-		else if (valTmp < minWatts[0])
-			minWatts[0] = valTmp;
-		energy[0] += valTmp;
-	}
-	energy[0] = energy[0] / ((double)(n_samples)) * duration;
+		MERIC_INFO << "  Subsample energy consumption estimation:\n";
+		MERIC_INFO << "  StartTime  : " << (long long)(FREQUENCY*startTime*1000.0) << "\n";
+		MERIC_INFO << "  StopTime   : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n";
+		MERIC_INFO << "  Duration   : " << (long long)(FREQUENCY*duration*1000.0) << " us\n";
 
-	MERIC_INFO << "minWatts : " << minWatts[0] << "\n";
-	MERIC_INFO << "maxWatts : " << maxWatts[0] << "\n";
-	MERIC_INFO << "avgWatts : " << energy[0] / ((double)(n_samples)) << "\n";	
-	MERIC_INFO << "energy   : " << energy[0] << "\n";
+		int  buf_size = 2*hallo_size+dur_t+2;
+		tmp_t.reserve(buf_size); 
+		tmp_w.reserve(buf_size);
+
+		for (size_t i = 0; i < buf_size; i++ ) {
+			tmp_t.push_back((double)  time_samples [*firstBlade - hallo_size + i]); 
+			tmp_w.push_back(          power_samples[*firstBlade - hallo_size + i]);
+
+			MERIC_INFO << "    Time: " << time_samples [*firstBlade - hallo_size + i] << "    [ms]; power: " 
+			                       << power_samples[*firstBlade - hallo_size + i] << " W \n";
+		}
+
+		tk::spline s;
+
+		if (use_linear_interpolation) {
+			s.set_points(tmp_t,tmp_w, false);  // void set_points(const std::vector<double>& x, const std::vector<double>& y, bool cubic_spline=true);
+		} else {
+			s.set_points(tmp_t,tmp_w, true); 
+		}
+
+		double inc = duration / double(n_subsamples); 
+
+		MERIC_INFO << "    ------------------------\n";
+		for (size_t i = 0; i < n_subsamples+1; i++) {
+			
+			double sub_time     = (startTime + (double)i * inc ) * (double)FREQUENCY;
+			double interp_power = s(sub_time);
+
+			if (i == 0) {
+				energy[0]   = interp_power;
+				maxWatts[0] = interp_power;
+				minWatts[0] = interp_power;
+			} else {
+
+				if (interp_power > maxWatts[0])
+					maxWatts[0] = interp_power;
+			
+				if (interp_power < minWatts[0])
+					minWatts[0] = interp_power; 
+
+				energy[0] += interp_power;
+			}
+ 
+			MERIC_INFO << "    Time: " << (long long) (sub_time*1000.0) <<  " [us]; power: " << interp_power << " W (sub-sample)\n"; 
+		}
+		MERIC_INFO << "    ------------------------\n";
+
+		maxWatts[0]-= GPU_offset;
+		minWatts[0]-= GPU_offset;
+
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n";
+		MERIC_INFO << "maxWatts : " << maxWatts[0] << " W\n";
+
+		double avgWatts = (energy[0] / double(n_subsamples+1)) - GPU_offset;
+		MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n";	
+		energy[0] = avgWatts * duration * 1000.0; // the * 1000.0 is for mW to W conversion from hdeem
+		MERIC_INFO << "energy   : " << avgWatts * duration << " J\n";		
+
+	} else {
+
+		energy[0]   = 0.0;
+		maxWatts[0] = power_samples[*firstBlade];
+		minWatts[0] = power_samples[*firstBlade];
+
+		double valTmp = power_samples[*firstBlade];
+		for (size_t it=*firstBlade; it <*lastBlade; it++)
+		{
+			valTmp = power_samples[it];
+
+			if (valTmp > maxWatts[0])
+				maxWatts[0] = valTmp;
+			
+			if (valTmp < minWatts[0]) //&& valTmp > 0.0)
+				minWatts[0] = valTmp;
+			
+			energy[0] += valTmp;
+		}
+
+		maxWatts[0]-= GPU_offset;
+		minWatts[0]-= GPU_offset;
+
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n";
+		MERIC_INFO << "maxWatts : " << maxWatts[0] << " W\n";
+
+		MERIC_INFO << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";	
+		energy[0] = ((energy[0] / ((double)(n_samples)) ) - GPU_offset ) * duration * 1000.0; // the * 1000.0 is for MW to W conversion from hdeem
+		MERIC_INFO << "energy   : " << energy[0] / 1000.0 << " J\n";
+
+	}	
 
 	return errMessage;	
 }
