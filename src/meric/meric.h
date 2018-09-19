@@ -74,7 +74,7 @@ public:
 			{
 				#pragma omp barrier
 			}
-			#pragma omp master
+			#pragma omp single nowait
 			{
 				if (IGNORE)
 					std::cerr << "MERIC WARNING: starting nested MERIC ignore sections not supported\n";
@@ -99,7 +99,7 @@ public:
 			{
 				#pragma omp barrier
 			}
-			#pragma omp master
+			#pragma omp single nowait
 			{
 				if (!IGNORE)
 					std::cerr << "MERIC WARNING: stopping already stopped MERIC ignore section\n";

@@ -21,13 +21,13 @@ public:
 
 	void start(const std::string &region)
 	{
-		MERIC_INFO << "region '" << region << "' starting\n";
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
 		}
-		#pragma omp master
+		#pragma omp single nowait
 		{
+			MERIC_INFO << "region '" << region << "' starting\n";
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -35,7 +35,7 @@ public:
 		}
 		if (Meric::IGNORE)
 			return;
-		#pragma omp master
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(region))
 				Meric::start(region);
@@ -49,13 +49,13 @@ public:
 	
 	void stop()
 	{
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
 		}
-		#pragma omp master
+		#pragma omp single nowait
 		{
+			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -63,7 +63,7 @@ public:
 		}
 		if (Meric::IGNORE)
 			return;
-		#pragma omp master
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
@@ -88,13 +88,13 @@ public:
 
 	void stopStart(const std::string &region)
 	{
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
 		}
-		#pragma omp master
+		#pragma omp single nowait
 		{
+			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -105,11 +105,11 @@ public:
 			return;
 		if (!_stack.size())
 		{
-			#pragma omp master
+			#pragma omp single nowait
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 			return;
 		}
-		#pragma omp master
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 				Meric::stop();
