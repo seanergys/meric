@@ -15,15 +15,18 @@ public:
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
 		timespec spectime1, spectime2;
-		clock_gettime(CLOCK_REALTIME, &spectime1);
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
+			clock_gettime(CLOCK_REALTIME, &spectime1);
 			SocketsRegionParameters change = regionValue(currentState, region);
 			setRegionEnvironment(change);
+			clock_gettime(CLOCK_REALTIME, &spectime2);
+			MERIC_INFO << "MERIC settings changed in " << mutils::timeToDouble(spectime2 - spectime1)*1000 << " ms\n";
 		}
-		clock_gettime(CLOCK_REALTIME, &spectime2);
-		MERIC_INFO << "MERIC settings changed in " << mutils::timeToDouble(spectime2 - spectime1)*1000 << " ms\n";
-		//startRegionEnvironment(region);
 		if (Meric::IGNORE)
 			return;
 		#pragma omp master
@@ -31,20 +34,27 @@ public:
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
+			clock_gettime(CLOCK_REALTIME, &spectime1);
+			MERIC_INFO << "MERIC status recorded in " << mutils::timeToDouble(spectime1 - spectime2)*1000 << " ms\n";
 		}
-		clock_gettime(CLOCK_REALTIME, &spectime1);
-		MERIC_INFO << "MERIC status recorded in " << mutils::timeToDouble(spectime1 - spectime2)*1000 << " ms\n";
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 	}
 	
 	void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1));
 			setRegionEnvironment(change);
 		}
-		//stopRegionEnvironment();
 		if (Meric::IGNORE)
 			return;
 		#pragma omp master
@@ -64,12 +74,19 @@ public:
 			else
 				_stack.pop_back();
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 	}
 	
 	void stopStart(const std::string &region)
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
-
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region);
@@ -80,7 +97,7 @@ public:
 			return;
 		if (!_stack.size())
 		{
-			#pragma omp single
+			#pragma omp master
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 			return;
 		}
@@ -93,6 +110,10 @@ public:
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
+		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
 		}
 	}
 	

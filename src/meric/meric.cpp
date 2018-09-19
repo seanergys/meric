@@ -87,23 +87,23 @@ int Meric::getDefaultParameters()
 		Meric::MODE = MODE_HDEEM;
 	}
 	
-	if (Meric::MODE == MODE_RUN && Meric::BARRIERS != "all")
+	if (Meric::BARRIERS != "all")
 	{
 		if (Meric::BARRIERS == "mpi")
 		{
 			Meric::OMPbarriers = false;
-			MERIC_INFO << "MERIC WARNING: OpenMP BARRIERS turned off\n";
+			std::cerr << "MERIC WARNING: OpenMP BARRIERS turned off\n";
 		}
 		else if (Meric::BARRIERS == "omp")
 		{
 			Meric::MPIbarriers = false;
-			MERIC_INFO << "MERIC WARNING: MPI BARRIERS turned off\n";
+			std::cerr << "MERIC WARNING: MPI BARRIERS turned off\n";
 		}
 		else if (Meric::BARRIERS == "none")
 		{
 			Meric::OMPbarriers = false;
 			Meric::MPIbarriers = false;
-			MERIC_INFO << "MERIC WARNING: BARRIERS turned off\n";
+			std::cerr << "MERIC WARNING: BARRIERS turned off\n";
 		}
 	}
 	

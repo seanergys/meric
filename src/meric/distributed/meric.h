@@ -22,7 +22,10 @@ public:
 	void start(const std::string &region)
 	{
 		MERIC_INFO << "region '" << region << "' starting\n";
-
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
@@ -38,12 +41,19 @@ public:
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 	}
 	
 	void stop()
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
@@ -70,12 +80,19 @@ public:
 			else
 				_stack.pop_back();
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 	}
 
 	void stopStart(const std::string &region)
 	{
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
-
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 		#pragma omp master
 		{
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
@@ -88,7 +105,7 @@ public:
 			return;
 		if (!_stack.size())
 		{
-			#pragma omp single
+			#pragma omp master
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
 			return;
 		}
@@ -101,6 +118,10 @@ public:
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
+		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
 		}
 	}
 
