@@ -38,10 +38,10 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)" # -DVERBOSE"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
 
 install:
-	./waf install #-v
+	./waf install
 
 i:
 	make install
@@ -49,7 +49,7 @@ i:
 ddt:
 	make love
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -O0 -g" --verbose
-	make install
+	./waf install -v
 
 gcc:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
