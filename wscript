@@ -136,5 +136,5 @@ def options(opt):
         "--flags",
         action="store",
         default="-O2",
-        help="Compiler flags (-std=c++14, -fPIC and -qopenmp are default)"
+        help="Compiler flags (-std=c++11, -fPIC and -qopenmp are default)"
     )
