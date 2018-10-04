@@ -30,6 +30,7 @@ template <class TSystem> class TimeStore: public Store {
 public:
 	virtual void addStart(int region);
 	virtual void addEnd(int region);
+	double getRegionDuration() {return 0.0;};
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);

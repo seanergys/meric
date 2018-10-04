@@ -35,6 +35,7 @@ public:
 
 	void addStart(int region) { _store->addStart(region); }
 	void addEnd(int region) { _store->addEnd(region); };
+	double getRegionDuration() { return _store->getRegionDuration(); };
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

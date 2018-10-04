@@ -45,6 +45,7 @@ class StoreBase
 public:
 	virtual void addStart(int region) = 0;
 	virtual void addEnd(int region) = 0;
+	virtual double getRegionDuration() = 0;
 	virtual void loadSchedulerEnvironment() = 0;	
 	virtual int storeCounter(std::string counterFileName) = 0;
 	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;

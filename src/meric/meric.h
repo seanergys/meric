@@ -54,7 +54,7 @@ public:
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
-	virtual void stop()
+	virtual double stop()
 	{
 		//stop should be in opposite order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
@@ -64,6 +64,12 @@ public:
 				_storeList[i]->addEnd(_stack.back());
 		}
 		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
+		if (_storeList.size() && _storeList[0]->getMPIWrite())
+			//infostore is allways the first store in the list
+			//only the infostore returns the region runtime, other return 0.0
+			return _storeList[0]->getRegionDuration();
+		else
+			return 0.0;
 	}
 	
 	virtual void startIgnore()

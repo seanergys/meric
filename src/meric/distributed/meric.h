@@ -48,8 +48,9 @@ public:
 		}
 	}
 	
-	void stop()
+	double stop()
 	{
+		double regionRuntime = 0.0;
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
@@ -63,7 +64,7 @@ public:
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
 		if (Meric::IGNORE)
-			return;
+			return 0.0;
 		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
@@ -71,10 +72,11 @@ public:
 				if (!_stack.size())
 				{
 					std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+					regionRuntime = -1.0;
 				}
 				else
 				{
-					Meric::stop();
+					regionRuntime = Meric::stop();
 					_stack.pop_back();
 				}
 			}
@@ -85,10 +87,12 @@ public:
 		{
 			#pragma omp barrier
 		}
+		return regionRuntime;
 	}
 
-	void stopStart(const std::string &region)
+	double stopStart(const std::string &region)
 	{
+		double regionRuntime = 0.0;
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
@@ -103,17 +107,17 @@ public:
 		}
 		
 		if (Meric::IGNORE)
-			return;
+			return 0.0;
 		if (!_stack.size())
 		{
 			#pragma omp single nowait
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			return;
+			return -1.0;
 		}
 		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
-				Meric::stop();
+				regionRuntime = Meric::stop();
 			_stack.pop_back();
 
 			if (!ignoreRegion(region))
@@ -124,6 +128,7 @@ public:
 		{
 			#pragma omp barrier
 		}
+		return regionRuntime;
 	}
 
 	void startIgnore()

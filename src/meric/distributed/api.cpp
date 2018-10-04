@@ -55,14 +55,14 @@ void MERIC_MeasureStart(const char* name)
 	holder->start(name);
 }
 
-void MERIC_MeasureStop()
+double MERIC_MeasureStop()
 {
-	holder->stop();
+	return holder->stop();
 }
 
-void MERIC_MeasureStopStart(const char* name)
+double MERIC_MeasureStopStart(const char* name)
 {
-	holder->stopStart(name);
+	return holder->stopStart(name);
 }
 
 void MERIC_IgnoreStart()
