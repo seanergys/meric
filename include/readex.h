@@ -1,8 +1,8 @@
 /**
- * Shared intarface for MERIC and Score-P libraries
+ * Shared interface for MERIC and Score-P libraries
  *
- * version 3.4
- * 19.02.2018
+ * version 3.5
+ * 04.10.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
  **/
