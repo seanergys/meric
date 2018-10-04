@@ -70,10 +70,10 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	ss << std::endl;
 
-	ss << "# Job info - " << HDEEM::storeLabel << std::endl
-	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;
+//	ss << "# Job info - " << HDEEM::storeLabel << std::endl
+//	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
+//	   << "Nodelist," << _nodelist << std::endl
+//	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;
 
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -98,13 +98,13 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     //////////////////
 
 	if(printSamples)
-		ss << "# Blade samples" << std::endl;
+		ss << "# Blade samples - " << HDEEM::storeLabel << std::endl;
 
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples)
 		{
-			ss << "# Blade samples" << std::endl;
+			ss << "# Blade samples - " << HDEEM::storeLabel << std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			for (size_t it = firstBlade; it < lastBlade; it++)
@@ -124,7 +124,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
-	ss << "# Blade summary" << std::endl
+	ss << "# Blade summary - " << HDEEM::storeLabel << std::endl
+	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
 	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
        << "Maximal power [W]" << "," << maxWatts[0] << std::endl

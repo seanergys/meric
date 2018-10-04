@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_ENERGYSTORE_H_
-#define SRC_BASIS_ENERGYSTORE_H_
+#ifndef SRC_STORE_ENERGYSTORE_H_
+#define SRC_STORE_ENERGYSTORE_H_
 
 #include "store.h"
 
@@ -75,4 +75,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_ENERGYSTORE_H_ */
+#endif /* SRC_STORE_ENERGYSTORE_H_ */

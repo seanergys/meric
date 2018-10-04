@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_COUNTERSSTORE_H_
-#define SRC_BASIS_COUNTERSSTORE_H_
+#ifndef SRC_STORE_COUNTERSSTORE_H_
+#define SRC_STORE_COUNTERSSTORE_H_
 
 #include <iomanip>
 
@@ -69,4 +69,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_COUNTERSSTORE_H_ */
+#endif /* SRC_STORE_COUNTERSSTORE_H_ */
