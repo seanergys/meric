@@ -1,3 +1,7 @@
+### XX.XX.XXXX #################################################################
+  - barriers turn off available not only for production runs
+  - new MERIC_MODE=6 stores only regions runtime
+  
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow
   - HDEEM error handled without writing zero values into output files

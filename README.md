@@ -163,12 +163,13 @@ READEX interface doesn't contain all Score-P API functions, because there is no 
 		3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
 		4 = jetson - energy measurement on BSC Jetson TX1 system
 		5 = thunder - energy measurement on BSC ThunderX system
+		6 = time - storing runtime of the regions only
+
 	export MERIC_BARRIERS=all
 		all  = all barriers are applied (default)
 		mpi  = use MPI barriers only
 		omp  = use OpenMP barriers only
 		none = do not use barriers
-		- This settings can by used in MERIC_MODE=3 only.
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
 	export MERIC_CONTINUAL=1
