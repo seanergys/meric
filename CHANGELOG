@@ -1,6 +1,7 @@
 ### XX.XX.XXXX #################################################################
   - barriers turn off available not only for production runs
   - new MERIC_MODE=6 stores only regions runtime
+  - MERIC_MeasureStop() and MERIC_MeasureStopStart() now returns runtime of the stopped region
   
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow

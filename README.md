@@ -84,22 +84,24 @@ The library originally developed for x86 systems (tested on HSW-EP and KNL) but 
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
 
-	MERIC_Init()
+	void MERIC_Init()
 		Initialization of the library. Insert directly after MPI_Init().
-	MERIC_Close()
+	void MERIC_Close()
 		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
-	MERIC_MeasureStart("A")
-		Starting measurement of a reagion A.
+	void MERIC_MeasureStart(const char * regionName)
+		Starting measurement of a reagion.
 		Please, do not use **#** and **@** in names of regions.
-	MERIC_MeasureStop()
+	double MERIC_MeasureStop()
 		End of the measurement of the last started region.
-	MERIC_MeasureStopStart("B")
-		End of the measurement of the last started region and start of region B.
-		Removes environment switching to configuration of the region we are nested in.
-	MERIC_IgnoreStart()
+		Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	double MERIC_MeasureStopStart(const char * regionName)
+		End of the measurement of the last started region and start of a new region.
+		Removes environment switching to configuration of the region the application is nested in.
+		Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	void MERIC_IgnoreStart()
 		From this point MERIC doesn't store resources consumption of the following regions but the requested settings of the nested regions is set.
 		It is not possible to nest ignore sections of the code.
-	MERIC_IgnoreStop()
+	void MERIC_IgnoreStop()
 		Cancels the ignore section of the code.
 
 If you want to insert MERIC regions into code you don't know, instead of MERIC probes insert into the code MPI and OpenMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
