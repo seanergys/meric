@@ -17,6 +17,8 @@
 #ifdef USE_SCOREP
 #include <scorep/SCOREP_User.h>
 #include <scorep/SCOREP_User_Types.h>
+//function that allows user to use MERIC's stop functions return value (region runtime) 
+inline static double dummyREADEXTimeWrapper() {return 0.0;};
 #endif
 
 #ifdef USE_MERIC
@@ -96,6 +98,7 @@
 //READEX_REGION_STOP(handle)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP( handle ) \
+		dummyREADEXTimeWrapper(); \
 		SCOREP_USER_REGION_END( handle );
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
@@ -107,6 +110,7 @@
 //READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		dummyREADEXTimeWrapper(); \
 		SCOREP_USER_REGION_END( stop_handle ); \
 		SCOREP_USER_REGION_BEGIN( start_handle, start_name, start_type );
 #elif defined USE_MERIC
@@ -132,6 +136,7 @@
 //READEX_PHASE_STOP(handle)
 #ifdef USE_SCOREP
 	#define READEX_PHASE_STOP( handle ) \
+		dummyREADEXTimeWrapper(); \
 		SCOREP_USER_OA_PHASE_END( handle );
 #elif defined USE_MERIC
 	#define READEX_PHASE_STOP( handle ) \
