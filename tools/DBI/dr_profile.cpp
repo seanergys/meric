@@ -155,8 +155,8 @@ static void getFunctionName(app_pc addr, std::string* funcName)
     char file[MAXIMUM_PATH];
     module_data_t *data;
     data = dr_lookup_module(addr);
-    if (data == NULL) {
-    	LogFile << "getFunctionName(): dr_lookup_module(addr) error" << std::endl;	//TODO improve the message 
+    if (data == NULL) {	
+        dr_fprintf(STDERR, "[-] getFunctionName(): dr_lookup_module(addr) error\n"); //TODO improve the message
         return;
     }
     sym.struct_size = sizeof(sym);
@@ -250,7 +250,7 @@ static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 	std::string funcName = "";
 	getFunctionName(addr, &funcName);
 
-	if (funcPROBEDList.count(funcName))
+	if (!funcPROBEDList.count(funcName))
 	{
 		RtnDesc function;
 		function.name = funcName;
@@ -260,7 +260,7 @@ static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 	}
 	funcPROBEDList[funcName].lastStart = timestamp;
 
-	LogFile << "START "<<funcName << std::endl; //TODO
+//	LogFile << "START "<<funcName << std::endl; //TODO
 }
 
 static void wrap_func_post(void *wrapcxt, void *user_data)
@@ -271,7 +271,7 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 	getFunctionName(addr, &funcName);
 	
 	if (funcPROBEDList.count(funcName) && funcPROBEDList[funcName].lastStart != 0)
-	{
+	{		
 		uint64 duration = dr_get_microseconds()-funcPROBEDList[funcName].lastStart;
 
 		if (duration > (funcPROBEDList[funcName].maxDuration))
@@ -279,8 +279,14 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 		if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
 			funcPROBEDList[funcName].minDuration = duration;
 		funcPROBEDList[funcName].lastStart=0;
-		
+
+/*		
 		LogFile << "\tSTOP "<<funcName<<" after "<<duration/1000<<" [ms]\n";	//TODO
+		LogFile 
+			<< funcName <<"\t"
+			<< funcPROBEDList[funcName].minDuration<<"\t"
+			<< funcPROBEDList[funcName].maxDuration<<"\n";
+*/
 	}
 }
 
@@ -314,12 +320,13 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 
 		if (funcFilterList.empty())
 		{	//catch all the functions in the application
+			dr_fprintf(STDERR, "[*] Profiling all the application functions\n");
 			APPLICATION_MODE = FUNCTION_DETECTION;
 			drmgr_register_bb_instrumentation_event(NULL, event_app_instruction, NULL);
 		}
 		else
 		{	//instrument only selected functions
-			dr_fprintf(STDERR, "[*] funcList size %d\n",funcFilterList.size());
+			dr_fprintf(STDERR, "[*] Profiling selected application functions - %d\n",funcFilterList.size());
 			APPLICATION_MODE = FUNCTION_RUNTIME_MEASUREMENT;
 			drmgr_register_module_load_event(module_load_event);
 		}
@@ -347,7 +354,10 @@ static void event_exit(void)
 		for (auto& funcRecord : funcPROBEDList)
 		{
 			if (funcRecord.second.minDuration > DURATION_THRASHOLD)
-				LogFile << funcRecord.first <<"\t"<<funcRecord.second.minDuration << std::endl;
+			{
+				LogFile << funcRecord.first << std::endl;
+				dr_fprintf(STDERR, "[*] %d\t%d\t%s\n",funcRecord.second.minDuration/1000, funcRecord.second.maxDuration/1000, funcRecord.first.c_str());
+			}
 		}
 	}
 
