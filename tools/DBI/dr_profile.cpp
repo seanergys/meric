@@ -28,6 +28,11 @@ static bool getLock();
 static void wrap_func_pre(void *wrapcxt, OUT void **user_data);
 static void wrap_func_post(void *wrapcxt, void *user_data);
 ////////////////////////////////////////////////////////////////////////////////
+static void event_thread_init(void *drcontext);
+static int threadCount; //needed for threadId production
+static int tls_idx; //stores unique threadId starting 0
+static void *max_lock; //mutex
+static void event_thread_exit(void *drcontext);
 
 //TODO make a prototypes cleaninig 
 static void event_exit(void);
@@ -199,17 +204,20 @@ static dr_emit_flags_t event_app_instruction(void *drcontext, void *tag, instrli
 //on function return add the function to the list of functions
 static void add_call(app_pc instr_addr, app_pc target_addr)	//TODO prejmenovat
 {
-
-	std::string funcName = "";
-	getFunctionName(instr_addr, &funcName);
+	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
+	if (!myId)
+	{
+		std::string funcName = "";
+		getFunctionName(instr_addr, &funcName);
 	
-	if (funcName != "" && !funcJITList.count(funcName))
-	{
-		funcJITList[funcName] = 1;
-	}
-	else
-	{
-		funcJITList[funcName]++;
+		if (funcName != "" && !funcJITList.count(funcName))
+		{
+			funcJITList[funcName] = 1;
+		}
+		else
+		{
+			funcJITList[funcName]++;
+		}
 	}
 }
 
@@ -244,41 +252,50 @@ static void module_load_event(void *drcontext, const module_data_t *mod, bool lo
 
 static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 {
-	uint64 timestamp = dr_get_microseconds();
-	app_pc addr;
-	addr = drwrap_get_func(wrapcxt);
-	std::string funcName = "";
-	getFunctionName(addr, &funcName);
-
-	if (!funcPROBEDList.count(funcName))
+	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
+	if (!myId)
 	{
-		RtnDesc function;
-		function.name = funcName;
-		function.maxDuration = 0;
-		function.minDuration = 0;
-		funcPROBEDList[funcName]=function;
-	}
-	funcPROBEDList[funcName].lastStart = timestamp;
+		uint64 timestamp = dr_get_microseconds();
+		app_pc addr;
+		addr = drwrap_get_func(wrapcxt);
+		std::string funcName = "";
+		getFunctionName(addr, &funcName);
 
+//dr_fprintf(STDERR, "[-] %s START - THREAD %d/%d\n",funcName.c_str(), dr_get_thread_id(wrapcxt), myId);
+//dr_fprintf(STDERR, "[-] %s START\n",funcName.c_str());
+
+		if (!funcPROBEDList.count(funcName))
+		{
+			RtnDesc function;
+			function.name = funcName;
+			function.maxDuration = 0;
+			function.minDuration = 0;
+			funcPROBEDList[funcName]=function;
+		}
+		funcPROBEDList[funcName].lastStart = timestamp;
+	}
 //	LogFile << "START "<<funcName << std::endl; //TODO
 }
 
 static void wrap_func_post(void *wrapcxt, void *user_data)
 {
-	app_pc addr;
-	addr = drwrap_get_func(wrapcxt);
-	std::string funcName = "";
-	getFunctionName(addr, &funcName);
-	
-	if (funcPROBEDList.count(funcName) && funcPROBEDList[funcName].lastStart != 0)
+	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
+	if (!myId)
 	{
-		uint64 duration = dr_get_microseconds()-funcPROBEDList[funcName].lastStart;
+		app_pc addr;
+		addr = drwrap_get_func(wrapcxt);
+		std::string funcName = "";
+		getFunctionName(addr, &funcName);
+	
+		if (funcPROBEDList.count(funcName) && funcPROBEDList[funcName].lastStart != 0)
+		{
+			uint64 duration = dr_get_microseconds()-funcPROBEDList[funcName].lastStart;
 
-		if (duration > (funcPROBEDList[funcName].maxDuration))
-			funcPROBEDList[funcName].maxDuration = duration;
-		if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
-			funcPROBEDList[funcName].minDuration = duration;
-		funcPROBEDList[funcName].lastStart=0;
+			if (duration > (funcPROBEDList[funcName].maxDuration))
+				funcPROBEDList[funcName].maxDuration = duration;
+			if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
+				funcPROBEDList[funcName].minDuration = duration;
+			funcPROBEDList[funcName].lastStart=0;
 
 /*
 		LogFile << "\tSTOP "<<funcName<<" after "<<duration/1000<<" [ms]\n";	//TODO
@@ -287,17 +304,33 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 			<< funcPROBEDList[funcName].minDuration<<"\t"
 			<< funcPROBEDList[funcName].maxDuration<<"\n";
 */
+		}
 	}
 }
 
 // MAIN ////////////////////////////////////////////////////////////////////////
+static void event_thread_init(void *drcontext)
+{
+	int myId = -1;
+	dr_mutex_lock(max_lock);
+		myId = threadCount++;
+	dr_mutex_unlock(max_lock);
+	drmgr_set_tls_field(drcontext, tls_idx, (void *)(ptr_uint_t)myId);
+}
+
+static void event_thread_exit(void *drcontext)
+{
+	dr_mutex_lock(max_lock);
+		threadCount--;
+	dr_mutex_unlock(max_lock);
+}
 
 DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 {
 
 	if (getLock())
 	{
-
+		threadCount = 0;
 		processFilterFile();
 		LogFile.open("memprofile.out");
 
@@ -330,7 +363,14 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 			APPLICATION_MODE = FUNCTION_RUNTIME_MEASUREMENT;
 			drmgr_register_module_load_event(module_load_event);
 		}
-		
+
+		max_lock = dr_mutex_create();
+	    drmgr_register_thread_init_event(event_thread_init);
+	    drmgr_register_thread_exit_event(event_thread_exit);
+	    
+		tls_idx = drmgr_register_tls_field();
+		DR_ASSERT(tls_idx > -1);
+				
 		dr_register_exit_event(event_exit);
 		startTime = dr_get_microseconds();
 	}
@@ -371,6 +411,7 @@ static void event_exit(void)
 	}
 	
 	drwrap_exit();
+	drmgr_unregister_tls_field(tls_idx);
 	drmgr_exit();
 
 /* part of an existing DRIO example code that does unregister events TODO
