@@ -7,12 +7,14 @@ def configure(ctx):
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
-    if ctx.options.withgcc:
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
-        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
-    else:
-        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
-        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+
+	if not ctx.options.nothread:
+		if ctx.options.withgcc:
+		    ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
+		    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+		else:
+		    ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
+		    ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
 
     ctx.env.append_unique("DEFINES", [ "ARMMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools\""])
     
@@ -130,6 +132,13 @@ def options(opt):
         action="store",
         default="mpic++",
         help="MPI C++ compiler"
+    )
+
+    opt.add_option(
+        "--nothread",
+        action="store",
+        default="False",
+        help="remove OpenMP pragmas from the MERIC"
     )
 
     opt.add_option(
