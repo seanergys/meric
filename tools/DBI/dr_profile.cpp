@@ -12,7 +12,7 @@ g++ -fPIC -shared -lgcc -DLINUX -DX86_64 -I$DYNAMORIO_HOME/include -I$DYNAMORIO_
 #include <map>
 #include <set>
 
-
+//#define DR_FAST_IR	//http://dynamorio.org/docs/API_BT.html
 #include "dr_api.h"
 #include "drmgr.h"
 #include "drwrap.h"
@@ -155,7 +155,7 @@ static void getFunctionName(app_pc addr, std::string* funcName)
     char file[MAXIMUM_PATH];
     module_data_t *data;
     data = dr_lookup_module(addr);
-    if (data == NULL) {	
+    if (data == NULL) {
         dr_fprintf(STDERR, "[-] getFunctionName(): dr_lookup_module(addr) error\n"); //TODO improve the message
         return;
     }
@@ -271,7 +271,7 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 	getFunctionName(addr, &funcName);
 	
 	if (funcPROBEDList.count(funcName) && funcPROBEDList[funcName].lastStart != 0)
-	{		
+	{
 		uint64 duration = dr_get_microseconds()-funcPROBEDList[funcName].lastStart;
 
 		if (duration > (funcPROBEDList[funcName].maxDuration))
@@ -280,7 +280,7 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 			funcPROBEDList[funcName].minDuration = duration;
 		funcPROBEDList[funcName].lastStart=0;
 
-/*		
+/*
 		LogFile << "\tSTOP "<<funcName<<" after "<<duration/1000<<" [ms]\n";	//TODO
 		LogFile 
 			<< funcName <<"\t"
@@ -372,6 +372,16 @@ static void event_exit(void)
 	
 	drwrap_exit();
 	drmgr_exit();
+
+/* part of an existing DRIO example code that does unregister events TODO
+    drx_exit();
+    if (!drmgr_unregister_bb_instrumentation_event(event_analyze_bb) ||
+        !drmgr_unregister_module_load_event(event_module_load) ||
+        !drmgr_unregister_module_unload_event(event_module_unload) ||
+        drreg_exit() != DRREG_SUCCESS)
+        DR_ASSERT(false);
+    drmgr_exit();
+*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
