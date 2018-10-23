@@ -18,7 +18,6 @@
 #include <scorep/SCOREP_User.h>
 #include <scorep/SCOREP_User_Types.h>
 //function that allows user to use MERIC's stop functions return value (region runtime) 
-inline static double dummyREADEXTimeWrapper() {return 0.0;};
 #endif
 
 #ifdef USE_MERIC
@@ -27,6 +26,7 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 	#include <cstddef>
 #endif
 
+inline static double dummyREADEXTimeWrapper() {return 0.0;};
 
 //READEX_INIT()
 //READEX_CLOSE()
@@ -104,7 +104,8 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 	#define READEX_REGION_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
-	#define READEX_REGION_STOP( handle )
+	#define READEX_REGION_STOP( handle ) \
+		dummyREADEXTimeWrapper();
 #endif
 
 //READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type)
@@ -117,7 +118,8 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
 		MERIC_MeasureStopStart( start_name );
 #else
-	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type )
+	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		dummyREADEXTimeWrapper();
 #endif
 
 
@@ -142,7 +144,8 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 	#define READEX_PHASE_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
-	#define READEX_PHASE_STOP( handle )
+	#define READEX_PHASE_STOP( handle ) \
+		dummyREADEXTimeWrapper();
 #endif
 
 //List of Score-P API functions (SCOREP_User.h) that will be ignored if the code is not compiled with Score-P
