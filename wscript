@@ -8,7 +8,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
 
-    if not ctx.options.nothread:
+    if ctx.options.nothread == False:
         if ctx.options.withgcc:
             ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
@@ -47,7 +47,7 @@ def configure(ctx):
 def build(ctx):
 
     sufix = ""
-    if ctx.options.nothread:
+    if ctx.options.nothread == True:
         sufix="nothread"
 
     ctx.objects(
