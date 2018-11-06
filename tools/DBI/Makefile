@@ -2,6 +2,7 @@
 # DBI libraries require to specify their location
 #	${DYNAMORIO_HOME}
 #	${PIN_ROOT}
+#	${DINST_HOME} + ${BOOST_ROOT}
 
 drio:
 	g++ -std=c++11 -fPIC -shared -lgcc -DLINUX -DX86_64 -I${DYNAMORIO_HOME}/include -I${DYNAMORIO_HOME}/ext/include dr_profile.cpp -L${DYNAMORIO_HOME}/ext/lib64/release/ -ldrmgr -ldrwrap -ldrsyms -o librio.so
@@ -11,6 +12,9 @@ pin:
 	g++ -shared -Wl,--hash-style=sysv ${PIN_ROOT}/intel64/runtime/pincrt/crtbeginS.o -Wl,-Bsymbolic -Wl,--version-script=${PIN_ROOT}/source/include/pin/pintool.ver -fabi-version=2    -o obj-intel64/pin_profile.so obj-intel64/pin_profile.o  -L${PIN_ROOT}/intel64/runtime/pincrt -L${PIN_ROOT}/intel64/lib -L${PIN_ROOT}/intel64/lib-ext -L${PIN_ROOT}/extras/xed-intel64/lib -lpin -lxed ${PIN_ROOT}/intel64/runtime/pincrt/crtendS.o -lpin3dwarf  -ldl-dynamic -nostdlib -lstlport-dynamic -lm-dynamic -lc-dynamic -lunwind-dynamic
 	# if you copy makefile and makefile.rules from ${PIN_ROOT}/source/tools/MyPinTool/ and edit TEST_TOOL_ROOTS variable to name of the compiled tool then you may use following command instead of these ugly two
 	# make PIN_ROOT=${PIN_ROOT} obj-intel64/pin_profile.so
+
+dinst:
+	g++ -g -Wall -std=c++11 -L/usr/local/lib -L/p/paradyn/packages/libelf/lib -L/p/paradyn/packages/libdwarf/lib ${DINST_HOME}/build/libiberty/libiberty.a -o dinst_instrument dinst_instrument.cpp -ldyninstAPI -lpatchAPI -lparseAPI -lstackwalk -lsymLite -lsymtabAPI -ldynElf -ldynDwarf -linstructionAPI -lpcontrol -ldwarf -lelf -lcommon -L${DINST_HOME}/build/libiberty/ -liberty -pthread -ldl -L${DINST_HOME}/build/libelf/lib/ -L${BOOST_ROOT}/stage/lib/ -lboost_date_time -lboost_system -lboost_thread
 
 ################################################################################
 ################################################################################
@@ -25,3 +29,8 @@ rundrio:
 
 runpin:
 	${PIN_ROOT}/pin -t obj-intel64/pin_profile.so -- ./test
+
+rundinst:
+	./dinst_instrument
+
+
