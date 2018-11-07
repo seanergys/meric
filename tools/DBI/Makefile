@@ -14,7 +14,8 @@ pin:
 	# make PIN_ROOT=${PIN_ROOT} obj-intel64/pin_profile.so
 
 dinst:
-	g++ -g -Wall -std=c++11 -L/usr/local/lib -L/p/paradyn/packages/libelf/lib -L/p/paradyn/packages/libdwarf/lib ${DINST_HOME}/build/libiberty/libiberty.a -o dinst_instrument dinst_instrument.cpp -ldyninstAPI -lpatchAPI -lparseAPI -lstackwalk -lsymLite -lsymtabAPI -ldynElf -ldynDwarf -linstructionAPI -lpcontrol -ldwarf -lelf -lcommon -L${DINST_HOME}/build/libiberty/ -liberty -pthread -ldl -L${DINST_HOME}/build/libelf/lib/ -L${BOOST_ROOT}/stage/lib/ -lboost_date_time -lboost_system -lboost_thread
+	g++ -g -Wall -std=c++11 -L/usr/local/lib -L/p/paradyn/packages/libelf/lib -L/p/paradyn/packages/libdwarf/lib -o dinst_instrument dinst_instrument.cpp -ldyninstAPI -lpatchAPI -lparseAPI -lstackwalk -lsymLite -lsymtabAPI -ldynElf -linstructionAPI -lpcontrol -lelf -lcommon -pthread -ldl -L${DINST_HOME}/build/libelf/lib/ -L${BOOST_ROOT}/stage/lib/ -lboost_date_time -lboost_system -lboost_thread -I${DINST_HOME}/dyninstAPI/h/ -I${DINST_HOME}/common/h/ -I${DINST_HOME}/symtabAPI/h/ -I${DINST_HOME}/build/common/h/ -I${DINST_HOME}/proccontrol/h/ -I${DINST_HOME}/instructionAPI/h/ -I${DINST_HOME}/dataflowAPI/h/ -L${DINST_HOME}/build/dyninstAPI/ -L${DINST_HOME}/build/common/ -L${DINST_HOME}/build/symtabAPI/ -L${DINST_HOME}/build/proccontrol/ -L${DINST_HOME}/build/instructionAPI/ -L${DINST_HOME}/build/dataflowAPI/ -L${DINST_HOME}/build/patchAPI/ -L${DINST_HOME}/build/libdwarf/lib/ -L${DINST_HOME}/build/parseAPI/ -L${DINST_HOME}/build/stackwalk/ -L${DINST_HOME}/build/symlite/ -L${DINST_HOME}/build/elf/ -L${DINST_HOME}/build/dwarf/
+
 
 ################################################################################
 ################################################################################
