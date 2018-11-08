@@ -24,6 +24,9 @@ BPatch bpatch;
 void printHelp()
 {
 	std::cerr << "This Dyninst application list all the functions in the binary\n"
+	          << "The functions are grouped according their module\n"
+	          << "Instrumentable functions are marked with \"+\" sign, othewise with \"-\"\n"
+	          << "\n"
 	          << "Application takes one argument - name of the binary to analyse\n"
 	          << "\n";
 }
@@ -37,7 +40,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	BPatch_binaryEdit *appBin = bpatch.openBinary (argv[1], true);
+	BPatch_binaryEdit *appBin = bpatch.openBinary (argv[1], false);
 	if (appBin == NULL)
 	{
 		printHelp();
@@ -61,16 +64,16 @@ int main (int argc, char *argv[])
 			std::cout << "Library: " << moduleName << std::endl;
 
 
-		std::vector < BPatch_function * >*allFunctions = (*moduleIter)->getProcedures ();
+		std::vector < BPatch_function * >*allFunctions = (*moduleIter)->getProcedures (true);
 		std::vector < BPatch_function * >::iterator funcIter;
 
 
 		for (funcIter = allFunctions->begin (); funcIter != allFunctions->end (); ++funcIter)
 		{
 			BPatch_function *curFunc = *funcIter;
-			char funcName[NAME_MAX_SIZE];
-			curFunc->getName (funcName, NAME_MAX_SIZE);
-			std::cout << "\t" << funcName << std::endl;
+			//curFunc->getName();
+			//curFunc->getMangledName()
+			std::cout << "\t" << (curFunc->isInstrumentable() ? "+ " : "- ") << curFunc->getTypedName() << std::endl;
 		}
 	}
 	return 0;
