@@ -18,46 +18,35 @@
 #include "BPatch_process.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-bool MPI=true;
+int writeBinary(BPatch_binaryEdit *binary, const char * binaryName);
+bool insertFunction(BPatch_binaryEdit *appBin, BPatch_image *appImage, 
+	std::vector<BPatch_function*> insertFuncs, std::vector<BPatch_snippet*> insertFuncArgs,
+	const char * instrumentFuncName, BPatch_procedureLocation instrumentPoint);
+bool insertMericInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage);
+void insertMericInstrumentation(BPatch_binaryEdit *appBin, BPatch_image *appImage);
+void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin = NULL);
+
+void processFile(std::string fileName, std::vector<std::string> * elements);
+void splitString(std::string s, std::vector<std::string> * param);
+void handleParameters(int argc, char *argv[]);
+void printHelp();
 ////////////////////////////////////////////////////////////////////////////////
-char *inBinary = NULL;
 BPatch bpatch;
-std::set<std::string> funcFilterList;
-const std::string FILTERFILE = "DINST_FILTER";
+std::vector<std::string> funcFilterList;
+
+struct Tparametres{
+	std::string input;
+	std::string output;
+	std::string funclist;
+	std::string dependencies;
+	std::string omplib;
+	std::string mpilib;
+	bool mpi;
+};
+Tparametres params = {"", "instrumentedBin", "", "", "", "", false};
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * reads environment variables
- **/
-inline std::string getenv(const std::string &param) //, std::string defaultValue)
-{
-	std::string value;
-	char *var = std::getenv(param.c_str());
-
-	if (var != NULL)
-	{
-		std::stringstream ss(var);
-		return ss.str();
-	} 
-	return "";//defaultValue;
-}
-
-/**
- * reads a list of functions from the input file to instrument
- **/
-void processFilterFile()
-{
-	std::string filterFileName = getenv(FILTERFILE);
-	if(filterFileName != "")
-	{
-		std::ifstream filterFile (filterFileName.c_str());
-		std::string functionName;
-		while (filterFile >> functionName)
-			funcFilterList.insert(functionName);
-		filterFile.close();
-	}
-}
 
 /**
  * Writes new edited version of the binary
@@ -122,15 +111,15 @@ bool insertMericInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 
 	std::vector<BPatch_function*> initFuncs;
 	std::vector<BPatch_function*> closeFuncs;
-	appImage->findFunction("MERIC_Init", initFuncs);
-	appImage->findFunction("MERIC_Close", closeFuncs);
+	appImage->findFunction("MERIC_Init", initFuncs, true, true, true);
+	appImage->findFunction("MERIC_Close", closeFuncs, true, true, true);
 	if (initFuncs.size() == 0 || closeFuncs.size() == 0)
 	{
 		std::cerr<< "Could not find MERIC_Init/Close function\n";
 		return false;
 	}
 
-	if(MPI)
+	if(params.mpi)
 	{
 		if (insertFunction(appBin, appImage, initFuncs, mericArgs, "MPI_Init", BPatch_exit) &&
 		insertFunction(appBin, appImage, closeFuncs, mericArgs, "MPI_Finalize", BPatch_entry))
@@ -143,96 +132,6 @@ bool insertMericInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 			return true;
 	}
 	return false;
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-	std::vector<BPatch_point *> *points;
-
-	const char * InitFunction;	//function related with MERIC_Init
-	const char * CloseFunction;	//function related with MERIC_Close
-	BPatch_procedureLocation InitPoint; //MERIC_Init insertion in InitPoint of InitFunction
-	BPatch_procedureLocation ClosePoint; //MERIC_Close insertion in ClosePoint of CloseFunction
-
-	if (MPI)
-	{
-		InitFunction = "MPI_Init";
-		InitPoint = BPatch_exit;
-		CloseFunction = "MPI_Finalize";
-		ClosePoint = BPatch_entry;
-	}
-	else
-	{
-		InitFunction = "main";
-		InitPoint = BPatch_entry;
-		CloseFunction = "main";
-		ClosePoint = BPatch_exit;
-	}
-
-	
-	//Insert MERIC_Init
-	appImage->findFunction(InitFunction, functions);
-	if (functions.size() == 0)
-	{
-		std::cerr << "No "<<InitFunction <<" to instrument\n";
-		return false;
-	}
-	points = functions[0]->findPoint(InitPoint);
-	if (!points || points->size() == 0)
-	{
-		std::cerr << "No entry points for " << InitFunction << std::endl;
-		return false;
-	}
-
-	std::vector<BPatch_function*> initFuncs;
-	appImage->findFunction("MERIC_Init", initFuncs);
-	if (initFuncs.size() == 0)
-	{
-		std::cerr<< "Could not find MERIC_Init\n";
-		return false;
-	}
-	else
-	{
-		BPatch_funcCallExpr initCall(*(initFuncs[0]), mericArgs);
-		if (!appBin->insertSnippet(initCall, *points))
-		{
-			std::cerr << "insertSnippet for MERIC_Init failed\n";
-			return false;
-		}
-	}
-
-	//Insert MERIC_Close
-	appImage->findFunction(CloseFunction, functions);
-	if (functions.size() == 0)
-	{
-		std::cerr << "No "<<CloseFunction <<" to instrument\n";
-		return false;
-	}
-	points = functions[0]->findPoint(ClosePoint);
-	if (!points || points->size() == 0)
-	{
-		std::cerr << "No exit points for " << ClosePoint << std::endl;	//TODO
-		return false;
-	}
-
-	std::vector<BPatch_function*> closeFuncs;
-	appImage->findFunction("MERIC_Close", closeFuncs);
-	if (closeFuncs.size() == 0)
-	{
-		std::cerr<< "Could not find MERIC_Close\n";
-		return false;
-	}
-	else
-	{
-		BPatch_funcCallExpr closeCall(*(closeFuncs[0]), mericArgs);
-		if (!appBin->insertSnippet(closeCall, *points))
-		{
-			std::cerr << "insertSnippet for MERIC_Close failed\n";
-			return false;
-		}
-	}
-	return true;
-*/
 }
 
 
@@ -245,17 +144,22 @@ void insertMericInstrumentation(BPatch_binaryEdit *appBin, BPatch_image *appImag
 
 	std::vector<BPatch_function*> startFuncs;
 	std::vector<BPatch_function*> stopFuncs;
-	appImage->findFunction("MERIC_MeasureStart", startFuncs);
-	appImage->findFunction("MERIC_MeasureStop", stopFuncs);
-	if (startFuncs.size() == 0 || stopFuncs.size() == 0)
+	appImage->findFunction("MERIC_MeasureStart", startFuncs, true, true, true);
+	appImage->findFunction("MERIC_MeasureStop", stopFuncs, true, true, true);
+	if (startFuncs.size() == 0)
 	{
-		std::cerr<< "Could not find MERIC_MeasureStart/Stop function\n";
+		std::cerr<< "Could not find MERIC_MeasureStart function\n";
+		return;
+	}
+	if (stopFuncs.size() == 0)
+	{
+		std::cerr<< "Could not find MERIC_MeasureStop function\n";
 		return;
 	}
 	
 	//Instrument functions from the list
 	std::vector<BPatch_snippet*> stopArgs; //always empty
-	for (std::string funcName : funcFilterList)
+	for (auto funcName : funcFilterList)
 	{
 		std::cout << "\t" << funcName << std::endl;
 
@@ -266,174 +170,217 @@ void insertMericInstrumentation(BPatch_binaryEdit *appBin, BPatch_image *appImag
 		if (insertFunction(appBin, appImage, startFuncs, startArgs, funcName.c_str(), BPatch_entry))
 			//TODO end execution in case of function call insertion fail
 			insertFunction(appBin, appImage, stopFuncs,  stopArgs,  funcName.c_str(), BPatch_exit);
-
-/*
-		std::vector<BPatch_function*> functions;
-		appImage->findFunction(funcName.c_str(), functions);
-		if (functions.size() == 0)
-		{
-			std::cerr << "Function " << funcName <<" not found!\n";
-			continue;
-		}
-
-
-		//Insert MERIC_MeasureStart(funcName)
-		std::vector<BPatch_point *> *entryPoints;
-		entryPoints = functions[0]->findPoint(BPatch_entry);
-		if (!entryPoints || entryPoints->size() == 0)
-		{
-			std::cerr << "No entry points for " << funcName << std::endl;
-			continue;
-		}
-		
-		std::vector<BPatch_snippet*> startArgs;
-		BPatch_snippet* param = new BPatch_constExpr(funcName.c_str());
-		startArgs.push_back(param);
-
-		BPatch_funcCallExpr startCall(*(startFuncs[0]), startArgs);
-		if (!appBin->insertSnippet(startCall, *entryPoints))
-		{
-			std::cerr << "insertSnippet "<< funcName <<" failed\n";
-			continue;
-		}
-
-		//Insert MERIC_MeasureStop()
-		std::vector<BPatch_point *> *exitPoints;
-		exitPoints = functions[0]->findPoint(BPatch_exit);
-		if (!exitPoints || exitPoints->size() == 0)
-		{
-			std::cerr << "No exit points for " << funcName << std::endl;
-			continue;	//TODO nyni vlozen start ale stop selhal takze vysledna aplikace nebude fungovat
-		}
-		
-		std::vector<BPatch_snippet*> stopArgs;
-
-		BPatch_funcCallExpr stopCall(*(stopFuncs[0]), stopArgs);
-		if (!appBin->insertSnippet(stopCall, *exitPoints))
-		{
-			std::cerr << "insertSnippet "<< funcName <<" failed\n";
-			continue;	//TODO nyni vlozen start ale stop selhal takze vysledna aplikace nebude fungovat
-		}
-*/
 	}
 }
 
+
+/**
+ * load necessary shared libraries to the binary
+ * if we instrument (Init and Close) libmpi.so we must add them all too
+ **/
+void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin = NULL)
+{
+	std::vector<std::string> extraSharedLibraries;
+	if (params.dependencies != "")
+	{
+		processFile(params.dependencies, &extraSharedLibraries);
+	}
+	else
+	{
+		if (params.mpi)
+			extraSharedLibraries.push_back("libmericmpi.so");
+		else
+			extraSharedLibraries.push_back("libmeric.so");
+		extraSharedLibraries.push_back("libx86_adapt.so");
+		extraSharedLibraries.push_back("librt.so");
+		extraSharedLibraries.push_back("libpapi.so");
+		extraSharedLibraries.push_back("libnuma.so");
+		extraSharedLibraries.push_back("libhdeem.so");
+		extraSharedLibraries.push_back("libfreeipmi.so");
+		extraSharedLibraries.push_back("libcpufreq.so");
+		extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
+		//GCC -fopenmp	libgomp.so
+		//ICC -qopenmp	libiomp5.so	
+		//extraSharedLibraries.push_back("libgomp.so");
+		//extraSharedLibraries.push_back("libiomp5.so");
+		if (params.omplib != "")
+			extraSharedLibraries.push_back(params.omplib.c_str());
+	}
+
+	std::cerr << "Inserting shared libraries dependencies - APP\n";
+	for (auto libName : extraSharedLibraries)
+	{
+		if (appBin->loadLibrary(libName.c_str()))
+		{
+			if (MPIBin != NULL)
+				MPIBin->loadLibrary(libName.c_str());
+			std::cerr << "\tOK \t" << libName << std::endl;
+		}
+		else
+			std::cerr << "\tN/A\t" << libName << std::endl;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * reads a file with input information
+ * - list of functions to instrument
+ * - list of shared libraries to load
+ **/
+void processFile(std::string fileName, std::vector<std::string> * elements)
+{
+	if(fileName != "")
+	{
+		std::ifstream inputfile (fileName.c_str());
+		std::string element;
+		while (inputfile >> element)
+			(*elements).push_back(element);
+		inputfile.close();
+	}
+}
+
+/**
+ * split a string according delimiter '=' a returns them in vector
+ **/
+void splitString(std::string s, std::vector<std::string> * param)
+{
+	const std::string delimiter = "=";
+	size_t pos = 0;
+	std::string token;
+	while ((pos = s.find(delimiter)) != std::string::npos)
+	{
+		(*param).push_back(s.substr(0, pos));
+		s.erase(0, pos + delimiter.length());
+	}
+	(*param).push_back(s);
+}
+
+/**
+ * reads commanline parametrs and sets global variable 'parameters'
+ **/
+void handleParameters(int argc, char *argv[])
+{
+	if (argc == 1)
+	{
+		printHelp();
+	}
+
+	for (int i = 1; i < argc; ++i)
+	{
+		std::vector<std::string> flag;
+		splitString(std::string(argv[i]), &flag);
+
+		if (flag[0] == "--input")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.input = flag[1];
+		}
+		else if (flag[0] == "--output")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.output = flag[1];
+		}
+		else if (flag[0] == "--funclist")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.funclist = flag[1];
+		}
+		else if (flag[0] == "--mpi")
+		{
+			params.mpi=true;
+			if(flag.size() == 2)
+				params.mpilib = flag[1];
+		}
+		else if (flag[0] == "--dependencies")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.dependencies = flag[1];
+		}
+		else if (flag[0] == "--omp")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.omplib = flag[1];
+		}else
+		{
+			printHelp();
+		}
+	}
+
+	if (params.input == "" || params.funclist == "") //compulsory
+		printHelp();
+}
+
+//TODO mangled names
 void printHelp()
 {
 	std::cerr << "This Dyninst application instruments application functions in the provided binary with MERIC functions\n"
-	          << "TEMPORARY SOLUTION how to control the appliaction\n"
-   	          << "Application takes one argument - name of the binary to analyse\n"
-   	          << "Functions to instrument must be listed in a file, function per line\n"
-   	          << "export DINST_FILTER=NameOfFileWithFunctionsToInstrument\n"
-	          << "\n";
-/*
-//	TODO
-
-COMPULSORY:
- --input binary	
- 		= input binary name
- --funclist file
- 		= input file with functions to instrument, function per line
-
-OPTIONAL:
- --output binary
- 		= name of the output binary
- --mpi [path/to/libmpi.so]
- 		= parameter must be used for mpi applications
- 		if instrumneted version of libmpi.so already exists, 
- 		than the path to libmpi.so does not have to be added
- --dependencies	file
- 		= list of shared libraries that should be added, 
- 		if not specified full list of libraries is applied
-
-//TODO OpenMP, Intel, mangeld names
-*/
+		<< "COMPULSORY PARAMETERS:\n"
+		<< "\t --input=binary \n"
+		<< "\t      = input binary name\n"
+		<< "\t --funclist=file\n"
+		<< "\t      = input file with functions to instrument, function per line\n"
+		"\n"
+		"OPTIONAL PARAMETERS:\n"
+		<< "\t --output=binary\n"
+		<< "\t      = name of the output binary\n"
+		<< "\t --mpi=[path/to/libmpi.so]\n"
+		<< "\t      = parameter must be used for mpi applications\n"
+		<< "\t      if instrumented version of libmpi.so already exists, \n"
+		<< "\t      than the path to libmpi.so does not have to be specified\n"
+		<< "\t --dependencies=file\n"
+		<< "\t      = list of shared libraries that should be added, \n"
+		<< "\t      if not specified full list of libraries is applied\n"
+		<< "\t --omp=libomp.so\n"
+		<< "\t      = if the instrumented binary does not use openmp, however MERIC with\n"
+		<< "\t      OpenMP support is demand, than the libomp.so (libgomp.so; libiomp5.so; ...)\n"
+		<< "\t      dependency can by added using this parameter\n\n";
+	exit(1);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[])
 {
+	handleParameters(argc, argv);
 
-	if (argc != 2 || std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help")
-	{
-		printHelp();
-		return EXIT_FAILURE;
-	}
-
-
-	//TODO read name of the input and output binary from command line
-	//inBinary = "../../test/testClean_mpi";	//input binary name
-	char * MPIlib = "/apps/all/OpenMPI/1.10.7-GCC-7.1.0-2.28/lib/libmpi.so.12";
-
-	/* Open the specified binary for binary rewriting. 
-	* When the second parameter is set to true, all the library dependencies 
-	* as well as the binary are opened */
-	BPatch_binaryEdit *appBin = bpatch.openBinary (argv[1], false);
+	BPatch_binaryEdit *appBin = bpatch.openBinary (params.input.c_str(), false);
 	if (appBin == NULL)
 	{
 		std::cerr << "Failed to open binary" << std::endl;
 		return EXIT_FAILURE;
 	}
 	
-	std::vector<const char*> extraSharedLibraries;
-	
-	BPatch_binaryEdit *MPIBin;
 	BPatch_image *MPIImage;
-	if (MPI)
+	BPatch_binaryEdit *MPIBin;
+	if (params.mpilib != "")
 	{
-		extraSharedLibraries.push_back("libmericmpi.so");
-
-		MPIBin = bpatch.openBinary (MPIlib, false);
+		MPIBin = bpatch.openBinary (params.mpilib.c_str(), false);
 		if (MPIBin == NULL)
 		{
 			std::cerr << "Failed to open MPI binary" << std::endl;
 			return EXIT_FAILURE;
 		}
 		MPIImage = MPIBin->getImage();
+		loadSharedLibs(appBin, MPIBin);
 	}
 	else
-	{
-		extraSharedLibraries.push_back("libmeric.so");
-	}
-	
-	extraSharedLibraries.push_back("libx86_adapt.so");
-	extraSharedLibraries.push_back("librt.so");
-	extraSharedLibraries.push_back("libpapi.so");
-	extraSharedLibraries.push_back("libnuma.so");
-	extraSharedLibraries.push_back("libhdeem.so");
-	extraSharedLibraries.push_back("libfreeipmi.so");
-	extraSharedLibraries.push_back("libcpufreq.so");
-
-	//TODO openMP
-	//GCC -fopenmp	libgomp.so
-	//ICC -qopenmp	libiomp5.so	
-	extraSharedLibraries.push_back("libgomp.so");
-	extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
-
-	
-	//TODO get dynamically a list of necessary shares libraries that should be added to the binary
-	std::cerr << "Inserting shared libraries dependencies - APP\n";
-	for (auto libName : extraSharedLibraries)
-	{
-		if (appBin->loadLibrary(libName))
-		{
-			if (MPI)
-				MPIBin->loadLibrary(libName);
-			std::cerr << "\tOK \t" << libName << std::endl;
-		}
-		else
-			std::cerr << "\tN/A\t" << libName << std::endl;
-
-
-	}
+		loadSharedLibs(appBin);
 
 	BPatch_image *appImage = appBin->getImage();
-
-	if (MPI)
+	if (params.mpi)
 	{
-		if(insertMericInitAndClose(MPIBin, MPIImage))
+		if (params.mpilib != "")
 		{
-			if (!writeBinary(MPIBin, "libmpi.so"))
-				return EXIT_FAILURE;
+			if(insertMericInitAndClose(MPIBin, MPIImage))
+			{
+				if (writeBinary(MPIBin, "libmpi.so"))
+					return EXIT_FAILURE;
+			}
 		}
 	}
 	else
@@ -442,36 +389,20 @@ int main (int argc, char *argv[])
 			return EXIT_FAILURE;
 	}
 	
-	processFilterFile();
+	processFile(params.funclist, &funcFilterList);
 	insertMericInstrumentation(appBin, appImage);
 
 	// Output the instrumented binary
-	if (writeBinary(appBin, "newTest"))
+	if (!writeBinary(appBin, params.output.c_str()))
 	{
 		std::cerr << "Static Binary Instrumentation successfully finished\n";
-		if(MPI)
+		if(params.mpi)
 			std::cerr << "To use instrumented version of MPI, run the application as follows:\n"
-			          << "LD_PRELOAD=$(pwd)/libmpi.so mpirun -n $NUMPROC ./newTest [APP_PARAMS]\n\n";
+			          << "LD_PRELOAD=$(pwd)/libmpi.so mpirun -n $NUMPROC ./"<< params.output <<" [APP_PARAMS]\n\n";
 		return 0;
 	}
 	return EXIT_FAILURE;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
