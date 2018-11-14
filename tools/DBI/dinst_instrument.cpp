@@ -31,7 +31,7 @@ template<typename TBpatch> bool insertFunction(TBpatch *appBin, BPatch_image *ap
 
 BPatch_addressSpace* startDBIapplication();
 void runDBIapplication(BPatch_addressSpace* app);
-void readFilterFile(BPatch_image *appImage, const char * appName);
+void readFilterFile(BPatch_image *appImage, const char * appName, bool readAll = false);
 void insertTimeInstrumentation(BPatch_addressSpace *appBin, BPatch_image *appImage);
 
 int writeBinary(BPatch_binaryEdit *binary, const char * binaryName);
@@ -211,10 +211,13 @@ void processFile(std::string fileName, std::vector<std::string> * elements)
 	if(fileName != "")
 	{
 		std::ifstream inputfile (fileName.c_str());
-		std::string element;
-		while (inputfile >> element)
-			(*elements).push_back(element);
-		inputfile.close();
+		if(inputfile.is_open())
+		{
+			std::string element;
+			while (inputfile >> element)
+				(*elements).push_back(element);
+			inputfile.close();
+		}
 	}
 }
 
@@ -287,9 +290,9 @@ BPatch_addressSpace* startDBIapplication()
 		exit(1);
 	}
 
-	if (!appAddrSpace->loadLibrary("libtimeprofile.so"))
+	if (!appAddrSpace->loadLibrary("libtimeprof.so"))
 	{
-		std::cerr << "failed to load libtimeprofile.so" << std::endl;
+		std::cerr << "failed to load libtimeprof.so" << std::endl;
 		exit(1);
 	}
 	return appAddrSpace;
@@ -316,30 +319,30 @@ void runDBIapplication(BPatch_addressSpace* app)
  * reads a file with names of functions to instrument
  * if the file does not exists or is empty than we instrument all available functions
  **/
-void readFilterFile(BPatch_image *appImage, const char * appName)
+void readFilterFile(BPatch_image *appImage, const char * appName, bool readAll)
 {
 	funcFilterList.clear();
 	processFile(params.funclist, &funcFilterList);
-	if (funcFilterList.size() == 0)
+	if (funcFilterList.size() == 0 && readAll)
 	{
-		std::vector < BPatch_function * >*allFunctions;
-/*		//searching not only in the main application module
-		if (deepSearch)
+		std::vector < BPatch_module * >*modules = appImage->getModules ();
+		std::vector < BPatch_module * >::iterator moduleIter;
+		for (moduleIter = modules->begin (); moduleIter != modules->end (); ++moduleIter)
 		{
-			allFunctions = appImage->getProcedures(false);
-		}
-		else
-*/
-		{
-			BPatch_module * mainModule = appImage->findModule(appName, false);
-			allFunctions = mainModule->getProcedures(false);
-		}
+			if ((*moduleIter)->isSharedLib ())
+				continue;
 
-		std::vector < BPatch_function * >::iterator funcIter;
-		for (funcIter = allFunctions->begin (); funcIter != allFunctions->end (); ++funcIter)
-		{
-			BPatch_function *curFunc = *funcIter;
-			funcFilterList.push_back(curFunc->getDemangledName());
+//			char moduleName[1024];
+//			(*moduleIter)->getName (moduleName, 1024);
+//			std::cout << "Library: " << moduleName << std::endl;
+
+			std::vector < BPatch_function * >*allFunctions = (*moduleIter)->getProcedures();
+			std::vector < BPatch_function * >::iterator funcIter;
+
+			for (funcIter = allFunctions->begin (); funcIter != allFunctions->end (); ++funcIter)
+			{
+				funcFilterList.push_back((*funcIter)->getDemangledName());
+			}
 		}
 	}
 }
@@ -349,27 +352,27 @@ void readFilterFile(BPatch_image *appImage, const char * appName)
  **/
 void insertTimeInstrumentation(BPatch_addressSpace *appBin, BPatch_image *appImage)
 {
-//	std::cerr << "Inserting TIMEPROFILE instrumentation for following application functions\n";
+//	std::cerr << "Inserting TIMEPROF instrumentation for following application functions\n";
 
 	std::vector<BPatch_function*> startFuncs;
 	std::vector<BPatch_function*> stopFuncs;
-	appImage->findFunction("TIMEPROFILE_regionStart", startFuncs, true, true, true);
-	appImage->findFunction("TIMEPROFILE_regionStop", stopFuncs, true, true, true);
+	appImage->findFunction("TIMEPROF_regionStart", startFuncs, true, true, true);
+	appImage->findFunction("TIMEPROF_regionStop", stopFuncs, true, true, true);
 	if (startFuncs.size() == 0)
 	{
-		std::cerr << "Could not find TIMEPROFILE_regionStart function\n";
+		std::cerr << "Could not find TIMEPROF_regionStart function\n";
 		return;
 	}
 	if (stopFuncs.size() == 0)
 	{
-		std::cerr << "Could not find TIMEPROFILE_regionStop function\n";
+		std::cerr << "Could not find TIMEPROF_regionStop function\n";
 		return;
 	}
 	
 	//Instrument functions from the list
 	for (auto funcName : funcFilterList)
 	{
-		std::cout << "\t" << funcName << std::endl;
+//		std::cout << "\t" << funcName << std::endl;
 
 		std::vector<BPatch_snippet*> funcArgs;
 		BPatch_snippet* param = new BPatch_constExpr(funcName.c_str());
@@ -381,14 +384,14 @@ void insertTimeInstrumentation(BPatch_addressSpace *appBin, BPatch_image *appIma
 
 // TIMEPROFILE_evaluate	TODO add checking
 	std::vector<BPatch_function*> evaluateFuncs;
-	appImage->findFunction("TIMEPROFILE_evaluate", evaluateFuncs, true, true, true);
+	appImage->findFunction("TIMEPROF_evaluate", evaluateFuncs, true, true, true);
 	if(evaluateFuncs.size() == 0)
 	{
-		std::cerr << "Could not find TIMEPROFILE_evaluate function\n";
+		std::cerr << "Could not find TIMEPROF_evaluate function\n";
 		return;
 	}
 	std::vector<BPatch_snippet*> evaluateArgs;
-	BPatch_snippet* param1 = new BPatch_constExpr(params.funclist.c_str());	//LogFile TODO <<<<<<<<<<<<<<< toto muze delat problemy <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	BPatch_snippet* param1 = new BPatch_constExpr(params.funclist.c_str());	//LogFile
 	BPatch_snippet* param2 = new BPatch_constExpr(params.trashold);	//TRASHOLD
 	evaluateArgs.push_back(param1);
 	evaluateArgs.push_back(param2);
@@ -534,25 +537,34 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 
 int profileApplication()
 {
+	std::cerr << "Application profiling\n";
 	BPatch_addressSpace *appAddrSpace = NULL;
 	BPatch_image *appImage = NULL;
-	
+
 	std::vector<std::string> appParams;
 	splitString(params.input, '/', &appParams);
-
+	
+	appAddrSpace = startDBIapplication();
+	appImage = appAddrSpace->getImage();
+	readFilterFile(appImage, appParams.back().c_str(), true);
+	size_t prevFuncListSize = funcFilterList.size();
+	size_t i=0;
+	insertTimeInstrumentation(appAddrSpace, appImage);
+	std::cerr << std::endl << "Profiling - iteration#" << i++ << " ("<<prevFuncListSize<<")"<< std::endl;
+	runDBIapplication(appAddrSpace);
 	readFilterFile(appImage, appParams.back().c_str());
+
+//std::cout << "SIZE: " << funcFilterList.size() << std::endl;
 
 	// running the application to detect funcitions with runtime > trashold
 	// due to removing instrumentation the overhead will be reduced and duration 
 	// of some functions may drop under the trashold
 	// run the application until we will have persistent list of functions
-	size_t prevFuncListSize = 0;
-	size_t i=0;
+
 	while(funcFilterList.size() > 0 && funcFilterList.size() < prevFuncListSize)
 	{
-		std::cerr << "Profiling - iteration#" << ++i << std::endl;
-		
 		prevFuncListSize = funcFilterList.size();
+		std::cerr << std::endl << "Profiling - iteration#" << i++ << " ("<<prevFuncListSize<<")"<< std::endl;
 		appAddrSpace = startDBIapplication();
 		appImage = appAddrSpace->getImage();
 		insertTimeInstrumentation(appAddrSpace, appImage);
@@ -560,6 +572,7 @@ int profileApplication()
 		readFilterFile(appImage, appParams.back().c_str());
 	}
 
+	std::cout << "\nApplication profiling finished - " << funcFilterList.size() <<" function(s) selected\n\n";
 	return 0;
 }
 
