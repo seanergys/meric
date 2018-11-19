@@ -21,7 +21,8 @@ dinst:
 sbi:
 	g++ -g -Wall -std=c++11 -L/usr/local/lib -o dinst_instrument dinst_instrument.cpp \
 	-ldyninstAPI -I${DINST_HOME}/dyninstAPI/h/ -L${DINST_HOME}/build/dyninstAPI/ \
-	-I${DINST_HOME}/common/h/ -I${DINST_HOME}/build/common/h/ -I${DINST_HOME}/symtabAPI/h/ -I${DINST_HOME}/proccontrol/h/ -I${DINST_HOME}/instructionAPI/h/ -I${DINST_HOME}/dataflowAPI/h/
+	-I${DINST_HOME}/common/h/ -I${DINST_HOME}/build/common/h/ -I${DINST_HOME}/symtabAPI/h/ -I${DINST_HOME}/proccontrol/h/ -I${DINST_HOME}/instructionAPI/h/ -I${DINST_HOME}/dataflowAPI/h/ \
+	-I${DINST_HOME}/instructionAPI/h/ -L${DINST_HOME}/build/instructionAPI/ -linstructionAPI
 
 
 ################################################################################
