@@ -149,12 +149,14 @@ void evaluate(unsigned int timeThrashold, const char * fileName)
 		{
 			double timeLimit = timeThrashold/1000.0;
 			std::ofstream of;
-			if (!fileName && fileName[0] != '\0')			
-				std::ofstream of(fileName);
+			if (fileName != NULL && fileName[0] != '\0')
+			{
+				of.open(fileName);
+			}
 			outputStream raii(of.rdbuf(), std::cerr);
-
-//			std::ofstream LogFile;
-//			LogFile.open(fileName);
+			if (!of.is_open())
+				raii.~outputStream();
+			
 	
 			for (auto& funcRecord : funcPROBEDList)
 			{
@@ -164,7 +166,6 @@ void evaluate(unsigned int timeThrashold, const char * fileName)
 					printout << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
 				}
 			}
-//			LogFile.close();
 			printout << "E2 "<<TIMEPROF_rank<< std::endl;
 		}	
 	}
