@@ -1,11 +1,12 @@
-#include <unistd.h>
-#include <iostream>
-#include <string.h>
-#include <time.h>
-#include <map>
-#include <fstream>
 
-#include "../../include/timeprof.h"
+#include "timeprof.h"
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <time.h>
+
 
 #ifdef HAVE_OMP_H
 	#include <omp.h>
@@ -15,11 +16,18 @@
 	#include <mpi.h>
 #endif
 
+
 #ifdef DEBUG
 	#define printout std::cout	
 #else
 	#define printout if (false) std::cout	
 #endif
+
+namespace timeprof{
+
+enum TIMEPROF_RANKING {PREV_INIT=-1, POST_FINALIZE=-2, MASTER=0};
+int TIMEPROF_rank = PREV_INIT;
+
 
 typedef struct RtnDesc
 {
@@ -28,19 +36,33 @@ typedef struct RtnDesc
 	double maxDuration;	//runtime
 	double minDuration;	//runtime
 } RTN_DESC;
-
 std::map<std::string, RtnDesc> funcPROBEDList;
-enum TIMEPROF_RANKING {PREV_INIT=-1, POST_FINALIZE=-2, MASTER=0};
-int TIMEPROF_rank = PREV_INIT;
+double lastDuration = 0.0;
+struct outputStream {
+	outputStream(std::streambuf * buf, std::ostream & os) : os(os), old_buf(os.rdbuf(buf)) {}
+	~outputStream() { os.rdbuf(old_buf); }
+
+	std::ostream& os;
+	std::streambuf * old_buf;
+};
+
+
+/*
+struct region {
+	region(const char * regionName) : name(std::string(regionName)) {TIMEPROF_regionStart(regionName);}
+	~region() { TIMEPROF_regionStop(name.c_str()); }
+	std::string name;
+};
+*/
 
 /**
  * starts time measurement for region 'regionName'
  **/
-void TIMEPROF_regionStart(const char * regionName)
+//void TIMEPROF_regionStart(const char * regionName)
+void regionStart(const char * regionName)
 {
 	if (regionName && !regionName[0])
 		return;
-
 	printout << "T1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
 	if (TIMEPROF_rank == PREV_INIT)
 	{
@@ -75,6 +97,7 @@ void TIMEPROF_regionStart(const char * regionName)
 			}
 			else
 				funcPROBEDList[funcName].lastStart = timestamp;
+			lastDuration = 0.0;
 		}
 	}
 }
@@ -82,13 +105,13 @@ void TIMEPROF_regionStart(const char * regionName)
 /**
  * stops time measurement for region 'regionName'
  **/
-double TIMEPROF_regionStop(const char * regionName)
+//double TIMEPROF_regionStop(const char * regionName)
+double regionStop(const char * regionName)
 {
 	if (regionName && !regionName[0])
-		return 0.0;
-
-	printout << "P1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
+		return 0.0;	
 	double duration = 0.0;
+	printout << "P1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
 	if (TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
@@ -108,13 +131,16 @@ double TIMEPROF_regionStop(const char * regionName)
 			}
 		}
 	}
+	lastDuration = duration;
 	return duration;
 }
 
 /**
  * to the file 'fileName' stores a list of regions with a runtime longer than the trashold [ms]
+ * if fileName not specified the output will go to the std::cerr
  **/
-void TIMEPROF_evaluate(const char * fileName, uint timeThrashold)
+//void TIMEPROF_evaluate(unsigned int timeThrashold, const char * fileName)
+void evaluate(unsigned int timeThrashold, const char * fileName)
 {
 	printout << "E1 "<< TIMEPROF_rank << std::endl;
 	if (TIMEPROF_rank == MASTER)
@@ -122,22 +148,33 @@ void TIMEPROF_evaluate(const char * fileName, uint timeThrashold)
 		#pragma omp master
 		{
 			double timeLimit = timeThrashold/1000.0;
-			std::ofstream LogFile;
-			LogFile.open(fileName);
+			std::ofstream of;
+			if (!fileName && fileName[0] != '\0')			
+				std::ofstream of(fileName);
+			outputStream raii(of.rdbuf(), std::cerr);
+
+//			std::ofstream LogFile;
+//			LogFile.open(fileName);
 	
 			for (auto& funcRecord : funcPROBEDList)
 			{
 				if (funcRecord.second.minDuration > timeLimit)
 				{
-					LogFile << funcRecord.first << std::endl;
+					std::cerr << funcRecord.first << "\t"<< ((!timeThrashold) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
 					printout << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
 				}
 			}
-			LogFile.close();
+//			LogFile.close();
 			printout << "E2 "<<TIMEPROF_rank<< std::endl;
 		}	
 	}
 	TIMEPROF_rank = POST_FINALIZE;
 }
 
+double getLastRegionDuration()
+{
+	return lastDuration;
+}
+
+} //timeprof namespace
 
