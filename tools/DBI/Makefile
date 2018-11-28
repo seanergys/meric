@@ -2,7 +2,7 @@
 # DBI libraries require to specify their location
 #	${DYNAMORIO_HOME}
 #	${PIN_ROOT}
-#	${DINST_HOME} + ${BOOST_ROOT}
+#	${DYNINST_HOME} + ${BOOST_ROOT}
 
 drio:
 	g++ -std=c++11 -fPIC -shared -lgcc -DLINUX -DX86_64 -I${DYNAMORIO_HOME}/include -I${DYNAMORIO_HOME}/ext/include dr_profile.cpp -L${DYNAMORIO_HOME}/ext/lib64/release/ -ldrmgr -ldrwrap -ldrsyms -o librio.so
@@ -13,16 +13,44 @@ pin:
 # if you copy makefile and makefile.rules from ${PIN_ROOT}/source/tools/MyPinTool/ and edit TEST_TOOL_ROOTS variable to name of the compiled tool then you may use following command instead of these ugly two
 # make PIN_ROOT=${PIN_ROOT} pin_profile.so
 
+
+DYNINST_INC_PATHS=-I/usr/local/include \
+-I${DYNINST_HOME}/build/tbb/include/ \
+-I${DYNINST_HOME}/dyninstAPI/h/ \
+-I${DYNINST_HOME}/common/h/ \
+-I${DYNINST_HOME}/build/common/h/ \
+-I${DYNINST_HOME}/symtabAPI/h/ \
+-I${DYNINST_HOME}/proccontrol/h/ \
+-I${DYNINST_HOME}/instructionAPI/h/ \
+-I${DYNINST_HOME}/dataflowAPI/h/ \
+-I${DYNINST_HOME}/instructionAPI/h/
+DYNINST_LIB_PATHS=-L/usr/local/lib \
+-L${DYNINST_HOME}/build/instructionAPI/ \
+-L${DYNINST_HOME}/build/dyninstAPI/ \
+-L${DYNINST_HOME}/build/patchAPI/ \
+-L${DYNINST_HOME}/build/parseAPI/ \
+-L${DYNINST_HOME}/build/stackwalk/ \
+-L${DYNINST_HOME}/build/symlite/ \
+-L${DYNINST_HOME}/build/symtabAPI/ \
+-L${DYNINST_HOME}/build/elf/ \
+-L${DYNINST_HOME}/build/proccontrol/ \
+-L${DYNINST_HOME}/build/dwarf/ \
+-L${DYNINST_HOME}/build/elfutils/lib/ \
+-L${DYNINST_HOME}/build/common/
+DYNINST_LIBS=-ldyninstAPI -linstructionAPI
+
+BOOST_LIB_PATHS=-L${BOOST_ROOT}/lib/ -L${BOOST_ROOT}/stage/lib/
+BOOST_LIBS=-lboost_date_time -lboost_system -lboost_thread
+
 dinst:
 	g++ -g -Wall -std=c++11 -L/usr/local/lib -o dinst_profile dinst_profile.cpp \
-	-ldyninstAPI -I${DINST_HOME}/dyninstAPI/h/ -L${DINST_HOME}/build/dyninstAPI/ \
-	-I${DINST_HOME}/common/h/ -I${DINST_HOME}/build/common/h/ -I${DINST_HOME}/symtabAPI/h/ -I${DINST_HOME}/proccontrol/h/ -I${DINST_HOME}/instructionAPI/h/ -I${DINST_HOME}/dataflowAPI/h/
+	-ldyninstAPI -I${DYNINST_HOME}/dyninstAPI/h/ -L${DYNINST_HOME}/build/dyninstAPI/ \
+	-I${DYNINST_HOME}/common/h/ -I${DYNINST_HOME}/build/common/h/ -I${DYNINST_HOME}/symtabAPI/h/ -I${DYNINST_HOME}/proccontrol/h/ -I${DYNINST_HOME}/instructionAPI/h/ -I${DYNINST_HOME}/dataflowAPI/h/
 
 sbi:
-	g++ -g -Wall -std=c++11 -L/usr/local/lib -o dinst_instrument dinst_instrument.cpp \
-	-ldyninstAPI -I${DINST_HOME}/dyninstAPI/h/ -L${DINST_HOME}/build/dyninstAPI/ \
-	-I${DINST_HOME}/common/h/ -I${DINST_HOME}/build/common/h/ -I${DINST_HOME}/symtabAPI/h/ -I${DINST_HOME}/proccontrol/h/ -I${DINST_HOME}/instructionAPI/h/ -I${DINST_HOME}/dataflowAPI/h/ \
-	-I${DINST_HOME}/instructionAPI/h/ -L${DINST_HOME}/build/instructionAPI/ -linstructionAPI
+	g++ -g -Wall -std=c++11 -o dinst_instrument dinst_instrument.cpp \
+	${DYNINST_INC_PATHS} ${DYNINST_LIB_PATHS} ${DYNINST_LIBS} \
+	${BOOST_INC_PATHS} ${BOOST_LIB_PATHS} ${BOOST_LIBS}
 
 
 ################################################################################
