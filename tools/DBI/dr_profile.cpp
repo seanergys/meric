@@ -18,54 +18,28 @@ g++ -fPIC -shared -lgcc -DLINUX -DX86_64 -I$DYNAMORIO_HOME/include -I$DYNAMORIO_
 #include "drwrap.h"
 #include "drsyms.h"
 
-//SHARED
+////////////////////////////////////////////////////////////////////////////////
 static void getUniqueFileName(char *fileName);
 static bool getLock();
 
-//JIT
-
-//PROBED
 static void wrap_func_pre(void *wrapcxt, OUT void **user_data);
 static void wrap_func_post(void *wrapcxt, void *user_data);
-////////////////////////////////////////////////////////////////////////////////
+
 static void event_thread_init(void *drcontext);
 static int threadCount; //needed for threadId production
 static int tls_idx; //stores unique threadId starting 0
 static void *max_lock; //mutex
 static void event_thread_exit(void *drcontext);
 
-//TODO make a prototypes cleaninig 
 static void event_exit(void);
-static void wrap_malloc_pre(void *wrapcxt, OUT void **user_data);
-static void wrap_malloc_post(void *wrapcxt, void *user_data);
-static void wrap_free_pre(void *wrapcxt, OUT void **user_data);
-
-static void print_address(file_t f, app_pc addr, const char *prefix);
 static void add_call(app_pc instr_addr, app_pc target_addr);
 static dr_emit_flags_t event_app_instruction(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr, bool for_trace, bool translating, void *user_data);
-
-static void addFuncToList(app_pc addr);
 static void getFunctionName(app_pc addr, std::string* funcName);
 
-static void print_address_origin(app_pc addr);
-
 #define MAX_SYM_RESULT 256
-#define DURATION_THRASHOLD 100000 //100 miliseconds
+#define DURATION_THRESHOLD 100000 //100 miliseconds
 
-std::ofstream LogFile;
-enum INSTUMENT_MODE {FUNCTION_DETECTION, FUNCTION_RUNTIME_MEASUREMENT};
-int APPLICATION_MODE;
-
-long GLOBAL_TMP;
-
-
-////////////////////////////////////////////////////////////////////////////////
-//uint64 timestamp; //TODO remove
-
-std::set<std::string> funcFilterList;
-const std::string FILTERFILE = "DRIO_FILTER";
-
-// Holds instruction count for a single procedure
+// Holds information about each function
 typedef struct RtnDesc
 {
 	std::string name;
@@ -75,15 +49,20 @@ typedef struct RtnDesc
 	uint64 lastStart;	//time
 	uint64 maxDuration;	//runtime
 	uint64 minDuration;	//runtime
-//	struct RtnDesc * _next;
 } RTN_DESC;
 
 std::map<std::string, RtnDesc> funcPROBEDList;
 std::map <std::string, int> funcJITList;
 uint64 startTime;
+enum INSTUMENT_MODE {FUNCTION_DETECTION, FUNCTION_RUNTIME_MEASUREMENT};
+int APPLICATION_MODE;
+std::set<std::string> funcFilterList;
+std::ofstream LogFile;
+const std::string FILTERFILE = "DRIO_FILTER";
 
-//----------------------------------------------------------------------------//
-inline std::string getenv(const std::string &param) //, std::string defaultValue)
+////////////////////////////////////////////////////////////////////////////////
+//reads environment variable
+inline std::string getenv(const std::string &param)
 {
 	std::string value;
 	char *var = std::getenv(param.c_str());
@@ -95,10 +74,10 @@ inline std::string getenv(const std::string &param) //, std::string defaultValue
 	} 
 	else
 	{
-		return "";//defaultValue;
+		return "";
 	}
 }
-
+//stores content of the input file - list of regions to instrument
 static void processFilterFile()
 {
 	std::string filterFileName = getenv(FILTERFILE);
@@ -115,7 +94,6 @@ static void processFilterFile()
 //function based on Ignacio Laguna code
 static void getUniqueFileName(char *fileName)
 {
-	/* Get hostname */
 	int buffSize = 256;
 	char hostName[buffSize];
 	gethostname(hostName, buffSize);
@@ -125,7 +103,6 @@ static void getUniqueFileName(char *fileName)
 	strcat(fileName, hostName);
 	strcat(fileName, "-");
 
-	/* get pid */
 	int pid = getpid();
 	char pidBuff[128];
 	sprintf(pidBuff, "%d", pid);
@@ -140,11 +117,11 @@ static bool getLock()
 	char fileName[512];
 	getUniqueFileName(fileName);
 
-	/* create file */
+	// create file
 	FILE *fd = fopen(fileName, "w");
 	fclose(fd);
 
-	/* create link */
+	// create link
 	int r = link(fileName,lockName);
 	if (r == 0)
 		ret = true;
@@ -152,6 +129,7 @@ static bool getLock()
 	return ret;
 }
 
+//get function name based on addres of the function
 static void getFunctionName(app_pc addr, std::string* funcName)
 {
     drsym_error_t symres;
@@ -161,7 +139,7 @@ static void getFunctionName(app_pc addr, std::string* funcName)
     module_data_t *data;
     data = dr_lookup_module(addr);
     if (data == NULL) {
-        dr_fprintf(STDERR, "[-] getFunctionName(): dr_lookup_module(addr) error\n"); //TODO improve the message
+        dr_fprintf(STDERR, "[-] function name not found\n");
         return;
     }
     sym.struct_size = sizeof(sym);
@@ -173,25 +151,13 @@ static void getFunctionName(app_pc addr, std::string* funcName)
 	
 	if (symres == DRSYM_SUCCESS || symres == DRSYM_ERROR_LINE_NOT_AVAILABLE)
 	{
-/*        const char *modname = dr_module_preferred_name(data);
-        if (modname == NULL)
-            modname = "<noname>";
-        dr_fprintf(f, "%s "PFX" %s!%s+"PIFX, prefix, addr,
-                   modname, sym.name, addr - data->start - sym.start_offs);
-        if (symres == DRSYM_ERROR_LINE_NOT_AVAILABLE) {
-            dr_fprintf(f, " ??:0\n");
-        } else {
-            dr_fprintf(f, " %s:%"UINT64_FORMAT_CODE"+"PIFX"\n",
-                       sym.file, sym.line, sym.line_offs);
-        }
-*/
 		(*funcName) = std::string(sym.name);
 	}
 	dr_free_module_data(data);
 }
 
 // JIT /////////////////////////////////////////////////////////////////////////
-//CATCH function return
+//CATCH function return 
 static dr_emit_flags_t event_app_instruction(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                       bool for_trace, bool translating, void *user_data)
 {
@@ -202,7 +168,7 @@ static dr_emit_flags_t event_app_instruction(void *drcontext, void *tag, instrli
 }
 
 //on function return add the function to the list of functions
-static void add_call(app_pc instr_addr, app_pc target_addr)	//TODO prejmenovat
+static void add_call(app_pc instr_addr, app_pc target_addr)
 {
 	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
 	if (!myId)
@@ -226,15 +192,12 @@ static void add_call(app_pc instr_addr, app_pc target_addr)	//TODO prejmenovat
 
 static void module_load_event(void *drcontext, const module_data_t *mod, bool loaded)
 {
-//	dr_fprintf(STDERR, "[-] APP name: %s\n", dr_get_application_name());
-//	dr_fprintf(STDERR, "[-] mod path: %s\n", mod->full_path);
 /*
 	if (strcmp(mod->full_path,dr_get_application_name())) //if we have the main module
 	{
-		; //TODO - depends if we want to analyze just the main module ...
+		; // depends if we want to analyze just the main module ...
 	}
-*/
-	
+*/	
 	app_pc towrap;
 	for (std::string funcName : funcFilterList)
 	{
@@ -250,6 +213,7 @@ static void module_load_event(void *drcontext, const module_data_t *mod, bool lo
 	}
 }
 
+//start time measurement befor the functions starts
 static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 {
 	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
@@ -260,9 +224,7 @@ static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 		addr = drwrap_get_func(wrapcxt);
 		std::string funcName = "";
 		getFunctionName(addr, &funcName);
-
-//dr_fprintf(STDERR, "[-] %s START - THREAD %d/%d\n",funcName.c_str(), dr_get_thread_id(wrapcxt), myId);
-//dr_fprintf(STDERR, "[-] %s START\n",funcName.c_str());
+//		dr_fprintf(STDERR, "[-] %s START\n",funcName.c_str());
 
 		if (!funcPROBEDList.count(funcName))
 		{
@@ -274,9 +236,9 @@ static void wrap_func_pre(void *wrapcxt, OUT void **user_data)
 		}
 		funcPROBEDList[funcName].lastStart = timestamp;
 	}
-//	LogFile << "START "<<funcName << std::endl; //TODO
 }
 
+//stop time measurement when the function stops
 static void wrap_func_post(void *wrapcxt, void *user_data)
 {
 	int myId = (int)(ptr_uint_t)drmgr_get_tls_field(dr_get_current_drcontext(), tls_idx);
@@ -296,14 +258,7 @@ static void wrap_func_post(void *wrapcxt, void *user_data)
 			if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
 				funcPROBEDList[funcName].minDuration = duration;
 			funcPROBEDList[funcName].lastStart=0;
-
-/*
-		LogFile << "\tSTOP "<<funcName<<" after "<<duration/1000<<" [ms]\n";	//TODO
-		LogFile 
-			<< funcName <<"\t"
-			<< funcPROBEDList[funcName].minDuration<<"\t"
-			<< funcPROBEDList[funcName].maxDuration<<"\n";
-*/
+//			dr_fprintf(STDERR, "[-] %s STOP in %f [ms]\n",funcName.c_str(), duration/1000);
 		}
 	}
 }
@@ -334,8 +289,8 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 		processFilterFile();
 		LogFile.open("memprofile.out");
 
-		dr_set_client_name("DynamoRIO Sample Client 'wrap'", "http://dynamorio.org/issues");	//TODO
-		dr_log(NULL, LOG_ALL, 1, "Client 'wrap' initializing\n");	//TODO
+		dr_set_client_name("DynamoRIO tool for application profiling 'dr_profile'", "https://code.it4i.cz/vys0053/meric/");
+		dr_log(NULL, LOG_ALL, 1, "Tool 'dr_profile' initializing\n");
 		if (dr_is_notify_on())
 		{
 			dr_fprintf(STDERR, "[*] DBI analysis runnnig\n");
@@ -343,7 +298,6 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 
 		drmgr_init();
 		drwrap_init();
-		//DynamoRIOv7.0.0 - The drsyms API will eventually support both sideline and online use, and the parameter to drsym_init() will specify the symbol server to use for sideline use. Today only online use is supported and NULL should be passed.
 		if (drsym_init(0) != DRSYM_SUCCESS)
 		{
 			dr_log(NULL, LOG_ALL, 1, "WARNING: unable to initialize symbol translation\n");
@@ -376,27 +330,30 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char *argv[])
 	}
 }
 
+//at the end of the application run process the results
 static void event_exit(void)
 {
-//process the results
-	uint64 duration = dr_get_microseconds()-startTime;
-	
+	uint64 duration = dr_get_microseconds()-startTime;	
 	if (APPLICATION_MODE == FUNCTION_DETECTION)
 	{
 		for (auto& funcRecord : funcJITList)
 		{
-			if (duration/funcRecord.second > DURATION_THRASHOLD)
-				LogFile << funcRecord.first << std::endl; // << " has value " << funcRecord.second << std::endl;
+			if (duration/funcRecord.second > DURATION_THRESHOLD)
+			{
+				LogFile << funcRecord.first << std::endl;
+				dr_fprintf(STDERR, "[-] %s\n", funcRecord.first.c_str());
+			}
 		}
 	}
 	else //if (APPLICATION_MODE == FUNCTION_RUNTIME_MEASUREMENT)
 	{
+		dr_fprintf(STDERR, "[*] Writing list of significant functions - from %d\n", funcPROBEDList.size());
 		for (auto& funcRecord : funcPROBEDList)
 		{
-			if (funcRecord.second.minDuration > DURATION_THRASHOLD)
+			if (funcRecord.second.minDuration > DURATION_THRESHOLD)
 			{
 				LogFile << funcRecord.first << std::endl;
-				dr_fprintf(STDERR, "[*] %d\t%d\t%s\n",funcRecord.second.minDuration/1000, funcRecord.second.maxDuration/1000, funcRecord.first.c_str());
+				dr_fprintf(STDERR, "[*] %f\t%f\t%s\n",funcRecord.second.minDuration/1000, funcRecord.second.maxDuration/1000, funcRecord.first.c_str());
 			}
 		}
 	}
@@ -404,7 +361,7 @@ static void event_exit(void)
 	
 	LogFile.close();
 
-//finalize DynamoRIO
+	//finalize DynamoRIO
 	if (drsym_exit() != DRSYM_SUCCESS)
 	{
 		dr_log(NULL, LOG_ALL, 1, "WARNING: error cleaning up symbol library\n");
@@ -413,85 +370,6 @@ static void event_exit(void)
 	drwrap_exit();
 	drmgr_unregister_tls_field(tls_idx);
 	drmgr_exit();
-
-/* part of an existing DRIO example code that does unregister events TODO
-    drx_exit();
-    if (!drmgr_unregister_bb_instrumentation_event(event_analyze_bb) ||
-        !drmgr_unregister_module_load_event(event_module_load) ||
-        !drmgr_unregister_module_unload_event(event_module_unload) ||
-        drreg_exit() != DRREG_SUCCESS)
-        DR_ASSERT(false);
-    drmgr_exit();
-*/
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void print_address_origin(app_pc addr)
-{
-    drsym_error_t symres;
-    drsym_info_t sym;
-    char name[MAX_SYM_RESULT];
-    char file[MAXIMUM_PATH];
-    module_data_t *data;
-    data = dr_lookup_module(addr);
-    if (data == NULL) {
-//        dr_fprintf(f, "%s "PFX" ? ??:0\n", prefix, addr);
-		LogFile << "dr_lookup_module(addr) == NULL\n";
-        return;
-    }
-    sym.struct_size = sizeof(sym);
-    sym.name = name;
-    sym.name_size = MAX_SYM_RESULT;
-    sym.file = file;
-    sym.file_size = MAXIMUM_PATH;
-    symres = drsym_lookup_address(data->full_path, addr - data->start, &sym,
-                                  DRSYM_DEFAULT_FLAGS);
-    if (symres == DRSYM_SUCCESS || symres == DRSYM_ERROR_LINE_NOT_AVAILABLE) {
-        const char *modname = dr_module_preferred_name(data);
-        if (modname == NULL)
-            modname = "<noname>";
-//        dr_fprintf(f, "%s "PFX" %s!%s+"PIFX, prefix, addr, modname, sym.name, addr - data->start - sym.start_offs);
-		LogFile << (long)addr <<"\t"<< modname <<"\t"<< sym.name <<"\t"<< (long)addr <<"-"<<(long) data->start <<"-"<< (long)sym.start_offs<<"="<<(long)(addr - data->start - sym.start_offs) << std::endl;
-/*
-        if (symres == DRSYM_ERROR_LINE_NOT_AVAILABLE) {
-            dr_fprintf(f, " ??:0\n");
-        } else {
-            dr_fprintf(f, " %s:%"UINT64_FORMAT_CODE"+"PIFX"\n",sym.file, sym.line, sym.line_offs);
-               LogFile << "TODO sym print\n";
-        }
-*/
-    } 
-//    else
-//        dr_fprintf(f, "%s "PFX" ? ??:0\n", prefix, addr);
-    dr_free_module_data(data);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
