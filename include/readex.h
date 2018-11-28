@@ -1,8 +1,8 @@
 /**
  * Shared interface for MERIC and Score-P libraries
  *
- * version 3.5
- * 04.10.2018
+ * version 3.6
+ * 28.11.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
  **/
@@ -26,7 +26,6 @@
 	#include <cstddef>
 #endif
 
-inline static double dummyREADEXTimeWrapper() {return 0.0;};
 
 //READEX_INIT()
 //READEX_CLOSE()
@@ -98,20 +97,20 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 //READEX_REGION_STOP(handle)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP( handle ) \
-		dummyREADEXTimeWrapper(); \
+		0.0; \
 		SCOREP_USER_REGION_END( handle );
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
 	#define READEX_REGION_STOP( handle ) \
-		dummyREADEXTimeWrapper();
+		0.0;
 #endif
 
 //READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
-		dummyREADEXTimeWrapper(); \
+		0.0; \
 		SCOREP_USER_REGION_END( stop_handle ); \
 		SCOREP_USER_REGION_BEGIN( start_handle, start_name, start_type );
 #elif defined USE_MERIC
@@ -119,9 +118,8 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 		MERIC_MeasureStopStart( start_name );
 #else
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
-		dummyREADEXTimeWrapper();
+		0.0;
 #endif
-
 
 
 //READEX_PHASE_START(handle, name, type)
@@ -138,14 +136,14 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 //READEX_PHASE_STOP(handle)
 #ifdef USE_SCOREP
 	#define READEX_PHASE_STOP( handle ) \
-		dummyREADEXTimeWrapper(); \
+		0.0; \
 		SCOREP_USER_OA_PHASE_END( handle );
 #elif defined USE_MERIC
 	#define READEX_PHASE_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
 	#define READEX_PHASE_STOP( handle ) \
-		dummyREADEXTimeWrapper();
+		0.0;
 #endif
 
 //List of Score-P API functions (SCOREP_User.h) that will be ignored if the code is not compiled with Score-P
@@ -180,6 +178,10 @@ inline static double dummyREADEXTimeWrapper() {return 0.0;};
 	//#define SCOREP_RECORDING_ON()
 	//#define SCOREP_RECORDING_OFF()
 	#define SCOREP_RECORDING_IS_ON() 0
+#endif
+
+#ifndef USE_MERIC
+	#define MERIC_captureScope( region )
 #endif
 
 #endif /* READEX_H_ */
