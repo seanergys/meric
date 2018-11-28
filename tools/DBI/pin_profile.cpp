@@ -1,42 +1,31 @@
-/*
-make PIN_ROOT=$PIN_PATH obj-intel64/TestPinTool.so
-
-g++ -E -g -Wall -Werror -Wno-unknown-pragmas -D__PIN__=1 -DPIN_CRT=1 -fno-stack-protector -fno-exceptions -funwind-tables -fasynchronous-unwind-tables -fno-rtti -DTARGET_IA32E -DHOST_IA32E -fPIC -DTARGET_LINUX -fabi-version=2  -I/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/source/include/pin -I/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/source/include/pin/gen -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/stlport/include -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/libstdc++/include -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/crt/include -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/crt/include/arch-x86_64 -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/crt/include/kernel/uapi -isystem /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/crt/include/kernel/uapi/asm-x86 -I/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/components/include -I/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/xed-intel64/include/xed -I/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/source/tools/InstLib -O3 -fomit-frame-pointer -fno-strict-aliasing   -c -o obj-intel64/TestPinTool.o TestPinTool.cpp
-g++ -E -shared -Wl,--hash-style=sysv /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/intel64/runtime/pincrt/crtbeginS.o -Wl,-Bsymbolic -Wl,--version-script=/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/source/include/pin/pintool.ver -fabi-version=2    -o obj-intel64/TestPinTool.so obj-intel64/TestPinTool.o  -L/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/intel64/runtime/pincrt -L/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/intel64/lib -L/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/intel64/lib-ext -L/home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/extras/xed-intel64/lib -lpin -lxed /home/andrew/Software/pin-3.7-97619-g0d0c92f4f-gcc-linux/intel64/runtime/pincrt/crtendS.o -lpin3dwarf  -ldl-dynamic -nostdlib -lstlport-dynamic -lm-dynamic -lc-dynamic -lunwind-dynamic
-
-pin -t obj-intel64/TestPinTool.so -- ./test
-
-*/
-
-/*
-  1) GCC/4.4.7-system   2) OpenMPI/1.8.6-GCC-4.4.7-system
-Could not exec /home/vys0053/Software/pin-2.14-71313-gcc.4.4.7-linux/ia32/bin/pinbin
-in file Source/pin/injector_nonmac/vm_elf_loader.cpp:GenerateMiniloaderProgramForImageLoad:702
-
-In any case for PIn to find its libraries one need to set PIN_VM32_LD_LIBRARY_PATH or PIN_VM64_LD_LIBRARY_PATH
-*/
-
-
-//
-// based od source/tools/ManualExamples/proccount.cpp
-//
+/**
+ * 
+ * This Pintool measures runtime for functions in the application and stores 
+ * list of all functions with runtime > 100 ms. 
+ * List of function to measure may be specified in a file, each function 
+ * on a single line, otherwise all the instrumentable functions will be measured
+ *     export PIN_FILTER=fileOfFunctionsNames.txt
+ * 
+ * based on example from PIN repo source/tools/ManualExamples/proccount.cpp
+ *
+ **/
 
 #include <unistd.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string.h>
-	#include <stdlib.h>
-	#include <cstdlib>
-	#include <sstream>
+#include <stdlib.h>
+#include <cstdlib>
+#include <sstream>
+#include <set>
 #include "pin.H"
 
 //----------------------------------------------------------------------------//
-#include <set>
 std::set<std::string> funcList;
 const std::string FILTERFILE = "PIN_FILTER";
 
-inline std::string getenv(const std::string &param) //, std::string defaultValue)
+inline std::string getenv(const std::string &param)
 {
 	std::string value;
 	char *var = std::getenv(param.c_str());
@@ -46,7 +35,7 @@ inline std::string getenv(const std::string &param) //, std::string defaultValue
 		std::stringstream ss(var);
 		return ss.str();
 	} 
-	return "";//defaultValue;
+	return "";
 }
 
 void processFilterFile()
@@ -61,8 +50,6 @@ void processFilterFile()
 		filterFile.close();
 	}
 }
-
-
 //----------------------------------------------------------------------------//
 
 ofstream outFile;
@@ -149,56 +136,46 @@ void stopTimerNoThrdControl(UINT64 * minDuration, UINT64 * maxDuration, UINT64 *
 
 
 // Pin calls this function every time a new rtn is executed
-VOID Routine(RTN rtn, VOID *v)
+VOID InstrumentAllFunctions(RTN rtn, VOID *v)
 {
 //	if (!IMG_IsMainExecutable(SEC_Img(RTN_Sec(rtn))))
 //		return;
-	
-	//if a function is not in our filter list
-//	if (!funcList.empty() && funcList.find(RTN_Name(rtn)) == funcList.end())
-//		return;
-    
-    // Allocate a counter for this routine
-    RTN_COUNT * rc = new RTN_COUNT;
-
-    // The RTN goes away when the image is unloaded, so save it now
-    // because we need it in the fini
-    rc->_name = RTN_Name(rtn);
-    rc->_image = StripPath(IMG_Name(SEC_Img(RTN_Sec(rtn))).c_str());
-    rc->_address = RTN_Address(rtn);
-    rc->_icount = 1;
-    rc->_rtnCount = 0;
+	 
+	RTN_COUNT * rc = new RTN_COUNT;
+	rc->_name = RTN_Name(rtn);
+	rc->_image = StripPath(IMG_Name(SEC_Img(RTN_Sec(rtn))).c_str());
+	rc->_address = RTN_Address(rtn);
+	rc->_icount = 1;
+	rc->_rtnCount = 0;
 	rc->lastStart = 0;
 	rc->maxDuration = 0;
 	rc->minDuration = 0;
-//	rc->path = "";
 
-    INT32 line;
-    PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &(rc->path));
-    if (rc->path != "")
-    {
-    	char* buffer = (char*) malloc (sizeof(char)*(line%10+1));
+	INT32 line;
+	PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &(rc->path));
+	if (rc->path != "")
+	{
+		char* buffer = (char*) malloc (sizeof(char)*(line%10+1));
 		sprintf (buffer, "%d", line);
 		std::string tmp (buffer);
 		rc->path +=": "+tmp;
 		free(buffer);
 	}
-	
-    // Add to list of routines
-    rc->_next = RtnList;
-    RtnList = rc;
-            
-    RTN_Open(rtn);
-            
-    // Insert a call at the entry and exit point of a routine to increment the call count
+
+	// Add to list of routines
+	rc->_next = RtnList;
+	RtnList = rc;
+
+	// Insert a call at the entry and exit point of a routine
+	RTN_Open(rtn);
 	RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)startTimer, IARG_PTR, &(rc->lastStart), IARG_PTR, &(rc->_name), IARG_THREAD_ID, IARG_END);
 	RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)stopTimer, IARG_PTR, &(rc->minDuration), IARG_PTR, &(rc->maxDuration), IARG_PTR, &(rc->lastStart), IARG_PTR, &(rc->_rtnCount), IARG_PTR, &(rc->_name), IARG_THREAD_ID, IARG_END);
-	
-    RTN_Close(rtn);
+
+	RTN_Close(rtn);
 }
 
-
-VOID ImageLoad(IMG img, VOID *v)
+// Insert Pin calls before function call in the probe mode
+VOID InstrumentSelectedFunctionsPROBE(IMG img, VOID *v)
 {
 	if (!IMG_IsMainExecutable(img))
 		return;
@@ -209,11 +186,7 @@ VOID ImageLoad(IMG img, VOID *v)
 		RTN routine = RTN_FindByName(img, (*it).c_str());
 		if (RTN_Valid(routine))
 		{
-			// Allocate a counter for this routine
 			RTN_COUNT * rc = new RTN_COUNT;
-
-			// The RTN goes away when the image is unloaded, so save it now
-			// because we need it in the fini
 			rc->_name = RTN_Name(routine);
 			rc->_image = StripPath(IMG_Name(SEC_Img(RTN_Sec(routine))).c_str());
 			rc->_address = RTN_Address(routine);
@@ -227,25 +200,59 @@ VOID ImageLoad(IMG img, VOID *v)
             INT32 line;
             PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &path);
             if (path != "")
-                std::cout << "File " << path << " Line " << line << endl; 
+                std::cout << "File " << path << " Line " << line << std::endl; 
 */	
-			// Add to list of routines
+			// Add to the list of routines
 			rc->_next = RtnList;
 			RtnList = rc;
 
 			// added call before the detected function
+			// we must call NoThreadConstrol function, since support for PIN
+			// threaded functions is in JIT mode only
 		    RTN_InsertCallProbed(routine, IPOINT_BEFORE, (AFUNPTR)startTimerNoThrdControl, IARG_PTR, &(rc->lastStart), IARG_END);
 		    
-			// call after the wrapped function requires prototype - missing in the following command
-//			RTN_InsertCallProbed(routine, IPOINT_AFTER, (AFUNPTR)stopTimerNoThrdControl, IARG_PTR, &(rc->minDuration), IARG_PTR, &(rc->maxDuration), IARG_PTR, &(rc->lastStart), IARG_PTR, &(rc->_rtnCount), IARG_END);
+			// to insert call after the function in the PROBE mode we would need 
+			// its prototype, which we do not have ...
+		}
+	}
+}
 
+// inserts Pin calls before and after function in the JIT mode
+VOID InstrumentSelectedFunctionsJIT(IMG img, VOID *v)
+{
+	if (!IMG_IsMainExecutable(img))
+		return;
+	
+	std::set<std::string>::iterator it;
+	for (it = funcList.begin(); it != funcList.end(); ++it)
+	{
+		RTN routine = RTN_FindByName(img, (*it).c_str());
+		if (RTN_Valid(routine))
+		{
+			RTN_COUNT * rc = new RTN_COUNT;
+			rc->_name = RTN_Name(routine);
+			rc->_image = StripPath(IMG_Name(SEC_Img(RTN_Sec(routine))).c_str());
+			rc->_address = RTN_Address(routine);
+			rc->_icount = 1;
+			rc->_rtnCount = 0;
+			rc->lastStart = 0;
+			rc->maxDuration = 0;
+			rc->minDuration = 0;
+/*
+            string path;
+            INT32 line;
+            PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &path);
+            if (path != "")
+                std::cout << "File " << path << " Line " << line << std::endl; 
+*/	
+			// Add to the list of routines
+			rc->_next = RtnList;
+			RtnList = rc;
 
-/*			//JIT version that allows us easily insert call before and also after the function - without wrapped function prototype
 			RTN_Open(routine);
 			RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)startTimer, IARG_PTR, &(rc->lastStart), IARG_PTR, &(rc->_name), IARG_THREAD_ID, IARG_END);
 			RTN_InsertCall(routine, IPOINT_AFTER, (AFUNPTR)stopTimer, IARG_PTR, &(rc->minDuration), IARG_PTR, &(rc->maxDuration), IARG_PTR, &(rc->lastStart), IARG_PTR, &(rc->_rtnCount), IARG_PTR, &(rc->_name), IARG_THREAD_ID, IARG_END);
 			RTN_Close(routine);
-*/
 		}
 	}
 }
@@ -255,16 +262,16 @@ VOID ImageLoad(IMG img, VOID *v)
 VOID Fini(INT32 code, VOID *v)
 {
 	outFile.open("proccount.out");
-/*    std::cout << setw(16) << "Image" << " "
-            << setw(18) << "Address" << " "
-            << setw(12) << "Calls" << " "
-            << setw(12) << "Max [ms]" << " "
-            << setw(12) << "Min [ms]" << " "
-            << setw(23) << "Procedure" 
-            << endl
-            << "-------------------------------------------------"
-            << "-------------------------------------------------"
-            << endl;
+/*	std::cout << setw(16) << "Image" << " "
+	          << setw(18) << "Address" << " "
+	          << setw(12) << "Calls" << " "
+	          << setw(12) << "Max [ms]" << " "
+	          << setw(12) << "Min [ms]" << " "
+	          << setw(23) << "Procedure" 
+	          << std::endl
+	          << "-------------------------------------------------"
+	          << "-------------------------------------------------"
+	          << std::endl;
 */
 	int numOfSelectedRoutines = 0;
 	int numOfAnalysedRoutines = 0;
@@ -282,7 +289,7 @@ VOID Fini(INT32 code, VOID *v)
                     << setw(12) << rc->minDuration/MILISECOND<< " "
                     << setw(23) << rc->_name << " "
                     << setw(30) << rc->path
-                    << endl;
+                    << std::endl;
 */
     		outFile << rc->_name << std::endl;
     		numOfSelectedRoutines++;
@@ -295,12 +302,12 @@ VOID Fini(INT32 code, VOID *v)
                     << setw(12) << rc->maxDuration/MILISECOND<< " "
                     << setw(12) << rc->minDuration/MILISECOND<< " "
                     << setw(23) << rc->_name 
-                    << endl;
+                    << std::endl;
 */
     }
 	outFile.close();
-	std::cout << "Number of analysed routines: " << numOfAnalysedRoutines << std::endl;
-	std::cout << "Number of selected routines: " << numOfSelectedRoutines << std::endl;
+	std::cout << "Number of analysed routines: " << numOfAnalysedRoutines << std::endl
+	          << "Number of selected routines: " << numOfSelectedRoutines << std::endl;
 
 	rc = RtnList;
 	while(rc)
@@ -312,42 +319,50 @@ VOID Fini(INT32 code, VOID *v)
 	
 }
 
-/* ========================================================================== */
-/* Print Help Message                                                         */
-/* ========================================================================== */
+////////////////////////////////////////////////////////////////////////////////
 
-INT32 Usage()
+INT32 printHelp()
 {
-    cerr << "This Pintool measures rintime for each function in the application" << endl;
-    cerr << "and stores list of all funstions with runtime > 100 ms" << endl;
-    cerr << endl << KNOB_BASE::StringKnobSummary() << endl;
+    std::cerr << "This Pintool measures runtime for each function in the application" << std::endl
+              << "and stores list of all functions with runtime > 100 ms" << std::endl
+              << "List of function to measure may be specified in a file: " <<std::endl
+              << "export PIN_FILTER=fileOfFunctionsNames.txt" << std::endl
+              << std::endl << KNOB_BASE::StringKnobSummary() << std::endl;
     return -1;
 }
 
-/* ========================================================================== */
-/* Main                                                                       */
-/* ========================================================================== */
-
 int main(int argc, char * argv[])
 {
-
-	cerr << PIN_GetPid() << " - " << getpid() << std::endl;
-	
 	processFilterFile();
 
-	// Initialize symbol table code, needed for rtn instrumentation
-	PIN_InitSymbols();
-
 	// Initialize pin
+	PIN_InitSymbols();
 	if (PIN_Init(argc, argv))
-		return Usage();
+		return printHelp();
 
 
 	// Register Routine to be called to instrument rtn
-	if (funcList.empty())
+/*	
+	// Since we have list of functions we might use the probe mode, however 
+	// the functionality is so reduced, that using JIT mode makes life easier
+	if (!funcList.empty())
+	{
+		std::cout << "Probe IMAGE analysis\n";
+		IMG_AddInstrumentFunction(InstrumentSelectedFunctionsPROBE, 0);
+	
+		// Register Fini to be called when the application exits
+		PIN_AddFiniFunction(Fini, 0);
+	
+		PIN_StartProgramProbed();
+	}
+	else
+*/
 	{
 		std::cout << "JIT ROUTINE analysis\n";
-		RTN_AddInstrumentFunction(Routine, 0);
+		if (funcList.empty())
+			RTN_AddInstrumentFunction(InstrumentAllFunctions, 0);
+		else // replaces the PROBED instrumentation of the binary
+			IMG_AddInstrumentFunction(InstrumentSelectedFunctionsJIT, 0);
 
 		// Register Fini to be called when the application exits
 		PIN_AddFiniFunction(Fini, 0);
@@ -355,18 +370,7 @@ int main(int argc, char * argv[])
 		// Start the program, never returns
 		PIN_StartProgram();
 	}
-	else
-	{
-		std::cout << "Probe IMAGE analysis\n";
-		IMG_AddInstrumentFunction(ImageLoad, 0);
-	
-		// Register Fini to be called when the application exits
-		PIN_AddFiniFunction(Fini, 0);
-	
-//		PIN_StartProgramProbed();
-		PIN_StartProgram();
-	}
-	
+		
     return 0;
 }
 
