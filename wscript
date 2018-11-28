@@ -8,13 +8,12 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
 
-    if ctx.options.nothread == False:
-        if ctx.options.withgcc:
-            ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
-            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
-        else:
-            ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
-            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+    if ctx.options.withgcc:
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
+        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+    else:
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
+        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
 
     ctx.env.append_unique("DEFINES", [ "ARMMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools\""])
     
@@ -45,11 +44,6 @@ def configure(ctx):
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
 def build(ctx):
-
-    sufix = ""
-    if ctx.options.nothread == True:
-        sufix="nothread"
-
     ctx.objects(
         source =
             ctx.path.ant_glob('src/basis/*.cpp') +
@@ -61,14 +55,14 @@ def build(ctx):
 
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
-        target       = "meric"+sufix,
+        target       = "meric",
         use          = "basis",
         install_path = "lib"
     )
 
     ctx.shlib(
         source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
-        target       = "meric"+sufix,
+        target       = "meric",
         use          = "basis",
         install_path = "lib"
     )
@@ -80,7 +74,7 @@ def build(ctx):
 
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
-        target       = "mericmpi"+sufix,
+        target       = "mericmpi",
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -88,7 +82,7 @@ def build(ctx):
 
     ctx.shlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
-        target       = "mericmpi"+sufix,
+        target       = "mericmpi",
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -136,13 +130,6 @@ def options(opt):
         action="store",
         default="mpic++",
         help="MPI C++ compiler"
-    )
-
-    opt.add_option(
-        "--nothread",
-        action="store",
-        default="False",
-        help="remove OpenMP pragmas from the MERIC"
     )
 
     opt.add_option(
