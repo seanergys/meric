@@ -53,6 +53,7 @@ def build(ctx):
         target = "basis",
     )
 
+    #MERIC
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
         target       = "meric",
@@ -67,6 +68,22 @@ def build(ctx):
         install_path = "lib"
     )
 
+    #TIMEPROF
+    ctx.stlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprof",
+        use          = "basis",
+        install_path = "lib"
+    )
+
+    ctx.shlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprof",
+        use          = "basis",
+        install_path = "lib"
+    )
+
+    #MERIC MPI
     if not ctx.env.MPICXX:
         return
     
@@ -87,6 +104,24 @@ def build(ctx):
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
     )
+    
+    #TIMEPROF MPI
+    ctx.stlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprofmpi",
+        use          = "basis",
+        install_path = "lib",
+        env          = ctx.all_envs["mpi"]
+    )
+
+    ctx.shlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprofmpi",
+        use          = "basis",
+        install_path = "lib",
+        env          = ctx.all_envs["mpi"]
+    )
+
 
 
 def options(opt):
