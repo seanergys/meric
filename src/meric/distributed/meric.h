@@ -10,6 +10,7 @@
 #include "../../store/aggregated/detailedaggregatestore.h"
 #include "../../store/aggregated/debugaggregatestore.h"
 #include "../../store/aggregated/countersaggregatestore.h"
+#include "../../store/aggregated/infoaggregatestore.h"
 
 namespace meric {
 
@@ -21,11 +22,14 @@ public:
 
 	void start(const std::string &region)
 	{
-		if (_storeList[0]->getMPIWrite())
-			MERIC_INFO << "region '" << region << "' starting\n";
-
-		#pragma omp master
+		if (OMPbarriers)
 		{
+			#pragma omp barrier
+		}
+		#pragma omp single nowait
+		{
+			if (_storeList[0]->getMPIWrite())
+				MERIC_INFO << "region '" << region << "' starting\n";
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -33,54 +37,71 @@ public:
 		}
 		if (Meric::IGNORE)
 			return;
-		#pragma omp master
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
 	}
 	
-	void stop()
+	double stop()
 	{
-		
-		if (_storeList[0]->getMPIWrite())
-			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
-
-		#pragma omp master
+		double regionRuntime = 0.0;
+		if (OMPbarriers)
 		{
+			#pragma omp barrier
+		}
+		#pragma omp single nowait
+		{
+			if (_storeList[0]->getMPIWrite())
+				MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
 		}
 		if (Meric::IGNORE)
-			return;
-		#pragma omp master
+			return 0.0;
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
 			{
 				if (!_stack.size())
 				{
 					std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
+					regionRuntime = -1.0;
 				}
 				else
 				{
-					Meric::stop();
+					regionRuntime = Meric::stop();
 					_stack.pop_back();
 				}
 			}
 			else
 				_stack.pop_back();
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
+		return regionRuntime;
 	}
 
-	void stopStart(const std::string &region)
+	double stopStart(const std::string &region)
 	{
-		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
-
-		#pragma omp master
+		double regionRuntime = 0.0;
+		if (OMPbarriers)
 		{
+			#pragma omp barrier
+		}
+		#pragma omp single nowait
+		{
+			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping and staring region'"  << region << "'\n";
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -88,23 +109,28 @@ public:
 		}
 		
 		if (Meric::IGNORE)
-			return;
+			return 0.0;
 		if (!_stack.size())
 		{
-			#pragma omp single
+			#pragma omp single nowait
 			std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-			return;
+			return -1.0;
 		}
-		#pragma omp master
+		#pragma omp single nowait
 		{
 			if (!ignoreRegion(getRegionName(_stack.size(), _stack.back())))
-				Meric::stop();
+				regionRuntime = Meric::stop();
 			_stack.pop_back();
 
 			if (!ignoreRegion(region))
 				Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
+		if (OMPbarriers)
+		{
+			#pragma omp barrier
+		}
+		return regionRuntime;
 	}
 
 	void startIgnore()

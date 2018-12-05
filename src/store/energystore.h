@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_ENERGYSTORE_H_
-#define SRC_BASIS_ENERGYSTORE_H_
+#ifndef SRC_STORE_ENERGYSTORE_H_
+#define SRC_STORE_ENERGYSTORE_H_
 
 #include "store.h"
 
@@ -28,6 +28,7 @@ class EnergyStore: public Store {
 public:
 	void addStart(int region);
 	void addEnd(int region);
+	double getRegionDuration() {return 0.0;};
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
@@ -75,4 +76,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_ENERGYSTORE_H_ */
+#endif /* SRC_STORE_ENERGYSTORE_H_ */

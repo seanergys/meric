@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_STORE_H_
-#define SRC_BASIS_STORE_H_
+#ifndef SRC_STORE_STORE_H_
+#define SRC_STORE_STORE_H_
 
 #include <vector>
 #include <map>
@@ -46,7 +46,12 @@ class StoreBase
 public:
 	virtual void addStart(int region) = 0;
 	virtual void addEnd(int region) = 0;
+	virtual double getRegionDuration() = 0;
+	virtual void loadSchedulerEnvironment() = 0;	
+	virtual int storeCounter(std::string counterFileName) = 0;
+	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
+
 	StoreBase(bool samples = false) : printSamples(samples) {};
 	StoreBase(bool samples, bool write) : printSamples(samples), MPIProcessWrite(write) {};
 //	StoreBase(bool write = true) : MPIProcessWrite(write) {};
@@ -54,12 +59,7 @@ public:
 	void setRegionsNames(std::vector<std::string> name) {_name = name;};
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
-	
-	virtual int storeCounter(std::string counterFileName) = 0;
-	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
-	
-	virtual void loadSchedulerEnvironment() = 0;
-	
+
 	int initStore(	int counter)
 	{
 		loadSchedulerEnvironment();
@@ -283,4 +283,4 @@ public:
 
 }
 
-#endif /* SRC_BASIS_STORE_H_ */
+#endif /* SRC_STORE_STORE_H_ */

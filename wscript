@@ -7,6 +7,7 @@ def configure(ctx):
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
+
     if ctx.options.withgcc:
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
         ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
@@ -43,7 +44,6 @@ def configure(ctx):
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
 def build(ctx):
-
     ctx.objects(
         source =
             ctx.path.ant_glob('src/basis/*.cpp') +
@@ -53,6 +53,7 @@ def build(ctx):
         target = "basis",
     )
 
+    #MERIC
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
         target       = "meric",
@@ -67,6 +68,22 @@ def build(ctx):
         install_path = "lib"
     )
 
+    #TIMEPROF
+    ctx.stlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprof",
+        use          = "basis",
+        install_path = "lib"
+    )
+
+    ctx.shlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprof",
+        use          = "basis",
+        install_path = "lib"
+    )
+
+    #MERIC MPI
     if not ctx.env.MPICXX:
         return
     
@@ -87,6 +104,24 @@ def build(ctx):
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
     )
+    
+    #TIMEPROF MPI
+    ctx.stlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprofmpi",
+        use          = "basis",
+        install_path = "lib",
+        env          = ctx.all_envs["mpi"]
+    )
+
+    ctx.shlib(
+        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+        target       = "timeprofmpi",
+        use          = "basis",
+        install_path = "lib",
+        env          = ctx.all_envs["mpi"]
+    )
+
 
 
 def options(opt):
@@ -136,5 +171,5 @@ def options(opt):
         "--flags",
         action="store",
         default="-O2",
-        help="Compiler flags (-std=c++14, -fPIC and -qopenmp are default)"
+        help="Compiler flags (-std=c++11, -fPIC and -qopenmp are default)"
     )

@@ -13,10 +13,10 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	}
 	ss << std::endl;
 
-	ss << "# Job info - " << HDEEM::storeLabel << std::endl
-	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+//	ss << "# Job info - " << HDEEM::storeLabel << std::endl
+//	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
+//	   << "Nodelist," << _nodelist << std::endl
+//	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -40,7 +40,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	// Blade values //
 	//////////////////
     
-	ss << "# Store CONTINUAL 1" << std::endl;
+	ss << "# Store CONTINUAL 1 - "<< HDEEM::storeLabel << std::endl;
 
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
@@ -62,7 +62,8 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 		std::cerr << "MERIC ERROR: No samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
-	ss << "# Blade summary" << std::endl
+	ss << "# Blade summary - " << HDEEM::storeLabel << std::endl
+	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
        << "Maximal power [W]" << "," << maxWatts[0] << std::endl
        << "Minimal power [W]" << "," << minWatts[0] << std::endl

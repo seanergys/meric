@@ -1,8 +1,8 @@
 /**
- * Shared intarface for MERIC and Score-P libraries
+ * Shared interface for MERIC and Score-P libraries
  *
- * version 3.4
- * 19.02.2018
+ * version 3.6
+ * 28.11.2018
  * Ondrej Vysocky, ondrej.vysocky@vsb.cz
  * IT4Innovations national supercomputing center, Czech Republic
  **/
@@ -17,6 +17,7 @@
 #ifdef USE_SCOREP
 #include <scorep/SCOREP_User.h>
 #include <scorep/SCOREP_User_Types.h>
+//function that allows user to use MERIC's stop functions return value (region runtime) 
 #endif
 
 #ifdef USE_MERIC
@@ -96,26 +97,29 @@
 //READEX_REGION_STOP(handle)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP( handle ) \
+		0.0; \
 		SCOREP_USER_REGION_END( handle );
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
-	#define READEX_REGION_STOP( handle )
+	#define READEX_REGION_STOP( handle ) \
+		0.0;
 #endif
 
 //READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type)
 #ifdef USE_SCOREP_MANUAL
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		0.0; \
 		SCOREP_USER_REGION_END( stop_handle ); \
 		SCOREP_USER_REGION_BEGIN( start_handle, start_name, start_type );
 #elif defined USE_MERIC
 	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
 		MERIC_MeasureStopStart( start_name );
 #else
-	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type )
+	#define READEX_REGION_STOP_START( stop_handle, start_handle, start_name, start_type ) \
+		0.0;
 #endif
-
 
 
 //READEX_PHASE_START(handle, name, type)
@@ -132,12 +136,14 @@
 //READEX_PHASE_STOP(handle)
 #ifdef USE_SCOREP
 	#define READEX_PHASE_STOP( handle ) \
+		0.0; \
 		SCOREP_USER_OA_PHASE_END( handle );
 #elif defined USE_MERIC
 	#define READEX_PHASE_STOP( handle ) \
 		MERIC_MeasureStop();
 #else
-	#define READEX_PHASE_STOP( handle )
+	#define READEX_PHASE_STOP( handle ) \
+		0.0;
 #endif
 
 //List of Score-P API functions (SCOREP_User.h) that will be ignored if the code is not compiled with Score-P
@@ -172,6 +178,10 @@
 	//#define SCOREP_RECORDING_ON()
 	//#define SCOREP_RECORDING_OFF()
 	#define SCOREP_RECORDING_IS_ON() 0
+#endif
+
+#ifndef USE_MERIC
+	#define MERIC_captureScope( region )
 #endif
 
 #endif /* READEX_H_ */

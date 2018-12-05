@@ -23,26 +23,32 @@ INCLUDES_JETSON= $(PAPI_INC_JETSON) $(X86A_INC_JETSON) $(CPUFREQ_INC_JETSON) $(F
 LIBPATH_JETSON=  $(PAPI_LIB_JETSON) $(X86A_LIB_JETSON) $(CPUFREQ_LIB_JETSON) $(FREEIPMI_LIB_JETSON)
 
 ## DAVIDE ######################################################################
-CPUFREQ_INC_DAVIDE=-I/davide/home/userexternal/lriha000/cpufrequtils-008/lib/
-CPUFREQ_LIB_DAVIDE=-L/davide/home/userexternal/lriha000/cpufrequtils-008/
+CPUFREQ_INC_DAVIDE=-I$(HOME)/cpufrequtils-008/lib/
+CPUFREQ_LIB_DAVIDE=-L$(HOME)/cpufrequtils-008/
 
-INCLUDES_DAVIDE=-I/davide/home/userexternal/lriha000/json/single_include/ -I/davide/home/userexternal/lriha000/rest-client/include/ $(CPUFREQ_INC_DAVIDE)
-LIBPATH_DAVIDE=-L/davide/home/userexternal/lriha000/rest-client/libs/ -lrestclient-cpp $(CPUFREQ_LIB_DAVIDE)
+INCLUDES_DAVIDE=-I$(HOME)/json/single_include/ -I$(HOME)/rest-client/include/ $(CPUFREQ_INC_DAVIDE)
+LIBPATH_DAVIDE=-L$(HOME)/rest-client/libs/ -lrestclient-cpp $(CPUFREQ_LIB_DAVIDE)
 
 ################################################################################
-INCLUDES_MERIC= $(INCLUDES_DAVIDE)
-LIBPATH_MERIC= $(LIBPATH_DAVIDE)
+INCLUDES_MERIC= 
+LIBPATH_MERIC= 
 unexport CXX
+
+ifeq ($(FC),ifort)
+	FORTFLAGS=-module
+else
+	FORTFLAGS=-J
+endif
 
 all:
 	make configure
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)" # -DVERBOSE"
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
 
 install:
-	./waf install 
+	./waf install
 
 i:
 	make install
@@ -50,11 +56,14 @@ i:
 ddt:
 	make love
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -O0 -g" --verbose
-	make install
+	./waf install -v
 
 gcc:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -DVERBOSE"
 	make install
+
+fortran:
+	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
 arm:
 	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_JETSON) $(INCLUDES_JETSON)" --dummy

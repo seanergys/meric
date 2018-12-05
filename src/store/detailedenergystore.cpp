@@ -34,16 +34,17 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
 	ss << std::endl;
 
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
-	ss << "# Job info - hdeem" << std::endl
-	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << duration << std::endl;
+//	ss << "# Job info - hdeem" << std::endl
+//	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
+//	   << "Nodelist," << _nodelist << std::endl
+//	   << "Runtime of function [s]," << duration << std::endl;
 
     //////////////////
     // Blade values //
     //////////////////
-    ss << "# Store CONTINUAL 0" << std::endl;
+    ss << "# Store CONTINUAL 0 - hdeem" << std::endl;
 	ss << "# Blade summary" << std::endl
+	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;
 
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)

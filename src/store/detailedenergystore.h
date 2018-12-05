@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_DETAILEDENERGYSTORE_H_
-#define SRC_BASIS_DETAILEDENERGYSTORE_H_
+#ifndef SRC_STORE_DETAILEDENERGYSTORE_H_
+#define SRC_STORE_DETAILEDENERGYSTORE_H_
 
 #include "store.h"
 
@@ -28,6 +28,7 @@ class DetailedEnergyStore: public Store {
 public:
 	void addStart(int region);
 	void addEnd(int region);
+	double getRegionDuration() {return 0.0;};
 
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 	{
@@ -77,4 +78,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_DETAILEDENERGYSTORE_H_ */
+#endif /* SRC_STORE_DETAILEDENERGYSTORE_H_ */

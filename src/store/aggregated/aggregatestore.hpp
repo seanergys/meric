@@ -9,6 +9,7 @@ void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t>
 	RegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
 
+	//TODO we send the whole structure despite we use just the information about energy
 	MPI_Gather(&stats, sizeof(RegionStats), MPI_BYTE, _buffer.data(), sizeof(RegionStats), MPI_BYTE, 0, this->_comm);
 
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
@@ -16,19 +17,12 @@ void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t>
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	ss << "\n# Job info - hdeem" << std::endl
-	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
-	   << "Nodelist," << this->_store->_nodelist << '\n';
-
 	double sumEnergy = 0,
 		   maxEnergy = 0,
 		   minEnergy = _buffer[0].energy;
-	double sumDuration = 0,
-		   maxDuration = 0,
-		   minDuration = _buffer[0].duration;
 
-    for (size_t i = 0; i < this->_size; i++)
-    {
+	for (size_t i = 0; i < this->_size; i++)
+	{
 		if(maxEnergy < _buffer[i].energy) {
 			maxEnergy = _buffer[i].energy;
 		} else if (minEnergy > _buffer[i].energy) {
@@ -36,26 +30,13 @@ void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t>
 		}
 
 		sumEnergy += _buffer[i].energy;
+	}
 
-		if(maxDuration < _buffer[i].duration) {
-			maxDuration = _buffer[i].duration;
-		} else if (minDuration > _buffer[i].duration) {
-			minDuration = _buffer[i].duration;
-		}
-
-		sumDuration += _buffer[i].duration;
-    }
-
-	ss << "Average runtime of function [s]," << sumDuration/this->_size << '\n'
-	   << "Maximal runtime of function [s]," << maxDuration << '\n'
-	   << "Minimal runtime of function [s]," << minDuration << '\n'
-
-	   << "# Blade summary" << '\n'
+	ss << "\n# Blade summary - hdeem\n"
 	   << "Average energy consumption [J]," << sumEnergy/this->_size << '\n'
 	   << "Maximal energy consumption [J]," << maxEnergy << '\n'
 	   << "Minimal energy consumption [J]," << minEnergy << '\n'
-	   << "Summary energy consumption [J]," << sumEnergy << '\n';
-	   
+	   << "Summary energy consumption [J]," << sumEnergy << '\n';	   
 }
 
 template <class TStore>

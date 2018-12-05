@@ -4,6 +4,7 @@ build
 *.so
 *.o
 *.a
+*.mod
 test/mericMeasurement*
 test/hdeemMeasurement*
 tools/__pycache__/
@@ -11,6 +12,8 @@ tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
 tools/staticMERICtool/energyMeasureStart
 tools/staticMERICtool/energyMeasureStop
+tools/DBI/*
+include/meric
 
 test/sleepTest
 test/test_mpi

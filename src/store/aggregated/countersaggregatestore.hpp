@@ -110,17 +110,12 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	};
 */
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
-	for (size_t j = 0; j < iStarts.size()-1; j++) {
+	for (size_t j = 0; j < iStarts.size()-1; j++)
+	{
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	ss << "\n# Job info - " << StoreCounterType::getCountersLabel() << std::endl
-	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
-	   << "Nodelist," << this->_store->_nodelist << std::endl;
-	//time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false);
-	time = printStats("Runtime of function [s]", _bufferTime, _bufferTime.size(), 1, false, ss);
-
-	ss << "# COUNTERS - "<<StoreCounterType::getCountersLabel() << ": \n";
+	ss << "\n# COUNTERS - "<<StoreCounterType::getCountersLabel() << ": \n";
 	int j = 0;
 	CountersRecord<StoreDataType> averageRecord;
 	//for(std::map<std::string, StoreDataType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)
@@ -133,6 +128,14 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 // Counters ratios
 	CountersRecord<StoreDataType> startRecord;
 	std::map <std::string, double> ratios;
+	
+	double sumTime = 0.0;
+	for(double nodeTime : _bufferTime)
+	{
+		sumTime += nodeTime;
+	}
+	time = sumTime/_bufferTime.size();
+	
 	StoreCounterType::getRatios(startRecord.record, averageRecord.record, time, ratios);
 	if (ratios.size())
 	{

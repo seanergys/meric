@@ -196,7 +196,18 @@ DistributedMeric::DistributedMeric()
 			_storeList.back()->setMPIWrite(true);
 		}
 	}
-
+	
+	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
+	{
+		if(Meric::AGGREGATE)
+		{
+			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs));
+			_storeList.front()->setMPIWrite(!_MPInodeRank);
+		}
+		else
+			_storeList.insert(_storeList.begin(), new InfoStore(!_MPInodeRank));
+	}
+	
 //INIT
 	if (Meric::MODE == MODE_JETSON)
 		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank);

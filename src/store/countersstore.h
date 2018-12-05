@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_COUNTERSSTORE_H_
-#define SRC_BASIS_COUNTERSSTORE_H_
+#ifndef SRC_STORE_COUNTERSSTORE_H_
+#define SRC_STORE_COUNTERSSTORE_H_
 
 #include <iomanip>
 
@@ -30,6 +30,7 @@ public:
 	typedef TCounter counterType;
 	void addStart(int region);
 	void addEnd(int region);
+	double getRegionDuration() {return 0.0;};
 	void fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
@@ -69,4 +70,4 @@ protected:
 }
 
 
-#endif /* SRC_BASIS_COUNTERSSTORE_H_ */
+#endif /* SRC_STORE_COUNTERSSTORE_H_ */

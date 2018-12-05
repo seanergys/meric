@@ -1,6 +1,6 @@
 
-#ifndef SRC_BASIS_TIMESTORE_H_
-#define SRC_BASIS_TIMESTORE_H_
+#ifndef SRC_STORE_TIMESTORE_H_
+#define SRC_STORE_TIMESTORE_H_
 
 #include "store.h"
 #include <unistd.h>
@@ -30,6 +30,7 @@ template <class TSystem> class TimeStore: public Store {
 public:
 	virtual void addStart(int region);
 	virtual void addEnd(int region);
+	double getRegionDuration() {return 0.0;};
 
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
@@ -122,4 +123,4 @@ protected:
 
 
 
-#endif /* SRC_BASIS_TIMESTORE_H_ */
+#endif /* SRC_STORE_TIMESTORE_H_ */

@@ -60,6 +60,9 @@ SharedMeric::SharedMeric()
 			_storeList.push_back(new CountersStore<PAPI, unsigned long long int>(Meric::SAMPLES));
 	}
 	
+	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
+		_storeList.insert(_storeList.begin(), new InfoStore());
+	
 	for (int i=0; i<_storeList.size(); i++)
 		_storeList[i]->setMPIWrite(true);
 

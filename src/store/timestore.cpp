@@ -104,10 +104,10 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	}
 	ss << std::endl;
 
-	ss << "# Job info - " << TSystem::storeLabel << std::endl;
-	ss << "JOB ID," << _jobID << "." << _stepID  << std::endl
-	   << "Nodelist," << _nodelist << std::endl
-	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
+//	ss << "# Job info - " << TSystem::storeLabel << std::endl;
+//	ss << "JOB ID," << _jobID << "." << _stepID  << std::endl
+//	   << "Nodelist," << _nodelist << std::endl
+//	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
@@ -134,7 +134,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
     // Blade values //
     //////////////////
 
-	ss << "# Store CONTINUAL 1" << std::endl;
+	ss << "# Store CONTINUAL 1 - " << TSystem::storeLabel << std::endl;
 	
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
@@ -156,6 +156,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	}
 	
 	ss << "# Blade summary" << std::endl
+	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
        << "Maximal power [W]" << "," << maxWatts[0] << std::endl
        << "Minimal power [W]" << "," << minWatts[0] << std::endl
