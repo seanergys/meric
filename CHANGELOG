@@ -2,13 +2,14 @@
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
   - new MERIC API RAII function for scope measurement MERIC_captureScope(const char * region)
   - barriers turn off available not only for production runs
-  - new MERIC_MODE=6 stores only regions runtime
+  - new MERIC mode to store regions runtime only
+  - support for OpenPOWER8 CINECA DAVIDE cluster energy measurement and DFVS
   - MERIC_MeasureStop() and MERIC_MeasureStopStart() now returns runtime of the stopped region
   - new instrument.h
 		+ new version of readex.h, not backward compatible (new functions parameters)
 		+ support for MERIC, Score-P, TIMEPROF, GEOPM, TAU
   - new function runtime profiling library TIMEPROF is now part of the repository
-  
+
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow
   - HDEEM error handled without writing zero values into output files
