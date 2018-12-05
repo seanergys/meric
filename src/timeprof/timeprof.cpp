@@ -139,15 +139,15 @@ double regionStop(const char * regionName)
  * to the file 'fileName' stores a list of regions with a runtime longer than the trashold [ms]
  * if fileName not specified the output will go to the std::cerr
  **/
-//void TIMEPROF_evaluate(unsigned int timeThrashold, const char * fileName)
-void evaluate(unsigned int timeThrashold, const char * fileName)
+//void TIMEPROF_evaluate(unsigned int timeThreshold, const char * fileName)
+void evaluate(unsigned int timeThreshold, const char * fileName)
 {
 	printout << "E1 "<< TIMEPROF_rank << std::endl;
 	if (TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
 		{
-			double timeLimit = timeThrashold/1000.0;
+			double timeLimit = timeThreshold/1000.0;
 			std::ofstream of;
 			if (fileName != NULL && fileName[0] != '\0')
 			{
@@ -162,7 +162,7 @@ void evaluate(unsigned int timeThrashold, const char * fileName)
 			{
 				if (funcRecord.second.minDuration > timeLimit)
 				{
-					std::cerr << funcRecord.first << "\t"<< ((!timeThrashold) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
+					std::cerr << funcRecord.first << "\t"<< ((!timeThreshold) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
 					printout << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
 				}
 			}

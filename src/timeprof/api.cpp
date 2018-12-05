@@ -12,9 +12,9 @@ double TIMEPROF_regionStop  (const char * regionName)
 	return timeprof::regionStop(regionName);
 }
 
-void   TIMEPROF_evaluate    (unsigned int timeThrashold, const char * fileName)
+void   TIMEPROF_evaluate    (unsigned int timeThreshold, const char * fileName)
 {
-	timeprof::evaluate(timeThrashold, fileName);
+	timeprof::evaluate(timeThreshold, fileName);
 }
 
 double TIMEPROF_getLastRegionDuration()
