@@ -2,84 +2,56 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library originally developed for x86 systems (tested on HSW-EP and KNL) but additionally supports selected BSC ARM systems.
+The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL) but additionally supports selected BSC ARM systems.
+
+--------------------------------------------------------------------------------
+#      README Content                                                          #
+--------------------------------------------------------------------------------
+ 1] [Content of src folder](https://code.it4i.cz/vys0053/meric#1-content-of-src-folder)
+ 2] [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
+ 3] [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#3-meric-binary-instrumentation)
+ 4] [Compilation](https://code.it4i.cz/vys0053/meric#4-compilation)
+ 5] [MERIC input parameters](https://code.it4i.cz/vys0053/meric#5-meric-input-parameters)
+ 6] [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#6-content-of-test-folder-and-example-application-run)
+ 7] [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#7-code-dynamism-investigation)
+ 8] [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#8-meric-with-a-fortran-code)
+ 9] [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric#9-using-meric-on-bsc-arm-systems)
+10] [Tool for static tuning](https://code.it4i.cz/vys0053/meric#10-tool-for-static-tuning)
+11] [Acknowledgement](https://code.it4i.cz/vys0053/meric#11-acknowledgement)
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
 --------------------------------------------------------------------------------
-* basis - Input parser
-* meric - Base class of the library, that differs in case of use of MPI.
-* store - Different types of the store class. To store new type of the data, 
-          new class inherited from class StoreBase (store.h) is required.
+* basis    - Input parser.
+* meric    - Base classes of the library.
+* store    - Different types of the store class. To store new type of the data, 
+             new class inherited from class StoreBase (store.h) is required.
+* timeprof - Lightweight time-profiling library desined to identify functions 
+             to instrument with MERIC.
 * wrapper
 	- environmentwrapper
-		= Thread switching, CPU core and uncore frequencies settings.
-		+ http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils
-		+ https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/X86Adapt
+		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt of [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
 
 	- hdeemwrapper
-		= Energy measurement using hdeem.
-		+ https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement
+		= Energy measurement using [HDEEM](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement).
 
 	- perfeventwrapper
-		= Hardware counters provided by perf_event.
-		+ http://man7.org/linux/man-pages/man2/perf_event_open.2.html
+		= Hardware counters provided by [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html).
 	
 	- papiwrapper
-		= Hardware counters provided by PAPI.
-		+ http://icl.cs.utk.edu/papi/
+		= Hardware counters provided by [PAPI](http://icl.cs.utk.edu/papi/).
 		
 	- raplwrapper
-		= Intel RAPL counters read by x86_adapt.
+		= Intel RAPL counters read by [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
 	
 	- jetsonwrapper and thunderwrapper
-		= Support for ARM machines.
+		= Support for [ARM machines](http://montblanc-project.eu/prototypes).
 	
 	- counters
 		= List of supported HW counters (PAPI, perfevent, RAPL).
 
 --------------------------------------------------------------------------------
-#     2] Content of test folder                                                #
---------------------------------------------------------------------------------
-* source codes
-	* test.cpp
-		* One region, with two another regions inside.
-		* This test uses shared Score-P/MERIC API. See section 3 of this README.
-	* test_mpi.cpp
-		* Same test as test.c, only extended with MPI.
-	* fort_test.f90
-		* Fortran version of test.cpp to show the MERIC and READEX Fortran interface.
-	* samples_test.cpp
-		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
-		* Follow the instructions inside to set the test.
-	* sleep_test.cpp
-		* A test with RUN (maximum load) and SLEEP (minimum load) regions, both with the same runtime.
-		* Originally made to control real CPU frequency of the machine.
-	* overhead_test.cpp
-		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
-	* blas_test.cpp
-		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
-		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests.
-* Makefile
-	* Command `make` compiles all test codes except blas_test.cpp
-	* To compile blas_test.cpp use `make blasTest` command
-* environment_taurus
-	* Basic script that sets chosen MERIC environment variables and informs you which varibles are set
-	* When run with argument `-t`, the script just prints list of set variables.
-	* Make a copy of this script and edit it to suits your needs.
-* config direcory
-	* region.options
-		* File that sets exact settings for regions inside your code.
-		* In default it is set for blas_test.
-	* region.options.extra
-		* Configuration file, that shows all available ways how to specify MERIC settings.
-* run.sh and run-mpi.sh
-	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
-* run-jetson.sh
-	* Template script to submit a job on BSC ARM Jetson platform.
-
---------------------------------------------------------------------------------
-#     3] MERIC interface and Shared Score-P/MERIC API                          #
+#     2] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
@@ -98,6 +70,9 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 		End of the measurement of the last started region and start of a new region.
 		Removes environment switching to configuration of the region the application is nested in.
 		Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	void MERIC_CaptureScope(const char * regionName)
+		C++ and C (no support for Fortran) function to start measurement which will be stopped automatically at the end of the scope. Useful to capture a function that has several return statements.
+		This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique and if it should be used for instrumentation of a C application, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag.
 	void MERIC_IgnoreStart()
 		From this point MERIC doesn't store resources consumption of the following regions but the requested settings of the nested regions is set.
 		It is not possible to nest ignore sections of the code.
@@ -125,8 +100,34 @@ There is one more restriction in placing probes into the code. In current versio
 	MERIC_MeasureStop()
 ```
 
+## TIMEPROF interface ##
+The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0. The interface is defined in `include/timeprof.h`. 
+
+	void MERIC_Init()
+		Initialization of the library. Insert directly after MPI_Init().
+	void MERIC_Close()
+		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
+	void TIMEPROF_regionStart(const char * regionName);
+		Start time measurement of region called regionName
+	double TIMEPROF_regionStop(const char * regionName);
+		End of the time measurement, returns region duration in seconds.
+	void TIMEPROF_evaluate (unsigned int timeThreshold = 0, const char * fileName = "");
+		At the end of the application run might be called this function 
+		to evaluate the measurements. It will produce a list of the regions 
+		with duration longer than timeThreshold [ms] and store it to the fileName.
+		If no threshold provided, it will print complete list of measured functions with its minimum runtime.
+		If no output file specified, the list of functions will be printed to stdout.
+	void TIMEPROF_captureScope(const char * regionName);
+		[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
+		In case of C applications , the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+	double TIMEPROF_getLastRegionDuration();
+		Since scope time measurement does not return the time measured, it can be obtained using this function.
+
+
 ## Shared MERIC/Score-P interface ##
 Into include folder the C header file `readex.h` and Fortran `readex.inc` were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
+
+TIMEPROF is not currently supported in readex header file.
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
@@ -148,14 +149,58 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 READEX interface doesn't contain all Score-P API functions, because there is no support for these in MERIC. For the rest functionality user may use usual Score-P API, the functions will be ignored if the code will be compiled without Score-P.
 
 --------------------------------------------------------------------------------
-#     4] MERIC input parameters                                                #
+#     3] MERIC binary instrumentation                                          #
+--------------------------------------------------------------------------------
+Manual application instrumentation is straightforward, however it requires at least some basic knowledge about the target application, access to the source files and also time to instrument the code. All these steps can be overcome when using static binary instrumentation (SBI). MERIC repository contains several tools for binary analysis placed in `tools/DBI` directory, all of them are compiled separately from the MERIC compilation, using Makefile located ibidem. For SBI there are two tools based on [Dyninst library](https://dyninst.org/) `dinst_profile.cpp` (make dinst) and `dins_instrument.cpp` (make sbi). The `dinst_profile` tool provides list of all functions that are defined in the binary (shared libraries are not take into account) and provides information whether the function can or cannot be instrumented.
+
+The second tool `dinst_instrument` provides binary instrumentation with MERIC or TIMEPROF based on list of functions that should be instrumented. In case of TIMEPROF, the list of functions does not have to be provided, in that case all the instrumentable functions are selected. Besides the instrumentation tools also adds all the necessary dependencies, so it is not necessary to recompile the application and link it with them. 
+In case of MPI applications it is not only the application that is instrumented, but also the MPI library itself too. For this purpose shared MPI library that is used for the application must be provided. Please, specify full path to the MPI library to omit any possible mistake. Use `ldd` command to detect which MPI library is used for the analyzed application. When running instrumented MPI application `LD_PRELOAD` must be specified to replace default MPI library with the instrumented one. 
+
+See tools' help message for more information.
+
+## Dyninst installation ##
+The tools has been developed using Dyninst-10.0.0, any newer version of the library should work too, however following information might be out-of-date with newer Dyninst versions. Dyninst installation is described in its [repository README](https://github.com/dyninst/dyninst) and it is quite simple, however Dyninst compilation may fail on `make install` due to missing sudo rights. Due to that all the tools' compilation paths are set, please, export following environment variables before you compile and use the Dyninst tool.
+```
+export DYNINST_HOME=/PATH/TO/DYNINST/DIRECTORY
+export DYNINSTAPI_RT_LIB=$DYNINST_HOME/build/dyninstAPI_RT/libdyninstAPI_RT.so
+export LD_LIBRARY_PATH+=:$DYNINST_HOME/build/dyninstAPI_RT/
+```
+
+### known issues ###
+ * Instrumented function with the return command only may lost the return value (might be related to previous issue), you may increase `instlimit` TIMEPROF parameter for skipping such function.
+ * If instrumented application is compiled with the same list of modules as the dininst tools, sometimes the new binary is corrupted. Can be tested using `ldd` command. If it happens, we suggest to use different set of modules for the application or the Dyninst tool.
+
+--------------------------------------------------------------------------------
+#    4] Compilation                                                            #
+--------------------------------------------------------------------------------
+MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, a Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
+
+### MERIC used libraries ###
+* mandatory - OpenMP
+* mandatory - rt (high precision time measurement)
+* optionaly - MPI
+* optionaly - PAPI
+* optionaly - cpufreq
+* optionaly - x86_adapt
+* optionaly - numa (mandatory if x86_adapt is missing)
+
+### TIMEPROF used libraries ###
+* mandatory - OpenMP
+* mandatory - rt
+
+Beside these libraries waf requires Python.
+
+Default compilation expects Intel compiler, if you want to compile using GCC use `make gcc` instead of `make`. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your MPI application.
+
+--------------------------------------------------------------------------------
+#     5] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
 	export MERIC_FREQUENCY=24        # [0.1 GHz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
-	export MERIC_NUM_THREADS=24      # [0 for applications that doesn't use threads]
-		- To run a code in the default settings, without MERIC influence, set this three environment variables to zero.
+	export MERIC_NUM_THREADS=24
+		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
@@ -218,7 +263,7 @@ READEX interface doesn't contain all Score-P API functions, because there is no 
 Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.
 In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are applied but no consumptions are measured), and size of change in settings, that should be ignored, because it is too small to apply.
 	
-To use the extended options, configuration file must be written in JSON format as follows and exported MERIC_REGION_OPTIONS=/path/to/regionoptions.json.
+To use the extended options, configuration file must be written in JSON format as follows and `export MERIC_REGION_OPTIONS=/path/to/regionoptions.json`.
 
 The basic settings via configuration file is HW settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the "MERIC_" prefix.
 	
@@ -249,43 +294,60 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
-#    5] Compile MERIC and run an instrumented application                      #
+#     6] Content of test folder and example application run                    #
 --------------------------------------------------------------------------------
-	# install/load libraries
-		mandatory - intel compiler	#if GCC is used use "make gcc" instead of "make" to compile MERIC
-		optionaly - MPI - mandatory for MPI version of the library
-		optionaly - HDEEM + freeipmi
-		optionaly - PAPI
-		optionaly - cpufreq
-		optionaly - x86_adapt
-		optionaly - numa - mandatory if x86_adapt is missing
-		
-	# edit Makefile to specify correct paths and compile MERIC
-		export LD_LIBRARY_PATH+=:$PATH_TO_MERIC/lib:/usr/local/lib
-		make # or make gcc
-
-	# instrument an application according a section 3 and link with the same libraries as meric
-		use -lmeric OR FOR MPI APPS -lmericmpi
+* source codes
+	* test.cpp
+		* One region, with two another regions inside.
+		* This test uses shared Score-P/MERIC API. See section 3 of this README.
+	* test_mpi.cpp
+		* Same test as test.c, only extended with MPI.
+	* fort_test.f90
+		* Fortran version of test.cpp to show the MERIC and READEX Fortran interface.
+	* samples_test.cpp
+		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
+		* Follow the instructions inside to set the test.
+	* sleep_test.cpp
+		* A test with RUN (maximum load) and SLEEP (minimum load) regions, both with the same runtime.
+		* Originally made to control real CPU frequency of the machine.
+	* overhead_test.cpp
+		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
+	* blas_test.cpp
+		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
+		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests.
+* Makefile
+	* Command `make` compiles all test codes except blas_test.cpp.
+	* To compile blas_test.cpp use `make blasTest` command.
+* environment_taurus
+	* Basic script that sets chosen MERIC environment variables and informs you which varibles are set.
+	* When run with argument `-t`, the script just prints list of set variables.
+	* Make a copy of this script and edit it to suits your needs.
+* config direcory
+	* region.options
+		* File that sets exact settings for regions inside your code.
+		* In default it is set for blas_test.
+	* region.options.extra
+		* Configuration file, that shows all available ways how to specify MERIC settings.
+* run.sh and run-mpi.sh
+	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
+* run-jetson.sh
+	* Template script to submit a job on BSC ARM Jetson platform.
 	
-	# or edit test/Makefile and compile a test application
-		cd test
-		make
-	
-	# set static frequencies outside of the regions, or inside regions where are not set
-		export MERIC_FREQUENCY=25
-		export MERIC_UNCORE_FREQUENCY=25
-		export MERIC_NUM_THREADS=0
-		export MERIC_MODE=3 # no energy measurement
 
-	# run the application as usual
-		./test
+Specify the mandatory MERIC's parameters and run you instrumented application or one from the test directory. Good starting point is runnig `test` application from test directory. To understand well MERIC's output, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set CPU core and uncore frequencies and number of threads.
+```
+export MERIC_FREQUENCY=0         # no CPU core frequency tuning
+export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
+export MERIC_NUM_THREADS=0       # non-OpenMP application
+export MERIC_MODE=6              # time measurement only
 
-To understand this example, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set CPU core and uncore frequencies and number of threads. How to do so, you will find in section MERIC input parameters.
+./test                           # run the application as usual
+```
 
 --------------------------------------------------------------------------------
-#     6] Measurement results                                                   #
+#      7] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-	# CODE OUTPUT:
+# MERIC's output:
 	* mericMeasurement
 	 	# contains result files in folders with names of the regions
 	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
@@ -295,31 +357,8 @@ To understand this example, explore the source file **test.cpp** to see that thi
 			# Data - tuples (mostly pairs) structured like a hash map: key, value
 	* mericMeasurementCounters
 		# Program start counters, stored in .tmp files.
-	
-	# EXAMPLE of CSV file contained in mericMeasurement folder:
-		# CALLTREE;init_0;Solve_RegCG_singular_dom_itersolver.cpp:109_0;Projector_l_inv_compG_itersolver.cpp:296_0
-		# Job info
-		JOB ID,8786406.0
-		Nodelist,taurusi6125
-		Runtime of function [s],0.005079696
-		# Blade samples
-		15635,135.75
-		15636,135.5
-		15637,136.125
-		15638,136.5
-		# Blade summary
-		Energy consumption [J] (Stats structure),0.68
-		Energy consumption [J] (Samples),0.69068
-		Maximal power [W] (Samples),136.5
-		Minimal power [W] (Samples),135.5
-		Average power [W] (Samples),135.969
-		ID of first blade sample,15635
-		ID of last blade sample,15638
-	
---------------------------------------------------------------------------------
-#      7] Code dynamism investigation                                          #
---------------------------------------------------------------------------------
-To find the best settings for each region, you should run your code with several possible settings. The measurement results are stored in two directories, that can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
+
+To find the best settings for each region, you should run your code with several possible settings. The content of the MERIC's output directories, can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
 
 	# Run an application in several configurations you want to test - in test directory are provided example scripts `run.sh` or `run-mpi.sh`
 		```
@@ -357,12 +396,12 @@ To find the best settings for each region, you should run your code with several
 
 
 --------------------------------------------------------------------------------
-#     8] MERIC with a Fortran code                                             #
+#      8] MERIC with a Fortran code                                            #
 --------------------------------------------------------------------------------
-There are Fortran module and interface in the include directory. One can use shared READEX interface `(#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
+There are Fortran module and interface in the include directory. One can use shared READEX interface (`#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
 	
 --------------------------------------------------------------------------------
-#     9] Using MERIC on BSC ARM systems                                        #
+#      9] Using MERIC on BSC ARM systems                                       #
 --------------------------------------------------------------------------------
 To compile MERIC on Jetson, use gcc and PAPI modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects CPU. 10 samples per second was selected in the measurement script as a compromise - this samples rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py. 
 
@@ -385,12 +424,18 @@ At BSC ARM systems it is possible to load modules at login node only - it is nec
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 
-Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measurement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument --rapl or --hdeem.
+Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measurement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
 For a static analysis of a selected application, the directory with the tool contain `staticAnalysis.sh` bash script too. It not only runs the application in variety of available HW settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
+--------------------------------------------------------------------------------
+#     11] Acknowledgement                                                      #
+--------------------------------------------------------------------------------
+MERIC is being developed at [IT4Innovations National Supercompiting Center](https://www.it4i.cz/) under [BSD-3 licese](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
+Please, open an issue, if you meet any problem. 
 
-
+	
+For referencing MERIC, please, cite: **[MERIC and RADAR Generator: Tools for Energy Evaluation and Runtime Tuning of HPC Applications](https://link.springer.com/chapter/10.1007/978-3-319-97136-0_11)**.
 
 
 
