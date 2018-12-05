@@ -43,6 +43,9 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
 		
 	- raplwrapper
 		= Intel RAPL counters read by [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+
+	- davidewrapper
+		= Support for OpenPOWER system [DAVIDE](http://www.hpc.cineca.it/content/davide).
 	
 	- jetsonwrapper and thunderwrapper
 		= Support for [ARM machines](http://montblanc-project.eu/prototypes).
@@ -210,7 +213,8 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 		3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
 		4 = jetson - energy measurement on BSC Jetson TX1 system
 		5 = thunder - energy measurement on BSC ThunderX system
-		6 = time - storing runtime of the regions only
+		6 = davide - energy measurement on CINECA DAVIDE system
+		7 = time - storing runtime of the regions only
 
 	export MERIC_BARRIERS=all
 		all  = all barriers are applied (default)
@@ -347,7 +351,8 @@ export MERIC_MODE=6              # time measurement only
 --------------------------------------------------------------------------------
 #      7] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-## MERIC's output: ##
+MERIC's output is stored in two directories:
+
 	* mericMeasurement
 	 	# contains result files in folders with names of the regions
 	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
@@ -398,7 +403,9 @@ To find the best settings for each region, you should run your code with several
 --------------------------------------------------------------------------------
 #      8] MERIC with a Fortran code                                            #
 --------------------------------------------------------------------------------
-There are Fortran module and interface in the include directory. One can use shared READEX interface (`#include "readex.inc"`) or just the MERIC version (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
+There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command.
+
+For manual instrumentation one can use shared READEX interface (`#include "readex.inc"`) or just the MERIC's API (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
 	
 --------------------------------------------------------------------------------
 #      9] Using MERIC on BSC ARM systems                                       #
