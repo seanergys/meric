@@ -7,17 +7,17 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
- 1] [Content of src folder](https://code.it4i.cz/vys0053/meric#1-content-of-src-folder)
- 2] [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
- 3] [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#3-meric-binary-instrumentation)
- 4] [Compilation](https://code.it4i.cz/vys0053/meric#4-compilation)
- 5] [MERIC input parameters](https://code.it4i.cz/vys0053/meric#5-meric-input-parameters)
- 6] [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#6-content-of-test-folder-and-example-application-run)
- 7] [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#7-code-dynamism-investigation)
- 8] [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#8-meric-with-a-fortran-code)
- 9] [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric#9-using-meric-on-bsc-arm-systems)
-10] [Tool for static tuning](https://code.it4i.cz/vys0053/meric#10-tool-for-static-tuning)
-11] [Acknowledgement](https://code.it4i.cz/vys0053/meric#11-acknowledgement)
+ 1. [Content of src folder](https://code.it4i.cz/vys0053/meric/tree/dev#1-content-of-src-folder)
+ 2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
+ 3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-binary-instrumentation)
+ 4. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#4-compilation)
+ 5. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-input-parameters)
+ 6. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#6-content-of-test-folder-and-example-application-run)
+ 7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#7-code-dynamism-investigation)
+ 8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#8-meric-with-a-fortran-code)
+ 9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric/tree/dev#9-using-meric-on-bsc-arm-systems)
+10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#10-tool-for-static-tuning)
+11. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#11-acknowledgement)
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
@@ -30,7 +30,7 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
              to instrument with MERIC.
 * wrapper
 	- environmentwrapper
-		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt of [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
+		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) of [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
 
 	- hdeemwrapper
 		= Energy measurement using [HDEEM](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement).
@@ -347,7 +347,7 @@ export MERIC_MODE=6              # time measurement only
 --------------------------------------------------------------------------------
 #      7] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-# MERIC's output:
+## MERIC's output: ##
 	* mericMeasurement
 	 	# contains result files in folders with names of the regions
 	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
