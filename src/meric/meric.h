@@ -350,6 +350,7 @@ protected:
 	static timespec _startTime, _stopTime;
 	static bool MPIbarriers;
 	static bool OMPbarriers;
+	static std::string outputFilenameInfo;
 };
 
 }

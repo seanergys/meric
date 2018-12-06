@@ -69,6 +69,7 @@ public:
 	int initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
+					const std::string outputFilenameInfo, //node_CF_UnCF_config
 					const std::string prefix = "")
 	{
 		loadSchedulerEnvironment();
@@ -79,6 +80,28 @@ public:
 			return counter;
 		}	
 		
+		mutils::createDir(outputDir);
+		std::string dataInfoFileName = outputDir + "/measurementInfo.json";
+		struct stat info;
+		if(stat(dataInfoFileName.c_str(), &info ) != 0)
+		{
+			std::ofstream oFile(dataInfoFileName);
+
+			char hostname[50];
+			gethostname(hostname, 50);
+			time_t now_t = time(0);
+   			std::string now_s = std::string(ctime(&now_t));
+   			now_s.pop_back();
+   			
+			oFile << "{\n" 
+			      << "\t\"Timestamp\" : \"" << now_s << "\",\n"
+			      << "\t\"System\"    : \"" << std::string(hostname) << "\",\n"
+			      << "\t\"DataFormat\": \"" << (prefix.size() ? "node_" : "") << outputFilenameInfo << "\",\n"
+			      << "\t\"Note\"      : \"\"\n"
+			      << "}";
+			oFile.close();
+		}
+
 		//CALLTREE init counter
 		mutils::createDir(outputDir + "Counters");
 		return storeCounter(outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp");

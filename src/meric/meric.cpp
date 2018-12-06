@@ -12,7 +12,6 @@ bool        Meric::SAMPLES    = mutils::getenv("MERIC_SAMPLES"   , false);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
 std::string Meric::BARRIERS   = mutils::getenv("MERIC_BARRIERS"  , std::string("all"));
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("mericMeasurement"));
-std::string Meric::OUTPUT_FILENAME = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string("log"));
 std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
@@ -28,7 +27,8 @@ timespec Meric::_stopTime;
 bool Meric::IGNORE = false;
 bool Meric::MPIbarriers = true;
 bool Meric::OMPbarriers = true;
-
+std::string Meric::outputFilenameInfo = "";
+std::string Meric::OUTPUT_FILENAME = "";
 
 
 void Meric::readRegionParameters()
@@ -54,6 +54,11 @@ int Meric::getDefaultParameters()
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY\n";
 		ret = 1;
 	}
+	else if (defaultParameter.frequency != 0)
+	{
+		Meric::outputFilenameInfo +="CF_";
+		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.frequency)+"_";
+	}
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
@@ -61,6 +66,11 @@ int Meric::getDefaultParameters()
 	{
 		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY\n";
 		ret = 1;
+	}
+	else if (defaultParameter.uncoreFrequency != 0)
+	{
+		Meric::outputFilenameInfo +="UnCF_";
+		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.uncoreFrequency)+"_";
 	}
 #endif
 
@@ -70,6 +80,11 @@ int Meric::getDefaultParameters()
 		std::cerr << "MERIC ERROR: set MERIC_NUM_THREADS\n"
 				  << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
 		ret = 1;
+	}
+	else if (defaultParameter.nthreads != 0)
+	{
+		Meric::outputFilenameInfo +="thrds_";
+		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.nthreads)+"_";
 	}
 #endif
 
@@ -81,6 +96,33 @@ int Meric::getDefaultParameters()
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 
+	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", "");
+	if (outputFilenameSuffix.size() == 0)
+	{
+		if (Meric::OUTPUT_FILENAME.size() == 0)
+		{
+			Meric::OUTPUT_FILENAME = "log";
+			Meric::outputFilenameInfo = "CFG";
+		}
+		else
+		{
+			Meric::OUTPUT_FILENAME.pop_back();
+			Meric::outputFilenameInfo.pop_back();
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < std::count(outputFilenameSuffix.begin(), outputFilenameSuffix.end(), '_'); i++)
+		{
+			Meric::outputFilenameInfo +="APP"+std::to_string(i)+"_";
+		}
+		if (Meric::outputFilenameInfo.size() > 0) //remove the last underscore
+		{
+			Meric::outputFilenameInfo.pop_back();
+		}
+		Meric::OUTPUT_FILENAME += outputFilenameSuffix;
+	}
+	
 	if (Meric::MODE < MODE_HDEEM || Meric::MODE >= MODE_LIMIT)
 	{
 		std::cerr << "MERIC WARNING: MERIC MODE unknown value - default "<< MODE_HDEEM <<std::endl;
