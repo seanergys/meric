@@ -261,7 +261,9 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
+		- default name is mericMeasurement
 	export MERIC_OUTPUT_FILENAME="log"
+		- name of the output file is set automatically according specified values of core and uncore CPU frequencies and number of active OpenMP threads, but this is a way how to add filename suffix
 
 ## ADVANCED SETTINGS ##
 Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.
@@ -374,7 +376,6 @@ To find the best settings for each region, you should run your code with several
 			do
 				for uncore_freq in {30..12..1} # or {30..12..2}
 				do
-					export MERIC_OUTPUT_FILENAME=$thread"_"$cpu_freq"_"$uncore_freq
 					export MERIC_NUM_THREADS=$thread
 					export MERIC_FREQUENCY=$cpu_freq
 					export MERIC_UNCORE_FREQUENCY=$uncore_freq
@@ -384,12 +385,12 @@ To find the best settings for each region, you should run your code with several
 		done
 		```
 	
-	# Add a description file `measurementInfo.json` to your output data folder. This step is not compulsory but this file helps us for data analysis.
+	# Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information what you have measured.
 		```
 		{
 			"Timestamp" : "13.6. 2017 14:59",
 			"System"	: "IT4I Salomon",
-			"DataFormat": "node_CF_UnCF_config",
+			"DataFormat": "node_CF_UnCF_thrds",
 			"Note"  	: ""
 		}
 		```
@@ -438,7 +439,7 @@ For a static analysis of a selected application, the directory with the tool con
 --------------------------------------------------------------------------------
 #     11] Acknowledgement                                                      #
 --------------------------------------------------------------------------------
-MERIC is being developed at [IT4Innovations National Supercompiting Center](https://www.it4i.cz/) under [BSD-3 licese](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
+MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 licese](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
 Please, open an issue, if you meet any problem. 
 
 	
