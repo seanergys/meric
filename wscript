@@ -27,6 +27,7 @@ def configure(ctx):
     ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
+    ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 #    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
 #    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching

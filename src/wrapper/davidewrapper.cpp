@@ -4,8 +4,6 @@
 
 using namespace meric;
 
-//#ifdef HAVE_DAVIDE_H
-
 std::string DAVIDE::node_n;
 std::string DAVIDE::metric;
 unsigned long long DAVIDE::_startTime;
@@ -16,14 +14,15 @@ std::string DAVIDE::storeLabel = "davide";
 std::vector<std::string> DAVIDE::vrSensorLabel = {"blade"};
 //const int DAVIDE::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 std::string DAVIDE::url_samples;
-RestClient::Connection* DAVIDE::conn_samples;
 
+#ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+RestClient::Connection* DAVIDE::conn_samples;
 void DAVIDE::init()
 {
 
 	char hostname[50];
    	gethostname(hostname, 50);
-	std::cout << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
+	MERIC_INFO << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
 	//node_n = std::string(hostname); //"davide43";
 	node_n = std::string("davide1");
 	MERIC_INFO << "Hostname : " << node_n << "\n";
@@ -182,6 +181,75 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	return errMessage;	
 }
 
+int DAVIDE::getSamples()
+{
+	
+	MERIC_INFO << "Start time is   : "  << _startTime << " ms\n";
+	MERIC_INFO << "Stop time is    : "  << _stopTime << " ms\n";
+	MERIC_INFO << "Duration  is    : "  << _stopTime - _startTime << " ms\n";
+
+
+	std::string stop_t  = std::to_string(_stopTime);    
+	std::string start_t = std::to_string(_startTime);  
+
+	std::string querry = "{\"cache_time\":0,\"end_absolute\":" + stop_t+ ",\"metrics\":[{\"group_by\":[{\"name\":\"tag\",\"tags\":[\"node\",\"cluster\",\"org\",\"plugin\"]}],\"name\":\""+metric+"\",\"tags\":{\"node\":[\""+node_n+"\"],\"plugin\":[\"bbb_pub\"],\"ts\":[\"1ms\"],\"chnl\":[\"data\"],\"cluster\":[\"davide\"],\"org\":[\"e4\"]}}],\"time_zone\":\"Europe/Rome\",\"start_absolute\":" +start_t+ "}";
+
+	int slt = 5; 
+	MERIC_INFO << "Waiting " << slt<<"s for KairosDB to get all samples." << "\n";		
+	sleep(slt); //wait for smaples to be loaded into DB
+	//MERIC_INFO << "Querry is : "  << querry << "\n";
+
+	RestClient::Response r = conn_samples->post("", querry);
+
+	//MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
+	//MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
+
+	json j = json::parse(r.body);
+	json v = j["/queries/0/results/0/values"_json_pointer];
+
+	//MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
+
+	// *** array parsing ***************************************************
+	// std::vector<long long> time_samples  (v.size(),0);
+	// std::vector<double>    power_samples (v.size(),0);	
+	
+	long long duration = _stopTime - _startTime;
+	MERIC_INFO << "# of samples is : "  << v.size() << "\n";
+	MERIC_INFO << "# of lost smpls.: "  << duration - v.size() << "\n";
+
+	time_samples.resize (duration + 1);
+	power_samples.resize(duration + 1);
+
+	long long it  = 0; 
+	long long it2 = 0;
+	double corrW = (double) v[0][1];
+	int missing_samples = 0; 
+	int last_error_index = 0; 
+	for (long long ts = _startTime; ts <= _stopTime; ts++)
+	{
+		time_samples [it2] = ts;
+		if ((long long) v[it ][0] == ts && it < v.size() ) {
+			power_samples[it2]     = (double)    v[it ][1];
+			corrW			       = power_samples[it2];
+			if (it2 < 20 || it2 > (duration - 20)) {
+				MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W \n";
+			}
+			it++;
+		} else {
+			power_samples[it2] = corrW;
+			missing_samples++; 
+			if (it2 < 20 || it2 > (duration - 20)) { 
+				MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W ----- corrected value ---- last error : " << it2 - last_error_index << " \n";
+			}
+			last_error_index = it2; 
+		}
+		it2++;  
+	}
+	// *** END - array parsing *********************************************
+	return 0;
+}
+
+
 //sensorId bude 0 - blade
 void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double>  & samples)
 {
@@ -190,7 +258,7 @@ void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 		samples.push_back(power_samples[i]);
 }
 
-//#endif
+#endif
 
 
 
