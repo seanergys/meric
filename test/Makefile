@@ -1,23 +1,26 @@
-#COMPILER=INTEL
-COMPILER=GCC
+# if env variables not set, using GNU compiler as default ######################
 
-ifeq ($(COMPILER),INTEL)
-	CC=icpc
-	MPICC=mpiicpc
-	FCC=ifort
-	OPENMP=-qopenmp
-else #ifeq($(COMPILER),GCC)
-	CC=g++
-	MPICC=mpic++
-	FCC=gfortran
+ifeq ($(CXX),)
+	CXX=g++
+endif
+ifeq ($(FC),)
+	FC=gfortran
+endif
+MPICXX=mpicxx
+
+ifeq ($(CXX),g++)
 	OPENMP=-fopenmp
+else
+	OPENMP=-qopenmp
 endif
 
+
 ################################################################################
-MERIC=-L../lib -I../include -L/davide/home/userexternal/lriha000/rest-client/libs/ -lrestclient-cpp
+MERIC=-L../lib -I../include 
+#DAVIDE=-L$(HOME)/rest-client/libs/ -lrestclient-cpp
 #HDEEM=-L../hdeem -lhdeem -lfreeipmi
 #X86ADAPT=-L/usr/local/lib -lx86_adapt
-CPUFREQ=-L/davide/home/userexternal/lriha000/cpufrequtils-008/ -lcpufreq
+#CPUFREQ=-L$(HOME)/cpufrequtils-008/ -lcpufreq
 #PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi
 #PAPI=-L/apps/papi/5.4.3/lib/ -lpapi # PAPI on BSC ARM machines
 
@@ -35,25 +38,25 @@ all: samplesTest mpiTest basicTest sleepTest fortTest overhead blasTestInfo
 
  ######
 sleepTest: sleep_test.cpp
-	$(CC) -O0 -g sleep_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o sleepTest -DUSE_MERIC
+	$(CXX) -O0 -g sleep_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o sleepTest -DUSE_MERIC
 	
 mpiTest: test_mpi.cpp
-	$(MPICC) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o test_mpi
+	$(MPICXX) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o test_mpi
 
 basicTest: test.cpp
-	$(CC)    -O0 -g test.cpp -o test -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI)
+	$(CXX)    -O0 -g test.cpp -o test -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE)
 
 scorepTest: test.cpp
-	scorep --online-access --user --thread=none g++ -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
+	scorep --online-access --user --thread=none $(CXX) -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
 
 overhead: overhead_test.cpp
-	$(CC)   -g overhead_test.cpp -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o overHead
+	$(CXX)   -g overhead_test.cpp -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o overHead
 
 samplesTest: samples_test.cpp
-	$(CC)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o samples
+	$(CXX)    -O0 -g samples_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o samples
 
 blasTest: blas_test.c
-	$(CC) -O3 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o blasTest
+	$(CXX) -O3 -g blas_test.c $(MERIC) -lmeric -mkl -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o blasTest
 
 blasTestInfo:
 	$(info )
@@ -61,7 +64,7 @@ blasTestInfo:
 	$(info )
 
 fortTest:
-	$(FCC) fort_test.f90 -cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(FREEIPMI) $(X86ADAPT) $(CPUFREQ) $(PAPI) -o fortTest -DUSE_MERIC
+	$(FC) fort_test.f90 -cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o fortTest -DUSE_MERIC
 
 
  ######
