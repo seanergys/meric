@@ -59,7 +59,7 @@ ddt:
 	./waf install -v
 
 gcc:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -DVERBOSE"
+	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
 	make install
 
 fortran:
