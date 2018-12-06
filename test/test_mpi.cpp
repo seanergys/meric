@@ -1,5 +1,5 @@
 
-#include <meric.h>
+#include <readex.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -9,7 +9,7 @@
 int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
-	MERIC_Init();
+	READEX_INIT();
 
 	int rank, size;
 	double time;
@@ -17,45 +17,48 @@ int main(int argc, char **argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	
-	MERIC_MeasureStart("A");
+	READEX_REGION_DEFINE(A);
+	READEX_REGION_START(A, "A", SCOREP_USER_REGION_TYPE_COMMON);
 
+		READEX_REGION_DEFINE(iteration);
 		for(int i = 0; i < 1; i++)
 		{
-			MERIC_MeasureStart("iteration");
+			READEX_REGION_START(iteration, "iteration", SCOREP_USER_REGION_TYPE_COMMON);
 
-				MERIC_MeasureStart("B");
+				READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
 					sleep(1);
-				time = MERIC_MeasureStop(); //B
+				time = READEX_REGION_STOP(B);
 				if (time > 0.0)
 					std::cout << "["<<rank<<"] B: "<< time << std::endl;
 
-			    MERIC_MeasureStart("C");
-				MERIC_MeasureStart("D");
+				READEX_REGION_START(C, "C", SCOREP_USER_REGION_TYPE_COMMON);
+				READEX_REGION_START(D, "D", SCOREP_USER_REGION_TYPE_COMMON);
 					sleep(2);
-				time = MERIC_MeasureStop(); //D
+				time = READEX_REGION_STOP(D);
 				if (time > 0.0)
 					std::cout << "["<<rank<<"] D: "<< time << std::endl;
 
-			    time = MERIC_MeasureStop(); //C
+			    time = READEX_REGION_STOP(C);
 				if (time > 0.0)
 					std::cout << "["<<rank<<"] C: "<< time << std::endl;
 					
-	    		MERIC_MeasureStart("B");
+	    		READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
 		    		sleep(1);
-		    	time = MERIC_MeasureStop(); //B
+		    	time = READEX_REGION_STOP(B);
 				if (time > 0.0)
 					std::cout << "["<<rank<<"] B: "<< time << std::endl;
 
-		    MERIC_MeasureStop(); //iteration
+		    READEX_REGION_STOP(iteration);
 		}
 
 		sleep(1);
 
-	MERIC_MeasureStop(); //A
+	READEX_REGION_STOP(A);
+	std::cout << "FIN\n";
 
 	MPI_Barrier(MPI_COMM_WORLD); //not necessary, just for the test purpose 
 	
-	MERIC_Close();
+	READEX_CLOSE();
 	MPI_Finalize();
 	return 0;
 }

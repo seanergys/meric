@@ -41,7 +41,7 @@ sleepTest: sleep_test.cpp
 	$(CXX) -O0 -g sleep_test.cpp $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o sleepTest -DUSE_MERIC
 	
 mpiTest: test_mpi.cpp
-	$(MPICXX) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o test_mpi
+	$(MPICXX) -O0 -g test_mpi.cpp $(MERIC) -lmericmpi -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE) -o test_mpi -DUSE_MERIC
 
 basicTest: test.cpp
 	$(CXX)    -O0 -g test.cpp -o test -DUSE_MERIC $(MERIC) -lmeric -lrt $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(DAVIDE)
