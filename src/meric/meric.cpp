@@ -57,7 +57,7 @@ int Meric::getDefaultParameters()
 	else if (defaultParameter.frequency != 0)
 	{
 		Meric::outputFilenameInfo +="CF_";
-		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.frequency)+"_";
+		Meric::OUTPUT_FILENAME += std::to_string((int)defaultParameter.frequency)+"_";
 	}
 #endif
 
