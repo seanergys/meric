@@ -51,8 +51,7 @@ public:
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addStart(getRegionID(region));
 		}
-		if (_storeList[0]->getMPIWrite())
-			MERIC_INFO << "region '" << region << "' started\n";
+		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
 	virtual double stop()
@@ -64,8 +63,7 @@ public:
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addEnd(_stack.back());
 		}
-		if (_storeList[0]->getMPIWrite())
-			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
+		MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 		if (_storeList.size() && _storeList[0]->getMPIWrite())
 			//infostore is allways the first store in the list
 			//only the infostore returns the region runtime, other return 0.0
