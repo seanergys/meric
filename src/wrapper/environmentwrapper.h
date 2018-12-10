@@ -62,7 +62,7 @@ public:
 	static int NODE_SIZE_SOCKET;
 	static int SOCKET_SIZE_CPU;
 
-	static systemLimits FreqLimits [4];
+	static systemLimits FreqLimits [5];
 	static int systemType;
 
 	static void frequency(uint64_t freq, int socket = -1);

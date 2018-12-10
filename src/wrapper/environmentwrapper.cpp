@@ -5,18 +5,20 @@ using namespace meric;
 
 // LIST OF POSSIBLE frequencies for JETSON CPUs (kHz)
 //	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000 1428000 1555500 1632000 1734000
-// LIST OF POSSIBLE frequnecies for JETSON memory (kHz)
+// LIST OF POSSIBLE frequencies for JETSON memory (kHz)
 //	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
+// LIST OF POSSIBLE frequencies for DAVIDE
+//	4023000 3757000 3491000 3225000 2959000 2693000 2427000 2161000 2061000
 
-
-systemLimits Environment::FreqLimits [4];
-/* [] = {
+//systemLimits Environment::FreqLimits [4];
+systemLimits Environment::FreqLimits [] = {
 	[SYS_HASWELL] = { 33, 25, 12, 30, 30, 12 },
 	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800},
-	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1}, //DVFS not supported
-	[SYS_OTHER] = { -1, -1, -1, -1, -1, -1}
+	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1 }, //DVFS+UFS not supported
+	[SYS_DAVIDE]  = { 4023000, 4023000, 2061000, -1, -1, -1 }, //UFS not supported
+	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1 }
 };
-*/
+
 int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
@@ -162,7 +164,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (freq == 0)
 		return;
 
-	if (systemType == SYS_THUNDER)
+	if (FreqLimits[SYS_OTHER].defaultCoreFreq == -1)
 		return;	//DVFS not supported
 
 	if (freq < FreqLimits[systemType].minCoreFreq)
@@ -262,7 +264,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	if (maxFreq == 0 || minFreq == 0)
 		return;
 	
-	if (systemType == SYS_THUNDER || systemType == SYS_DAVIDE)
+	if (FreqLimits[SYS_OTHER].defaultUncoreFreq == -1)
 		return; //UFS not supported
 		
 	if (maxFreq > FreqLimits[systemType].maxUncoreFreq || minFreq < FreqLimits[systemType].minUncoreFreq || maxFreq < minFreq)
