@@ -41,7 +41,7 @@ public:
 	static const int RAPL_BASELINE = 0;
 	static void init() {};
 	static void close() {};
-	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {std::cerr << "RAPL::getCounterValues() TODO\n"; };
+	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter) {return 0;};
