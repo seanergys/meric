@@ -112,7 +112,7 @@ int Meric::getDefaultParameters()
 	}
 	else
 	{
-		for (size_t i = 0; i < std::count(outputFilenameSuffix.begin(), outputFilenameSuffix.end(), '_'); i++)
+		for (size_t i = 0; i < std::count(outputFilenameSuffix.begin(), outputFilenameSuffix.end(), '_')+1; i++)
 		{
 			Meric::outputFilenameInfo +="APP"+std::to_string(i)+"_";
 		}
