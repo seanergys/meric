@@ -16,6 +16,8 @@ pin:
 
 DYNINST_INC_PATHS=-I/usr/local/include \
 -I${DYNINST_HOME}/build/tbb/include/ \
+-I${DYNINST_HOME}/tbb/include \
+-I${DYNINST_HOME}/boost/src/boost \
 -I${DYNINST_HOME}/dyninstAPI/h/ \
 -I${DYNINST_HOME}/common/h/ \
 -I${DYNINST_HOME}/build/common/h/ \
@@ -38,6 +40,7 @@ DYNINST_LIB_PATHS=-L/usr/local/lib \
 -L${DYNINST_HOME}/build/elfutils/lib/ \
 -L${DYNINST_HOME}/build/common/
 DYNINST_LIBS=-ldyninstAPI -linstructionAPI
+
 
 BOOST_LIB_PATHS=-L${BOOST_ROOT}/lib/ -L${BOOST_ROOT}/stage/lib/
 BOOST_LIBS=-lboost_date_time -lboost_system -lboost_thread

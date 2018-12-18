@@ -376,16 +376,18 @@ void readFilterFile(BPatch_image *appImage)
 				size_t bb_cnt = blocks.size();
 				size_t inst_cnt = 0;
 
-
 				for (auto block_iter = blocks.begin(); block_iter != blocks.end(); ++block_iter)
 				{
 					BPatch_basicBlock* block = *block_iter;
+#if DYNINST_MAJOR_VERSION < 10
 					std::vector<Dyninst::InstructionAPI::Instruction::Ptr> insns;
+#else
+					std::vector<Dyninst::InstructionAPI::Instruction> insns;
+#endif
 					block->getInstructions(insns);
 					inst_cnt += insns.size();
-					//it is possible to determine a type of the instruction
+					//it is also possible to determine a type of the instruction
 				}
-
 //--------------//another heurictic how to detect small functions
 				Dyninst::Address addrStart;
 				Dyninst::Address addrStop;
@@ -394,6 +396,10 @@ void readFilterFile(BPatch_image *appImage)
 //----------------------------------------------------------------------------//
 				std::string funcName = (*funcIter)->getDemangledName();
 //				std::string funcName = (*funcIter)->getMangledName();
+				
+
+//				if (inst_cnt > 37)	//ESPRESO
+//					continue;
 
 				if (inst_cnt > params.instlimit && //some small funcs may cause problems to Dyninst
 					funcName.substr (0,5) != "std::" && 
@@ -401,12 +407,16 @@ void readFilterFile(BPatch_image *appImage)
 					funcName.substr(0,9) != "thunk to " &&
 					funcName.substr(0,15) != "_GLOBAL__sub_I_" &&
 					funcName != "__static_initialization_and_destruction_0"
+
+					&& funcName.substr(0,8) != "__intel_"
+					&& funcName.substr(0,7) != "_intel_"
 					)
 				{
-					std::cout << "A: "<<addrStop - addrStart 
-					          << "\tBB: "<<bb_cnt
-					          << "\tIS: "<<inst_cnt
-					          << "\t" <<funcName << std::endl;
+					std::cout << (*funcIter)->getTypedName() << std::endl;
+//					std::cout << "A: "<<addrStop - addrStart 
+//					          << "\tBB: "<<bb_cnt
+//					          << "\tIS: "<<inst_cnt
+//					          << "\t" <<funcName << std::endl;
 					TfuncName name = {funcName, (*funcIter)->getMangledName()};
 					funcFilterList.push_back(name);
 				}
@@ -462,8 +472,8 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 	}
 	else //params.timeprof
 	{
-		BPatch_snippet* param1 = new BPatch_constExpr(params.funclist.c_str());
-		BPatch_snippet* param2 = new BPatch_constExpr(params.trashold);
+		BPatch_snippet* param1 = new BPatch_constExpr(params.trashold);
+		BPatch_snippet* param2 = new BPatch_constExpr(params.funclist.c_str());
 		funcArgs.push_back(param1);
 		funcArgs.push_back(param2);
 		appImage->findFunction("TIMEPROF_evaluate", closeFuncs, true, true, true);
@@ -508,7 +518,7 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
  **/
 void insertRegionStartStopInstrumentation(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 {
-	std::cerr << "<> Inserting instrumentation for following application functions\n";
+	std::cerr << "<> Inserting instrumentation of application functions ("<< funcFilterList.size()<<")\n";
 
 	std::vector<BPatch_function*> startFuncs; 
 	std::vector<BPatch_function*> stopFuncs;
@@ -541,12 +551,12 @@ void insertRegionStartStopInstrumentation(BPatch_binaryEdit *appBin, BPatch_imag
 	//Instrument functions from the list
 	for (auto funcName : funcFilterList)
 	{
-
 //		std::cout << "\t" << funcName.demangled << std::endl;
 
 		std::vector<BPatch_snippet*> startArgs;
 		std::vector<BPatch_snippet*> stopArgs;
-		BPatch_snippet* param = new BPatch_constExpr(funcName.demangled.c_str());
+		//BPatch_snippet* param = new BPatch_constExpr(funcName.demangled.c_str());
+		BPatch_snippet* param = new BPatch_constExpr(funcName.mangled.c_str());
 		startArgs.push_back(param);
 		if (params.timeprof)
 			stopArgs.push_back(param);
