@@ -47,8 +47,8 @@ BOOST_LIBS=-lboost_date_time -lboost_system -lboost_thread
 
 dinst:
 	g++ -g -Wall -std=c++11 -L/usr/local/lib -o dinst_profile dinst_profile.cpp \
-	-ldyninstAPI -I${DYNINST_HOME}/dyninstAPI/h/ -L${DYNINST_HOME}/build/dyninstAPI/ \
-	-I${DYNINST_HOME}/common/h/ -I${DYNINST_HOME}/build/common/h/ -I${DYNINST_HOME}/symtabAPI/h/ -I${DYNINST_HOME}/proccontrol/h/ -I${DYNINST_HOME}/instructionAPI/h/ -I${DYNINST_HOME}/dataflowAPI/h/
+	${DYNINST_INC_PATHS} ${DYNINST_LIB_PATHS} ${DYNINST_LIBS} \
+	${BOOST_INC_PATHS} ${BOOST_LIB_PATHS} ${BOOST_LIBS}
 
 sbi:
 	g++ -g -Wall -std=c++11 -o dinst_instrument dinst_instrument.cpp \
