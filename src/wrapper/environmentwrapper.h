@@ -77,6 +77,8 @@ private:
 	static void getFrequenciesLimits();
 	static bool usedDVFS;
 	static bool usedUFS;
+	static std::string originalGovernor;
+	static bool CPUFREQ_GOVERNOR;
 
 };
 

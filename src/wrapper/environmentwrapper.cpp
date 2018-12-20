@@ -25,6 +25,8 @@ int Environment::SOCKET_SIZE_CPU = 0;
 int Environment::systemType = SYS_HASWELL;
 bool Environment::usedDVFS = false;
 bool Environment::usedUFS = false;
+bool Environment::CPUFREQ_GOVERNOR = false;
+std::string Environment::originalGovernor = "";
 
 void Environment::threadNumber(int nthreads)
 {
@@ -124,7 +126,45 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	if(!rank)
 	{
 		if (systemType == SYS_OTHER)
+		{
+			//GOVERNOR
+			std::ifstream governorFileI;
+			if (defaultParameter.frequency != 0)
+			{
+				governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+				governorFileI >> originalGovernor;
+				governorFileI.close();
+				if (originalGovernor == "userspace")
+				{
+					CPUFREQ_GOVERNOR=true;
+				}
+				else
+				{
+					governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
+					std::string availGovernor;
+					while (governorFileI >> availGovernor)
+					{
+						if (availGovernor == "userspace")
+						{
+							CPUFREQ_GOVERNOR = true;
+							break;
+						}
+					}
+					governorFileI.close();
+					if (CPUFREQ_GOVERNOR == true)
+					{
+						std::ofstream governorFileO;
+						for (int i=0; i<NODE_SIZE_CPU; i++)
+						{
+							governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
+							governorFileO << "userspace";
+							governorFileO.close();
+						}
+					}
+				}
+			}
 			getFrequenciesLimits();
+		}
 		//activate userspace governor
 		if (systemType == SYS_JETSON)
 		{
@@ -192,64 +232,73 @@ void Environment::frequency(uint64_t freq, int socket)
 	else
 	{
 #ifdef HAVE_CPUFREQ_H
-		MERIC_INFO << "CPUFREQ set frequency to: " << freq;
-		int ret;
-		int nodeSize = NODE_SIZE_CPU;
-		int cpu = 0;
-		if(socket != -1)
+		if (CPUFREQ_GOVERNOR)
 		{
-			nodeSize = SOCKET_SIZE_CPU*(socket+1);
-			cpu = SOCKET_SIZE_CPU*socket;
-			MERIC_INFO << "; socket: " << socket;
-		}
-		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
+				MERIC_INFO << "CPUFREQ set frequency to: " << freq;
+				int ret;
+				int nodeSize = NODE_SIZE_CPU;
+				int cpu = 0;
+				if(socket != -1)
+				{
+					nodeSize = SOCKET_SIZE_CPU*(socket+1);
+					cpu = SOCKET_SIZE_CPU*socket;
+					MERIC_INFO << "; socket: " << socket;
+				}
+				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
-		for (; cpu < nodeSize; cpu++)
-		{
-			ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
+				for (; cpu < nodeSize; cpu++)
+				{
+					ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
 
-			if(ret != 0) // || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))	//TODO test turbo freq setting
-			{
-				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
-			}
+					if(ret != 0) // || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))	//TODO test turbo freq setting
+					{
+						std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+					}
+				}
+				MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
 		}
-		MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
-#elif defined HAVE_X86_ADAPT_H
-		int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
-		if (adaptHandler < 0)
+		else
+#endif
+#ifdef HAVE_X86_ADAPT_H
 		{
-			std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
-			return;
-		}
-		MERIC_INFO << "X86ADAPT set frequency to: " << freq;
+				int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
+				if (adaptHandler < 0)
+				{
+					std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
+					return;
+				}
+				MERIC_INFO << "X86ADAPT set frequency to: " << freq;
 
-		int nodeSize = NODE_SIZE_CPU;
-		int cpu=0;
-		if(socket != -1)
-		{
-			nodeSize = SOCKET_SIZE_CPU*(socket+1);
-			cpu = SOCKET_SIZE_CPU*socket;
-		}
-		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
+				int nodeSize = NODE_SIZE_CPU;
+				int cpu=0;
+				if(socket != -1)
+				{
+					nodeSize = SOCKET_SIZE_CPU*(socket+1);
+					cpu = SOCKET_SIZE_CPU*socket;
+				}
+				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 		
-		for (; cpu<nodeSize; cpu++)
-		{
-			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-			if (fd < 0)
-			{
-				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//				exit(2);
-			}
+				for (; cpu<nodeSize; cpu++)
+				{
+					int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+					if (fd < 0)
+					{
+						std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+		//				exit(2);
+					}
 
-			if(x86_adapt_set_setting(fd, adaptHandler, freq*X86ADAPT_FREQ_MULT) != 8)
-			{
-				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-//				exit(3);
-			}
+					if(x86_adapt_set_setting(fd, adaptHandler, freq*X86ADAPT_FREQ_MULT) != 8)
+					{
+						std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+		//				exit(3);
+					}
 	
-			if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+					if ( x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+						std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+				}
 		}
+#elif defined HAVE_CPUFREQ_H
+			std::cerr << "CPUFREQ error: governor not specified as userspace\n";
 #endif
 	}
 	clock_gettime(CLOCK_REALTIME, &stop_time);
@@ -340,7 +389,19 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 void Environment::setDefaultFrequencies()
 {
 	if (usedDVFS)
+	{
 		frequency(FreqLimits[systemType].defaultCoreFreq);
+		if (CPUFREQ_GOVERNOR == true && originalGovernor == "userspace")
+		{
+			std::ofstream governorFile;
+			for (int i=0; i<NODE_SIZE_CPU; i++)
+			{
+				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
+				governorFile << originalGovernor;
+				governorFile.close();
+			}
+		}
+	}
 	if (systemType == SYS_JETSON)
 	{
 		uncoreFrequency(FreqLimits[SYS_JETSON].defaultUncoreFreq, FreqLimits[SYS_JETSON].defaultUncoreFreq);
