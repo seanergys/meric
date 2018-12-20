@@ -103,7 +103,15 @@ void Environment::getFrequenciesLimits()
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	FreqLimits[SYS_OTHER].minUncoreFreq = (int)setting;
-#endif	
+	
+	if (FreqLimits[SYS_OTHER].maxUncoreFreq == FreqLimits[SYS_OTHER].minUncoreFreq && FreqLimits[SYS_OTHER].maxUncoreFreq != -1)
+	{
+		std::cerr << "MERIC warning: system does not have correctly set uncore frequencies\n\tMERIC set them to 1.2-3.0GHz. FIX them if you are not runnig HSW-EP system.\n"; //BDW ranges are 1.2-2.7 GHz
+		FreqLimits[SYS_OTHER].maxUncoreFreq = FreqLimits[SYS_HASWELL].maxUncoreFreq;
+		FreqLimits[SYS_OTHER].minUncoreFreq = FreqLimits[SYS_HASWELL].minUncoreFreq;
+		FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_HASWELL].defaultUncoreFreq;
+	}
+#endif
 	MERIC_INFO << "CORE FREQ limits: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq<< std::endl;
 	MERIC_INFO << "UNCORE FREQ limits: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
 }
@@ -298,7 +306,7 @@ void Environment::frequency(uint64_t freq, int socket)
 				}
 		}
 #elif defined HAVE_CPUFREQ_H
-			std::cerr << "CPUFREQ error: governor not specified as userspace\n";
+			std::cerr << "CPUFREQ error: governor not specified as userspace, CPU core frequency not changed\n";
 #endif
 	}
 	clock_gettime(CLOCK_REALTIME, &stop_time);
