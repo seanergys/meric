@@ -14,8 +14,8 @@ int THUNDER::FREQUENCY = 1;
 void THUNDER::init() //int rank = 0)
 {
 	//start energy measurement
-	system(("ssh -f hca \""+std::string(ARMMEASUREMENTPATH)+"/getYokogawaMeasurements.py "+ARM_INFO+"\"").c_str());
-	filename = std::string(ARMMEASUREMENTPATH)+"/yokogawaMeasurement/hca-server.csv"; //one file for all nodes
+	system(("ssh -f hca \""+std::string(MERIC_PATH)+"/tools/getYokogawaMeasurements.py "+ARM_INFO+"\"").c_str());
+	filename = std::string(MERIC_PATH)+"/tools/yokogawaMeasurement/hca-server.csv"; //one file for all nodes
 }
 
 

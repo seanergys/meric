@@ -15,7 +15,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
         ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
 
-    ctx.env.append_unique("DEFINES", [ "ARMMEASUREMENTPATH=\""+ctx.path.abspath()+"/tools\""])
+    ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
     
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])

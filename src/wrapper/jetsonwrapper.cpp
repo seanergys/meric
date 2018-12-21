@@ -14,12 +14,12 @@ int JETSON::FREQUENCY = 10;
 void JETSON::init() //int rank = 0)
 {
 	//start energy measurement
-	system((std::string(ARMMEASUREMENTPATH)+"/getJTX1measurements.py "+ARM_INFO+" &").c_str());
+	system((std::string(MERIC_PATH)+"/tools/getJTX1measurements.py "+ARM_INFO+" &").c_str());
 	
 	//get name of the file with measurements
 	char hostname[50];
 	gethostname(hostname, 50);
-	filename = std::string(ARMMEASUREMENTPATH)+"/jetsonMeasurement/"+std::string(hostname)+".csv";
+	filename = std::string(MERIC_PATH)+"/tools/jetsonMeasurement/"+std::string(hostname)+".csv";
 }
 
 

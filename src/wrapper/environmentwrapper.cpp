@@ -103,13 +103,34 @@ void Environment::getFrequenciesLimits()
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	FreqLimits[SYS_OTHER].minUncoreFreq = (int)setting;
-	
-	if (FreqLimits[SYS_OTHER].maxUncoreFreq == FreqLimits[SYS_OTHER].minUncoreFreq && FreqLimits[SYS_OTHER].maxUncoreFreq != -1)
+
+	struct stat info;
+	std::string uncoreFrequencyDefaultFile = std::string(MERIC_PATH)+"/build/ucfRestore.csv";
+	if(stat(uncoreFrequencyDefaultFile.c_str(), &info ) != 0)
 	{
-		std::cerr << "MERIC warning: system does not have correctly set uncore frequencies\n\tMERIC set them to 1.2-3.0GHz. FIX them if you are not runnig HSW-EP system.\n"; //BDW ranges are 1.2-2.7 GHz
-		FreqLimits[SYS_OTHER].maxUncoreFreq = FreqLimits[SYS_HASWELL].maxUncoreFreq;
-		FreqLimits[SYS_OTHER].minUncoreFreq = FreqLimits[SYS_HASWELL].minUncoreFreq;
-		FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_HASWELL].defaultUncoreFreq;
+		if (FreqLimits[SYS_OTHER].minUncoreFreq != FreqLimits[SYS_OTHER].maxUncoreFreq)
+		{
+			std::ofstream ucfRestoreFile;
+			ucfRestoreFile.open (uncoreFrequencyDefaultFile);
+			ucfRestoreFile << FreqLimits[SYS_OTHER].minUncoreFreq << " " << FreqLimits[SYS_OTHER].maxUncoreFreq << std::endl;
+			ucfRestoreFile.close();
+		}
+		else
+		{
+			std::cerr << "MERIC error: system does not have correctly set uncore frequency range\n";
+		}
+	}
+	else if (FreqLimits[SYS_OTHER].minUncoreFreq == FreqLimits[SYS_OTHER].maxUncoreFreq)
+	{
+		std::string ucfString;
+		std::ifstream ucfRestoreFile;
+		ucfRestoreFile.open (uncoreFrequencyDefaultFile);
+		ucfRestoreFile >> ucfString;
+		FreqLimits[SYS_OTHER].minUncoreFreq = std::stoi(ucfString);
+		ucfRestoreFile >> ucfString;
+		FreqLimits[SYS_OTHER].maxUncoreFreq = std::stoi(ucfString);
+		ucfRestoreFile.close();
+		FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_OTHER].maxUncoreFreq;
 	}
 #endif
 	MERIC_INFO << "CORE FREQ limits: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq<< std::endl;
