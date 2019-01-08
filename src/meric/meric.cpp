@@ -9,6 +9,7 @@ bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
 bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
 bool        Meric::SAMPLES    = mutils::getenv("MERIC_SAMPLES"   , false);
+bool        Meric::HDF5       = mutils::getenv("MERIC_HDF5"      , true);
 std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("none"));
 std::string Meric::BARRIERS   = mutils::getenv("MERIC_BARRIERS"  , std::string("all"));
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("mericMeasurement"));
@@ -87,6 +88,10 @@ int Meric::getDefaultParameters()
 		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.nthreads)+"_";
 	}
 #endif
+
+#ifndef HAVE_HDF5_H
+	Meric::HDF5 = false;
+#endif 
 
 	if (ret)
 		return ret;

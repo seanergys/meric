@@ -37,6 +37,7 @@ public:
 	static bool DEBUG;
 	static bool SAMPLES;
 	static bool IGNORE;
+	static bool HDF5;
 	static int MODE;
 	static std::string COUNTERS;
 	static std::string OUTPUT_DIR;
