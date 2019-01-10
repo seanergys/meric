@@ -3,17 +3,24 @@ from waflib import Logs
 
 def configure(ctx):
     ctx.load(ctx.options.cpp)
+    print(ctx.env)
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
 
     if ctx.options.withgcc:
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                       #GCC
-        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+        if not ctx.options.noopenmp:
+            ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                   #GCC
+            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
+        else:
+            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                       #Intel
-        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H" ])                      #with openMP
+        if not ctx.options.noopenmp:
+            ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                   #Intel
+            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
+        else:
+            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
 
     ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
     
@@ -34,15 +41,18 @@ def configure(ctx):
 
 #    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching
 #    ctx.env.append_unique("DEFINES", [ "HAVE_X86_ADAPT_H" ])	#if problem with searching
-    ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
+    if ctx.options.noopenmp:
+        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True)
+    else:
+        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
         ctx.env.CXX = list(ctx.env.MPICXX)
         ctx.env.LINK_CXX = ctx.env.CXX
-        ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H" ])
+        ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H=1" ])
 
     ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
-
+    print(ctx.env)
     if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
@@ -55,36 +65,40 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/*.cpp'),
         target = "basis",
     )
+    
+    if not ctx.env.NOOPENMP:
+        #MERIC
+        ctx.stlib(
+            source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
+            target       = "meric",
+            use          = "basis",
+            install_path = "lib"
+        )
 
-    #MERIC
-    ctx.stlib(
-        source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
-        target       = "meric",
-        use          = "basis",
-        install_path = "lib"
-    )
+        ctx.shlib(
+            source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
+            target       = "meric",
+            use          = "basis",
+            install_path = "lib"
+        )
 
-    ctx.shlib(
-        source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
-        target       = "meric",
-        use          = "basis",
-        install_path = "lib"
-    )
+        #TIMEPROF
+        ctx.stlib(
+            source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+            target       = "timeprof",
+            use          = "basis",
+            install_path = "lib"
+        )
 
-    #TIMEPROF
-    ctx.stlib(
-        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
-        target       = "timeprof",
-        use          = "basis",
-        install_path = "lib"
-    )
-
-    ctx.shlib(
-        source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
-        target       = "timeprof",
-        use          = "basis",
-        install_path = "lib"
-    )
+        ctx.shlib(
+            source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
+            target       = "timeprof",
+            use          = "basis",
+            install_path = "lib"
+        )
+        suffix=""
+    else:
+    	suffix="only"
 
     #MERIC MPI
     if not ctx.env.MPICXX:
@@ -94,7 +108,7 @@ def build(ctx):
 
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
-        target       = "mericmpi",
+        target       = "mericmpi"+suffix,
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -102,7 +116,7 @@ def build(ctx):
 
     ctx.shlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
-        target       = "mericmpi",
+        target       = "mericmpi"+suffix,
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -111,7 +125,7 @@ def build(ctx):
     #TIMEPROF MPI
     ctx.stlib(
         source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
-        target       = "timeprofmpi",
+        target       = "timeprofmpi"+suffix,
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -119,7 +133,7 @@ def build(ctx):
 
     ctx.shlib(
         source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
-        target       = "timeprofmpi",
+        target       = "timeprofmpi"+suffix,
         use          = "basis",
         install_path = "lib",
         env          = ctx.all_envs["mpi"]
@@ -171,8 +185,15 @@ def options(opt):
     )
 
     opt.add_option(
+        "--noopenmp",
+        action="store",
+        default=False,
+        help="Compilation of MPI version without OpenMP"
+    )
+    
+    opt.add_option(
         "--flags",
         action="store",
         default="-O2",
-        help="Compiler flags (-std=c++11, -fPIC and -qopenmp are default)"
+        help="Compiler flags (-std=c++11, -fPIC and -qopenmp/-fopenmp are default)"
     )
