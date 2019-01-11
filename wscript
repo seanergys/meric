@@ -3,7 +3,6 @@ from waflib import Logs
 
 def configure(ctx):
     ctx.load(ctx.options.cpp)
-    print(ctx.env)
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
@@ -52,7 +51,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H=1" ])
 
     ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
-    print(ctx.env)
+#    print(ctx.env)
     if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
