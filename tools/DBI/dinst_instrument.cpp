@@ -95,7 +95,7 @@ void printHelp()
 		<< "\t      than the path to libmpi.so does not have to be specified\n"
 		<< "\t --noopenmp\n"
 		<< "\t      = if the instrumented use only MPI but not OpenMP"
-		binary does not use OpenMP, however MERIC with\n"
+		<< "\t      binary does not use OpenMP, however MERIC with\n"
 		<< "\t      OpenMP support is demand, than the libomp.so (libgomp.so; libiomp5.so; ...)\n"
 		<< "\t      dependency can by added using this parameter\n"
 		<< "\n"
@@ -206,7 +206,7 @@ void handleParameters(int argc, char *argv[])
 	if (params.input == "" || params.funclist == "" || (params.timeprof == params.meric)) //compulsory
 		printHelp();
 	
-	if (!params.omplib && !params.mpi=true)
+	if (!params.omplib && !params.mpi)
 	{
 		std::cerr << "ERROR Non-parallelized applications not supported!\n";
 		exit(2);
