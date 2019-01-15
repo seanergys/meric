@@ -32,16 +32,16 @@ struct Tparametres{
 	std::string output;
 	std::string funclist;
 	std::string dependencies;
-	std::string omplib;
 	std::string mpilib;
 	bool mpi;
+	bool omplib;
 	bool timeprof;
 	bool meric;
 	uint trashold;
 	uint instlimit;
 	std::vector <const char *> argv;
 };
-Tparametres params = {"", "instrumentedBin", "", "", "", "", false, false, false, 100, 128, {}};
+Tparametres params = {"", "instrumentedBin", "", "", "", false, true, false, false, 100, 128, {}};
 
 struct TfuncName{
 	std::string demangled;
@@ -93,8 +93,9 @@ void printHelp()
 		<< "\t      = parameter must be used for MPI applications\n"
 		<< "\t      if instrumented version of libmpi.so already exists, \n"
 		<< "\t      than the path to libmpi.so does not have to be specified\n"
-		<< "\t --omp=libomp.so\n"
-		<< "\t      = if the instrumented binary does not use OpenMP, however MERIC with\n"
+		<< "\t --noopenmp\n"
+		<< "\t      = if the instrumented use only MPI but not OpenMP"
+		binary does not use OpenMP, however MERIC with\n"
 		<< "\t      OpenMP support is demand, than the libomp.so (libgomp.so; libiomp5.so; ...)\n"
 		<< "\t      dependency can by added using this parameter\n"
 		<< "\n"
@@ -180,11 +181,9 @@ void handleParameters(int argc, char *argv[])
 				printHelp();
 			params.dependencies = flag[1];
 		}
-		else if (flag[0] == "--omp")
+		else if (flag[0] == "--noopenmp")
 		{
-			if(flag.size() != 2)
-				printHelp();
-			params.omplib = flag[1];
+			params.omplib = false;
 		}
 		else if (flag[0] == "--instlimit")
 		{
@@ -206,6 +205,12 @@ void handleParameters(int argc, char *argv[])
 
 	if (params.input == "" || params.funclist == "" || (params.timeprof == params.meric)) //compulsory
 		printHelp();
+	
+	if (!params.omplib && !params.mpi=true)
+	{
+		std::cerr << "ERROR Non-parallelized applications not supported!\n";
+		exit(2);
+	}
 }
 
 /**
@@ -261,32 +266,39 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 		if (params.meric)
 		{
 			if (params.mpi)
-				extraSharedLibraries.push_back("libmericmpi.so");
-			else
+			{
+				if (params.omplib)
+					extraSharedLibraries.push_back("libmericmpi.so");
+				else
+					extraSharedLibraries.push_back("libmericmpionly.so");
+			}
+			else //OpenMP only
+			{
 				extraSharedLibraries.push_back("libmeric.so");
+			}
 			extraSharedLibraries.push_back("libx86_adapt.so");
 			extraSharedLibraries.push_back("libpapi.so");
 			extraSharedLibraries.push_back("libnuma.so");
 			extraSharedLibraries.push_back("libhdeem.so");
 			extraSharedLibraries.push_back("libfreeipmi.so");
 			extraSharedLibraries.push_back("libcpufreq.so");
-			extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
+//			extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
 		}
 		else //params.timeprof
 		{
 			if (params.mpi)
-				extraSharedLibraries.push_back("libtimeprofmpi.so");
-			else
+			{
+				if (params.omplib)
+					extraSharedLibraries.push_back("libtimeprofmpi.so");
+				else
+					extraSharedLibraries.push_back("libtimeprofmpionly.so");
+			}
+			else //OpenMP only
+			{
 				extraSharedLibraries.push_back("libtimeprof.so");
+			}
 		}
-		
 		extraSharedLibraries.push_back("librt.so");
-		//GCC -fopenmp	libgomp.so
-		//ICC -qopenmp	libiomp5.so	
-		//extraSharedLibraries.push_back("libgomp.so");
-		//extraSharedLibraries.push_back("libiomp5.so");
-		if (params.omplib != "")
-			extraSharedLibraries.push_back(params.omplib.c_str());
 	}
 
 	std::cerr << "<> Inserting shared libraries dependencies - APP\n";
