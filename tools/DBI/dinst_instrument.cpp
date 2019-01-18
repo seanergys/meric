@@ -33,6 +33,7 @@ struct Tparametres{
 	std::string funclist;
 	std::string dependencies;
 	std::string mpilib;
+	std::string language;
 	bool mpi;
 	bool omplib;
 	bool timeprof;
@@ -41,7 +42,7 @@ struct Tparametres{
 	uint instlimit;
 	std::vector <const char *> argv;
 };
-Tparametres params = {"", "instrumentedBin", "", "", "", false, true, false, false, 100, 128, {}};
+Tparametres params = {"", "instrumentedBin", "", "", "", "", false, true, false, false, 100, 128, {}};
 
 struct TfuncName{
 	std::string demangled;
@@ -94,10 +95,10 @@ void printHelp()
 		<< "\t      if instrumented version of libmpi.so already exists, \n"
 		<< "\t      than the path to libmpi.so does not have to be specified\n"
 		<< "\t --noopenmp\n"
-		<< "\t      = if the instrumented use only MPI but not OpenMP"
+		<< "\t      = if the instrumented use only MPI but not OpenMP\n"
 		<< "\t      binary does not use OpenMP, however MERIC with\n"
-		<< "\t      OpenMP support is demand, than the libomp.so (libgomp.so; libiomp5.so; ...)\n"
-		<< "\t      dependency can by added using this parameter\n"
+		<< "\t --language=[c/c++/fortran]\n"
+		<< "\t      = please, specify if Dyninst cannot resolve language type of the binary\n"
 		<< "\n"
 		<< "OPTIONAL PARAMETERS - MERIC ONLY:\n"
 		<< "\t --dependencies=file\n"
@@ -184,6 +185,12 @@ void handleParameters(int argc, char *argv[])
 		else if (flag[0] == "--noopenmp")
 		{
 			params.omplib = false;
+		}
+		else if (flag[0] == "--language")
+		{
+			if(flag.size() != 2)
+				printHelp();
+			params.language = flag[1];			
 		}
 		else if (flag[0] == "--instlimit")
 		{
@@ -282,6 +289,7 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 			extraSharedLibraries.push_back("libhdeem.so");
 			extraSharedLibraries.push_back("libfreeipmi.so");
 			extraSharedLibraries.push_back("libcpufreq.so");
+			extraSharedLibraries.push_back("libcpupower.so");
 //			extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
 		}
 		else //params.timeprof
@@ -507,10 +515,53 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 	}
 	else
 	{
+		std::vector<BPatch_sourceObj*> sourceObjs;
+		appImage->getSourceObj(sourceObjs);
+		BPatch_language language = sourceObjs[0]->getLanguage();
+/*
+typedef enum BPatch_language {
+		BPatch_c,
+		BPatch_cPlusPlus,
+		BPatch_fortran,
+		BPatch_fortran77,
+		BPatch_fortran90,
+		BPatch_f90_demangled_stabstr,
+		BPatch_fortran95,
+	BPatch_assembly,
+	BPatch_mixed,
+	BPatch_hpf,
+	BPatch_java,
+	BPatch_unknownLanguage
+} BPatch_language;		
+*/
+		std::string mainFunction;
+		if (language == BPatch_c ||
+		    language == BPatch_cPlusPlus ||
+		    params.language == "c" ||
+		    params.language == "c++") //"main"
+		{
+			//std::cerr << "<> Instrumenting C/C++ application\n";
+			mainFunction = "main";
+		}
+		else if (language == BPatch_fortran ||
+		    language == BPatch_fortran77 || 
+		    language == BPatch_fortran90 || 
+		    language == BPatch_f90_demangled_stabstr || 
+		    language == BPatch_fortran95 ||
+		    params.language == "fortran") //"MAIN__"
+		{
+			//std::cerr << "<> Instrumenting Fortran application\n";
+			mainFunction = "MAIN__";
+		}
+		else
+		{
+			std::cerr << "<> ERROR: Unknown or unsupported language type! Please, specify '--language' parameter.\n";
+			return false;
+		}
 		if (!initFuncs.empty())
-			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "main", BPatch_entry);
+			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, mainFunction.c_str(), BPatch_entry);
 		if (!closeFuncs.empty())
-			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, closeFuncs, funcArgs, "main", BPatch_exit);
+			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, closeFuncs, funcArgs, mainFunction.c_str(), BPatch_exit);
 	}
 	if (!ret)
 	{
