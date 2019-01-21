@@ -3,7 +3,7 @@
 
 using namespace meric;
 
-int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_HDEEM);
+int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_RUN);
 bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , false);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
 bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
@@ -130,8 +130,8 @@ int Meric::getDefaultParameters()
 	
 	if (Meric::MODE < MODE_HDEEM || Meric::MODE >= MODE_LIMIT)
 	{
-		std::cerr << "MERIC WARNING: MERIC MODE unknown value - default "<< MODE_HDEEM <<std::endl;
-		Meric::MODE = MODE_HDEEM;
+		std::cerr << "MERIC WARNING: MERIC MODE unknown value <"<<MODE_HDEEM<<","<<MODE_LIMIT-1<<"> - default "<< MODE_RUN <<std::endl;
+		Meric::MODE = MODE_RUN;
 	}
 	
 	if (Meric::BARRIERS != "all")
