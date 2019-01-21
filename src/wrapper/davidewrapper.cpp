@@ -22,9 +22,23 @@ void DAVIDE::init()
 
 	char hostname[50];
    	gethostname(hostname, 50);
-	MERIC_INFO << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
+   	std::string davideHostname = std::string(hostname);
+   	std::string::iterator it = davideHostname.begin();
+	while (it != davideHostname.end() && !std::isdigit(*it))
+		++it;
+	if (!davideHostname.empty() || it != davideHostname.end())
+	{
+		int numero;
+		std::stringstream(std::string(it, davideHostname.end())) >> numero;
+		davideHostname = std::to_string(numero);
+	}
+	else
+		davideHostname = "";
+	node_n = "davide" + davideHostname;
+	
+	//MERIC_INFO << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
 	//node_n = std::string(hostname); //"davide43";
-	node_n = std::string("davide1");
+	//node_n = std::string("davide1");
 	MERIC_INFO << "Hostname : " << node_n << "\n";
 
 	metric = "power";
