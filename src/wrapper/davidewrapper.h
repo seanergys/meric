@@ -46,14 +46,12 @@ public:
 	static void start(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_startTime =  time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0; //(long long) mutils::timeToDouble(time)*1000.0;
-		MERIC_INFO << "Setting start time \n";
+		_startTime = (unsigned long long)(mutils::timeToDouble(time)*1000.0);
 	}
 	static void stop(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);
-		_stopTime = time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0; //(long long)mutils::timeToDouble(time)*1000.0;
-		MERIC_INFO << "Setting stop time \n";
+		_stopTime = (unsigned long long)(mutils::timeToDouble(time)*1000.0);
 	}
 	static void setTimeAdjustment(timespec start) {};
 

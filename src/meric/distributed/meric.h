@@ -201,7 +201,7 @@ public:
 				}
 				catch (int &e)
 				{
-					//exception for hdeem store only, that is always first store in the list
+					//exception for timeenergystore(HDEEM), timestore<HDEEM>, timestore<DAVIDE> store when there are no power samples
 					_storeList[i]->restoreCounter(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
 					MPI_Abort(MPI_COMM_WORLD, 1);
 				}

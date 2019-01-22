@@ -62,6 +62,7 @@ void DAVIDE::init()
 //metoda pro ziskani energie pro pozadovany region na zaklade pocatecniho a koncoveho casu
 std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
+	MERIC_INFO << " ***************************************************************************\n";
 	std::string errMessage = "";
 
 	double GPU_offset = 120.0; 
@@ -73,7 +74,7 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	*lastBlade = (size_t)((ts - t0) + dur_t);  
 	size_t n_samples = *lastBlade - *firstBlade;
 
-	MERIC_INFO << " ***************************************************************************\n";
+
 	MERIC_INFO << "StartTime  : " << ts << "\n";
 	if (dur_t == 0) {	
 		MERIC_INFO << "Duration   : < 1 sample\n";
@@ -218,58 +219,72 @@ int DAVIDE::getSamples()
 	//MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
 	//MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
 
+std::cerr << "DBS response: " << r.body << std::endl;
+
+//{"queries":[{"sample_size":0,"results":[{"name":"power","tags":{},"values":[]}]}]}
+//DBS response: {"queries":[{"sample_size":3950,"results":[{"name":"power","group_by":[{"name":"tag","tags":["node","cluster","org","plugin"],"group":{"node":"davide45","cluster":"davide","org":"e4","plugin":"bbb_pub"}},{"name":"type","type":"number"}],"tags":{"chnl":["data"],"cluster":["davide"],"node":["davide45"],"org":["e4"],"plugin":["bbb_pub"],"ts":["1ms"]},"values":[[1548152597225,541.96],[1548152597226,566.864],[1548152597227,554.993],[1548152597228,556.957],[1548152597229,542.214],[1548152597230,559.897], ... ,[1548152601226,564.257]]}]}]}
+
 	json j = json::parse(r.body);
-	json v = j["/queries/0/results/0/values"_json_pointer];
-
-	//MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
-
-	// *** array parsing ***************************************************
-	// std::vector<long long> time_samples  (v.size(),0);
-	// std::vector<double>    power_samples (v.size(),0);	
-	
-	long long duration = _stopTime - _startTime;
-	MERIC_INFO << "# of samples is : "  << v.size() << "\n";
-	MERIC_INFO << "# of lost smpls.: "  << duration - v.size() << "\n";
-
-	time_samples.resize (duration + 1);
-	power_samples.resize(duration + 1);
-
-	long long it  = 0; 
-	long long it2 = 0;
-	double corrW = (double) v[0][1];
-	int missing_samples = 0; 
-	int last_error_index = 0; 
-	for (long long ts = _startTime; ts <= _stopTime; ts++)
+	json x = j["/queries/0/sample_size"_json_pointer];
+	if (x.dump() == "0")
 	{
-		time_samples [it2] = ts;
-		if ((long long) v[it ][0] == ts && it < v.size() ) {
-			power_samples[it2]     = (double)    v[it ][1];
-			corrW			       = power_samples[it2];
-			if (it2 < 20 || it2 > (duration - 20)) {
-				MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W \n";
-			}
-			it++;
-		} else {
-			power_samples[it2] = corrW;
-			missing_samples++; 
-			if (it2 < 20 || it2 > (duration - 20)) { 
-				MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W ----- corrected value ---- last error : " << it2 - last_error_index << " \n";
-			}
-			last_error_index = it2; 
-		}
-		it2++;  
+		std::cerr << "MERIC ERROR: no power samples from DiG\n";
+		return 1;
 	}
-	// *** END - array parsing *********************************************
-	return 0;
+	else
+	{
+		json v = j["/queries/0/results/0/values"_json_pointer];
+
+		//MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
+
+		// *** array parsing ***************************************************
+		// std::vector<long long> time_samples  (v.size(),0);
+		// std::vector<double>    power_samples (v.size(),0);	
+		
+		long long duration = _stopTime - _startTime;
+		MERIC_INFO << "# of samples is : "  << v.size() << "\n";
+		MERIC_INFO << "# of lost smpls.: "  << duration - v.size() << "\n";
+
+		time_samples.resize (duration + 1);
+		power_samples.resize(duration + 1);
+
+		long long it  = 0; 
+		long long it2 = 0;
+		double corrW = (double) v[0][1];
+		int missing_samples = 0; 
+		int last_error_index = 0; 
+		for (long long ts = _startTime; ts <= _stopTime; ts++)
+		{
+			time_samples [it2] = ts;
+			if ((long long) v[it ][0] == ts && it < v.size() ) {
+				power_samples[it2]     = (double)    v[it ][1];
+				corrW			       = power_samples[it2];
+				if (it2 < 20 || it2 > (duration - 20)) {
+					MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W \n";
+				}
+				it++;
+			} else {
+				power_samples[it2] = corrW;
+				missing_samples++; 
+				if (it2 < 20 || it2 > (duration - 20)) { 
+					MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W ----- corrected value ---- last error : " << it2 - last_error_index << " \n";
+				}
+				last_error_index = it2; 
+			}
+			it2++;  
+		}
+		// *** END - array parsing *********************************************
+		return 0;
+	}
 }
 
 
 //sensorId bude 0 - blade
-void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double>  & samples)
+void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples)
 {
-
-	for (size_t i = first; i < last; i++)
-		samples.push_back(power_samples[i]);
+	if (power_samples.size() > last)
+		for (size_t i = first; i < last; i++)
+			samples.push_back(power_samples[i]);
 }
 
 #endif
