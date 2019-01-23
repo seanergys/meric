@@ -8,14 +8,22 @@
 ifeq ($(CXX),)
 	CXX=g++
 endif
+
 ifeq ($(FC),)
 	FC=gfortran
-endif
-ifeq ($(MPICXX),)
-	MPICXX=mpicxx
+	ifeq (, $(shell which ${FC}))
+		FC=\#
+	endif
 endif
 
-ifeq ($(shell awk '{n=split($$1,A,"/"); print A[n]}' <<< ${CXX}),g++)
+ifeq ($(MPICXX),)
+	MPICXX=mpicxx
+	ifeq (, $(shell which ${MPICXX}))
+		MPICXX=\#
+	endif
+endif
+
+ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),g++)
 	OPENMP=-fopenmp
 else
 	OPENMP=-qopenmp
@@ -43,7 +51,7 @@ BINARIES=test test_mpi blasTest samples sleepTest fortTest overHead
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest fortTest overhead blasTestInfo
+all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTest
 
  ######
 sleepTest: sleep_test.cpp
@@ -59,7 +67,7 @@ scorepTest: test.cpp
 	scorep --online-access --user --thread=none $(CXX) -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
 
 overhead: overhead_test.cpp
-	$(CXX)   -g overhead_test.cpp -DUSE_MERIC -lmeric $(LIBS) -o overHead
+	$(CXX)   -g overhead_test.cpp -std=c++11 -DUSE_MERIC -lmeric $(LIBS) -o overHead
 
 samplesTest: samples_test.cpp
 	$(CXX)    -O0 -g samples_test.cpp -lmeric $(LIBS) -o samples

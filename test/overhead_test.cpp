@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
+#include <cmath>
 #include <chrono>
 #include <ctime>
 
