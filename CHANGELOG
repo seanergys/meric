@@ -5,12 +5,15 @@
   - new MERIC API RAII function for scope measurement MERIC_captureScope(const char * region)
   - barriers turn off available not only for production runs
   - new MERIC mode to store regions runtime only
-  - support for OpenPOWER8 CINECA DAVIDE cluster energy measurement and DFVS
+  - support for IBM OpenPOWER8+ CINECA D.A.V.I.D.E. cluster energy measurement and DFVS
   - MERIC_MeasureStop() and MERIC_MeasureStopStart() now returns runtime of the stopped region
   - new instrument.h
 		+ new version of readex.h, not backward compatible (new functions parameters)
 		+ support for MERIC, Score-P, TIMEPROF, GEOPM, TAU
   - new function runtime profiling library TIMEPROF is now part of the repository
+  - now on request available compilation of MERIC/TIMEPROF MPI version without OpenMP
+  - test/environment_taurus updated and renamed to test/environment_default.source
+  - default MERIC mode is RUN (3) instead of HDEEM (0)
 
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow
@@ -47,7 +50,7 @@
   - much faster Meric IO
   - new warnings when regions are too short
   - handles RAPL overflow
-  - added shared Score-P/Meric api
+  - added shared Score-P/MERIC api
   - MERIC_NUM_THREADS is now obligatory parameter
   - input region options json file is now parsed via sheredom library which is much more accurate in input file format
   - completely new way of work with region options, that gives much more options to set - see the README "MERIC input parameters" section!
@@ -69,7 +72,7 @@
   - papi and perfevent counters now gives correct values for MPI code
   - in test folder is an environment script to set MERIC variables
   - region.options file is not loaded implicitly, but user have to set MERIC_REGION_OPTIONS environment variable
-  - Meric prints its output about its progress only when configured with --verbose (make ddt)
+  - MERIC prints its output about its progress only when configured with --verbose (make ddt)
   - to reduce content of output files, Meric doesn't print hdeem samples, if MERIC_SAMPLES=1 is not set
   - when using counters, there is also an information about flop/s  
   - enhanced version of run.sh 
@@ -81,6 +84,6 @@
   - set number of threads for each region using MERIC_NUM_THREADS variable
   - tests in test folder are renamed and blas test is added
   - connection to RADAR tool, that is set by default to run with MERIC test.cpp and test_mpi.cpp examples
-  - hdeem measurement counters are moved to separated folder, that has the same name as MERIC_OUTPUT_DIR with suffix "Counters"
+  - HDEEM measurement counters are moved to separated folder, that has the same name as MERIC_OUTPUT_DIR with suffix "Counters"
 
 

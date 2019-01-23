@@ -16,8 +16,9 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
  7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#7-code-dynamism-investigation)
  8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#8-meric-with-a-fortran-code)
  9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric/tree/dev#9-using-meric-on-bsc-arm-systems)
-10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#10-tool-for-static-tuning)
-11. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#11-acknowledgement)
+10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-d-a-v-i-d-e-systems)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
@@ -30,7 +31,7 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
              to instrument with MERIC.
 * wrapper
 	- environmentwrapper
-		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) of [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
+		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
 
 	- hdeemwrapper
 		= Energy measurement using [HDEEM](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement).
@@ -186,6 +187,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionaly - cpufreq
 * optionaly - x86_adapt
 * optionaly - numa (mandatory if x86_adapt is missing)
+* optionaly - REST-client (mandatory for DiG energy measurement system)
 
 ### TIMEPROF used libraries ###
 * mandatory - OpenMP
@@ -193,7 +195,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 
 Beside these libraries waf requires Python.
 
-Default compilation expects Intel compiler, if you want to compile using GCC use `make gcc` instead of `make`. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your MPI application.
+Default compilation expects Intel compiler, if you want to compile using GCC use `make gcc` instead of `make`. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If a MPI application without OpenMP should be analyzed, compilation with `--noopenmp` must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
 
 --------------------------------------------------------------------------------
 #     5] MERIC input parameters                                                #
@@ -213,7 +215,7 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 		3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
 		4 = jetson - energy measurement on BSC Jetson TX1 system
 		5 = thunder - energy measurement on BSC ThunderX system
-		6 = davide - energy measurement on CINECA DAVIDE system
+		6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
 		7 = time - storing runtime of the regions only
 
 	export MERIC_BARRIERS=all
@@ -324,7 +326,7 @@ Examples of region.options files are in test/config directory. The region.option
 * Makefile
 	* Command `make` compiles all test codes except blas_test.cpp.
 	* To compile blas_test.cpp use `make blasTest` command.
-* environment_taurus
+* environment_default.source
 	* Basic script that sets chosen MERIC environment variables and informs you which varibles are set.
 	* When run with argument `-t`, the script just prints list of set variables.
 	* Make a copy of this script and edit it to suits your needs.
@@ -388,10 +390,10 @@ To find the best settings for each region, you should run your code with several
 	# Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information what you have measured.
 		```
 		{
-			"Timestamp" : "13.6. 2017 14:59",
-			"System"	: "IT4I Salomon",
+			"Timestamp" : "Thu Dec  6 15:37:23 2018",
+			"System"    : "IT4I Salomon",
 			"DataFormat": "node_CF_UnCF_thrds",
-			"Note"  	: ""
+			"Note"      : ""
 		}
 		```
 
@@ -426,9 +428,16 @@ ARM core and uncore frequencies are much lower than Haswell's. To easily set the
 Another supported ARM system is ThunderX. This system is much more powerfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the CPUs. Its measurement system measure the energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Unfortunately, the frequency scaling is not supported. To run MERIC on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
 
 At BSC ARM systems it is possible to load modules at login node only - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
- 
+
 --------------------------------------------------------------------------------
-#     10] Tool for static tuning                                               #
+#     10] Using MERIC on CINECA D.A.V.I.D.E. system                            #
+--------------------------------------------------------------------------------
+To activate posibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
+
+Available CPU core frequencies available on IBM Power8+ are: 4.02, 3.99, 3.96, 3.92, 3.89, 3.86, 3.82, 3.79, 3.76, 3.72, 3.69, 3.66, 3.62, 3.59, 3.56, 3.52, 3.49, 3.46, 3.42, 3.39, 3.36, 3.33, 3.29, 3.26, 3.23, 3.19, 3.16, 3.13, 3.09, 3.06, 3.03, 2.99, 2.96, 2.93, 2.89, 2.86, 2.83, 2.79, 2.76, 2.73, 2.69, 2.66, 2.63, 2.59, 2.56, 2.53, 2.49, 2.46, 2.43, 2.39, 2.36, 2.33, 2.29, 2.26, 2.23, 2.19, 2.16, 2.13, 2.09, 2.06 GHz. For the frequency tuning no extra library is necessary.
+
+--------------------------------------------------------------------------------
+#     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 
@@ -437,9 +446,9 @@ Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measureme
 For a static analysis of a selected application, the directory with the tool contain `staticAnalysis.sh` bash script too. It not only runs the application in variety of available HW settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
 --------------------------------------------------------------------------------
-#     11] Acknowledgement                                                      #
+#     12] Acknowledgement                                                      #
 --------------------------------------------------------------------------------
-MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 licese](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
+MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
 Please, open an issue, if you meet any problem. 
 
 	
