@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_DAVIDEWRAPPER_H_
 
 #include "../basis/utils.h"
+#include "../basis/json.h"
 #include <cstdlib>
 #include <iostream>
 #include <time.h>
@@ -24,10 +25,6 @@
 	// *** Rest client headers required to access KairosDD
 	#include "restclient-cpp/connection.h"
 	#include "restclient-cpp/restclient.h"
-
-	// *** JSON single header library used to parse JSON quieries 
-	#include <nlohmann/json.hpp>
-	using json = nlohmann::json;
 #endif
 
 namespace meric {

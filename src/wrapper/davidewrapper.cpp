@@ -219,63 +219,100 @@ int DAVIDE::getSamples()
 	//MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
 	//MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
 
-std::cerr << "DBS response: " << r.body << std::endl;
-
-//{"queries":[{"sample_size":0,"results":[{"name":"power","tags":{},"values":[]}]}]}
-//DBS response: {"queries":[{"sample_size":3950,"results":[{"name":"power","group_by":[{"name":"tag","tags":["node","cluster","org","plugin"],"group":{"node":"davide45","cluster":"davide","org":"e4","plugin":"bbb_pub"}},{"name":"type","type":"number"}],"tags":{"chnl":["data"],"cluster":["davide"],"node":["davide45"],"org":["e4"],"plugin":["bbb_pub"],"ts":["1ms"]},"values":[[1548152597225,541.96],[1548152597226,566.864],[1548152597227,554.993],[1548152597228,556.957],[1548152597229,542.214],[1548152597230,559.897], ... ,[1548152601226,564.257]]}]}]}
-
-	json j = json::parse(r.body);
-	json x = j["/queries/0/sample_size"_json_pointer];
-	if (x.dump() == "0")
+	const char * json_data = r.body.c_str();
+	struct json_value_s* root = json_parse(json_data, r.body.size());
+	if (root ==  NULL)
 	{
-		std::cerr << "MERIC ERROR: no power samples from DiG\n";
+		std::cerr << "MERIC ERROR: empty or invalid json from DiG\n";
 		return 1;
-	}
-	else
+	}	
+	struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+	if (data != NULL && std::string(data->name->string) == "queries")
 	{
-		json v = j["/queries/0/results/0/values"_json_pointer];
-
-		//MERIC_INFO << "\nValues are:\n" << v.dump(4) << "\n\n";
-
-		// *** array parsing ***************************************************
-		// std::vector<long long> time_samples  (v.size(),0);
-		// std::vector<double>    power_samples (v.size(),0);	
+		struct json_array_element_s* arr = ((struct json_array_s*)data->value->payload)->start;
+		data = ((struct json_object_s*)arr->value->payload)->start;
+		long long numOfSamples = std::stoi(std::string(((struct json_string_s*)data->value->payload)->string));
+		if (numOfSamples == 0)
+		{
+			std::cerr << "MERIC ERROR: no power samples from DiG\n";
+			return 1;
+		}
 		
 		long long duration = _stopTime - _startTime;
-		MERIC_INFO << "# of samples is : "  << v.size() << "\n";
-		MERIC_INFO << "# of lost smpls.: "  << duration - v.size() << "\n";
+		MERIC_INFO << "# of samples is : "  << numOfSamples << "\n";
+		MERIC_INFO << "# of lost smpls.: "  << duration - numOfSamples << "\n";
 
 		time_samples.resize (duration + 1);
 		power_samples.resize(duration + 1);
 
-		long long it  = 0; 
-		long long it2 = 0;
-		double corrW = (double) v[0][1];
-		int missing_samples = 0; 
-		int last_error_index = 0; 
-		for (long long ts = _startTime; ts <= _stopTime; ts++)
+		//std::cerr << ((struct json_string_s*)data->value->payload)->string << std::endl;
+		data = data->next;
+		arr = ((struct json_array_s*)data->value->payload)->start;
+		data = ((struct json_object_s*)arr->value->payload)->start;
+
+		while(data != NULL && std::string(data->name->string) != "values")
+			data = data->next;
+		if (data != NULL)
 		{
-			time_samples [it2] = ts;
-			if ((long long) v[it ][0] == ts && it < v.size() ) {
-				power_samples[it2]     = (double)    v[it ][1];
-				corrW			       = power_samples[it2];
-				if (it2 < 20 || it2 > (duration - 20)) {
-					MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W \n";
+
+			auto getSingleSample = [&] (struct json_array_element_s* arr, long long *time, double *power)
+			{
+				if (arr != NULL)
+				{
+					struct json_array_element_s* sample = ((struct json_array_s*)arr->value->payload)->start;
+					*time = std::stoll(std::string(((struct json_string_s*)sample->value->payload)->string));
+					sample = sample->next;
+					*power = std::stod(std::string(((struct json_string_s*)sample->value->payload)->string));
 				}
-				it++;
-			} else {
-				power_samples[it2] = corrW;
-				missing_samples++; 
-				if (it2 < 20 || it2 > (duration - 20)) { 
-					MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W ----- corrected value ---- last error : " << it2 - last_error_index << " \n";
+			};
+
+			arr = ((struct json_array_s*)data->value->payload)->start; //array of time-power samples
+			long long it  = 0; 
+			long long it2 = 0;
+			int missing_samples = 0; 
+			int last_error_index = 0;
+			long long time = 0;
+			double power = .0;
+			getSingleSample(arr, &time, &power);
+			double corrW = power;
+			for (long long ts = _startTime; ts <= _stopTime; ts++)
+			{
+				time_samples[it2] = ts;
+				if (time == ts && it < numOfSamples)
+				{
+					power_samples[it2] = power;
+					corrW = power;
+					if (it2 < 20 || it2 > (duration - 20))
+						MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W \n";
+					it++;
+					arr = arr->next;
+					getSingleSample(arr, &time, &power);
 				}
-				last_error_index = it2; 
+				else
+				{
+					power_samples[it2] = corrW;
+					missing_samples++;
+					if (it2 < 20 || it2 > (duration - 20))
+						MERIC_INFO << "Index : " << it2 << " - " << it << "\tTime s: " << ts << " ms\tPower s: " << power_samples[it2] << " W ----- corrected value ---- last error : " << it2 - last_error_index << " \n";
+					last_error_index = it2;
+				}
+				it2++;
 			}
-			it2++;  
 		}
-		// *** END - array parsing *********************************************
-		return 0;
+		else
+		{
+			std::cerr << "MERIC ERROR: invalid json from DiG\n";
+			free(root);
+			return 1;
+		}
 	}
+	else
+	{
+		std::cerr << "MERIC ERROR: empty or invalid json from DiG\n";
+		free(root);
+		return 1;
+	}
+	return 0;
 }
 
 
