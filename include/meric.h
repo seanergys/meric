@@ -18,7 +18,7 @@ void   MERIC_IgnoreStop();
 
 //void MERIC_CaptureScope(const char * region);
 //RAII scope measurement - it does not return time
-void MERIC_ScopeEnd(const char ** region)
+static void MERIC_ScopeEnd(const char ** region)
 {
     MERIC_MeasureStop();
 }
