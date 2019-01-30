@@ -15,6 +15,13 @@
 	#include <numa.h>
 #endif
 
+#ifdef HAVE_MSR_CORE_H
+	#include <msr_core.h>
+	#include <msr_rapl.h>
+	#include <msr_clocks.h>
+	#include <libmsr_error.h>
+#endif
+
 #ifdef HAVE_CILK_CILK_API_H
 	#include <cilk/cilk_api.h> 
 #endif
@@ -58,6 +65,7 @@ const int X86ADAPT_MAX_FREQ = 33;
 class Environment {
 
 public:
+	static int NODE_SIZE_THREAD;
 	static int NODE_SIZE_CPU;
 	static int NODE_SIZE_SOCKET;
 	static int SOCKET_SIZE_CPU;

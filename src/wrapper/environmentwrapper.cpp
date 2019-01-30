@@ -19,6 +19,7 @@ systemLimits Environment::FreqLimits [] = {
 	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1 }
 };
 
+int Environment::NODE_SIZE_THREAD = 1;
 int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
@@ -63,16 +64,30 @@ void Environment::threadNumber(int nthreads)
 
 void Environment::initHWSizes()
 {
-#ifdef HAVE_X86_ADAPT_H // and adapt must be initialized which makes it 
-	NODE_SIZE_CPU = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
+#ifdef HAVE_MSR_CORE_H
+	int Hthreads;
+	uint64_t cs = 0;
+	uint64_t ts = 0;
+	uint64_t ss = 0;
+	core_config(&cs, &ts, &ss, &Hthreads);
+	NODE_SIZE_SOCKET = ss;
+	SOCKET_SIZE_CPU  = cs;
+	NODE_SIZE_CPU    = SOCKET_SIZE_CPU * NODE_SIZE_SOCKET;
+	NODE_SIZE_THREAD = ts * NODE_SIZE_CPU;
+	MERIC_INFO << "HThreads: " << ((Hthreads == 0) ? "inactive" : "active") << std::endl;
+#elif defined HAVE_X86_ADAPT_H // and adapt must be initialized which makes it 
+	NODE_SIZE_CPU    = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+	//NODE_SIZE_THREAD = 1;	TODO get real number of avail threads per core - not used now
+	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
 #else
-	NODE_SIZE_CPU = sysconf(_SC_NPROCESSORS_ONLN);
+	NODE_SIZE_CPU    = sysconf(_SC_NPROCESSORS_ONLN);
 	NODE_SIZE_SOCKET = numa_node_of_cpu(NODE_SIZE_CPU-1)+1;
+	//NODE_SIZE_THREAD = 1;	TODO
 	if (NODE_SIZE_SOCKET <= 0)
 		NODE_SIZE_SOCKET=1;
-#endif
 	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
+#endif
 	MERIC_INFO << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
 }
 
@@ -144,6 +159,14 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	if (x86_adapt_init())
 	{
 		std::cerr << "X86ADAPT ERROR: init error\n";
+//		exit(1);
+	}
+#endif
+
+#ifdef HAVE_MSR_CORE_H
+	if (init_msr())
+	{
+		libmsr_error_handler("Unable to initialize libmsr", LIBMSR_ERROR_MSR_INIT, getenv("HOSTNAME"), __FILE__, __LINE__);
 //		exit(1);
 	}
 #endif
@@ -459,6 +482,9 @@ void Environment::close()
 {
 #ifdef HAVE_X86_ADAPT_H
 	x86_adapt_finalize();
+#endif
+#ifdef HAVE_MSR_CORE_H
+	finalize_msr();
 #endif
 }
 

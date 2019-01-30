@@ -25,7 +25,7 @@ static std::map<std::string, std::string> counterLabel = {
 };
 
 }
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * to add new PERFEVENT counter:
  *	add here counter description
@@ -50,7 +50,7 @@ static std::map<std::string, std::string> counterLabel = {
 };
 
 }
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * to add new RAPL counter:
  * 	add here counter name as it is in "x86a_read -n"
@@ -59,7 +59,7 @@ static std::map<std::string, std::string> counterLabel = {
  * WARNING: RAPL counters are for each socket - in output file counters label will have a suffix
  * WARNING: all added counters must be ENERGY counters, RAPL time and RAPL power has different unit and RAPL::init() must be changed accordingly. Further explanation at the top of raplwrapper.cpp.
  **/
-namespace RAPL_COUNTERS {
+namespace X86ADAPT_RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
 const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
@@ -81,6 +81,41 @@ static std::map<std::string, std::string> counterLabel = {
 	{ "Intel_RAPL_RAM_Energy_1", "RAPL_RAM_1 [J]" },
 	{ "Energy summary [J]", "Energy summary [J]" }
 };
+}
+////////////////////////////////////////////////////////////////////////////////
+namespace MSR_RAPL_COUNTERS {
+
+const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
+const std::string RAPL_RAM_ENERGY  = "MSR_DRAM_ENERGY_STATUS";
+const std::string RAPL_SUM_ENERGY  = "Energy summary [J]";	//PCKG+RAM = not a counter to measure
+/*
+const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //not available
+const std::string RAPL_PP1_ENERGY  = "MSR_PP1_ENERGY_STATUS";
+*/
+
+static std::map<std::string, std::string> counterLabel = {
+	{ "MSR_PKG_ENERGY_STATUS",    "RAPL_PCKG [J]"      },
+	{ "MSR_DRAM_ENERGY_STATUS",   "RAPL_RAM [J]"       },
+	{ "MSR_PKG_ENERGY_STATUS_0",  "RAPL_PCKG_0 [J]"    },
+	{ "MSR_PKG_ENERGY_STATUS_1",  "RAPL_PCKG_1 [J]"    },
+	{ "MSR_DRAM_ENERGY_STATUS_0", "RAPL_RAM_0 [J]"     },
+	{ "MSR_DRAM_ENERGY_STATUS_1", "RAPL_RAM_1 [J]"     },
+	{ "Energy summary [J]",       "Energy summary [J]" }
+};
+
+#ifdef HAVE_MSR_CORE_H
+#include <master.h>
+static std::map<std::string, uint64_t> counterDefines = {
+	{ "MSR_PKG_ENERGY_STATUS",    MSR_PKG_ENERGY_STATUS  },
+	{ "MSR_DRAM_ENERGY_STATUS",   MSR_DRAM_ENERGY_STATUS },
+	{ "MSR_PKG_ENERGY_STATUS_0",  MSR_PKG_ENERGY_STATUS  },
+	{ "MSR_PKG_ENERGY_STATUS_1",  MSR_PKG_ENERGY_STATUS  },
+	{ "MSR_DRAM_ENERGY_STATUS_0", MSR_DRAM_ENERGY_STATUS },
+	{ "MSR_DRAM_ENERGY_STATUS_1", MSR_DRAM_ENERGY_STATUS },
+	{ "Energy summary [J]",       0x0                    }
+};
+#endif
+
 }
 
 

@@ -13,9 +13,9 @@
 namespace meric {
 
 class RAPL {
-#ifdef HAVE_X86_ADAPT_H
+#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 public:
-	static const int RAPL_BASELINE = 0; // ~70 W should be added in the RADAR config file
+	static const int RAPL_BASELINE = 0; // NOT USED at the MERIC side now
 	static void init();
 	static void close() {};
 	
@@ -33,7 +33,9 @@ private:
 	static std::map<std::string, unsigned long long int> counters;
 	static std::map<std::string, double> energyUnit;
 	static std::string suffix;
-	static int numOfDevices;
+	static int NODE_SIZE_SOCKET;
+	static int NODE_SIZE_CPU;
+	static int SOCKET_SIZE_CPU;
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #else
