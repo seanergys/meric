@@ -135,6 +135,8 @@ void RAPL::init()
 	energyUnit["Intel_RAPL_Pckg_Energy"] = 1.0/pow(2,unit);
 	//the rest unit modifiers are set according to x86_adapt "documentation"
 	//https://github.com/tud-zih-energy/x86_energy/blob/eac130973b2fbfa0b5a3e72ef9912af617584d97/rapl.c#L763
+	//DRAM ENERGY unit is fixed to 15.3uJ
+	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
 	energyUnit["Intel_RAPL_RAM_Energy"] = 1.0/pow(2,16);
 	energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"] = 1.0/pow(2,16);	//1.0/pow(2,18)
 	energyUnit["Intel_DRAM_ENERGY_STATUS_CH1"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
@@ -224,8 +226,10 @@ void RAPL::init()
 
     uint64_t unit;
     read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &unit);
-	energyUnit[RAPL_PCKG_ENERGY] = pow(2,((unit & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
-	energyUnit[RAPL_RAM_ENERGY] = energyUnit[RAPL_PCKG_ENERGY];
+	energyUnit[RAPL_PCKG_ENERGY] = 1.0/pow(2,((unit & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
+	//DRAM ENERGY unit is fixed to 15.3uJ
+	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
+	energyUnit[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
 }
 
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
