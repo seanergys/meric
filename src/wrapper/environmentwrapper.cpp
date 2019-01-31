@@ -12,7 +12,7 @@ using namespace meric;
 
 //systemLimits Environment::FreqLimits [4];
 systemLimits Environment::FreqLimits [] = {
-	[SYS_HASWELL] = { 33, 25, 12, 30, 30, 12 },
+	[SYS_HASWELL] = { 3300000 , 2500000, 1200000, 30, 30, 12 },
 	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800},
 	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1 }, //DVFS+UFS not supported
 	[SYS_DAVIDE]  = { 4023000, 4023000, 2061000, -1, -1, -1 }, //UFS not supported
@@ -24,6 +24,7 @@ int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
 int Environment::systemType = SYS_HASWELL;
+uint64_t Environment::IA32_ENERGY_PERF_BIAS_default = 0;
 bool Environment::usedDVFS = false;
 bool Environment::usedUFS = false;
 bool Environment::CPUFREQ_GOVERNOR = false;
@@ -61,7 +62,9 @@ void Environment::threadNumber(int nthreads)
 	MERIC_INFO << "MERIC number of OpenMP threads changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 }
 
-
+/**
+ * x86_adapt must be initialized befor it us used here
+ **/
 void Environment::initHWSizes()
 {
 #ifdef HAVE_MSR_CORE_H
@@ -75,7 +78,7 @@ void Environment::initHWSizes()
 	NODE_SIZE_CPU    = SOCKET_SIZE_CPU * NODE_SIZE_SOCKET;
 	NODE_SIZE_THREAD = ts * NODE_SIZE_CPU;
 	MERIC_INFO << "HThreads: " << ((Hthreads == 0) ? "inactive" : "active") << std::endl;
-#elif defined HAVE_X86_ADAPT_H // and adapt must be initialized which makes it 
+#elif defined HAVE_X86_ADAPT_H
 	NODE_SIZE_CPU    = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	//NODE_SIZE_THREAD = 1;	TODO get real number of avail threads per core - not used now
@@ -100,12 +103,11 @@ void Environment::getFrequenciesLimits()
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
 	FreqLimits[SYS_OTHER].maxCoreFreq = std::stoi(freqBound);
-	FreqLimits[SYS_OTHER].defaultCoreFreq = FreqLimits[SYS_OTHER].maxCoreFreq / CPUFREQ_FREQ_MULT;
-	FreqLimits[SYS_OTHER].maxCoreFreq = FreqLimits[SYS_OTHER].defaultCoreFreq + (FreqLimits[SYS_OTHER].maxCoreFreq % CPUFREQ_FREQ_MULT ? 1 : 0);
+	FreqLimits[SYS_OTHER].defaultCoreFreq = FreqLimits[SYS_OTHER].maxCoreFreq;
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	FreqLimits[SYS_OTHER].minCoreFreq = std::stoi(freqBound) / CPUFREQ_FREQ_MULT;
+	FreqLimits[SYS_OTHER].minCoreFreq = std::stoi(freqBound);
 
 	//UnCORE freq
 #ifdef HAVE_X86_ADAPT_H
@@ -148,8 +150,8 @@ void Environment::getFrequenciesLimits()
 		FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_OTHER].maxUncoreFreq;
 	}
 #endif
-	MERIC_INFO << "CORE FREQ limits: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq<< std::endl;
-	MERIC_INFO << "UNCORE FREQ limits: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
+	MERIC_INFO << "CORE FREQ limits [Hz]: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq << std::endl;
+	MERIC_INFO << "UNCORE FREQ limits [100MHz]: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
@@ -179,6 +181,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	{
 		if (systemType == SYS_OTHER)
 		{
+			getFrequenciesLimits();
 			//GOVERNOR
 			std::ifstream governorFileI;
 			if (defaultParameter.frequency != 0)
@@ -186,6 +189,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 				governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 				governorFileI >> originalGovernor;
 				governorFileI.close();
+// USERSPACE GOVERNOR
 				if (originalGovernor == "userspace")
 				{
 					CPUFREQ_GOVERNOR=true;
@@ -213,12 +217,35 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 							governorFileO.close();
 						}
 					}
+// POWERSAVE GOVERNOR TODO - zjistit s kterymi to presne funguje
+#ifdef HAVE_MSR_CORE_H
+					else
+					{
+						std::ofstream defaultSettings;
+						MERIC_INFO << "Disable turbo logic of Intel P-state driver\n";
+						defaultSettings.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+						defaultSettings << "1";
+						defaultSettings.close();
+						
+						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
+						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_default);
+						uint64_t REG_MAX_PSTATE = (FreqLimits[systemType].maxCoreFreq/100000)*256;
+						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+						{
+							defaultSettings.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+							defaultSettings << FreqLimits[systemType].minCoreFreq;
+							defaultSettings.close();
+
+							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+							write_msr_by_idx(cpu, IA32_PERF_CTL, REG_MAX_PSTATE);
+						}
+					}
+#endif
 				}
 			}
-			getFrequenciesLimits();
 		}
 		//activate userspace governor
-		if (systemType == SYS_JETSON)
+		else if (systemType == SYS_JETSON)
 		{
 			std::ofstream governorFile;
 			if (defaultParameter.frequency != 0) //core
@@ -259,6 +286,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (FreqLimits[SYS_OTHER].defaultCoreFreq == -1)
 		return;	//DVFS not supported
 
+
 	if (freq < FreqLimits[systemType].minCoreFreq)
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
@@ -283,24 +311,36 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 	else
 	{
-#ifdef HAVE_CPUFREQ_H
+		int nodeSize = NODE_SIZE_CPU;
+		int cpu=0;
+		if(socket != -1)
+		{
+			nodeSize = SOCKET_SIZE_CPU*(socket+1);
+			cpu = SOCKET_SIZE_CPU*socket;
+		}
+#ifdef HAVE_MSR_CORE_H
+		MERIC_INFO << "MSR set frequency to: " << freq;
+		if (socket != -1)
+			MERIC_INFO << "; socket: " << socket;
+		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
+
+		for (; cpu<nodeSize; cpu++)
+		{
+			write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/CPUFREQ_FREQ_MULT) << 8);
+		}
+#else
+	#ifdef HAVE_CPUFREQ_H
 		if (CPUFREQ_GOVERNOR)
 		{
-				MERIC_INFO << "CPUFREQ set frequency to: " << freq;
 				int ret;
-				int nodeSize = NODE_SIZE_CPU;
-				int cpu = 0;
+				MERIC_INFO << "CPUFREQ set frequency to: " << freq;
 				if(socket != -1)
-				{
-					nodeSize = SOCKET_SIZE_CPU*(socket+1);
-					cpu = SOCKET_SIZE_CPU*socket;
 					MERIC_INFO << "; socket: " << socket;
-				}
 				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
 				for (; cpu < nodeSize; cpu++)
 				{
-					ret = cpufreq_set_frequency(cpu,freq*CPUFREQ_FREQ_MULT);
+					ret = cpufreq_set_frequency(cpu,freq);
 
 					if(ret != 0) // || freq*CPUFREQ_FREQ_MULT != cpufreq_get_freq_kernel(cpu))	//TODO test turbo freq setting
 					{
@@ -310,8 +350,8 @@ void Environment::frequency(uint64_t freq, int socket)
 				MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
 		}
 		else
-#endif
-#ifdef HAVE_X86_ADAPT_H
+	#endif
+	#ifdef HAVE_X86_ADAPT_H
 		{
 				int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
 				if (adaptHandler < 0)
@@ -320,14 +360,8 @@ void Environment::frequency(uint64_t freq, int socket)
 					return;
 				}
 				MERIC_INFO << "X86ADAPT set frequency to: " << freq;
-
-				int nodeSize = NODE_SIZE_CPU;
-				int cpu=0;
 				if(socket != -1)
-				{
-					nodeSize = SOCKET_SIZE_CPU*(socket+1);
-					cpu = SOCKET_SIZE_CPU*socket;
-				}
+					MERIC_INFO << "; socket: " << socket;
 				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 		
 				for (; cpu<nodeSize; cpu++)
@@ -339,7 +373,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		//				exit(2);
 					}
 
-					if(x86_adapt_set_setting(fd, adaptHandler, freq*X86ADAPT_FREQ_MULT) != 8)
+					if(x86_adapt_set_setting(fd, adaptHandler, (freq/CPUFREQ_FREQ_MULT) *X86ADAPT_FREQ_MULT) != 8)
 					{
 						std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
 		//				exit(3);
@@ -349,8 +383,9 @@ void Environment::frequency(uint64_t freq, int socket)
 						std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 				}
 		}
-#elif defined HAVE_CPUFREQ_H
+	#elif defined HAVE_CPUFREQ_H
 			std::cerr << "CPUFREQ error: governor not specified as userspace, CPU core frequency not changed\n";
+	#endif
 #endif
 	}
 	clock_gettime(CLOCK_REALTIME, &stop_time);
@@ -453,6 +488,25 @@ void Environment::setDefaultFrequencies()
 				governorFile.close();
 			}
 		}
+#ifdef HAVE_MSR_CORE_H
+		else
+		{
+			std::ofstream defaultSettings;
+			MERIC_INFO << "Enable turbo logic of Intel P-state driver\n";
+			defaultSettings.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+			defaultSettings << "0";
+			defaultSettings.close();
+			
+			MERIC_INFO << "Enable scaling frequency of Intel P-state driver and set default energy performance bias\n";
+			for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+			{
+				defaultSettings.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+				defaultSettings << FreqLimits[systemType].maxCoreFreq;
+				defaultSettings.close();
+				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, IA32_ENERGY_PERF_BIAS_default);
+			}
+		}
+#endif
 	}
 	if (systemType == SYS_JETSON)
 	{

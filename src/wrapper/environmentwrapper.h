@@ -20,6 +20,8 @@
 	#include <msr_rapl.h>
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
+	//TODO where does this register addres come from?
+	#define IA32_ENERGY_PERF_BIAS	0x1B0
 #endif
 
 #ifdef HAVE_CILK_CILK_API_H
@@ -82,6 +84,7 @@ public:
 	static void close();
 
 private:
+	static uint64_t IA32_ENERGY_PERF_BIAS_default;
 	static void getFrequenciesLimits();
 	static bool usedDVFS;
 	static bool usedUFS;
