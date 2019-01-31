@@ -1,6 +1,7 @@
 ### XX.XX.XXXX #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
-  - user should not specify CF, UnCF and #threads in the name of the output file any more - it is done automatically
+  - CPU core frequency must be specified in Hz
+  - user should not specify CPU core frequency, uncore frequency and number of active threads in the name of the output file any more - it is done automatically
   - directory with measured data contain measurementInfo.json, for data description
   - new MERIC API RAII function for scope measurement MERIC_captureScope(const char * region)
   - barriers turn off available not only for production runs

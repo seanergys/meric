@@ -16,7 +16,7 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
  7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#7-code-dynamism-investigation)
  8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#8-meric-with-a-fortran-code)
  9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric/tree/dev#9-using-meric-on-bsc-arm-systems)
-10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-d-a-v-i-d-e-systems)
+10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-systems)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 
@@ -31,7 +31,7 @@ The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL)
              to instrument with MERIC.
 * wrapper
 	- environmentwrapper
-		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
+		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils) or [libmsr](https://github.com/LLNL/libmsr) + [msr-safe](https://github.com/LLNL/msr-safe).
 
 	- hdeemwrapper
 		= Energy measurement using [HDEEM](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement).
@@ -180,14 +180,17 @@ export LD_LIBRARY_PATH+=:$DYNINST_HOME/build/dyninstAPI_RT/
 MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, a Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
 
 ### MERIC used libraries ###
-* mandatory - OpenMP
-* mandatory - rt (high precision time measurement)
-* optionaly - MPI
-* optionaly - PAPI
-* optionaly - cpufreq
-* optionaly - x86_adapt
-* optionaly - numa (mandatory if x86_adapt is missing)
-* optionaly - REST-client (mandatory for DiG energy measurement system)
+* mandatory  - rt (high precision time measurement)
+* optionally - OpenMP (used in default)
+* optionally - MPI
+* optionally - [PAPI](http://icl.cs.utk.edu/papi/)
+* optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
+* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe)
+* optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
+* optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
+* optionally - [numa](https://github.com/numactl/numactl) (mandatory if x86_adapt is missing)
+* optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) (mandatory for DiG energy measurement system)
+* integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
 ### TIMEPROF used libraries ###
 * mandatory - OpenMP
@@ -202,7 +205,7 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
-	export MERIC_FREQUENCY=24        # [0.1 GHz]
+	export MERIC_FREQUENCY=24        # [Hz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24
 		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
