@@ -2,7 +2,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library originally developed for x86 systems (tested on HSW-EP, BDW and KNL) but additionally supports selected BSC ARM systems.
+The library originally developed for x86 systems (tested on HSW, BDW and KNL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -193,8 +193,9 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
 ### TIMEPROF used libraries ###
-* mandatory - OpenMP
-* mandatory - rt
+* mandatory  - rt
+* optionally - OpenMP
+* optionally - MPI
 
 Beside these libraries waf requires Python.
 
@@ -205,7 +206,7 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
-	export MERIC_FREQUENCY=24        # [Hz]
+	export MERIC_FREQUENCY=2400000   # [Hz]
 	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
 	export MERIC_NUM_THREADS=24
 		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
@@ -285,7 +286,7 @@ It is also possible to specify the settings for a socket on a specific node, in 
 	"@SOCKET" : {
 		"0" : {
 			"A" : {
-				"FREQUENCY" : 13,
+				"FREQUENCY" : 1300000,
 				"UNCORE_FREQUENCY" : 13
 			}
 		}
@@ -296,7 +297,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"FREQUENCY" : 2,
+			"FREQUENCY" : 200000,
 			"UNCORE_FREQUENCY" : 2,
 			"NUM_THREADS" : 2
 		}
@@ -382,7 +383,7 @@ To find the best settings for each region, you should run your code with several
 				for uncore_freq in {30..12..1} # or {30..12..2}
 				do
 					export MERIC_NUM_THREADS=$thread
-					export MERIC_FREQUENCY=$cpu_freq
+					export MERIC_FREQUENCY=${cpu_freq}00000
 					export MERIC_UNCORE_FREQUENCY=$uncore_freq
 					./test
 				done
