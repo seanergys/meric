@@ -2,7 +2,8 @@
 #include "../basis/utils.h"
 
 /**
- * RAPL description
+ * Intel RAPL energy consumption mearurement registers description
+ * From Intel 64 and IA-32 Architectures Software Developer's Manual
  *
  * Intel_RAPL_Pckg_Energy - all energy consumptions
  * Intel_RAPL_PP0_Energy  - CPU
@@ -15,12 +16,18 @@
  *
  * MSR_RAPL_POWER_UNIT Register ***********************************************
  * Power Units (bits 3:0):
- 	Power related information (in Watts) is based on the multiplier, 1/2^PU; where PU is an unsigned integer represented by bits 3:0. Default value is 0011b, indicating power unit is in 1/8 Watts 
+ 	Power related information (in Watts) is based on the multiplier, 1/2^PU; 
+ 	where PU is an unsigned integer represented by bits 3:0. 
+ 	Default value is 0011b, indicating power unit is in 1/8 Watts 
 increment.
  * Energy Status Units (bits 12:8): 
- 	Energy related information (in Joules) is based on the multiplier, 1/2^ESU; where ESU is an unsigned integer represented by bits 12:8. Default value is 10000b, indicating energy status unit is in 15.3 micro-Joules increment.
+ 	Energy related information (in Joules) is based on the multiplier, 1/2^ESU; 
+ 	where ESU is an unsigned integer represented by bits 12:8. 
+ 	Default value is 10000b, indicating energy status unit is 15.3uJ increment.
  * Time Units (bits 19:16): 
-	Time related information (in Seconds) is based on the multiplier, 1/ 2^TU; where TU is an unsigned integer represented by bits 19:16. Default value is 1010b, indicating time unit is in 976 micro-seconds increment.
+	Time related information (in Seconds) is based on the multiplier, 1/2^TU; 
+	where TU is an unsigned integer represented by bits 19:16. 
+	Default value is 1010b, indicating time unit is in 976us increment.
 
 TIME    ENERGY     POWER
 1010|000|01110|0000|0011
@@ -28,25 +35,30 @@ TIME    ENERGY     POWER
 
  * MSR_PKG_ENERGY_STATUS register *********************************************
  * Total energy consumed (bits 31:0):
-	The unsigned integer value represents the total amount of energy consumed since that last time this register is cleared. The unit of this field is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
+	The unsigned integer value represents the total amount of energy consumed 
+	since that last time this register is cleared. The unit of this field 
+	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
  * Reserved (bits 63:32)
  
  * MSR_PP0_ENERGY_STATUS/MSR_PP1_ENERGY_STATUS register ***********************
  * Total Energy Consumed (bits 31:0): 
-	The unsigned integer value represents the total amount of energy consumed since the last time this register was cleared. The unit of this field is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
+	The unsigned integer value represents the total amount of energy consumed 
+	since the last time this register was cleared. The unit of this field 
+	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
  * Reserved (bits 63:32)
 
  * MSR_DRAM_ENERGY_STATUS register ********************************************
  * Total Energy Consumed (bits 31:0):
-	The unsigned integer value represents the total amount of energy consumed since that last time this register is cleared. The unit of this field is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
+	The unsigned integer value represents the total amount of energy consumed 
+	since that last time this register is cleared. The unit of this field 
+	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
  * Reserved (bits 63:32)
- 
  *
  **/
 const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
-const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF;
+const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
 const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
 //TODO to simplyfy the code, only PKG mask is used in the following code since 
 //it is the same as DRAM/PP0/PP1 mask
@@ -132,16 +144,16 @@ void RAPL::init()
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 	
-	energyUnit["Intel_RAPL_Pckg_Energy"] = 1.0/pow(2,unit);
+	energyUnit[RAPL_PCKG_ENERGY] = 1.0/pow(2,unit);
 	//the rest unit modifiers are set according to x86_adapt "documentation"
 	//https://github.com/tud-zih-energy/x86_energy/blob/eac130973b2fbfa0b5a3e72ef9912af617584d97/rapl.c#L763
 	//DRAM ENERGY unit is fixed to 15.3uJ
 	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
-	energyUnit["Intel_RAPL_RAM_Energy"] = 1.0/pow(2,16);
-	energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"] = 1.0/pow(2,16);	//1.0/pow(2,18)
-	energyUnit["Intel_DRAM_ENERGY_STATUS_CH1"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
-	energyUnit["Intel_DRAM_ENERGY_STATUS_CH2"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
-	energyUnit["Intel_DRAM_ENERGY_STATUS_CH3"] = energyUnit["Intel_DRAM_ENERGY_STATUS_CH0"];
+	energyUnit[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
+	energyUnit[RAPL_DRAM_CH0]   = 1.0/pow(2,16);	//1.0/pow(2,18)
+	energyUnit[RAPL_DRAM_CH1]   = energyUnit[RAPL_DRAM_CH0];
+	energyUnit[RAPL_DRAM_CH2]   = energyUnit[RAPL_DRAM_CH0];
+	energyUnit[RAPL_DRAM_CH3]   = energyUnit[RAPL_DRAM_CH0];
 
 }
 
@@ -224,8 +236,8 @@ void RAPL::init()
 	NODE_SIZE_CPU    = SOCKET_SIZE_CPU * NODE_SIZE_SOCKET;
 	initMap(counters);
 
-    uint64_t unit;
-    read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &unit);
+	uint64_t unit;
+	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &unit);
 	energyUnit[RAPL_PCKG_ENERGY] = 1.0/pow(2,((unit & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
 	//DRAM ENERGY unit is fixed to 15.3uJ
 	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
