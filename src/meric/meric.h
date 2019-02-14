@@ -50,7 +50,7 @@ public:
 		for (int i=0; i<_storeList.size(); i++)
 		{
 			if (_storeList[i]->getMPIWrite())
-				_storeList[i]->addStart(getRegionID(region));
+				_storeList[i]->addStart(getRegionID(region), currentState.socket[0]); //data storing into file with name according socket#0
 		}
 		MERIC_INFO << "region '" << region << "' started\n";
 	}

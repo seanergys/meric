@@ -13,7 +13,7 @@
 
 using namespace meric;
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addStart(int region)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addStart(int region, RegionParameters configuration)
 {
 	std::map<std::string, TType> record;
 	struct timespec time;
@@ -21,7 +21,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	TCounter::getCounterValues(record);
 	clock_gettime(CLOCK_REALTIME, &time);
 
-	_records.push_back(CountersRecord<TType>(region, record, time));
+	_records.push_back(CountersRecord<TType>(region, record, time, configuration));
 }
 
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addEnd(int region)
@@ -32,7 +32,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	clock_gettime(CLOCK_REALTIME, &time);
 	TCounter::getCounterValues(record);
 
-	_records.push_back(CountersRecord<TType>(region, record, time));
+	_records.push_back(CountersRecord<TType>(region, record, time, _records.back().configuration));
 }
 
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd)

@@ -4,18 +4,18 @@
 
 using namespace meric;
 
-template <class TSystem> void TimeStore<TSystem>::addStart(int region)
+template <class TSystem> void TimeStore<TSystem>::addStart(int region, RegionParameters configuration)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
-	_records.push_back(TimeRecord(region, time));
+	_records.push_back(TimeRecord(region, time, configuration));
 }
 
 template <class TSystem> void TimeStore<TSystem>::addEnd(int region)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
-	_records.push_back(TimeRecord(region, time));
+	_records.push_back(TimeRecord(region, time, _records.back().configuration));
 }
 
 template <class TSystem> void TimeStore<TSystem>::computePeriods()

@@ -7,12 +7,13 @@
 namespace meric {
 
 struct DetailedEnergyRecord {
-	DetailedEnergyRecord(int region, std::array<double, HDEEM::PROBE_NUMBER> &energy, timespec &time)
-	: time(time), energy(energy), region(region) {};
+	DetailedEnergyRecord(int region, std::array<double, HDEEM::PROBE_NUMBER> &energy, timespec &time, RegionParameters configuration)
+	: time(time), energy(energy), region(region), configuration(configuration) {};
 
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
 	timespec time;
 	int region;
+	RegionParameters configuration;
 };
 
 template <class TStore>
@@ -26,7 +27,7 @@ class DetailedEnergyStore: public Store {
 	friend class AggregateStore<DetailedEnergyStore>;
 	friend class DetailedAggregateStore<DetailedEnergyStore>;
 public:
-	void addStart(int region);
+	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 
@@ -67,6 +68,16 @@ public:
 	DetailedEnergyStore()
 	{
 		MERIC_INFO << "Create DetailedEnergyStore\n";
+	}
+
+	RegionParameters* getConfiguration(size_t id)
+	{
+		if (_records.size()-1 >= id)
+			return &(_records[id].configuration);
+		else
+		{
+			return NULL;
+		}
 	}
 
 protected:

@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <exception> 
 
+#include "../wrapper/environmentwrapper.h"
 #include "../wrapper/hdeemwrapper.h"
 #include "../wrapper/jetsonwrapper.h"
 #include "../wrapper/thunderwrapper.h"
@@ -44,7 +45,7 @@ struct DebugRegionStats {
 class StoreBase
 {
 public:
-	virtual void addStart(int region) = 0;
+	virtual void addStart(int region, RegionParameters configuration) = 0;
 	virtual void addEnd(int region) = 0;
 	virtual double getRegionDuration() = 0;
 	virtual void loadSchedulerEnvironment() = 0;	
@@ -133,12 +134,10 @@ protected:
 		_levels.resize(_name.size());
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
-		std::vector<std::ofstream> ss(_name.size());
 		for (int i=0; i<_name.size(); i++)
 		{
 			std::string folderName = _name[i].c_str();
 			mutils::createDir(outputDir + "/" + folderName);
-			ss[i].open(outputDir + "/" + folderName + "/" + (prefix.size() ? prefix + "_" : "" ) + outputFilename + ".csv", std::ios::app);
 		}
 		clock_gettime(CLOCK_REALTIME, &time2);
 		MERIC_INFO << "MERIC open csv files in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
@@ -155,14 +154,23 @@ protected:
 			}
 			else
 			{
-				processInterval(ss[records[i].region], starts, i);
-				_counters[records[i].region]++;		
+				std::string filenamePrefix = (prefix.size() ? prefix + "_" : "" )
+					+ ((int)records[starts.back()].configuration.frequency == 0  ? "" : std::to_string((int)records[starts.back()].configuration.frequency)  +"_" )
+					+ (records[starts.back()].configuration.uncoreFrequency == 0 ? "" : std::to_string(records[starts.back()].configuration.uncoreFrequency) +"_" )
+					+ (records[starts.back()].configuration.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
+					+ outputFilename;
+				if (filenamePrefix.back() == '_')
+					filenamePrefix.pop_back();
+				std::ofstream ss(outputDir + "/" + _name[records[i].region] + "/" + filenamePrefix + ".csv", std::ios::app);
+				processInterval(ss, starts, i);
+				_counters[records[i].region]++;
 				for(size_t j=0; j<_levels.size(); j++)
 				{
 					if (_levels[j] > _levels[records[i].region])
 						_counters[j] = 0;
 				}
 				starts.pop_back();
+				ss.close();
 			}
 		}
 	}

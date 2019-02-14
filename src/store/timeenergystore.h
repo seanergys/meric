@@ -8,12 +8,13 @@
 namespace meric {
 
 struct TimeEnergyRecord {
-	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, HDEEM::PROBE_NUMBER> &energy)
-	: region(region), clockTime(clockTime), energy(energy) {};
+	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, HDEEM::PROBE_NUMBER> &energy, RegionParameters configuration)
+	: region(region), clockTime(clockTime), energy(energy), configuration(configuration) {};
 
 	timespec clockTime;
     std::array<double, HDEEM::PROBE_NUMBER> energy;
 	int region;
+	RegionParameters configuration;
 };
 
 template <class TStore>
@@ -23,7 +24,7 @@ class TimeEnergyStore: public TimeStore <HDEEM> {
 
 	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
-	void addStart(int region);
+	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 	void fillRegionStats(DebugRegionStats &stats, size_t iStarts, size_t iEnd);
@@ -78,6 +79,7 @@ public:
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 */
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

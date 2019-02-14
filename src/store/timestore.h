@@ -8,11 +8,12 @@
 namespace meric {
 
 struct TimeRecord {
-	TimeRecord(int region, timespec &time)
-	: time(time), region(region) {};
+	TimeRecord(int region, timespec &time, RegionParameters configuration)
+	: time(time), region(region), configuration(configuration) {};
 
 	timespec time;
 	int region;
+	RegionParameters configuration;
 };
 
 template <class TStore>
@@ -28,7 +29,7 @@ template <class TSystem> class TimeStore: public Store {
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
 public:
-	virtual void addStart(int region);
+	virtual void addStart(int region, RegionParameters configuration);
 	virtual void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 
@@ -111,6 +112,7 @@ public:
 		clock_gettime(CLOCK_REALTIME, &_start);
 	}
 */
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void computePeriods();

@@ -33,9 +33,10 @@ public:
 		MPI_Comm_size(_comm, &_size);
 	}
 
-	void addStart(int region) { _store->addStart(region); }
+	void addStart(int region, RegionParameters configuration) { _store->addStart(region, configuration); }
 	void addEnd(int region) { _store->addEnd(region); };
 	double getRegionDuration() { return _store->getRegionDuration(); };
+	RegionParameters* getConfiguration(size_t id) { return _store->getConfiguration(id); }
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

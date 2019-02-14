@@ -3,7 +3,7 @@
 
 using namespace meric;
 
-void DetailedEnergyStore::addStart(int region)
+void DetailedEnergyStore::addStart(int region, RegionParameters configuration)
 {
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
 	struct timespec time;
@@ -11,7 +11,7 @@ void DetailedEnergyStore::addStart(int region)
 	HDEEM::getDetailedCounterValues(energy);
 	clock_gettime(CLOCK_REALTIME, &time);
 
-	_records.push_back(DetailedEnergyRecord(region, energy, time));
+	_records.push_back(DetailedEnergyRecord(region, energy, time, configuration));
 }
 
 void DetailedEnergyStore::addEnd(int region)
@@ -22,7 +22,7 @@ void DetailedEnergyStore::addEnd(int region)
 	clock_gettime(CLOCK_REALTIME, &time);
 	HDEEM::getDetailedCounterValues(energy);
 	
-	_records.push_back(DetailedEnergyRecord(region, energy, time));
+	_records.push_back(DetailedEnergyRecord(region, energy, time, _records.back().configuration));
 }
 
 void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)

@@ -4,12 +4,12 @@
 
 using namespace meric;
 
-void InfoStore::addStart(int region)
+void InfoStore::addStart(int region, RegionParameters configuration)
 {
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	
-	_records.push_back(InfoRecord(region, time));
+	_records.push_back(InfoRecord(region, time, configuration));
 	_timeStack.push_back(time);
 }
 
@@ -18,7 +18,7 @@ void InfoStore::addEnd(int region)
 	struct timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 
-	_records.push_back(InfoRecord(region, time));
+	_records.push_back(InfoRecord(region, time, _records.back().configuration)); //this configuration is not relevant - must be used configuration of the region start
 }
 
 double InfoStore::getRegionDuration()

@@ -5,7 +5,7 @@
 
 using namespace meric;
 
-void EnergyStore::addStart(int region)
+void EnergyStore::addStart(int region, RegionParameters configuration)
 {
 	double energy;
 	struct timespec time;
@@ -13,7 +13,7 @@ void EnergyStore::addStart(int region)
 	HDEEM::getCounterValues(energy);
 	clock_gettime(CLOCK_REALTIME, &time);
 	
-	_records.push_back(EnergyRecord(region, time, energy));
+	_records.push_back(EnergyRecord(region, time, energy, configuration));
 }
 
 void EnergyStore::addEnd(int region)
@@ -24,7 +24,7 @@ void EnergyStore::addEnd(int region)
 	clock_gettime(CLOCK_REALTIME, &time);
 	HDEEM::getCounterValues(energy);
 	
-	_records.push_back(EnergyRecord(region, time, energy));
+	_records.push_back(EnergyRecord(region, time, energy, _records.back().configuration));
 }
 
 void EnergyStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)

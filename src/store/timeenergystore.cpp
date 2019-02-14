@@ -4,7 +4,7 @@
 
 using namespace meric;
 
-void TimeEnergyStore::addStart(int region)
+void TimeEnergyStore::addStart(int region, RegionParameters configuration)
 {
 	struct timespec time;
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
@@ -12,7 +12,7 @@ void TimeEnergyStore::addStart(int region)
 	HDEEM::getDetailedCounterValues(energy);
 	clock_gettime(CLOCK_REALTIME, &time);
 
-	_records.push_back(TimeEnergyRecord(region, time, energy));
+	_records.push_back(TimeEnergyRecord(region, time, energy, configuration));
 }
 
 void TimeEnergyStore::addEnd(int region)
@@ -23,7 +23,7 @@ void TimeEnergyStore::addEnd(int region)
 	clock_gettime(CLOCK_REALTIME, &time);
     HDEEM::getDetailedCounterValues(energy);
 
-	_records.push_back(TimeEnergyRecord(region, time, energy));
+	_records.push_back(TimeEnergyRecord(region, time, energy, _records.back().configuration));
 }
 
 

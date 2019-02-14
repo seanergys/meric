@@ -58,7 +58,6 @@ int Meric::getDefaultParameters()
 	else if (defaultParameter.frequency != 0)
 	{
 		Meric::outputFilenameInfo +="CF_";
-		Meric::OUTPUT_FILENAME += std::to_string((int)defaultParameter.frequency)+"_";
 	}
 #endif
 
@@ -71,7 +70,6 @@ int Meric::getDefaultParameters()
 	else if (defaultParameter.uncoreFrequency != 0)
 	{
 		Meric::outputFilenameInfo +="UnCF_";
-		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.uncoreFrequency)+"_";
 	}
 #endif
 
@@ -85,7 +83,6 @@ int Meric::getDefaultParameters()
 	else if (defaultParameter.nthreads != 0)
 	{
 		Meric::outputFilenameInfo +="thrds_";
-		Meric::OUTPUT_FILENAME += std::to_string(defaultParameter.nthreads)+"_";
 	}
 #endif
 
@@ -104,14 +101,13 @@ int Meric::getDefaultParameters()
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", "");
 	if (outputFilenameSuffix.size() == 0)
 	{
-		if (Meric::OUTPUT_FILENAME.size() == 0)
+		if (Meric::outputFilenameInfo.size() == 0)
 		{
 			Meric::OUTPUT_FILENAME = "log";
 			Meric::outputFilenameInfo = "CFG";
 		}
 		else
 		{
-			Meric::OUTPUT_FILENAME.pop_back();
 			Meric::outputFilenameInfo.pop_back();
 		}
 	}
@@ -158,7 +154,8 @@ int Meric::getDefaultParameters()
 	{
 		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent")
 		{
-			std::cerr << "MERIC WARNING: unknown counter type "<<Meric::COUNTERS<<std::endl;
+			if (Meric::COUNTERS != "")
+				std::cerr << "MERIC WARNING: unknown counter type "<<Meric::COUNTERS<<std::endl;
 			Meric::COUNTERS = "none";
 		}
 	}
@@ -305,13 +302,22 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data)
 	do
 	{
 		if ("FREQUENCY" == std::string(set->name->string))
+		{
+			if (defaultParameter.frequency != 0)
 				param.frequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
 		else if ("UNCORE_FREQUENCY" == std::string(set->name->string))
+		{
+			if (defaultParameter.uncoreFrequency != 0)
 				param.uncoreFrequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
 		else if ("NUM_THREADS" == std::string(set->name->string))
+		{
+			if (defaultParameter.nthreads != 0)
 				param.nthreads = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
 		else
-				std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;
+			std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;
 		set = set->next;
 	}while (set != NULL);
 	

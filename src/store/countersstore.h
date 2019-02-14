@@ -10,13 +10,14 @@ namespace meric {
 
 template <typename TType>
 struct CountersRecord {
-	CountersRecord(int region, std::map <std::string, TType> record, timespec time)
-	: region(region), record(record), time(time){};
+	CountersRecord(int region, std::map <std::string, TType> record, timespec time, RegionParameters configuration)
+	: region(region), record(record), time(time), configuration(configuration) {};
 	CountersRecord() : region(-1){};
 	
 	int region;
 	std::map <std::string, TType> record;
 	timespec time;
+	RegionParameters configuration;
 };
 
 template <class TStore>
@@ -28,7 +29,7 @@ template <class TCounter, typename TType> class CountersStore: public Store {
 public:
 	typedef TType dataType;
 	typedef TCounter counterType;
-	void addStart(int region);
+	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 	void fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd);

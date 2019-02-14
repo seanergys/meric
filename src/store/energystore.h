@@ -7,12 +7,13 @@
 namespace meric {
 
 struct EnergyRecord {
-	EnergyRecord(int region, timespec &time, double energy)
-	: time(time), energy(energy), region(region) {};
+	EnergyRecord(int region, timespec &time, double energy, RegionParameters configuration)
+	: time(time), energy(energy), region(region), configuration(configuration) {};
 
 	double energy;
 	timespec time;
 	int region;
+	RegionParameters configuration;
 };
 
 template <class TStore>
@@ -26,7 +27,7 @@ class EnergyStore: public Store {
 	friend class AggregateStore<EnergyStore>;
 	friend class DetailedAggregateStore<EnergyStore>;
 public:
-	void addStart(int region);
+	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
@@ -67,6 +68,7 @@ public:
 		MERIC_INFO << "Create EnergyStore\n";
 	}
 */
+
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 

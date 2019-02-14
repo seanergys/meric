@@ -7,11 +7,12 @@
 namespace meric {
 
 struct InfoRecord {
-	InfoRecord(int region, timespec &time)
-	: time(time), region(region) {};
+	InfoRecord(int region, timespec &time, RegionParameters configuration)
+	: time(time), region(region), configuration(configuration) {};
 
 	timespec time;
 	int region;
+	RegionParameters configuration;
 };
 
 
@@ -29,7 +30,7 @@ class InfoStore: public Store {
 	friend class InfoAggregateStore<InfoStore>;
 
 public:
-	void addStart(int region);
+	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration();
 	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
