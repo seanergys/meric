@@ -43,20 +43,20 @@ enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER
 enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
 
 struct RegionParameters {
-	double frequency;
-	uint64_t uncoreFrequency;
+	long frequency;       //must be able to carry -1
+	long uncoreFrequency; //must be able to carry -1
 	int nthreads;
 };
 
 
 
-struct systemLimits{
-	int maxCoreFreq;
-	int defaultCoreFreq;
-	int minCoreFreq;
-	int maxUncoreFreq;
-	int defaultUncoreFreq;
-	int minUncoreFreq;
+struct systemLimits{ //Hz
+	uint64_t maxCoreFreq;
+	uint64_t defaultCoreFreq;
+	uint64_t minCoreFreq;
+	uint64_t maxUncoreFreq;
+	uint64_t defaultUncoreFreq;
+	uint64_t minUncoreFreq;
 };
 
 const int CPUFREQ_FREQ_MULT = 100000;

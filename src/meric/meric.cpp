@@ -46,8 +46,8 @@ int Meric::getDefaultParameters()
 	int ret=0;
 //OBLIGATORY SECTION
 	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", -1);
-	defaultParameter.frequency       = mutils::getenv("MERIC_FREQUENCY", -1);
-	defaultParameter.uncoreFrequency = mutils::getenv("MERIC_UNCORE_FREQUENCY", -1);
+	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", ""));
+	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", ""));
 
 #if defined (HAVE_CPUFREQ_H) || HAVE_X86_ADAPT_H
 	if (defaultParameter.frequency < 0)
@@ -59,6 +59,7 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="CF_";
 	}
+	
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
@@ -304,12 +305,12 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data)
 		if ("FREQUENCY" == std::string(set->name->string))
 		{
 			if (defaultParameter.frequency != 0)
-				param.frequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+				param.frequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
 		else if ("UNCORE_FREQUENCY" == std::string(set->name->string))
 		{
 			if (defaultParameter.uncoreFrequency != 0)
-				param.uncoreFrequency = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+				param.uncoreFrequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
 		else if ("NUM_THREADS" == std::string(set->name->string))
 		{

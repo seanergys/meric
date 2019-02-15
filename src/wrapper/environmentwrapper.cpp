@@ -12,10 +12,10 @@ using namespace meric;
 
 //systemLimits Environment::FreqLimits [4];
 systemLimits Environment::FreqLimits [] = {
-	[SYS_HASWELL] = { 3300000 , 2500000, 1200000, 30, 30, 12 },
-	[SYS_JETSON]  = { 1734000, 518400, 102000, 1600000, 408000, 40800},
+	[SYS_HASWELL] = { 3300000000, 2500000000, 1200000000, 3000000000, 3000000000, 1200000000 },
+	[SYS_JETSON]  = { 1734000000,  518400000,  102000000, 1600000000,  408000000,   40800000 },
 	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1 }, //DVFS+UFS not supported
-	[SYS_DAVIDE]  = { 4023000, 4023000, 2061000, -1, -1, -1 }, //UFS not supported
+	[SYS_DAVIDE]  = { 4023000000, 4023000000, 2061000000, -1, -1, -1 }, //UFS not supported
 	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1 }
 };
 
@@ -98,16 +98,16 @@ void Environment::getFrequenciesLimits()
 {
 	//CORE freq
 	std::ifstream frequencyBounderyFile;
-	std::string freqBound;
+	std::string freqBound; //files has the value in KHz
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	FreqLimits[SYS_OTHER].maxCoreFreq = std::stoi(freqBound);
+	FreqLimits[SYS_OTHER].maxCoreFreq = std::stol(freqBound) * 1000;
 	FreqLimits[SYS_OTHER].defaultCoreFreq = FreqLimits[SYS_OTHER].maxCoreFreq;
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	FreqLimits[SYS_OTHER].minCoreFreq = std::stoi(freqBound);
+	FreqLimits[SYS_OTHER].minCoreFreq = std::stol(freqBound) * 1000;
 
 	//UnCORE freq
 #ifdef HAVE_X86_ADAPT_H
@@ -115,11 +115,11 @@ void Environment::getFrequenciesLimits()
 	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 	uint64_t setting;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	FreqLimits[SYS_OTHER].maxUncoreFreq = (int)setting;
+	FreqLimits[SYS_OTHER].maxUncoreFreq = setting * 100000000;
 	FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_OTHER].maxUncoreFreq;
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	FreqLimits[SYS_OTHER].minUncoreFreq = (int)setting;
+	FreqLimits[SYS_OTHER].minUncoreFreq = setting * 100000000;
 
 	struct stat info;
 	std::string uncoreFrequencyDefaultFile = std::string(MERIC_PATH)+"/build/ucfRestore.csv";
@@ -150,8 +150,8 @@ void Environment::getFrequenciesLimits()
 		FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_OTHER].maxUncoreFreq;
 	}
 #endif
-	MERIC_INFO << "CORE FREQ limits [Hz]: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq << std::endl;
-	MERIC_INFO << "UNCORE FREQ limits [100MHz]: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
+	MERIC_INFO << "CORE FREQ limits   [Hz]: " << FreqLimits[SYS_OTHER].maxCoreFreq << '\t' << FreqLimits[SYS_OTHER].minCoreFreq << std::endl;
+	MERIC_INFO << "UNCORE FREQ limits [Hz]: " << FreqLimits[SYS_OTHER].maxUncoreFreq << '\t' << FreqLimits[SYS_OTHER].minUncoreFreq<< std::endl;
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
@@ -415,7 +415,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	{
 		std::ofstream uncoreFile;
 		uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
-		uncoreFile << maxFreq << "000";
+		uncoreFile << maxFreq;
 		uncoreFile.close();
 		MERIC_INFO << "JETSON set uncore frequency to: "<< maxFreq << std::endl;
 	}
@@ -460,8 +460,8 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 				}
 			};
 
-			setFreq(adaptHandlerUncoreMax, maxFreq);
-			setFreq(adaptHandlerUncoreMin, minFreq);
+			setFreq(adaptHandlerUncoreMax, maxFreq/100000000);
+			setFreq(adaptHandlerUncoreMin, minFreq/100000000);
 		
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";

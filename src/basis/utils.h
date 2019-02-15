@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <sys/stat.h>
+#include <algorithm>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -26,6 +27,28 @@ struct mutils {
 	static double timeToDouble(const timespec &time)
 	{
 		return time.tv_sec + time.tv_nsec / 1e9;
+	}
+
+	static long frequencyToHz(const std::string &data)
+	{
+		if (data == "" || data.find_first_of("0123456789") != 0)
+			return -1;
+		size_t const n = data.find_first_not_of("0123456789");
+		if (n == std::string::npos)
+			return std::stol(data);
+		const long frequency = std::stol(data.substr(0,n));
+		std::string units = data.substr(n, data.size()-n);
+		std::transform(units.begin(), units.end(), units.begin(), ::toupper);
+		if (units == "HZ")
+			return frequency;
+		else if (units == "KHZ")
+			return frequency * 1000;
+		else if (units == "MHZ")
+			return frequency * 1000000;
+		else if (units == "GHZ")
+			return frequency * 1000000000;
+		else
+			return -1;
 	}
 
 	static timespec stringToTime(const std::string &data)
