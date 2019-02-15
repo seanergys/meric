@@ -15,6 +15,7 @@
  * 
  *
  * MSR_RAPL_POWER_UNIT Register ***********************************************
+ * 0x00000606 0x0000000000000000
  * Power Units (bits 3:0):
  	Power related information (in Watts) is based on the multiplier, 1/2^PU; 
  	where PU is an unsigned integer represented by bits 3:0. 
@@ -34,6 +35,7 @@ TIME    ENERGY     POWER
 9876 543 21098 7654 3210
 
  * MSR_PKG_ENERGY_STATUS register *********************************************
+ * 0x00000611 0x0000000000000000
  * Total energy consumed (bits 31:0):
 	The unsigned integer value represents the total amount of energy consumed 
 	since that last time this register is cleared. The unit of this field 
@@ -41,6 +43,7 @@ TIME    ENERGY     POWER
  * Reserved (bits 63:32)
  
  * MSR_PP0_ENERGY_STATUS/MSR_PP1_ENERGY_STATUS register ***********************
+ * 0x000000639 0x0000000000000000 / 0x000000641 0x0000000000000000
  * Total Energy Consumed (bits 31:0): 
 	The unsigned integer value represents the total amount of energy consumed 
 	since the last time this register was cleared. The unit of this field 
@@ -48,6 +51,7 @@ TIME    ENERGY     POWER
  * Reserved (bits 63:32)
 
  * MSR_DRAM_ENERGY_STATUS register ********************************************
+ * 0x00000619 0x0000000000000000
  * Total Energy Consumed (bits 31:0):
 	The unsigned integer value represents the total amount of energy consumed 
 	since that last time this register is cleared. The unit of this field 

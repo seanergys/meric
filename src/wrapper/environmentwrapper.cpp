@@ -1,13 +1,119 @@
 
 #include "environmentwrapper.h"
 
+/**
+ * UNCORE Freq
+ * From Intel 64 and IA-32 Architectures Software Developer's Manual 
+ * Volume 4: Model-Specific Registers
+ *
+ * MSR_UNCORE_RATIO_LIMIT Register ********************************************
+ * Out of reset, the min_ratio and max_ratio fields represent the widest 
+ * possible range of uncore frequencies. Writing to these fields allows software 
+ * to control the minimum and the maximum frequency that hardware will select.
+ * 0x000000620 0x0000000000007F7F
+ * MAX_RATIO (bits 6:0):
+ 	This field is used to limit the max ratio of the LLC/Ring.
+ * Reserved (bit 7)
+ * MIN_RATIO (bits 14:8):
+ 	Writing to this field controls the minimum possible ratio of the LLC/Ring.
+ * Reserved (bits 63:15)
+ *
+ *
+ * Intel RAPL power capping registers description
+ * From Intel 64 and IA-32 Architectures Software Developer's Manual
+ *
+ * MSR_PKG_POWER_LIMIT register ***********************************************
+ * Register allows a software agent to define power limitation for the package 
+ * domain. Power limitation is defined in terms of average power usage (Watts) 
+ * over a time window specified in MSR_PKG_POWER_LIMIT. Two power limits can be 
+ * specified, corresponding to time windows of different sizes. Each power limit 
+ * provides independent clamping control that would permit the processor cores 
+ * to go below OS-requested state to meet the power limits. A lock mechanism 
+ * allow the software agent to enforce power limit settings. Once the lock bit 
+ * is set, the power limit settings are static and unmodifiable until next RESET
+ * 0x00000610 0x00ffffff00ffffff
+ * Package Power Limit #1 (bits 14:0): 
+	Sets the average power usage limit of the package domain corresponding 
+	to time window # 1. The unit of this field is specified by the "Power Units"
+	field of MSR_RAPL_POWER_UNIT
+ * Enable Power Limit #1 (bit 15): 
+	0 = disabled; 1 = enabled.
+ * Package Clamping Limitation #1 (bit 16):
+ 	0 = disabled; 1 = enabled.
+	Allow going below OS-requested P/T state setting during time window 
+	specified by bits 23:17.
+ * Time Window for Power Limit #1 (bits 23:17): 
+	Indicates the time window for power limit #1 
+	Time limit = 2^Y * (1.0 + Z/4.0) * Time_Unit 
+	Here "Y" is the unsigned integer value represented. by bits 21:17, 
+	"Z" is an unsigned integer represented by bits 23:22. 
+	"Time_Unit" is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT.
+ * Reserved (bits 31:24)
+ * Package Power Limit #2 (bits 46:32): 
+	Sets the average power usage limit of the package domain corre-sponding 
+	to time window # 2. The unit of this field is specified by the "Power Units" 
+	field of MSR_RAPL_POWER_UNIT.
+ * Enable Power Limit #2 (bit 47): 
+	0 = disabled; 1 = enabled.
+ * Package Clamping Limitation #2 (bit 48):
+	0 = disabled; 1 = enabled.
+	Allow going below OS-requested P/T state setting during time window 
+	specified by bits 23:17.
+ * Time Window for Power Limit #2 (bits 55:49): 
+	Indicates the time window for power limit #2 
+	Time limit = 2^Y * (1.0 + Z/4.0) * Time_Unit 
+	Here "Y" is the unsigned integer value represented. by bits 53:49, 
+	"Z" is an unsigned integer represented by bits 55:54. 
+	"Time_Unit" is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT. 
+	This field may have a hard-coded value in hardware and ignores values 
+	written by software.
+ * Reserved (bits 62:56)
+ * Lock (bit 63):
+	If set, all write attempts to this MSR are ignored until next 
+	RESET.MSR_PKG_ENERGY_STATUS is a read-only MSR. It reports the actual energy 
+	use for the package domain. This MSR is updated every ~1msec. It has 
+	a wraparound time of around 60 secs when power consumption is high, and may 
+	be longer otherwise.
+ *
+ * MSR_DRAM_POWER_LIMIT register **********************************************
+ * allows a software agent to define power limitation for the DRAM domain. Power 
+ * limitation is defined in terms of average power usage (Watts) over a time 
+ * window specified in MSR_DRAM_POWER_LIMIT. A power limit can be specified 
+ * along with a time window. A lock mechanism allow the software agent to 
+ * enforce power limit settings. Once the lock bit is set, the power limit 
+ * settings are static and unmodifiable until next RESET
+ * 0x00000618 0x0000000000ffffff
+ * DRAM Power Limit #1(bits 14:0):
+	Sets the average power usage limit of the DRAM domain corresponding to time 
+	window # 1. The unit of this field is specified by the "Power Units" field 
+	of MSR_RAPL_POWER_UNIT.
+ * Enable Power Limit #1(bit 15):
+	0 = disabled; 1 = enabled.
+ * Claping limit (bit 16):
+	0 = disabled; 1 = enabled.
+	Allow going below OS-requested P/T state setting during time window 
+	specified by bits 23:17.
+ * Time Window for Power Limit (bits 23:17):
+	Indicates the length of time window over which the power limit will be used 
+	by the processor. The numeric value encoded by bits 23:17 is represented by 
+	the product of 2^Y *F; where F is a single-digit decimal floating-point 
+	value between 1.0 and 1.3 with the fraction digit represented by bits 23:22, 
+	Y is an unsigned integer represented by bits 21:17. The unit of this field 
+	is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT.
+ * Registred (bits 30:24)
+ * Lock (bit 31): 
+	If set, all write attempts to this MSR are ignored until next RESET.
+ * Registred (bits 63:32)
+ **/
+
+
 using namespace meric;
 
-// LIST OF POSSIBLE frequencies for JETSON CPUs (kHz)
+// LIST OF POSSIBLE frequencies for JETSON CPUs [kHz]
 //	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000 1428000 1555500 1632000 1734000
-// LIST OF POSSIBLE frequencies for JETSON memory (kHz)
+// LIST OF POSSIBLE frequencies for JETSON memory [kHz]
 //	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
-// LIST OF POSSIBLE frequencies for DAVIDE
+// LIST OF POSSIBLE frequencies for DAVIDE [kHz]
 //	4023000 3757000 3491000 3225000 2959000 2693000 2427000 2161000 2061000
 
 //systemLimits Environment::FreqLimits [4];
