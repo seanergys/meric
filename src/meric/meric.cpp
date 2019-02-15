@@ -52,7 +52,7 @@ int Meric::getDefaultParameters()
 #if defined (HAVE_CPUFREQ_H) || HAVE_X86_ADAPT_H
 	if (defaultParameter.frequency < 0)
 	{
-		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY\n";
+		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
 		ret = 1;
 	}
 	else if (defaultParameter.frequency != 0)
@@ -65,7 +65,7 @@ int Meric::getDefaultParameters()
 #ifdef HAVE_X86_ADAPT_H
 	if (defaultParameter.uncoreFrequency < 0)
 	{
-		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY\n";
+		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY [Hz]\n";
 		ret = 1;
 	}
 	else if (defaultParameter.uncoreFrequency != 0)
