@@ -155,7 +155,7 @@ protected:
 			else
 			{
 				std::string filenamePrefix = (prefix.size() ? prefix + "_" : "" )
-					+ ((int)records[starts.back()].configuration.frequency == 0  ? "" : std::to_string((int)records[starts.back()].configuration.frequency)  +"_" )
+					+ (records[starts.back()].configuration.frequency == 0  ? "" : std::to_string(records[starts.back()].configuration.frequency)  +"_" )
 					+ (records[starts.back()].configuration.uncoreFrequency == 0 ? "" : std::to_string(records[starts.back()].configuration.uncoreFrequency) +"_" )
 					+ (records[starts.back()].configuration.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
 					+ outputFilename;
