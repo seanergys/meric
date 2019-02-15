@@ -15,6 +15,7 @@
   - now on request available compilation of MERIC/TIMEPROF MPI version without OpenMP
   - test/environment_taurus updated and renamed to test/environment_default.source
   - default MERIC mode is RUN (3) instead of HDEEM (0)
+  - CPU core and uncore frequency may be specified without unit in Hz or with unit
 
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow

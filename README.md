@@ -206,8 +206,9 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
-	export MERIC_FREQUENCY=2400000   # [Hz]
-	export MERIC_UNCORE_FREQUENCY=24 # [0.1 GHz]
+	export MERIC_FREQUENCY=2400MHz
+	export MERIC_UNCORE_FREQUENCY=2GHz
+		- both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz
 	export MERIC_NUM_THREADS=24
 		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
 
@@ -286,8 +287,8 @@ It is also possible to specify the settings for a socket on a specific node, in 
 	"@SOCKET" : {
 		"0" : {
 			"A" : {
-				"FREQUENCY" : 1300000,
-				"UNCORE_FREQUENCY" : 13
+				"FREQUENCY" : 1300MHz,
+				"UNCORE_FREQUENCY" : 1400MHz
 			}
 		}
 	}
@@ -297,8 +298,8 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"FREQUENCY" : 200000,
-			"UNCORE_FREQUENCY" : 2,
+			"FREQUENCY" : 2500MHz,
+			"UNCORE_FREQUENCY" : 2GHz,
 			"NUM_THREADS" : 2
 		}
 	}
@@ -383,8 +384,8 @@ To find the best settings for each region, you should run your code with several
 				for uncore_freq in {30..12..1} # or {30..12..2}
 				do
 					export MERIC_NUM_THREADS=$thread
-					export MERIC_FREQUENCY=${cpu_freq}00000
-					export MERIC_UNCORE_FREQUENCY=$uncore_freq
+					export MERIC_FREQUENCY=${cpu_freq}00MHz
+					export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
 					./test
 				done
 			done
@@ -423,10 +424,10 @@ Export MERIC_MODE=4 to activate MERIC on Jetson - otherwise it isn't possible to
 
 ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequencies, input values are in kHz. Default frequencies are 518400 kHz core and 408000 kHz uncore. It is recommended to set frequencies from a list made by administrators, see:
 
-	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
+	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies [kHz]
 	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
 
-	uncore:	/sys/kernel/debug/clock/emc/possible_rates
+	uncore:	/sys/kernel/debug/clock/emc/possible_rates [kHz]
 	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
 
 Another supported ARM system is ThunderX. This system is much more powerfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the CPUs. Its measurement system measure the energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Unfortunately, the frequency scaling is not supported. To run MERIC on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
