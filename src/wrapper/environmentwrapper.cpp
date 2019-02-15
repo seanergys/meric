@@ -216,7 +216,15 @@ void Environment::getFrequenciesLimits()
 	FreqLimits[SYS_OTHER].minCoreFreq = std::stol(freqBound) * 1000;
 
 	//UnCORE freq
-#ifdef HAVE_X86_ADAPT_H
+#ifdef HAVE_MSR_CORE_H
+	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
+	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+
+	FreqLimits[SYS_OTHER].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+	FreqLimits[SYS_OTHER].defaultUncoreFreq = FreqLimits[SYS_OTHER].maxUncoreFreq;
+	FreqLimits[SYS_OTHER].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+
+#elif defined HAVE_X86_ADAPT_H
 	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 	uint64_t setting;
@@ -226,7 +234,9 @@ void Environment::getFrequenciesLimits()
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	FreqLimits[SYS_OTHER].minUncoreFreq = setting * 100000000;
+#endif
 
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 	struct stat info;
 	std::string uncoreFrequencyDefaultFile = std::string(MERIC_PATH)+"/build/ucfRestore.csv";
 	if(stat(uncoreFrequencyDefaultFile.c_str(), &info ) != 0)
@@ -425,7 +435,7 @@ void Environment::frequency(uint64_t freq, int socket)
 			cpu = SOCKET_SIZE_CPU*socket;
 		}
 #ifdef HAVE_MSR_CORE_H
-		MERIC_INFO << "MSR set frequency to: " << freq;
+		MERIC_INFO << "LIBMSR set frequency to: " << freq;
 		if (socket != -1)
 			MERIC_INFO << "; socket: " << socket;
 		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
@@ -527,7 +537,26 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	}
 	else
 	{
-#ifdef HAVE_X86_ADAPT_H
+#ifdef HAVE_MSR_CORE_H
+		MERIC_INFO << "LIBMSR set uncore frequency to: "<< maxFreq;
+		if (maxFreq != minFreq)
+			MERIC_INFO << " - " << minFreq;
+		int max = NODE_SIZE_SOCKET;
+		int die=0;
+		if (socket != -1 && socket < max)
+		{
+			die = socket;
+			max = socket+1;
+		}
+		MERIC_INFO << "; soc " << die << " - " << max-1<< std::endl;
+
+		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
+		for (; die<max; die++)
+		{
+			write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+		}
+		
+#elif defined HAVE_X86_ADAPT_H
 		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 		{
 			std::cerr << "X86ADAPT ERROR: uncore frequency settings not allowed\n";
@@ -572,7 +601,6 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 		}
-#else
 #endif
 	}
 	clock_gettime(CLOCK_REALTIME, &stop_time);

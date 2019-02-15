@@ -20,8 +20,13 @@
 	#include <msr_rapl.h>
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
-	//TODO where does this register addres come from?
-	#define IA32_ENERGY_PERF_BIAS	0x1B0
+
+	#ifndef IA32_ENERGY_PERF_BIAS
+		#define IA32_ENERGY_PERF_BIAS	0x1B0
+	#endif
+	#ifndef MSR_UNCORE_RATIO_LIMIT
+		#define MSR_UNCORE_RATIO_LIMIT   0x620
+	#endif
 #endif
 
 #ifdef HAVE_CILK_CILK_API_H
@@ -35,6 +40,10 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+
+const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
+const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
+const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 
 namespace meric {
 
