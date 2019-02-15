@@ -36,7 +36,6 @@
 #include <iostream>
 #include <fstream>
 
-
 namespace meric {
 
 enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_TIME, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
@@ -59,10 +58,7 @@ struct systemLimits{ //Hz
 	uint64_t minUncoreFreq;
 };
 
-const int CPUFREQ_FREQ_MULT = 100000;
-const int X86ADAPT_FREQ_MULT = 256;
-const int CPUFREQ_MAX_FREQ = 25;
-const int X86ADAPT_MAX_FREQ = 33;
+const int MSR_FREQ_MULT = 256;
 
 class Environment {
 
