@@ -150,11 +150,12 @@ void RAPL::init()
 	//DRAM ENERGY unit is fixed to 15.3uJ
 	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
 	energyUnit[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
+/*
 	energyUnit[RAPL_DRAM_CH0]   = 1.0/pow(2,16);	//1.0/pow(2,18)
 	energyUnit[RAPL_DRAM_CH1]   = energyUnit[RAPL_DRAM_CH0];
 	energyUnit[RAPL_DRAM_CH2]   = energyUnit[RAPL_DRAM_CH0];
 	energyUnit[RAPL_DRAM_CH3]   = energyUnit[RAPL_DRAM_CH0];
-
+*/
 }
 
 //	read counters values
