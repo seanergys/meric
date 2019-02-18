@@ -223,6 +223,10 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 		6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
 		7 = time - storing runtime of the regions only
 
+	export MERIC_ITERATION=0
+		- if runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
+		- always start with 0
+
 	export MERIC_BARRIERS=all
 		all  = all barriers are applied (default)
 		mpi  = use MPI barriers only
@@ -360,17 +364,11 @@ export MERIC_MODE=6              # time measurement only
 --------------------------------------------------------------------------------
 #      7] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
-MERIC's output is stored in two directories:
-
-	* mericMeasurement
-	 	# contains result files in folders with names of the regions
-	 	# to change output folder name export MERIC_OUTPUT_DIR="NEW_NAME"
-		# 3 types of data in CSV files:
-			# CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
-			# Section label (e.g. '# Job info') - determines a "category" of following data in a file7
-			# Data - tuples (mostly pairs) structured like a hash map: key, value
-	* mericMeasurementCounters
-		# Program start counters, stored in .tmp files.
+MERIC's output is stored in the directory in default named `mericMeasurement` that contains result files in folders with names of the regions. To change output folder name export MERIC_OUTPUT_DIR="NEW_NAME".
+Each csv file carry 3 types of data:
+ *  CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
+ *  Section label (e.g. '# Job info') - determines a "category" of following data in a file7
+ *  Data - tuples (mostly pairs) structured like a hash map: key, value
 
 To find the best settings for each region, you should run your code with several possible settings. The content of the MERIC's output directories, can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
 
@@ -383,10 +381,14 @@ To find the best settings for each region, you should run your code with several
 			do
 				for uncore_freq in {30..12..1} # or {30..12..2}
 				do
-					export MERIC_NUM_THREADS=$thread
-					export MERIC_FREQUENCY=${cpu_freq}00MHz
-					export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-					./test
+					for iter in {0..3}
+					do
+						export MERIC_NUM_THREADS=$thread
+						export MERIC_FREQUENCY=${cpu_freq}00MHz
+						export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
+						export MERIC_ITERATION=$iter
+						./test
+					done
 				done
 			done
 		done

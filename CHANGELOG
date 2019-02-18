@@ -16,6 +16,7 @@
   - test/environment_taurus updated and renamed to test/environment_default.source
   - default MERIC mode is RUN (3) instead of HDEEM (0)
   - CPU core and uncore frequency may be specified without unit in Hz or with unit
+  - removed mericMeasurementCounters - when runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
 
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow

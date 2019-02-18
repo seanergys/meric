@@ -10,7 +10,7 @@
  ### PRINT LIST OF ENV VARIABLES ###
 variables()
 {
-	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_COUNTERS MERIC_CONTINUAL MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MODE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS
+	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_COUNTERS MERIC_CONTINUAL MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MODE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS MERIC_ITERATION
 	do
         	if [ ! -z ${!exp} ]
 	        then
@@ -43,8 +43,9 @@ fi
 export MERIC_FREQUENCY=0         # no DVFS
 export MERIC_UNCORE_FREQUENCY=0  # no UFS
 export MERIC_NUM_THREADS=0       # non-OpenMP application
+export MERIC_ITERATION=0    # iteration of the same configuration run
 export MERIC_COUNTERS=papi  # perfevent, papi
-export MERIC_MODE=3	        # {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
+export MERIC_MODE=3	    # {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 export MERIC_AGGREGATE=1    # aggregated data from all the nodes
 export MERIC_CONTINUAL=1    # energy read at the end of the runtime
 # export MERIC_DETAILED=1   # detailed information about the system
