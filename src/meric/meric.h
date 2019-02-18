@@ -31,20 +31,6 @@ class Meric {
 public:
 	static void readRegionParameters();
 
-	static bool CONTINUAL;
-	static bool DETAILED;
-	static bool AGGREGATE;
-	static bool DEBUG;
-	static bool SAMPLES;
-	static bool IGNORE;
-	static bool HDF5;
-	static int MODE;
-	static std::string COUNTERS;
-	static std::string OUTPUT_DIR;
-	static std::string OUTPUT_FILENAME;
-	static std::string REGION_OPTIONS;
-	static std::string BARRIERS;
-
 	virtual void start(const std::string &region)
 	{
 		for (int i=0; i<_storeList.size(); i++)
@@ -352,6 +338,21 @@ protected:
 	static bool MPIbarriers;
 	static bool OMPbarriers;
 	static std::string outputFilenameInfo;
+
+	static int ITERATION;
+	static bool CONTINUAL;
+	static bool DETAILED;
+	static bool AGGREGATE;
+	static bool DEBUG;
+	static bool SAMPLES;
+	static bool IGNORE;
+	static bool HDF5;
+	static int MODE;
+	static std::string COUNTERS;
+	static std::string OUTPUT_DIR;
+	static std::string OUTPUT_FILENAME;
+	static std::string REGION_OPTIONS;
+	static std::string BARRIERS;
 };
 
 }

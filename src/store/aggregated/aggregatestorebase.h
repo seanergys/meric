@@ -41,7 +41,6 @@ public:
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
 		_store->setRegionsNames(regionNames);
-		_store->initStore(_initCounter);
 		if (_rank) {
 			_store->save([&] (std::vector<size_t> &iStarts, size_t iEnd) {
 				saveInterval(iStarts, iEnd);
@@ -52,52 +51,14 @@ public:
 			});
 		}
 	}
-
-	int storeCounter(std::string counterFileName)
-	{
-		if (!_rank)
-		{
-			std::ifstream iFile(counterFileName);
-			if(iFile.is_open())
-			{
-				std::string numOfStartsStr;
-				std::getline(iFile, numOfStartsStr);
-				_initCounter = std::stoi(numOfStartsStr) + 1;
-				iFile.close();
-
-			}else
-			{
-				_initCounter = 0;
-			}
-			std::ofstream oFile(counterFileName);
-			oFile << _initCounter;
-			oFile.close();
-			return _initCounter;
-		}
-		else
-			return -1;
-	}
 	
-	void restoreCounter(int counter,
+	void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
-					const std::string prefix = "")
+					const std::string outputFilenameInfo, //node_CF_UnCF_config
+					const std::string prefix = "") override 
 	{
-		if (!_rank)
-		{
-			std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
-		
-			if(counter == 0)
-			{
-				remove(startCounterFile.c_str());
-			}
-			else
-			{
-				std::ofstream oFile(startCounterFile);
-				oFile << _initCounter-1;
-				oFile.close();
-			}
-		}
+		this->_store->initStore(counter, outputDir, outputFilename, outputFilenameInfo, prefix);
 	}
 	
 	void loadSchedulerEnvironment()

@@ -155,20 +155,10 @@ public:
 			exit(-1);
 		}
 		
-		int initCounter = -1;
 		for(int i=0; i<_storeList.size(); i++)
 		{
-			initCounter = _storeList[i]->initStore(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFilenameInfo);
-			try
-			{
-				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
-			}
-			catch (int &e)
-			{
-				//exception for timeenergystore(HDEEM), timestore<HDEEM>, timestore<DAVIDE> store when there are no power samples
-				_storeList[i]->restoreCounter(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
-				break;
-			}
+			_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFilenameInfo);
+			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		}
 	}
 

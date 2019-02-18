@@ -175,23 +175,12 @@ public:
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
 		}
-/*
-		if (!_MPInodeRank) {
-			if (Meric::AGGREGATE) {
-				for(int i=0; i<_storeList.size(); i++)
-					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
-			} else {
-				for(int i=0; i<_storeList.size(); i++)
-					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
-			}
-		}
-*/
-		int initCounter = -1;
+
 		for(int i=0; i<_storeList.size(); i++)
 		{
 			if (!_MPInodeRank)
 			{
-				initCounter = _storeList[i]->initStore(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFilenameInfo, _nodeName);
+				_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFilenameInfo, _nodeName);
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
@@ -202,7 +191,6 @@ public:
 				catch (int &e)
 				{
 					//exception for timeenergystore(HDEEM), timestore<HDEEM>, timestore<DAVIDE> store when there are no power samples
-					_storeList[i]->restoreCounter(initCounter, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME);
 					MPI_Abort(MPI_COMM_WORLD, 1);
 				}
 			}

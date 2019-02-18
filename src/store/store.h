@@ -49,8 +49,6 @@ public:
 	virtual void addEnd(int region) = 0;
 	virtual double getRegionDuration() = 0;
 	virtual void loadSchedulerEnvironment() = 0;	
-	virtual int storeCounter(std::string counterFileName) = 0;
-	virtual void restoreCounter(int counter, const std::string outputDir, const std::string outputFilename, const std::string prefix = "") = 0;
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
 
 	StoreBase(bool samples = false) : printSamples(samples) {};
@@ -61,51 +59,21 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 
-	int initStore(	int counter)
+	virtual void initStore(	int counter)
 	{
 		loadSchedulerEnvironment();
 		_initCounter = counter;
 	};
 	
-	int initStore(	int counter,
+	virtual void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
 					const std::string outputFilenameInfo, //node_CF_UnCF_config
 					const std::string prefix = "")
 	{
 		loadSchedulerEnvironment();
-		
-		if(counter >= 0)
-		{
-			_initCounter = counter;
-			return counter;
-		}	
-		
-		mutils::createDir(outputDir);
-		std::string dataInfoFileName = outputDir + "/measurementInfo.json";
-		struct stat info;
-		if(stat(dataInfoFileName.c_str(), &info ) != 0)
-		{
-			std::ofstream oFile(dataInfoFileName);
-
-			char hostname[50];
-			gethostname(hostname, 50);
-			time_t now_t = time(0);
-   			std::string now_s = std::string(ctime(&now_t));
-   			now_s.pop_back();
-   			
-			oFile << "{\n" 
-			      << "\t\"Timestamp\" : \"" << now_s << "\",\n"
-			      << "\t\"System\"    : \"" << std::string(hostname) << "\",\n"
-			      << "\t\"DataFormat\": \"" << (prefix.size() ? "node_" : "") << outputFilenameInfo << "\",\n"
-			      << "\t\"Note\"      : \"\"\n"
-			      << "}";
-			oFile.close();
-		}
-
-		//CALLTREE init counter
-		mutils::createDir(outputDir + "Counters");
-		return storeCounter(outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp");
+		_initCounter = counter;
+		return;
 	};
 	
 
@@ -221,44 +189,6 @@ protected:
 class Store: public StoreBase {
 
 public:
-	int storeCounter(std::string counterFileName)
-	{
-		std::ifstream iFile(counterFileName);
-		if(iFile.is_open())
-		{
-			std::string numOfStartsStr;
-			std::getline(iFile, numOfStartsStr);
-			_initCounter = std::stoi(numOfStartsStr) + 1;
-			iFile.close();
-
-		}else
-		{
-			_initCounter = 0;
-		}
-		std::ofstream oFile(counterFileName);
-		oFile << _initCounter;
-		oFile.close();
-		return _initCounter;
-	}
-
-	void restoreCounter(int counter,
-					const std::string outputDir,
-					const std::string outputFilename,
-					const std::string prefix = "")
-	{
-		std::string startCounterFile = outputDir + "Counters/" + "startCounter_" + (prefix.size() ? prefix + "_" : "" )  + outputFilename + ".tmp";
-		
-		if(counter == 0)
-		{
-			remove(startCounterFile.c_str());
-		}
-		else
-		{
-			std::ofstream oFile(startCounterFile);
-			oFile << _initCounter-1;
-			oFile.close();
-		}
-	}
 	
 	void loadSchedulerEnvironment()
 	{
