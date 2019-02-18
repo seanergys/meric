@@ -17,7 +17,7 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
  7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#7-code-dynamism-investigation)
  8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#8-meric-with-a-fortran-code)
  9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric#9-using-meric-on-bsc-arm-systems)
-10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric#10-using-meric-on-cineca-davide-systems)
+10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric#10-using-meric-on-cineca-davide-system)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 
@@ -31,7 +31,7 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
  7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#7-code-dynamism-investigation)
  8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#8-meric-with-a-fortran-code)
  9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric/tree/dev#9-using-meric-on-bsc-arm-systems)
-10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-systems)
+10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-system)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 <!-->
