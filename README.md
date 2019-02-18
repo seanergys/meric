@@ -7,6 +7,21 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
+<!--> master branch links <!-->
+ 1. [Content of src folder](https://code.it4i.cz/vys0053/meric#1-content-of-src-folder)
+ 2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
+ 3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#3-meric-binary-instrumentation)
+ 4. [Compilation](https://code.it4i.cz/vys0053/meric#4-compilation)
+ 5. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#5-meric-input-parameters)
+ 6. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#6-content-of-test-folder-and-example-application-run)
+ 7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#7-code-dynamism-investigation)
+ 8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#8-meric-with-a-fortran-code)
+ 9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric#9-using-meric-on-bsc-arm-systems)
+10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric#10-using-meric-on-cineca-davide-systems)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
+
+<!--> dev branch links
  1. [Content of src folder](https://code.it4i.cz/vys0053/meric/tree/dev#1-content-of-src-folder)
  2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
  3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-binary-instrumentation)
@@ -19,6 +34,7 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
 10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-systems)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
+<!-->
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #

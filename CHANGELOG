@@ -1,6 +1,5 @@
-### XX.XX.XXXX #################################################################
+### 18.02.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
-  - CPU core frequency must be specified in Hz
   - user should not specify CPU core frequency, uncore frequency and number of active threads in the name of the output file any more - it is done automatically
   - directory with measured data contain measurementInfo.json, for data description
   - new MERIC API RAII function for scope measurement MERIC_captureScope(const char * region)
@@ -8,15 +7,13 @@
   - new MERIC mode to store regions runtime only
   - support for IBM OpenPOWER8+ CINECA D.A.V.I.D.E. cluster energy measurement and DFVS
   - MERIC_MeasureStop() and MERIC_MeasureStopStart() now returns runtime of the stopped region
-  - new instrument.h
-		+ new version of readex.h, not backward compatible (new functions parameters)
-		+ support for MERIC, Score-P, TIMEPROF, GEOPM, TAU
   - new function runtime profiling library TIMEPROF is now part of the repository
   - now on request available compilation of MERIC/TIMEPROF MPI version without OpenMP
   - test/environment_taurus updated and renamed to test/environment_default.source
   - default MERIC mode is RUN (3) instead of HDEEM (0)
   - CPU core and uncore frequency may be specified without unit in Hz or with unit
   - removed mericMeasurementCounters - when runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
+  - support for msrsafe RAPL reading, DVFS and UFS
 
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow
