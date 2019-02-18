@@ -59,12 +59,12 @@ struct RegionParameters {
 
 
 struct systemLimits{ //Hz
-	uint64_t maxCoreFreq;
-	uint64_t defaultCoreFreq;
-	uint64_t minCoreFreq;
-	uint64_t maxUncoreFreq;
-	uint64_t defaultUncoreFreq;
-	uint64_t minUncoreFreq;
+	long maxCoreFreq;
+	long defaultCoreFreq;
+	long minCoreFreq;
+	long maxUncoreFreq;
+	long defaultUncoreFreq;
+	long minUncoreFreq;
 };
 
 const int MSR_FREQ_MULT = 256;

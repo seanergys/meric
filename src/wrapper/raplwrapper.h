@@ -33,7 +33,6 @@ private:
 	static std::map<std::string, unsigned long long int> counters;
 	static std::map<std::string, double> energyUnit;
 	static std::string suffix;
-	static int NODE_SIZE_SOCKET;
 	static int NODE_SIZE_CPU;
 	static int SOCKET_SIZE_CPU;
 	static bool detailedMode;
@@ -59,6 +58,7 @@ private:
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #endif
+	static int NODE_SIZE_SOCKET;
 };
 
 }

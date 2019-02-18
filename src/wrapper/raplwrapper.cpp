@@ -77,8 +77,6 @@ const uint64_t MSR_PKG_ENERGY_STATUS_mask       = 0xFFFFFFFF;
 #elif defined (HAVE_MSR_CORE_H)
 	#include <msr_core.h>
 	#include <msr_rapl.h>
-//	#include <master.h>
-//	#include <libmsr_error.h>
 	using namespace MSR_RAPL_COUNTERS;
 #else
 	using namespace X86ADAPT_RAPL_COUNTERS;
@@ -87,15 +85,15 @@ const uint64_t MSR_PKG_ENERGY_STATUS_mask       = 0xFFFFFFFF;
 using namespace meric;
 
 std::string RAPL::suffix = "_";
-int RAPL::NODE_SIZE_SOCKET = 1;
-int RAPL::NODE_SIZE_CPU = 1;
-int RAPL::SOCKET_SIZE_CPU = 1;
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
+int RAPL::NODE_SIZE_SOCKET = 1;
 
 #if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 std::map<std::string, unsigned long long int> RAPL::counters;
 std::map<std::string, double> RAPL::energyUnit;
+int RAPL::NODE_SIZE_CPU = 1;
+int RAPL::SOCKET_SIZE_CPU = 1;
 
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
