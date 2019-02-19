@@ -11,7 +11,9 @@
 	#include <stdint.h>
 	#include <memory>
 	#include "x86_adapt.h"
-#else
+#endif
+
+#ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
 

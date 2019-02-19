@@ -189,7 +189,7 @@ void Environment::initHWSizes()
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	//NODE_SIZE_THREAD = 1;	TODO get real number of avail threads per core - not used now
 	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
-#else
+#else //ifdef HAVE_NUMA_H
 	NODE_SIZE_CPU    = sysconf(_SC_NPROCESSORS_ONLN);
 	NODE_SIZE_SOCKET = numa_node_of_cpu(NODE_SIZE_CPU-1)+1;
 	//NODE_SIZE_THREAD = 1;	TODO
