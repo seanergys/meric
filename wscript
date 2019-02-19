@@ -30,9 +30,9 @@ def configure(ctx):
     if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
         ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
-    ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     if((not ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", execute=False, mandatory=False))):
         ctx.check_cc(header_name="numa.h", execute=False, mandatory=True)
+        ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
