@@ -47,10 +47,10 @@ int Meric::getDefaultParameters()
 	int ret=0;
 //OBLIGATORY SECTION
 	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", -1);
-	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", ""));
-	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", ""));
+	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
+	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
 
-#if defined (HAVE_CPUFREQ_H) || HAVE_X86_ADAPT_H
+#if defined (HAVE_CPUFREQ_H) || defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_DORE_H)
 	if (defaultParameter.frequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
@@ -63,7 +63,7 @@ int Meric::getDefaultParameters()
 	
 #endif
 
-#ifdef HAVE_X86_ADAPT_H
+#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 	if (defaultParameter.uncoreFrequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY [Hz]\n";

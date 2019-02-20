@@ -345,7 +345,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						
 						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
 						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_default);
-						uint64_t REG_MAX_PSTATE = (FreqLimits[systemType].maxCoreFreq/100000)*MSR_FREQ_MULT;
+						uint64_t REG_MAX_PSTATE = (FreqLimits[systemType].maxCoreFreq/100000000) << 8;
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
 							defaultSettings.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
@@ -442,7 +442,7 @@ void Environment::frequency(uint64_t freq, int socket)
 
 		for (; cpu<nodeSize; cpu++)
 		{
-			write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000) << 8);
+			write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000000) << 8);
 		}
 #else
 	#ifdef HAVE_CPUFREQ_H
@@ -489,7 +489,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		//				exit(2);
 					}
 
-					if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000)*MSR_FREQ_MULT) != 8)
+					if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000)*MSR_FREQ_MULT) != 8)
 					{
 						std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
 		//				exit(3);
