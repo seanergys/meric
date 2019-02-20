@@ -372,7 +372,7 @@ Specify the mandatory MERIC's parameters and run you instrumented application or
 export MERIC_FREQUENCY=0         # no CPU core frequency tuning
 export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
 export MERIC_NUM_THREADS=0       # non-OpenMP application
-export MERIC_MODE=6              # time measurement only
+export MERIC_MODE=7              # time measurement only
 
 ./test                           # run the application as usual
 ```
@@ -429,9 +429,9 @@ To find the best settings for each region, you should run your code with several
 --------------------------------------------------------------------------------
 #      8] MERIC with a Fortran code                                            #
 --------------------------------------------------------------------------------
-There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command.
+There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
 
-For manual instrumentation one can use shared READEX interface (`#include "readex.inc"`) or just the MERIC's API (`#include "meric.inc"`). If MERIC interface is used, user should use keyword `call` as usual for Fortran functions, however READEX interface (as well as Score-P Fortran interface) should be used without it. MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the interfaces can be used.
+To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
 	
 --------------------------------------------------------------------------------
 #      9] Using MERIC on BSC ARM systems                                       #
