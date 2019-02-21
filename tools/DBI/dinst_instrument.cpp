@@ -284,6 +284,7 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 				extraSharedLibraries.push_back("libmeric.so");
 			}
 			extraSharedLibraries.push_back("libx86_adapt.so");
+			extraSharedLibraries.push_back("libmsr.so");
 			extraSharedLibraries.push_back("libpapi.so");
 			extraSharedLibraries.push_back("libnuma.so");
 			extraSharedLibraries.push_back("libhdeem.so");
