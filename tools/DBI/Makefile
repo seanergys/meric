@@ -44,6 +44,7 @@ DYNINST_LIBS=-ldyninstAPI -linstructionAPI
 
 BOOST_LIB_PATHS=-L${BOOST_ROOT}/lib/ -L${BOOST_ROOT}/stage/lib/
 BOOST_LIBS=-lboost_date_time -lboost_system -lboost_thread
+BOOST_INC_PATHS=-I${BOOST_ROOT}
 
 dinst:
 	g++ -g -Wall -std=c++11 -L/usr/local/lib -o dinst_profile dinst_profile.cpp \
