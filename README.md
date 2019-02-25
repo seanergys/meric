@@ -78,8 +78,10 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 
 	void MERIC_Init()
 		Initialization of the library. Insert directly after MPI_Init().
+		MERIC automatically starts a region called same as the analyzed application binary with suffix "_static".
 	void MERIC_Close()
 		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
+		Ends the region that started at the MERIC_Init() time.
 	void MERIC_MeasureStart(const char * regionName)
 		Starting measurement of a reagion.
 		Please, do not use **#** and **@** in names of regions.
