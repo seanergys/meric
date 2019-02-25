@@ -102,6 +102,16 @@ SharedMeric::SharedMeric()
 		DAVIDE::init();
 		DAVIDE::start(_startTime);
 	}
+	
+	std::string applicationMainRegion = std::string(program_invocation_name);
+	size_t n = applicationMainRegion.find_last_of("/");
+	if (n != std::string::npos)
+		applicationMainRegion = applicationMainRegion.substr(n+1);
+	n = applicationMainRegion.find_first_of(".");
+	if (n != std::string::npos)
+		applicationMainRegion = applicationMainRegion.substr(0,n);
+	applicationMainRegion +="_static";
+	start(applicationMainRegion.c_str());
 }
 
 SharedMeric::~SharedMeric()

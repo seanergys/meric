@@ -137,6 +137,8 @@ public:
 	
 	void save()
 	{
+		stop(); //applicationMainRegion
+		
 		if (MODE == MODE_HDEEM || MODE == MODE_BOTH)
 		{
 			HDEEM::stop(_stopTime);

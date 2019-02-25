@@ -145,6 +145,8 @@ public:
 
 	void save()
 	{
+		stop(); //applicationMainRegion
+		
 		if (MPIbarriers)
 			MPI_Barrier(_currentNode);
 
