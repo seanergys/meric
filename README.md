@@ -7,7 +7,7 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
-<!--> master branch links 
+<!--> master branch links <!-->
  1. [Content of src folder](https://code.it4i.cz/vys0053/meric#1-content-of-src-folder)
  2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
  3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#3-meric-binary-instrumentation)
@@ -20,8 +20,8 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
 10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric#10-using-meric-on-cineca-davide-system)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
-<!-->
-<!--> dev branch links <!-->
+
+<!--> dev branch links 
  1. [Content of src folder](https://code.it4i.cz/vys0053/meric/tree/dev#1-content-of-src-folder)
  2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
  3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-binary-instrumentation)
@@ -34,7 +34,7 @@ The library originally developed for x86 systems (tested on HSW, BDW and KNL) bu
 10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-system)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
-
+<!-->
 
 --------------------------------------------------------------------------------
 #     1] Content of src folder                                                 #
@@ -125,10 +125,6 @@ There is one more restriction in placing probes into the code. In current versio
 ## TIMEPROF interface ##
 The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0. The interface is defined in `include/timeprof.h`. 
 
-	void MERIC_Init()
-		Initialization of the library. Insert directly after MPI_Init().
-	void MERIC_Close()
-		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
 	void TIMEPROF_regionStart(const char * regionName);
 		Start time measurement of region called regionName
 	double TIMEPROF_regionStop(const char * regionName);
