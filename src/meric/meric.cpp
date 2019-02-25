@@ -50,7 +50,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
 	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
 
-#if defined (HAVE_CPUFREQ_H) || defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_DORE_H)
+#if defined (HAVE_CPUFREQ_H) || defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 	if (defaultParameter.frequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
@@ -100,7 +100,7 @@ int Meric::getDefaultParameters()
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
 
-	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", "");
+	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
 	if (outputFilenameSuffix.size() == 0)
 	{
 		if (Meric::outputFilenameInfo.size() == 0)
