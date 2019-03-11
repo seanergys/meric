@@ -7,22 +7,34 @@ def configure(ctx):
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
+    for path in ctx.options.includes.split(' '):
+        if len(path) > 2 and path[0:2] == "-I":
+            ctx.env.append_unique("CXXFLAGS",path)
+        else:
+            ctx.env.append_unique("CXXFLAGS","-I"+path)
+    for path in ctx.options.libpaths.split(' '):
+        if len(path) > 2 and path[0:2] == "-L":
+            ctx.env.append_unique("LINKFLAGS", path)
+        else:
+            ctx.env.append_unique("LINKFLAGS", "-L"+path)
 
     if ctx.options.withgcc:
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])                   #GCC
+            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])                   #GCC
+            ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
     else:
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])                   #Intel
+            ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])                   #Intel
+            ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
 
     ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
-    
+        
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.verbose:
@@ -30,7 +42,8 @@ def configure(ctx):
     if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
         ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
-    if((not ctx.check_cc(header_name="x86_adapt.h", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", execute=False, mandatory=False))):
+    
+    if((not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False))):
         ctx.check_cc(header_name="numa.h", execute=False, mandatory=True)
         ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
@@ -55,14 +68,23 @@ def configure(ctx):
     if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
 
+################################################################################
 def build(ctx):
+    # SYSTEM INFO TOOL
+    ctx.program(
+        source="tools/systemInfo.cpp",
+        target="systemInfo",
+        use="msr",
+        install_path = "tools"
+    )
+
     ctx.objects(
         source =
             ctx.path.ant_glob('src/basis/*.cpp') +
             ctx.path.ant_glob('src/store/*.cpp') +
             ctx.path.ant_glob('src/meric/*.cpp') +
             ctx.path.ant_glob('src/wrapper/*.cpp'),
-        target = "basis",
+        target = "basis"
     )
     
     if not ctx.env.NOOPENMP:
@@ -138,8 +160,7 @@ def build(ctx):
         env          = ctx.all_envs["mpi"]
     )
 
-
-
+################################################################################
 def options(opt):
     opt.add_option(
         "--withgcc",
@@ -196,3 +217,18 @@ def options(opt):
         default="-O2",
         help="Compiler flags (-std=c++11, -fPIC and -qopenmp/-fopenmp are default)"
     )
+    
+    opt.add_option("--includes",
+        action="store",
+        type="string",
+        metavar="INCLUDE_PATHS",
+        default="",
+        help="List of paths to include.")
+
+    opt.add_option("--libpaths",
+        action="store",
+        type="string",
+        metavar="LIB_PATHS",
+        default="",
+        help="List of paths to libraries.")
+

@@ -12,6 +12,7 @@ tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
 tools/staticMERICtool/energyMeasureStart
 tools/staticMERICtool/energyMeasureStop
+tools/systemInfo
 tools/DBI/*
 include/meric
 

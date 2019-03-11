@@ -30,8 +30,9 @@ INCLUDES_DAVIDE=-I$(HOME)/json/single_include/ -I$(HOME)/rest-client/include/ $(
 LIBPATH_DAVIDE=-L$(HOME)/rest-client/libs/ -lrestclient-cpp $(CPUFREQ_LIB_DAVIDE)
 
 ################################################################################
-INCLUDES_MERIC= 
-LIBPATH_MERIC= 
+INCLUDES_MERIC=
+LIBPATH_MERIC=
+
 unexport CXX
 
 ifeq ($(FC),ifort)
@@ -45,7 +46,7 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
+	./waf configure --cpp=icpc --mpi=mpiicpc --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
 
 install:
 	./waf install
@@ -55,18 +56,18 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC) -O0 -g" --verbose
+	./waf configure --cpp=icpc --mpi=mpiicpc --flag="-O0 -g" --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
 	./waf install -v
 
 gcc:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_MERIC) $(INCLUDES_MERIC)"
+	./waf configure --withgcc --cpp=g++ --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
 	make install
 
 fortran:
 	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
 arm:
-	./waf configure --withgcc --cpp=g++ --flag="$(LIBPATH_JETSON) $(INCLUDES_JETSON)" --dummy
+	./waf configure --withgcc --cpp=g++ --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --dummy
 	make install
 
 love:
