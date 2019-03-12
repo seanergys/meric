@@ -14,6 +14,15 @@
 	#include <libmsr_error.h>
 #endif
 
+#ifdef HAVE_X86_ADAPT_H
+	#include <stdint.h>
+	#include <memory>
+	#include "x86_adapt.h"
+#endif
+
+#ifdef HAVE_NUMA_H
+	#include <numa.h>
+#endif
 
 /**
  * List of related MSRs with description:
@@ -315,12 +324,19 @@ void sysInfoSize()
 	int Hthreads;
 #ifdef HAVE_MSR_CORE_H
 	core_config(&cores, &threads, &sockets, &Hthreads);
+#elif defined HAVE_X86_ADAPT_H
+	sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+	cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
+#elif defined HAVE_NUMA_H
+	cores = sysconf(_SC_NPROCESSORS_ONLN);
+	sockets = cores / (numa_node_of_cpu(cores-1)+1);
 #endif
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tSockets per Node: " << sockets << std::endl
-	          << "\tCores per Socket: " << cores << std::endl
-	          << "\tThreads per Core: " << threads << std::endl
-	          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
+	          << "\tCores per Socket: " << cores << std::endl;
+	if (threads != 0)         
+		std::cout << "\tThreads per Core: " << threads << std::endl
+		          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
 }
 
 void sysInfoFrequencies()
@@ -343,26 +359,33 @@ void sysInfoFrequencies()
 		std::cout << "\tAvailable governors:        " << freqBound << std::endl;
 	}
 	
+	#ifdef HAVE_X86_ADAPT_H
+	bool DVFS = true;
+	#else
 	bool DVFS = false;
+	#endif
 	size_t pos;
 	std::string token;
-	while ((pos = freqBound.find(' ')) != std::string::npos)
+	
+	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 	{
-		token = freqBound.substr(0, pos);
-		if (token == "userspace")
+		while (DVFS == false && (pos = freqBound.find(' ')) != std::string::npos)
 		{
-			DVFS = true;
-			break;
+			token = freqBound.substr(0, pos);
+			if (token == "userspace")
+				DVFS = true;
+			freqBound.erase(0, pos+1);
 		}
-		freqBound.erase(0, pos+1);
 	}
 	
-	if (!DVFS);
+	if (!DVFS)
 	{
 		if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) != 0 ||
 		   (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) != 0))
 			std::cout << "\tCPU Core Frequency scaling (DVFS) not available\n"
-			          << "\t\tadd userspace scaling governor or grand write access to:\n"
+			          << "\t\tadd userspace scaling governor and grand write access to:\n"
+			          << "\t\t - /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\n"
+			          << "\t\tor use Intel PState and grand write access to:\n"
 			          << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
 			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n";
 	}
@@ -389,25 +412,125 @@ void sysInfoFrequencies()
 	if (nominalFreq != 0)
 		std::cout << "\tNominal CPU Core Frequency: " << nominalFreq << " Hz\n";
 
-	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 #ifdef HAVE_MSR_CORE_H
+	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	std::cout << "\tMax CPU Uncore Frequency:   " << (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000 << " Hz\n";
 	std::cout << "\tMin CPU Uncore Frequency:   " << ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000 << " Hz\n";
+#elif defined HAVE_X86_ADAPT_H
+	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
+	uint64_t setting;
+	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+	std::cout << "\tMax CPU Uncore Frequency:   " << setting * 100000000 << " Hz\n";
+		
+	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
+	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+	std::cout << "\tMin CPU Uncore Frequency:   " << setting * 100000000 << " Hz\n";
 #else
-	std::cout << "\n# CPU Uncore frequency NOT available\n\n";
+	std::cout << "\n# CPU Uncore frequency NOT available - install msr-safe or x86_adapt\n\n";
 #endif
 }
 
 void sysInfoPowercap()
 {
-#ifndef HAVE_MSR_CORE_H
-	std::cout << "\n# RAPL power capping NOT available\n\n";
-	return;
-#else
+// /sys/class/powercap/intel-rapl/intel-rapl\:0
 
+
+
+
+	if (unit.size() == 0)
+	{
+		std::cout << "\n# RAPL power capping NOT available\n\n";
+		return;
+	}
+
+
+
+/*
+ .knob.name="Intel_RAPL_PKG_POWER_LIMIT_1",
+.knob.name="Intel_RAPL_PKG_POWER_LIMIT_2",
+.knob.name="Intel_RAPL_RAM_POWER_LIMIT",
+        .knob.description="MSR 0x618 [23:0] which provides access to PPO package power limit [23:17] Time Window for Power Limit time window for power limit in 2^[21:17]*(1.0+[23:22]/10.0) unit according to Intel_RAPL_Power_Unit; [16] Clamping Limitation - Allow to go below OS set P/T-state; [15] enable power limitation; [14:0] power Limit in power units according to Intel_RAPL_Power_Unit",
+
+
+.knob.name="Intel_RAPL_PKG_PERF_STATUS",
+.knob.name="Intel_RAPL_RAM_PERF_STATUS",
+
+        .knob.name="Intel_RAPL_PKG_POWER_LIMIT_Locked",
+        .knob.description="MSR 0x610 [63] is package power locked?",
+        .knob.device=MSRNODE,
+        .knob.register_index=0x610,
+        .knob.bitmask=(1ULL<<63),
+        .knob.readonly=1,
+        .knob.length=1,
+        .knob.restricted_settings_length=0,
+        .knob.reserved_settings_length=0,
+        .av_length=6,
+        .av_vendors=processorgroups_Intel_RAPL_PKG_POWER_LIMIT_Locked,
+        .blocked_by_cpuid=0}
+.knob.name="Intel_RAPL_RAM_POWER_LIMIT_Locked",
+
+
+
+~/readex/x86adapt/x86_adapt/build/kernel_module/definition_driver/x86_adapt_defs.c 
+*/
+
+////////////////////////////////////////////////////////////////////////////////
+/*
+#ifdef HAVE_X86_ADAPT_H
+int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+int adaptRegisterHandler;
+
+// START
+uint64_t MSR_DRAM_POWER_LIMIT_bits;
+uint64_t MSR_PKG_POWER_LIMIT_bits;
+
+
+
+	uint64_t Y, Z, F;
+	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
+x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+
+std::cout << "MSR_PKG_POWER_LIMIT_bits = " << MSR_PKG_POWER_LIMIT_bits << std::endl;
+	std::cout << "\tPKG power limit #1: " 
+		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+		<< " + clamping "
+		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+		<< std::endl
+		<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+
+
+
+	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
+	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
+	unit["MSR_PKG_POWER_LIMIT_timewindow_1"] = pow(2,Y) * (1.0 + Z/4.0);
+	std::cout << "\tPKG time window #1: "
+		      << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
+		      << " s\n";
+
+
+
+// DRAM
+
+adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
+x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
+std::cout << "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n";
+
+
+
+// END
+if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+	std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+
+#endif
+*/
+////////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_MSR_CORE_H
 // power capping limits
-	std::cout << "\n# RAPL POWER LIMITS\n";
+	std::cout << "\n# RAPL POWER LIMITS\n";	
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
@@ -430,6 +553,8 @@ void sysInfoPowercap()
 
 		<< "\tDRAM min time window: " 
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n";
+#endif
+
 
 // default power capping
 	std::cout << "\n# DEFAULT RAPL POWER LIMITS\n";
@@ -437,21 +562,22 @@ void sysInfoPowercap()
 // PKG
 	uint64_t Y, Z, F;
 	uint64_t MSR_PKG_POWER_LIMIT_bits;
+
+#ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+#elif defined HAVE_X86_ADAPT_H
+	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+	int adaptRegisterHandler;
+
+	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
+	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+#endif
 	std::cout << "\tPKG power limit #1: " 
 		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 		<< " + clamping "
 		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 		<< std::endl
 		<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
-
-
-	std::cout << "\tPKG power limit #2: " 
-		<< ((((MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift) & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-		<< " + clamping "
-		<< ((((MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift) & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
-		<< std::endl
-		<< "\tPKG power limit #2: " << ((MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift) & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
 
 	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
@@ -460,7 +586,21 @@ void sysInfoPowercap()
 		      << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
 		      << " s\n";
 
+#ifdef HAVE_MSR_CORE_H
 	MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
+#elif defined HAVE_X86_ADAPT_H
+	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+#endif
+
+	std::cout << "\tPKG power limit #2: " 
+		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+		<< " + clamping "
+		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+		<< std::endl
+		<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+
+
 	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
 	unit["MSR_PKG_POWER_LIMIT_timewindow_2"] = pow(2,Y) * (1.0 + Z/4.0);
@@ -470,7 +610,15 @@ void sysInfoPowercap()
 
 // DRAM
 	uint64_t MSR_DRAM_POWER_LIMIT_bits;
+#ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
+#elif defined HAVE_X86_ADAPT_H
+	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
+	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
+
+	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#endif
 
 	std::cout << "\tDRAM power limit:   " 
 		<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
@@ -485,20 +633,33 @@ void sysInfoPowercap()
 	std::cout << "\tDRAM time window:   "
 		      << unit["MSR_DRAM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
 		      << " s\n";
-#endif
 }
 
 void getRAPLunits()
 {
+	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
-	uint64_t MSR_RAPL_POWER_UNIT_bits;
 	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
-	unit["MSR_PKG_POWER_LIMIT"] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
-	unit["MSR_DRAM_POWER_LIMIT"] = unit["MSR_PKG_POWER_LIMIT"];
-	unit["MSR_PKG_ENERGY_STATUS"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
-	unit["MSR_DRAM_ENERGY_STATUS"] = 1.0/pow(2,16);
-	unit["MSR_RAPL_POWER_UNIT_time"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
+#elif defined HAVE_X86_ADAPT_H
+	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+	if (fd < 0)
+	{
+		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
+		return;
+	}
+	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
+	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
+	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 #endif
+	if (MSR_RAPL_POWER_UNIT_bits != 0)
+	{
+		unit["MSR_PKG_POWER_LIMIT"] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
+		unit["MSR_DRAM_POWER_LIMIT"] = unit["MSR_PKG_POWER_LIMIT"];
+		unit["MSR_PKG_ENERGY_STATUS"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
+		unit["MSR_DRAM_ENERGY_STATUS"] = 1.0/pow(2,16);
+		unit["MSR_RAPL_POWER_UNIT_time"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
+	}
 }
 
 void sysEnergyMeasurement()
@@ -526,24 +687,59 @@ void sysEnergyMeasurement()
 }
 
 //****************************************************************************//
+
+enum MODE
+{
+	USING_MSR,
+	USING_ADAPT,
+	USING_NUMA,
+	USING_NONE
+};
+
 int main()
 {
-#ifdef HAVE_MSR_CORE_H
+	MODE status = USING_NONE;
+	#ifdef HAVE_MSR_CORE_H
+	status = USING_MSR;
 	if (init_msr())
 	{
 		std::cerr << "LIBMSR ERROR: Unable to initialize\n";
-		return 1;
 	}
-#endif
-
+	else
+	#endif
+	{
+		#ifdef HAVE_X86_ADAPT_H
+		status = USING_ADAPT;
+		if (x86_adapt_init())
+		{
+			std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
+		}
+		else
+		#endif
+		{
+			#ifdef HAVE_NUMA_H
+			status = USING_NUMA;
+			#endif
+		}
+	}
 	getRAPLunits();
 	sysInfoSize();
 	sysInfoFrequencies();
 	sysInfoPowercap();
 	sysEnergyMeasurement();
 
-#ifdef HAVE_MSR_CORE_H
-	finalize_msr();
-#endif
+	if (status == USING_MSR)
+	{
+		#ifdef HAVE_MSR_CORE_H
+		finalize_msr();
+		#endif
+	}
+	else if (status == USING_ADAPT)
+	{
+		#ifdef HAVE_X86_ADAPT_H
+		x86_adapt_finalize();
+		#endif
+	}
+
 	return 0;
 }

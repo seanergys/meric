@@ -22,39 +22,40 @@ def configure(ctx):
 
     if ctx.options.withgcc:
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])                   #GCC
+            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])                  #GCC
             ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
     else:
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])                   #Intel
+            ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])                  #Intel
             ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
 
     ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
-        
+
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.verbose:
         ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
-    if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
-        ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
-    ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
-    
-    if((not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False))):
-        ctx.check_cc(header_name="numa.h", execute=False, mandatory=True)
+   
+    if((not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
+        ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=True, errmsg="not found - When both x86_adapt and msr-safe are missing, numactl is mandatory!")
         ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
+    else:
+        ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
+    if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
+        # missing include <freeipmi/freeipmi.h>
+        ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
     ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
+    ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 #    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
-#    ctx.env.append_unique("DEFINES", [ "HAVE_LINUX_PERF_EVENT_H" ]) #if problem with searching
-#    ctx.env.append_unique("DEFINES", [ "HAVE_X86_ADAPT_H" ])	#if problem with searching
     if ctx.options.noopenmp:
         ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True)
     else:
@@ -76,7 +77,7 @@ def build(ctx):
     ctx.program(
         source="tools/systemInfo.cpp",
         target="systemInfo",
-        use="msr",
+        use="msr x86_adapt numa",
         install_path = "tools"
     )
 
