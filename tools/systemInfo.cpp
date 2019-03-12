@@ -1,11 +1,12 @@
 /**
- * Tool to provide 
+ * Tool to provide information about the system parameters that can be tuned.
  **/
 #include <unistd.h>
 #include <iostream>
 #include <math.h>
 #include <map>
 #include <fstream>
+#include <string.h>
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_core.h>
@@ -17,7 +18,7 @@
 #ifdef HAVE_X86_ADAPT_H
 	#include <stdint.h>
 	#include <memory>
-	#include "x86_adapt.h"
+	#include <x86_adapt.h>
 #endif
 
 #ifdef HAVE_NUMA_H
@@ -227,7 +228,13 @@ const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 
-#include <string.h>
+enum MODE
+{
+	USING_MSR,
+	USING_ADAPT,
+	USING_NUMA,
+	USING_NONE
+};
 
 enum reg_cpuid
 {
@@ -438,98 +445,14 @@ void sysInfoPowercap()
 {
 // /sys/class/powercap/intel-rapl/intel-rapl\:0
 
-
-
-
 	if (unit.size() == 0)
 	{
 		std::cout << "\n# RAPL power capping NOT available\n\n";
 		return;
 	}
 
-
-
-/*
- .knob.name="Intel_RAPL_PKG_POWER_LIMIT_1",
-.knob.name="Intel_RAPL_PKG_POWER_LIMIT_2",
-.knob.name="Intel_RAPL_RAM_POWER_LIMIT",
-        .knob.description="MSR 0x618 [23:0] which provides access to PPO package power limit [23:17] Time Window for Power Limit time window for power limit in 2^[21:17]*(1.0+[23:22]/10.0) unit according to Intel_RAPL_Power_Unit; [16] Clamping Limitation - Allow to go below OS set P/T-state; [15] enable power limitation; [14:0] power Limit in power units according to Intel_RAPL_Power_Unit",
-
-
-.knob.name="Intel_RAPL_PKG_PERF_STATUS",
-.knob.name="Intel_RAPL_RAM_PERF_STATUS",
-
-        .knob.name="Intel_RAPL_PKG_POWER_LIMIT_Locked",
-        .knob.description="MSR 0x610 [63] is package power locked?",
-        .knob.device=MSRNODE,
-        .knob.register_index=0x610,
-        .knob.bitmask=(1ULL<<63),
-        .knob.readonly=1,
-        .knob.length=1,
-        .knob.restricted_settings_length=0,
-        .knob.reserved_settings_length=0,
-        .av_length=6,
-        .av_vendors=processorgroups_Intel_RAPL_PKG_POWER_LIMIT_Locked,
-        .blocked_by_cpuid=0}
-.knob.name="Intel_RAPL_RAM_POWER_LIMIT_Locked",
-
-
-
-~/readex/x86adapt/x86_adapt/build/kernel_module/definition_driver/x86_adapt_defs.c 
-*/
-
-////////////////////////////////////////////////////////////////////////////////
-/*
-#ifdef HAVE_X86_ADAPT_H
-int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-int adaptRegisterHandler;
-
-// START
-uint64_t MSR_DRAM_POWER_LIMIT_bits;
-uint64_t MSR_PKG_POWER_LIMIT_bits;
-
-
-
-	uint64_t Y, Z, F;
-	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
-
-std::cout << "MSR_PKG_POWER_LIMIT_bits = " << MSR_PKG_POWER_LIMIT_bits << std::endl;
-	std::cout << "\tPKG power limit #1: " 
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-		<< " + clamping "
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-		<< std::endl
-		<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
-
-
-
-	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
-	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-	unit["MSR_PKG_POWER_LIMIT_timewindow_1"] = pow(2,Y) * (1.0 + Z/4.0);
-	std::cout << "\tPKG time window #1: "
-		      << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
-		      << " s\n";
-
-
-
-// DRAM
-
-adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
-x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
-std::cout << "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n";
-
-
-
-// END
-if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-	std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-
-#endif
-*/
-////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_MSR_CORE_H
-// power capping limits
+// power capping limits ////////////////////////////////////////////////////////
 	std::cout << "\n# RAPL POWER LIMITS\n";	
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
@@ -556,7 +479,7 @@ if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 #endif
 
 
-// default power capping
+// default power capping ///////////////////////////////////////////////////////
 	std::cout << "\n# DEFAULT RAPL POWER LIMITS\n";
 
 // PKG
@@ -687,15 +610,6 @@ void sysEnergyMeasurement()
 }
 
 //****************************************************************************//
-
-enum MODE
-{
-	USING_MSR,
-	USING_ADAPT,
-	USING_NUMA,
-	USING_NONE
-};
-
 int main()
 {
 	MODE status = USING_NONE;
