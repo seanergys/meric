@@ -14,7 +14,8 @@ int JETSON::FREQUENCY = 10;
 void JETSON::init() //int rank = 0)
 {
 	//start energy measurement
-	system((std::string(MERIC_PATH)+"/tools/getJTX1measurements.py "+ARM_INFO+" &").c_str());
+	if (system((std::string(MERIC_PATH)+"/tools/getJTX1measurements.py "+ARM_INFO+" &").c_str()))
+		std::cerr << "JETSON energy measurement system ERROR: connection failed\n";
 	
 	//get name of the file with measurements
 	char hostname[50];
@@ -36,7 +37,8 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 		if (timestamp == prevstamp)
 		{
 			std::cerr << "MERIC ERROR: missing energy samples, energy measurement has already ended\n";
-			system("pkill -f -INT getJTX1measurements.py 2> /dev/null"); //just to be sure
+			if (system("pkill -f -INT getJTX1measurements.py 2> /dev/null")) //just to be sure
+				std::cerr << "JETSON energy measurement system ERROR: connection failed\n";
 			return 1;
 		}
 		prevstamp = timestamp;			
@@ -81,7 +83,8 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 	}while(timestamp <= currentTime);
 	
 	//stop energy measurement
-	system("pkill -f -INT getJTX1measurements.py");
+	if (system("pkill -f -INT getJTX1measurements.py"))
+		std::cerr << "JETSON energy measurement system ERROR: connection failed\n";
 	
 	//load samples
 	std::ifstream iFile(filename);

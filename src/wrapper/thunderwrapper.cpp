@@ -14,7 +14,8 @@ int THUNDER::FREQUENCY = 1;
 void THUNDER::init() //int rank = 0)
 {
 	//start energy measurement
-	system(("ssh -f hca \""+std::string(MERIC_PATH)+"/tools/getYokogawaMeasurements.py "+ARM_INFO+"\"").c_str());
+	if (system(("ssh -f hca \""+std::string(MERIC_PATH)+"/tools/getYokogawaMeasurements.py "+ARM_INFO+"\"").c_str()))
+		std::cerr << "THUNDER energy measurement system ERROR: connection failed\n";
 	filename = std::string(MERIC_PATH)+"/tools/yokogawaMeasurement/hca-server.csv"; //one file for all nodes
 }
 
@@ -29,7 +30,8 @@ int THUNDER::getSamples()					//prejmenovat loadSamples()
 	double prevstamp = 0.0;
 	//stop energy measurement
 	sleep(5); //output file is located at hca-server and it will be moved to the system when the measurement is closed
-	system("ssh hca \"pkill -f -INT getYokogawaMeasurements.py\"");
+	if (system("ssh hca \"pkill -f -INT getYokogawaMeasurements.py\""))
+		std::cerr << "THUNDER energy measurement system ERROR: connection failed\n";
 	sleep(1);
 	
 	//load samples
