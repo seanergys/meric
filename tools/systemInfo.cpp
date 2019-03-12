@@ -335,8 +335,11 @@ void sysInfoSize()
 	sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
 #elif defined HAVE_NUMA_H
-	cores = sysconf(_SC_NPROCESSORS_ONLN);
-	sockets = cores / (numa_node_of_cpu(cores-1)+1);
+	cores = sysconf(_SC_NPROCESSORS_ONLN); //cores per node
+	sockets = numa_node_of_cpu(cores-1)+1;
+	if (sockets <= 0)
+		sockets = 1;
+	cores = cores / sockets;
 #endif
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tSockets per Node: " << sockets << std::endl
