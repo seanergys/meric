@@ -210,7 +210,7 @@ const uint64_t MSR_PKG_POWER_LIMIT_time_z_mask = 0xC00000;
 const uint64_t MSR_PKG_POWER_LIMIT_time_z_shift = 22;
 
 const uint64_t MSR_PKG_POWER_LIMIT_power1_shift = 0;
-const uint64_t MSR_PKG_POWER_LIMIT_power2_shift = 32; //use "half register-lenght" shift instead of specifying all the mask and shifts for the second half of the register
+const uint64_t MSR_PKG_POWER_LIMIT_power2_shift = 32; //use "half register-length" shift instead of specifying all the mask and shifts for the second half of the register
 
 const uint64_t MSR_PKG_POWER_LIMIT_lock_mask  = 0x8000000000000000;
 const uint64_t MSR_DRAM_POWER_LIMIT_lock_mask = 0x80000000;
@@ -460,25 +460,31 @@ void sysInfoPowercap()
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	std::cout << "\tPKG max power limit:  " 
+
+	std::cout 
+		<< "\tRAPL time window unit: " << unit["MSR_RAPL_POWER_UNIT_time"]*1000000 << " us\n"
+		<< "\tPKG max power limit:   " 
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * unit["MSR_PKG_POWER_LIMIT"] << " W\n"
 		
-		<< "\tPKG min power limit:  " 
+		<< "\tPKG min power limit:   " 
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * unit["MSR_PKG_POWER_LIMIT"] << " W\n"
 
-		<< "\tPKG max time window:  " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n";
+//		<< "\tPKG max time window:   " 
+//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n"
+		;
 
 // DRAM
 	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	std::cout << "\tDRAM max power limit: "
+	std::cout 
+		<< "\tDRAM max power limit:  "
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n"
 
-		<< "\tDRAM min power limit: " 
+		<< "\tDRAM min power limit:  " 
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n"
 
-		<< "\tDRAM min time window: " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n";
+//		<< "\tDRAM max time window:  " 
+//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n"
+		;
 #endif
 
 
