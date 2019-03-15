@@ -1,5 +1,5 @@
 #include "raplwrapper.h"
-#include "../basis/utils.h"
+
 
 /**
  * Intel RAPL energy consumption mearurement registers description
@@ -71,29 +71,19 @@ const uint64_t MSR_PKG_ENERGY_STATUS_mask       = 0xFFFFFFFF;
 //const uint64_t MSR_PP0_ENERGY_STATUS_mask     = 0xFFFFFFFF;
 //const uint64_t MSR_PP1_ENERGY_STATUS_mask     = 0xFFFFFFFF;
 
-#ifdef HAVE_X86_ADAPT_H
-	#include "x86_adapt.h"
-	using namespace X86ADAPT_RAPL_COUNTERS;
-#elif defined (HAVE_MSR_CORE_H)
-	#include <msr_core.h>
-	#include <msr_rapl.h>
-	using namespace MSR_RAPL_COUNTERS;
-#else
-	using namespace X86ADAPT_RAPL_COUNTERS;
-#endif
+
 
 using namespace meric;
 
 std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
-int RAPL::NODE_SIZE_SOCKET = 1;
+uint64_t RAPL::NODE_SIZE_SOCKET = 1;
 
 #if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 std::map<std::string, unsigned long long int> RAPL::counters;
-std::map<std::string, double> RAPL::energyUnit;
-int RAPL::NODE_SIZE_CPU = 1;
-int RAPL::SOCKET_SIZE_CPU = 1;
+std::map<std::string, double> RAPL::units;
+uint64_t RAPL::SOCKET_SIZE_CPU = 1;
 
 // solve counter overflow and add baseline energy consumption
 unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
@@ -109,57 +99,66 @@ unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsig
 	
 	if (stopValue < startValue)
 	{	
-		if (energyUnit.count(counterName))
+		if (units.count(counterName))
 		{
-			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< energyUnit[counterName] <<" " <<counterName << std::endl;
-			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName] << std::endl;
-			return ((COUNTERMAX - startValue) + stopValue) * energyUnit[counterName];
+			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< units[counterName] <<" " <<counterName << std::endl;
+			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * units[counterName] << std::endl;
+			return ((COUNTERMAX - startValue) + stopValue) * units[counterName];
 		} //else: unit modifier is missing
 		return 0;
 	}
 	else
-		return (stopValue - startValue) * energyUnit[counterName];
+		return (stopValue - startValue) * units[counterName];
 }
-#endif
 
-#ifdef HAVE_X86_ADAPT_H
 // set counters units
-void RAPL::init()
+void RAPL::init(bool detailed)
 {
+	detailedMode = detailed;
+#ifdef HAVE_MSR_CORE_H
+	core_config(&SOCKET_SIZE_CPU, NULL, &NODE_SIZE_SOCKET, NULL);
+#elif defined HAVE_X86_ADAPT_H
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+	//SOCKET_SIZE_CPU is not used when using adapt
+#endif
 	initMap(counters);
+	//initCountersUnits() is already called from environmentwrapper
+}
 
-	//set unit modifier for Intel_RAPL_Pckg_Energy
-	uint64_t unit;
-	//ignoring the fact that different sockets may have different units
+void RAPL::initCountersUnits()
+{
+	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
+#ifdef HAVE_MSR_CORE_H
+	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
+#elif defined HAVE_X86_ADAPT_H
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	if (fd < 0)
 	{
 		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
-		std::cerr << "WARNING: RAPL values will be without any unit\n";
 		return;
 	}
 	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
-	x86_adapt_get_setting(fd, itemId, &unit);
-	unit &= MSR_RAPL_POWER_UNIT_energy_mask;
-	unit >>= MSR_RAPL_POWER_UNIT_energy_shift;
+	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-	
-	energyUnit[RAPL_PCKG_ENERGY] = 1.0/pow(2,unit);
-	//the rest unit modifiers are set according to x86_adapt "documentation"
-	//https://github.com/tud-zih-energy/x86_energy/blob/eac130973b2fbfa0b5a3e72ef9912af617584d97/rapl.c#L763
-	//DRAM ENERGY unit is fixed to 15.3uJ
-	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
-	energyUnit[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
-/*
-	energyUnit[RAPL_DRAM_CH0]   = 1.0/pow(2,16);	//1.0/pow(2,18)
-	energyUnit[RAPL_DRAM_CH1]   = energyUnit[RAPL_DRAM_CH0];
-	energyUnit[RAPL_DRAM_CH2]   = energyUnit[RAPL_DRAM_CH0];
-	energyUnit[RAPL_DRAM_CH3]   = energyUnit[RAPL_DRAM_CH0];
-*/
-}
+#endif
+	if (MSR_RAPL_POWER_UNIT_bits != 0)
+	{
+		units[RAPL_PCKG_POWER_LIMIT] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
+		units[RAPL_RAM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 
+		units[RAPL_PCKG_ENERGY] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
+		//DRAM ENERGY unit is fixed to 15.3uJ
+		//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
+		units[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
+
+		units[RAPL_POWER_LIMIT_TIMEWINDOW] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
+	}
+}
+#endif
+
+
+#ifdef HAVE_X86_ADAPT_H
 //	read counters values
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
@@ -192,7 +191,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 					std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
 					continue;
 				}
-				if (!energyUnit.count(itemName))
+				if (!units.count(itemName))
 				{
 					std::cerr << "X86ADAPT RAPL missing unit modifier for counter - " << itemName <<" Add modifier in RAPL::init()"<<std::endl;
 					continue;					
@@ -228,25 +227,6 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 
 ////////////////////////////////////////////////////////////////////////////////
 #elif  defined HAVE_MSR_CORE_H
-// set counters units
-void RAPL::init()
-{
-	uint64_t cs = 0;
-	uint64_t ss = 0;
-	core_config(&cs, NULL, &ss, NULL);
-	NODE_SIZE_SOCKET = ss;
-	SOCKET_SIZE_CPU  = cs;
-	NODE_SIZE_CPU    = SOCKET_SIZE_CPU * NODE_SIZE_SOCKET;
-	initMap(counters);
-
-	uint64_t unit;
-	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &unit);
-	energyUnit[RAPL_PCKG_ENERGY] = 1.0/pow(2,((unit & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
-	//DRAM ENERGY unit is fixed to 15.3uJ
-	//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
-	energyUnit[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
-}
-
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -304,6 +284,14 @@ std::string RAPL::getSummaryCounterName()
 void RAPL::getSummaryValue(double time, unsigned long long int * counterSummary)
 {
 	*counterSummary += time * RAPL_BASELINE;
+}
+
+double RAPL::getUnit(std::string counterName)
+{
+	if (units.count(counterName))
+		return units[counterName];
+	else
+		return -1.0;
 }
 
 //	set list of counters to measure

@@ -89,9 +89,9 @@ SharedMeric::SharedMeric()
 		PAPI::init();
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		if (Meric::DETAILED)
-			RAPL::detailed();
-		RAPL::init();
+//		if (Meric::DETAILED)
+//			RAPL::detailed();
+		RAPL::init(Meric::DETAILED);
 	}
 	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
 		JETSON::init();

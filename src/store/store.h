@@ -126,6 +126,8 @@ protected:
 					+ (records[starts.back()].configuration.frequency == 0  ? "" : std::to_string(records[starts.back()].configuration.frequency)  +"_" )
 					+ (records[starts.back()].configuration.uncoreFrequency == 0 ? "" : std::to_string(records[starts.back()].configuration.uncoreFrequency) +"_" )
 					+ (records[starts.back()].configuration.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
+					+ (records[starts.back()].configuration.powerCapPKG == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKG) +"_" )
+					+ (records[starts.back()].configuration.powerCapPKGtime == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKGtime) +"_" )
 					+ outputFilename;
 				if (filenamePrefix.back() == '_')
 					filenamePrefix.pop_back();

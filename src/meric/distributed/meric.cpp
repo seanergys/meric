@@ -251,9 +251,9 @@ DistributedMeric::DistributedMeric()
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		if (Meric::DETAILED)
-			RAPL::detailed();
-		RAPL::init();
+//		if (Meric::DETAILED)
+//			RAPL::detailed();
+		RAPL::init(Meric::DETAILED);
 	}
 
 	std::string applicationMainRegion = std::string(program_invocation_name);

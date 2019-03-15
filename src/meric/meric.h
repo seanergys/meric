@@ -162,7 +162,7 @@ protected:
 		
 		auto cmpSettings = [&] (SocketsRegionParameters & prev, RegionParameters & next, int socket)
 		{
-			uint64_t paramChange;
+			long paramChange;
 			//core frequency
 			if (next.frequency)
 			{
@@ -222,6 +222,46 @@ protected:
 					prev.socket[socket].nthreads = defaultParameter.nthreads;
 				}			
 			}
+			
+			//power cap
+			if (next.powerCapPKG)
+			{
+				paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG-next.powerCapPKG : next.powerCapPKG-prev.socket[socket].powerCapPKG;
+				if (paramChange > ignoreSettings.powerCapPKG)
+				{
+					change.socket[socket].powerCapPKG = paramChange;
+					prev.socket[socket].powerCapPKG = next.powerCapPKG;
+				}
+			}
+			else
+			{
+				paramChange = prev.socket[socket].powerCapPKG > defaultParameter.powerCapPKG ? prev.socket[socket].powerCapPKG-defaultParameter.powerCapPKG : defaultParameter.powerCapPKG-prev.socket[socket].powerCapPKG;
+				if (paramChange > ignoreSettings.powerCapPKG)
+				{
+					change.socket[socket].powerCapPKG = paramChange;
+					prev.socket[socket].powerCapPKG = defaultParameter.powerCapPKG;
+				}
+			}
+
+			if (next.powerCapPKGtime)
+			{
+				paramChange = prev.socket[socket].powerCapPKGtime > next.powerCapPKGtime ? prev.socket[socket].powerCapPKGtime-next.powerCapPKGtime : next.powerCapPKGtime-prev.socket[socket].powerCapPKGtime;
+				if (paramChange > ignoreSettings.powerCapPKGtime)
+				{
+					change.socket[socket].powerCapPKGtime = paramChange;
+					prev.socket[socket].powerCapPKGtime = next.powerCapPKGtime;
+				}
+			}
+			else
+			{
+				paramChange = prev.socket[socket].powerCapPKGtime > defaultParameter.powerCapPKGtime ? prev.socket[socket].powerCapPKGtime-defaultParameter.powerCapPKGtime : defaultParameter.powerCapPKGtime-prev.socket[socket].powerCapPKGtime;
+				if (paramChange > ignoreSettings.powerCapPKGtime)
+				{
+					change.socket[socket].powerCapPKGtime = paramChange;
+					prev.socket[socket].powerCapPKGtime = defaultParameter.powerCapPKGtime;
+				}
+			}
+
 		};
 	
 		if (parameter.find(region) == parameter.end())	//region name not in list
@@ -246,9 +286,12 @@ protected:
 		}
 /*
 		MERIC_INFO << region << " CHANGE\n"
-			<< "\tFRQ "<< change.socket[0].frequency	<< std::endl
-			<< "\tunF "<< change.socket[0].uncoreFrequency	<< std::endl
-			<< "\tTHR "<< change.socket[0].nthreads	<< std::endl;
+			<< "\tFRQ "<< change.socket[0].frequency << std::endl
+			<< "\tunF "<< change.socket[0].uncoreFrequency << std::endl
+			<< "\tTHR "<< change.socket[0].nthreads << std::endl
+			<< "\tPWR "<< change.socket[0].powerCapPKG << std::endl
+			<< "\tTWD "<< change.socket[0].powerCapPKGtime << std::endl
+			;
 */
 		return change;
 	}
@@ -264,7 +307,7 @@ protected:
 		{
 			//set core frequency
 			bool differentSettingsForSockets = false;
-			double diffCore = change.socket[0].frequency;
+			long diffCore = change.socket[0].frequency;
 			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
 			{
 				if (diffCore != change.socket[socket].frequency)
@@ -284,7 +327,7 @@ protected:
 		
 			//set uncore frequncy
 			differentSettingsForSockets = false;
-			uint64_t diffUncore = change.socket[0].uncoreFrequency;
+			long diffUncore = change.socket[0].uncoreFrequency;
 			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
 			{
 				if (diffUncore != change.socket[socket].uncoreFrequency)
@@ -301,6 +344,30 @@ protected:
 			}
 			else if (diffUncore)
 				Environment::uncoreFrequency(currentState.socket[0].uncoreFrequency, currentState.socket[0].uncoreFrequency);
+
+			//set powercap - to change timeWindow also power must be different
+			differentSettingsForSockets = false;
+			long diffCapPower = change.socket[0].powerCapPKG;
+			long diffCapTime  = change.socket[0].powerCapPKGtime;
+			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
+			{
+				if (diffCapPower != change.socket[socket].powerCapPKG || diffCapTime != change.socket[0].powerCapPKGtime)
+				{
+					differentSettingsForSockets = true;
+					break;
+				}
+			}
+			
+			if (differentSettingsForSockets)
+			{
+				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+				{
+					if(change.socket[socket].powerCapPKG)
+						Environment::powercap(currentState.socket[socket].powerCapPKG, currentState.socket[socket].powerCapPKGtime, socket);
+				}
+			}
+			else if (diffCapPower)
+				Environment::powercap(currentState.socket[0].powerCapPKG, currentState.socket[0].powerCapPKGtime);
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);	

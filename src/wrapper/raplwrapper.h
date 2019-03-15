@@ -7,8 +7,25 @@
 #include <iostream>
 #include <math.h>
 
+#ifdef HAVE_X86_ADAPT_H
+	#include <x86_adapt.h>
+#elif defined (HAVE_MSR_CORE_H)
+	#include <msr_core.h>
+	#include <msr_rapl.h>
+#endif
+
 #include "counters.h"
 #include "countersrates.h"
+#include "../basis/utils.h"
+
+#ifdef HAVE_X86_ADAPT_H
+	using namespace X86ADAPT_RAPL_COUNTERS;
+#elif defined (HAVE_MSR_CORE_H)
+	using namespace MSR_RAPL_COUNTERS;
+#else
+	using namespace X86ADAPT_RAPL_COUNTERS;
+#endif
+
 
 namespace meric {
 
@@ -16,31 +33,32 @@ class RAPL {
 #if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 public:
 	static const int RAPL_BASELINE = 0; // NOT USED at the MERIC side now
-	static void init();
+	static void init(bool detailed = false);
 	static void close() {};
 	
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
-	static void detailed() {detailedMode = true;};
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
+
+	static void initCountersUnits();
+	static double getUnit(std::string counterName);
 private:
 		//list of counters
 	static std::map<std::string, unsigned long long int> counters;
-	static std::map<std::string, double> energyUnit;
+	static std::map<std::string, double> units;
 	static std::string suffix;
-	static int NODE_SIZE_CPU;
-	static int SOCKET_SIZE_CPU;
+	static uint64_t SOCKET_SIZE_CPU;
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #else
 public:
 	static const int RAPL_BASELINE = 0;
-	static void init() {};
+	static void init(bool detailed = false) {};
 	static void close() {};
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
@@ -52,13 +70,15 @@ public:
 	static std::string getCountersLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
+	static void initCountersUnits() {};
+	static double getUnit(std::string counterName);
 private:
 	static std::string suffix;
 	static int numOfDevices;
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #endif
-	static int NODE_SIZE_SOCKET;
+	static uint64_t NODE_SIZE_SOCKET;
 };
 
 }

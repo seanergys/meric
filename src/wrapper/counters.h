@@ -72,6 +72,10 @@ const std::string RAPL_DRAM_CH2    = "Intel_DRAM_ENERGY_STATUS_CH2";
 const std::string RAPL_DRAM_CH3    = "Intel_DRAM_ENERGY_STATUS_CH3";
 */
 
+const std::string RAPL_PCKG_POWER_LIMIT = "Intel_RAPL_PKG_POWER_LIMIT_1";
+const std::string RAPL_RAM_POWER_LIMIT  = "Intel_RAPL_RAM_POWER_LIMIT";
+const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "Intel_RAPL_POWER_UNIT_TIMEWINDOW";
+
 static std::map<std::string, std::string> counterLabel = {
 	{ "Intel_RAPL_Pckg_Energy", "RAPL_PCKG [J]" },
 	{ "Intel_RAPL_RAM_Energy", "RAPL_RAM [J]" },
@@ -92,6 +96,10 @@ const std::string RAPL_SUM_ENERGY  = "Energy summary [J]";	//PCKG+RAM = not a co
 const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //not available
 const std::string RAPL_PP1_ENERGY  = "MSR_PP1_ENERGY_STATUS";
 */
+
+const std::string RAPL_PCKG_POWER_LIMIT = "MSR_PKG_POWER_LIMIT";
+const std::string RAPL_RAM_POWER_LIMIT  = "MSR_DRAM_POWER_LIMIT";
+const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<std::string, std::string> counterLabel = {
 	{ "MSR_PKG_ENERGY_STATUS",    "RAPL_PCKG [J]"      },

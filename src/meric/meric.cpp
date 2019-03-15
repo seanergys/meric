@@ -49,6 +49,8 @@ int Meric::getDefaultParameters()
 	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", -1);
 	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
 	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
+	defaultParameter.powerCapPKG     = mutils::getenv("MERIC_PWRCAP_POWER", -1);
+	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
 
 #if defined (HAVE_CPUFREQ_H) || defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 	if (defaultParameter.frequency < 0)
@@ -88,6 +90,25 @@ int Meric::getDefaultParameters()
 	}
 #endif
 
+#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+	if (defaultParameter.powerCapPKG < 0 || defaultParameter.powerCapPKGtime < 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_POWER [W] and MERIC_PWRCAP_TIME [us]\n";
+		ret = 1;
+	}
+	else if (defaultParameter.powerCapPKG != 0)
+	{
+		Meric::outputFilenameInfo +="PWR_";
+		if (defaultParameter.powerCapPKGtime != 0)
+			Meric::outputFilenameInfo +="Twindow_";
+	}
+	else if (defaultParameter.powerCapPKGtime != 0)
+	{
+		std::cerr << "MERIC ERROR: MERIC_PWRCAP_POWER [W] must be set to change MERIC_PWRCAP_TIME [us]\n";
+		ret = 1;
+	}
+#endif
+
 #ifndef HAVE_HDF5_H
 	Meric::HDF5 = false;
 #endif 
@@ -96,9 +117,10 @@ int Meric::getDefaultParameters()
 		return ret;
 
 //OPTIONAL SECTION
-	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
-	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << "\n";
+	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << " Hz\n";
+	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << " Hz\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
+	MERIC_INFO << "Default powercap: " << defaultParameter.powerCapPKG << " W\t" << defaultParameter.powerCapPKGtime << " us\n";
 
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
 	if (outputFilenameSuffix.size() == 0)
@@ -317,6 +339,16 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data)
 		{
 			if (defaultParameter.nthreads != 0)
 				param.nthreads = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
+		else if ("PWRCAP_POWER" == std::string(set->name->string))
+		{
+			if (defaultParameter.powerCapPKG != 0)
+				param.powerCapPKG = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
+		else if ("PWRCAP_TIME" == std::string(set->name->string))
+		{
+			if (defaultParameter.powerCapPKGtime != 0)
+				param.powerCapPKGtime = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
 		else
 			std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;

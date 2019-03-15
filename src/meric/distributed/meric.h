@@ -166,7 +166,7 @@ public:
 		
 		if (!_MPInodeRank)
 		{
-			Environment::setDefaultFrequencies();
+			Environment::restoreSystemSettings();
 		}
 		
 		if (_stack.size() != 0)

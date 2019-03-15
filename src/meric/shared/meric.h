@@ -149,7 +149,7 @@ public:
 		}
 
 		Meric::close();
-		Environment::setDefaultFrequencies();
+		Environment::restoreSystemSettings();
 
 		if (_stack.size() != 0)
 		{
