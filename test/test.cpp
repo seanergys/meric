@@ -6,6 +6,8 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "work.h"
+
 int main(int argc, char **argv)
 {
 //	MERIC_Init();
@@ -18,7 +20,7 @@ int main(int argc, char **argv)
 //	MERIC_MeasureStart("B");
 	READEX_REGION_DEFINE(B);
 	READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
-	sleep(1);
+	do_work(1);
 //	MERIC_MeasureStop();
 	READEX_REGION_STOP(B);
 
@@ -31,7 +33,7 @@ int main(int argc, char **argv)
 
 //	MERIC_MeasureStart("B");
 	READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
-	sleep(2);
+	do_work(2);
 //	MERIC_MeasureStop();
 	READEX_REGION_STOP(B);
 	
