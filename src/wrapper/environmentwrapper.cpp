@@ -308,12 +308,6 @@ void Environment::getSystemDefaultSettings()
 	read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
 	read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
 #elif defined HAVE_X86_ADAPT_H
-	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-	if (fd < 0)
-	{
-		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
-		return;
-	}
 	int adaptRegisterHandler;
 	uint64_t MSR_PKG_1_POWER_LIMIT_bits, MSR_PKG_2_POWER_LIMIT_bits;
 	
@@ -766,7 +760,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 		}
 		
 		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-		x86_adapt_set_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+		x86_adapt_set_setting(fd, adaptRegisterHandler, MSR_PKG_POWER_LIMIT_bits);
 
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
@@ -834,11 +828,11 @@ void Environment::restoreSystemSettings()
 			int adaptRegisterHandler;
 			uint64_t POWER_LIMIT_bits = defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask;
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-			x86_adapt_set_setting(fd, adaptRegisterHandler, &POWER_LIMIT_bits);
+			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
 			
 			POWER_LIMIT_bits = defaultSettings[SYS_OTHER].defaultPowerCapPKG >> MSR_PKG_POWER_LIMIT_power2_shift;
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
-			x86_adapt_set_setting(fd, adaptRegisterHandler, &POWER_LIMIT_bits);
+			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
 			
 //			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
 //			x86_adapt_set_setting(fd, adaptRegisterHandler, &defaultSettings[SYS_OTHER].defaultPowerCapRAM);
