@@ -465,16 +465,17 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (defaultSettings[SYS_OTHER].defaultCoreFreq == -1)
 		return;	//DVFS not supported
 
-
-	if (freq < defaultSettings[systemType].minCoreFreq)
+	if (freq < defaultSettings[systemType].minCoreFreq || freq > defaultSettings[systemType].maxCoreFreq)
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
 		return;
 	}
-	else if (freq > defaultSettings[systemType].maxCoreFreq)
+/*	//would work if defaultCoreFreq is set at the nominal frequency, which is currently not
+	else if (freq > defaultSettings[systemType].defaultCoreFreq)
 	{
 		MERIC_INFO << "Trying to apply turbo CPU frequency\n";
 	}
+*/
 	usedDVFS = true;
 
 	if (systemType == SYS_JETSON)
