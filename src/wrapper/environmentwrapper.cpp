@@ -411,7 +411,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
 							defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-							defSet << defaultSettings[systemType].minCoreFreq;
+							defSet << defaultSettings[systemType].minCoreFreq / 1000;
 							defSet.close();
 
 							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
@@ -801,7 +801,7 @@ void Environment::restoreSystemSettings()
 			for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 			{
 				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				defSet << defaultSettings[systemType].maxCoreFreq;
+				defSet << defaultSettings[systemType].maxCoreFreq / 1000;
 				defSet.close();
 				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, IA32_ENERGY_PERF_BIAS_default);
 			}
