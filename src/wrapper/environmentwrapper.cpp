@@ -487,7 +487,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						defSet.close();
 						
 						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
-						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS);
+						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 						uint64_t REG_MAX_PSTATE = (defaultSettings[systemType].maxCoreFreq/100000000) << 8;
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
@@ -495,7 +495,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 							defSet << defaultSettings[systemType].minCoreFreq / 1000;
 							defSet.close();
 
-							write_msr_by_idx(cpu, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS, 0);
+							write_msr_by_idx(cpu, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default, 0);
 							write_msr_by_idx(cpu, IA32_PERF_CTL, REG_MAX_PSTATE);
 						}
 					}
@@ -837,7 +837,7 @@ void Environment::restoreSystemSettings()
 			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
 			defSet << defaultSettings[systemType].maxCoreFreq / 1000;
 			defSet.close();
-			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS);
+			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 		}
 #endif
 	}

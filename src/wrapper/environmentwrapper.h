@@ -119,7 +119,7 @@ struct systemLimits{
 	long maxPowerCapRAMtime;     //us
 	uint64_t defaultPowerCapRAM; //raw register value
 
-	uint64_t IA32_ENERGY_PERF_BIAS; //raw register value
+	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
 };
 
 
