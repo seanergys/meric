@@ -236,6 +236,8 @@ enum MODE
 	USING_NONE
 };
 
+#ifdef __x86_64
+//#define _GNU_SOURCE
 enum reg_cpuid
 {
 	eax,
@@ -322,6 +324,9 @@ unsigned long discover_nominal_frequency()
 
 	return f = (unsigned long) (atof(token2) * 1E9);
 }
+#else
+unsigned long discover_nominal_frequency() {return 0;};
+#endif
 
 void sysInfoSize()
 {
