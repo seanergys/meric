@@ -254,7 +254,8 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
-Specify following parameters to zero if you don't want to use th
+Specify following parameters to zero if you do not want to tune the selected system parameter.
+
 	export MERIC_FREQUENCY=2400MHz
 	export MERIC_UNCORE_FREQUENCY=2GHz
 		- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
