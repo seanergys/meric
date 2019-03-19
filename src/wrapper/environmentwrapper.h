@@ -119,8 +119,7 @@ struct systemLimits{
 	long maxPowerCapRAMtime;     //us
 	uint64_t defaultPowerCapRAM; //raw register value
 
-//	std::string defaultGovernor;
-//	uint64_t default_IA32_ENERGY_PERF_BIAS; //TODO
+	uint64_t IA32_ENERGY_PERF_BIAS; //raw register value
 };
 
 
@@ -150,9 +149,11 @@ private:
 	static bool usedDVFS;
 	static bool usedUFS;
 	static bool usedPWRCAP;
-	static bool CPUFREQ_GOVERNOR;
-	static std::string originalGovernor;
-	static uint64_t IA32_ENERGY_PERF_BIAS_default;
+	static bool activatedDVFS;
+	static bool activatedUFS;
+	static bool activatedPWRCAP;
+	
+	static std::string defaultGovernor;
 };
 
 

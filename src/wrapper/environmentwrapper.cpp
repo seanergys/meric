@@ -3,7 +3,7 @@
 #include "raplwrapper.h"
 
 /**
- * UNCORE Freq
+ * Intel CPU uncore frequency
  * From Intel 64 and IA-32 Architectures Software Developer's Manual 
  * Volume 4: Model-Specific Registers
  *
@@ -18,10 +18,11 @@
  * MIN_RATIO (bits 14:8):
  	Writing to this field controls the minimum possible ratio of the LLC/Ring.
  * Reserved (bits 63:15)
- *
+ ******************************************************************************
  *
  * Intel RAPL power capping registers description
  * From Intel 64 and IA-32 Architectures Software Developer's Manual
+ * NOTE: RAPL power, energy and time units description is in the raplwrapper.
  *
  * MSR_PKG_POWER_LIMIT register ***********************************************
  * Register allows a software agent to define power limitation for the package 
@@ -101,10 +102,79 @@
 	value between 1.0 and 1.3 with the fraction digit represented by bits 23:22, 
 	Y is an unsigned integer represented by bits 21:17. The unit of this field 
 	is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT.
- * Registred (bits 30:24)
+ * Reserved (bits 30:24)
  * Lock (bit 31): 
 	If set, all write attempts to this MSR are ignored until next RESET.
- * Registred (bits 63:32)
+ * Reserved (bits 63:32)
+ *
+ * IA32_PERF_CTL register *****************************************************
+ * Performance Control MSR (R/W) Software makes a request for a new Performance 
+ * state (P-State) by writing this MSR.
+ * State transitions are initiated by writing a 16-bit value to the 
+ * IA32_PERF_CTL register, see Figure 14-2. If a transition is already in 
+ * progress, transition to a new value will subsequently take effect. Reads of 
+ * IA32_PERF_CTL determine the last targeted operating point. The current 
+ * operating point can be read from IA32_PERF_STATUS. IA32_PERF_STATUS is 
+ * updated dynamically. The 16-bit encoding that defines valid operating points 
+ * is model-specific. Applications and performance tools are not expected to use 
+ * either IA32_PERF_CTL or IA32_PERF_STATUS and should treat both as reserved. 
+ * Performance monitoring tools can access model-specific events and report the 
+ * occurrences of state transitions.
+ * Target performance State Value (bits 15:0)
+ * Reserved (bits 31:16)
+ * IDA Engage (R/W) (bit 32):
+ 	When set to 1: disengages IDA.
+ * Reserved (63:33)
+ *
+ * IA32_ENERGY_PERF_BIAS register *********************************************
+ * Performance Energy Bias Hint (R/W)
+ * Power Policy Preference (bits 3:0):
+ 	0 indicates preference to highest performance.
+	15 indicates preference to maximize energy saving.
+ * Reserved (bits 63:4)
+ *
+ * MSR_PKG_POWER_INFO/MSR_DRAM_POWER_INFO register ****************************
+ * Read-only MSR. It reports the package/DRAM power range information for RAPL 
+ * usage. This MSR provides maximum/minimum values (derived from electrical 
+ * specification), thermal specification power of the package/DRAM domain. It 
+ * also provides the largest possible time window for software to program the 
+ * RAPL interface.
+ * Thermal Spec Power (bits 14:0):
+	The unsigned integer value is the equivalent of thermal specification power
+	of the package/DRAM domain. The unit of this field is specified by the 
+	"Power Units" field of MSR_RAPL_POWER_UNIT.
+ * Reserved (bit 15)
+ * Minimum Power (bits 30:16):
+	The unsigned integer value is the equivalent of minimum power derived from
+	electrical spec of the package/DRAM domain. The unit of this field is 
+	specified by the "Power Units" field of MSR_RAPL_POWER_UNIT.
+ * Reserved (bit 31)
+ * Maximum Power (bits 46:32):
+	The unsigned integer value is the equivalent of maximum power derived from
+	the electrical spec of the package/DRAM domain. The unit of this field is 
+	specified by the "Power Units" field of MSR_RAPL_POWER_UNIT.
+ * Reserved (bit 47)
+ * Maximum Time Window (bits 53:48):
+	The unsigned integer value is the equivalent of largest acceptable value to 
+	program the time window of MSR_PKG_POWER_LIMIT/MSR_DRAM_POWER_LIMIT. The 
+	unit of this field is specified by the "Time Units" field of 
+	MSR_RAPL_POWER_UNIT.
+ * Reserved (bits 63:54)
+ *
+ * MSR_PKG_PERF_STATUS/MSR_DRAM_PERF_STATUS register **************************
+ * Read-only MSR. It reports the total time for which the package was throttled 
+ * due to the RAPL power limits. Throttling in this context is defined as going 
+ * below the OS-requested P-state or T-state. It has a wrap-around time of many 
+ * hours. The availability of this MSR is platform specific (see Chapter 2, 
+ * "Model-Specific Registers (MSRs)" in the Intel® 64 and IA-32 Architectures 
+ * Software Developer's Manual, Volume 4).
+ * Accumulated Package Throttled Time (bits 31:0):
+	The unsigned integer value represents the cumulative time (since the last 
+	time this register is cleared) that the package/DRAM domain has throttled. 
+	The unit of this field is specified by the "Time Units" field of 
+	MSR_RAPL_POWER_UNIT.
+ * Reserved (bits 63:32)
+ ******************************************************************************
  **/
 
 
@@ -121,24 +191,28 @@ systemLimits Environment::defaultSettings [] = {
 	[SYS_HASWELL] = { 3300000000, 2500000000, 1200000000, //DVFS
 	                  3000000000, 3000000000, 1200000000, //UFS 
 	                         290,         66,      45898, 13239288264131720, //PKG powercap
-	                          44,          4,      45898, 13230870095724886},//RAM powercap
-	[SYS_JETSON]  = { 1734000000,  518400000,  102000000, 1600000000,  408000000,   40800000 , -1, -1, -1, 0x0, -1, -1, -1, 0x0},
-	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0}, //system tuning not supported
-	[SYS_DAVIDE]  = { 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0}, //UFS+powercap not supported
-	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0}
+	                          44,          4,      45898, 13230870095724886,//RAM powercap
+	                         0x0},
+	[SYS_JETSON]  = { 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0},
+	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //system tuning not supported
+	[SYS_DAVIDE]  = { 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //UFS+powercap not supported
+	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
 };
 
 int Environment::NODE_SIZE_THREAD = 1;
 int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
-int Environment::systemType = SYS_HASWELL;
-uint64_t Environment::IA32_ENERGY_PERF_BIAS_default = 0;
+int Environment::systemType = SYS_OTHER;
+
+std::string Environment::defaultGovernor = "";
+
 bool Environment::usedDVFS = false;
 bool Environment::usedUFS = false;
 bool Environment::usedPWRCAP = false;
-bool Environment::CPUFREQ_GOVERNOR = false;
-std::string Environment::originalGovernor = "";
+bool Environment::activatedDVFS = false;
+bool Environment::activatedUFS = false;
+bool Environment::activatedPWRCAP = false;
 
 /**
  * change number of active threads
@@ -218,48 +292,49 @@ void Environment::getSystemDefaultSettings()
 {
 	//CORE freq
 	std::ifstream frequencyBounderyFile;
-	std::string freqBound; //files has the value in KHz
+	std::string freqBound; //files have the value in KHz
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	defaultSettings[SYS_OTHER].maxCoreFreq = std::stol(freqBound) * 1000;
-	defaultSettings[SYS_OTHER].defaultCoreFreq = defaultSettings[SYS_OTHER].maxCoreFreq;
+	defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
+	defaultSettings[systemType].defaultCoreFreq = defaultSettings[systemType].maxCoreFreq;
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	defaultSettings[SYS_OTHER].minCoreFreq = std::stol(freqBound) * 1000;
+	defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
 
 	//UnCORE freq
 #ifdef HAVE_MSR_CORE_H
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
-	defaultSettings[SYS_OTHER].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-	defaultSettings[SYS_OTHER].defaultUncoreFreq = defaultSettings[SYS_OTHER].maxUncoreFreq;
-	defaultSettings[SYS_OTHER].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-
+	defaultSettings[systemType].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+	defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
+	defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
 #elif defined HAVE_X86_ADAPT_H
 	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 	uint64_t setting;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	defaultSettings[SYS_OTHER].maxUncoreFreq = setting * 100000000;
-	defaultSettings[SYS_OTHER].defaultUncoreFreq = defaultSettings[SYS_OTHER].maxUncoreFreq;
+	defaultSettings[systemType].maxUncoreFreq = setting * 100000000;
+	defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	defaultSettings[SYS_OTHER].minUncoreFreq = setting * 100000000;
+	defaultSettings[systemType].minUncoreFreq = setting * 100000000;
 #endif
 
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+	if (defaultSettings[systemType].defaultUncoreFreq != -1)
+		activatedUFS = true;
 	struct stat info;
 	std::string uncoreFrequencyDefaultFile = std::string(MERIC_PATH)+"/build/ucfRestore.csv";
 	if(stat(uncoreFrequencyDefaultFile.c_str(), &info ) != 0)
 	{
-		if (defaultSettings[SYS_OTHER].minUncoreFreq != defaultSettings[SYS_OTHER].maxUncoreFreq)
+		if (defaultSettings[systemType].minUncoreFreq != defaultSettings[systemType].maxUncoreFreq)
 		{
 			std::ofstream ucfRestoreFile;
 			ucfRestoreFile.open (uncoreFrequencyDefaultFile);
-			ucfRestoreFile << defaultSettings[SYS_OTHER].minUncoreFreq << " " << defaultSettings[SYS_OTHER].maxUncoreFreq << std::endl;
+			ucfRestoreFile << defaultSettings[systemType].minUncoreFreq << " " << defaultSettings[systemType].maxUncoreFreq << std::endl;
 			ucfRestoreFile.close();
 		}
 		else
@@ -267,21 +342,21 @@ void Environment::getSystemDefaultSettings()
 			std::cerr << "MERIC error: system does not have correctly set uncore frequency range\n";
 		}
 	}
-	else if (defaultSettings[SYS_OTHER].minUncoreFreq == defaultSettings[SYS_OTHER].maxUncoreFreq)
+	else if (defaultSettings[systemType].minUncoreFreq == defaultSettings[systemType].maxUncoreFreq)
 	{
 		std::string ucfString;
 		std::ifstream ucfRestoreFile;
 		ucfRestoreFile.open (uncoreFrequencyDefaultFile);
 		ucfRestoreFile >> ucfString;
-		defaultSettings[SYS_OTHER].minUncoreFreq = std::stoi(ucfString);
+		defaultSettings[systemType].minUncoreFreq = std::stoi(ucfString);
 		ucfRestoreFile >> ucfString;
-		defaultSettings[SYS_OTHER].maxUncoreFreq = std::stoi(ucfString);
+		defaultSettings[systemType].maxUncoreFreq = std::stoi(ucfString);
 		ucfRestoreFile.close();
-		defaultSettings[SYS_OTHER].defaultUncoreFreq = defaultSettings[SYS_OTHER].maxUncoreFreq;
+		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 	}
 #endif
-	MERIC_INFO << "CORE FREQ limits   [Hz]: " << defaultSettings[SYS_OTHER].maxCoreFreq << '\t' << defaultSettings[SYS_OTHER].minCoreFreq << std::endl;
-	MERIC_INFO << "UNCORE FREQ limits [Hz]: " << defaultSettings[SYS_OTHER].maxUncoreFreq << '\t' << defaultSettings[SYS_OTHER].minUncoreFreq<< std::endl;
+	MERIC_INFO << "CORE FREQ limits   [Hz]: " << defaultSettings[systemType].maxCoreFreq << "\t" << defaultSettings[systemType].minCoreFreq << std::endl;
+	MERIC_INFO << "UNCORE FREQ limits [Hz]: " << defaultSettings[systemType].maxUncoreFreq << "\t" << defaultSettings[systemType].minUncoreFreq<< std::endl;
 
 
 #ifdef HAVE_MSR_CORE_H
@@ -289,15 +364,15 @@ void Environment::getSystemDefaultSettings()
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[SYS_OTHER].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[SYS_OTHER].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[SYS_OTHER].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
+	defaultSettings[systemType].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
 
 // DRAM
 	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[SYS_OTHER].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[SYS_OTHER].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[SYS_OTHER].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
+	defaultSettings[systemType].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
 #endif
 
 	//Default power-cap PKG a RAM
@@ -323,16 +398,17 @@ void Environment::getSystemDefaultSettings()
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 #endif
-	defaultSettings[SYS_OTHER].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
-	defaultSettings[SYS_OTHER].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+	defaultSettings[systemType].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
+	defaultSettings[systemType].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+	if (MSR_PKG_POWER_LIMIT_bits != 0x0)
+		activatedPWRCAP = true;
 
 	MERIC_INFO << "Default PKG powercap bits: " << MSR_PKG_POWER_LIMIT_bits << std::endl
-	<< "Default RAM powercap bits: " << MSR_DRAM_POWER_LIMIT_bits << std::endl;
+	           << "Default RAM powercap bits: " << MSR_DRAM_POWER_LIMIT_bits << std::endl;
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
 {
-
 #ifdef HAVE_X86_ADAPT_H
 	if (x86_adapt_init())
 	{
@@ -348,31 +424,28 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 //		exit(1);
 	}
 #endif
-	//if (SOCKET_SIZE_CPU <= 0)
 	initHWSizes();
 	RAPL::initCountersUnits();
-	
-	MERIC_INFO << "SOCKET SIZE is " << SOCKET_SIZE_CPU <<std::endl;
 	systemType = system;
 	
 	if(!rank)
 	{
-		if (systemType == SYS_OTHER)
+		getSystemDefaultSettings();
+//ACTIVATE DVFS
+		std::ifstream governorFileI;
+		if (defaultParameter.frequency != 0)
 		{
-			getSystemDefaultSettings();
-			//GOVERNOR
-			std::ifstream governorFileI;
-			if (defaultParameter.frequency != 0)
+			governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+			governorFileI >> defaultGovernor;
+			governorFileI.close();
+			//using userspace governor
+			if (defaultGovernor == "userspace")
 			{
-				governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
-				governorFileI >> originalGovernor;
-				governorFileI.close();
-// USERSPACE GOVERNOR
-				if (originalGovernor == "userspace")
-				{
-					CPUFREQ_GOVERNOR=true;
-				}
-				else
+				activatedDVFS=true;
+			}
+			else
+			{
+				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 				{
 					governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
 					std::string availGovernor;
@@ -380,25 +453,33 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 					{
 						if (availGovernor == "userspace")
 						{
-							CPUFREQ_GOVERNOR = true;
+							activatedDVFS = true;
 							break;
 						}
 					}
 					governorFileI.close();
-					if (CPUFREQ_GOVERNOR == true)
+				}
+				if (activatedDVFS == true)
+				{
+					std::ofstream governorFileO;
+					for (int i=0; i<NODE_SIZE_CPU; i++)
 					{
-						std::ofstream governorFileO;
-						for (int i=0; i<NODE_SIZE_CPU; i++)
-						{
-							governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-							governorFileO << "userspace";
-							governorFileO.close();
-						}
+						governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
+						governorFileO << "userspace";
+						governorFileO.close();
 					}
-// POWERSAVE GOVERNOR TODO - zjistit s kterymi to presne funguje
+#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+					if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) != 0)
+						activatedDVFS = false;
+#endif
+				}
+			// Intel P-State
 #ifdef HAVE_MSR_CORE_H
-					else
+				else
+				{
+					if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
 					{
+						activatedDVFS = true;
 						std::ofstream defSet;
 						MERIC_INFO << "Disable turbo logic of Intel P-state driver\n";
 						defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
@@ -406,7 +487,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						defSet.close();
 						
 						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
-						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_default);
+						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS);
 						uint64_t REG_MAX_PSTATE = (defaultSettings[systemType].maxCoreFreq/100000000) << 8;
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
@@ -414,34 +495,28 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 							defSet << defaultSettings[systemType].minCoreFreq / 1000;
 							defSet.close();
 
-							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+							write_msr_by_idx(cpu, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS, 0);
 							write_msr_by_idx(cpu, IA32_PERF_CTL, REG_MAX_PSTATE);
 						}
 					}
-#endif
 				}
+#endif
+#ifdef HAVE_X86_ADAPT_H
+				activatedDVFS = true;
+#endif
 			}
 		}
-		//activate userspace governor
-		else if (systemType == SYS_JETSON)
+//ACTIVATE UFS
+		if (systemType == SYS_JETSON)
 		{
-			std::ofstream governorFile;
-			if (defaultParameter.frequency != 0) //core
+			if (defaultParameter.uncoreFrequency != 0 && access("/sys/kernel/debug/clock/override.emc/state", W_OK) == 0)
 			{
-				for (int i=0; i<NODE_SIZE_CPU; i++)
-				{
-					governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-					governorFile << "userspace";
-					governorFile.close();
-				}
-				MERIC_INFO << "CORE FREQUENCY activated\n";
-			}
-			if (defaultParameter.uncoreFrequency != 0) //uncore
-			{
+				std::ofstream governorFile;
 				governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
 				governorFile << "1";
 				governorFile.close();
-				MERIC_INFO << "unCORE FREQUENCY activated\n";
+				activatedUFS = true;
+				MERIC_INFO << "MERIC: unCORE FREQUENCY scaling activated\n";
 			}
 		}
 
@@ -462,8 +537,8 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (freq == 0)
 		return;
 
-	if (defaultSettings[SYS_OTHER].defaultCoreFreq == -1)
-		return;	//DVFS not supported
+	if (!activatedDVFS)
+		return;
 
 	if (freq < defaultSettings[systemType].minCoreFreq || freq > defaultSettings[systemType].maxCoreFreq)
 	{
@@ -477,99 +552,73 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 */
 	usedDVFS = true;
-
-	if (systemType == SYS_JETSON)
+	int nodeSize = NODE_SIZE_CPU;
+	int cpu=0;
+	if(socket != -1)
 	{
-		std::ofstream coreFile;	//TODO what if I cannot write to file
-		for (int i=0; i<NODE_SIZE_CPU; i++)
-		{
-			coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_setspeed");
-			coreFile << freq;
-			coreFile.close();
-		}
-		MERIC_INFO << "JETSON set frequency to: " << freq << std::endl;
+		nodeSize = SOCKET_SIZE_CPU*(socket+1);
+		cpu = SOCKET_SIZE_CPU*socket;
 	}
-	else
-	{
-		int nodeSize = NODE_SIZE_CPU;
-		int cpu=0;
-		if(socket != -1)
-		{
-			nodeSize = SOCKET_SIZE_CPU*(socket+1);
-			cpu = SOCKET_SIZE_CPU*socket;
-		}
-#ifdef HAVE_MSR_CORE_H
-		MERIC_INFO << "LIBMSR set frequency to: " << freq;
-		if (socket != -1)
-			MERIC_INFO << "; socket: " << socket;
-		MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
 
-		for (; cpu<nodeSize; cpu++)
-		{
-			write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
-		}
-#else
-	#ifdef HAVE_CPUFREQ_H
-		if (CPUFREQ_GOVERNOR)
-		{
-				int ret;
-				MERIC_INFO << "CPUFREQ set frequency to: " << freq;
-				if(socket != -1)
-					MERIC_INFO << "; socket: " << socket;
-				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
-
-				for (; cpu < nodeSize; cpu++)
-				{
-					ret = cpufreq_set_frequency(cpu,freq);
-
-					if(ret != 0) // || freq*100000 != cpufreq_get_freq_kernel(cpu))	//TODO test turbo freq setting
-					{
-						std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
-					}
-				}
-				MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
-		}
-		else
-	#endif
-	#ifdef HAVE_X86_ADAPT_H
-		{
-				int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
-				if (adaptHandler < 0)
-				{
-					std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
-					return;
-				}
-				MERIC_INFO << "X86ADAPT set frequency to: " << freq;
-				if(socket != -1)
-					MERIC_INFO << "; socket: " << socket;
-				MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1<< std::endl;
-		
-				for (; cpu<nodeSize; cpu++)
-				{
-					int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-					if (fd < 0)
-					{
-						std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-		//				exit(2);
-					}
-
-					if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
-					{
-						std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-		//				exit(3);
-					}
+	MERIC_INFO << "MERIC set frequency to: " << freq;
+	if (socket != -1)
+		MERIC_INFO << "; socket: " << socket;
+	MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1;
 	
-					if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-						std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-				}
-		}
-	#elif defined HAVE_CPUFREQ_H
-			std::cerr << "CPUFREQ error: governor not specified as userspace, CPU core frequency not changed\n";
-	#endif
-#endif
+#ifdef HAVE_MSR_CORE_H
+	MERIC_INFO << "; using LIBMSR\n";
+	for (; cpu<nodeSize; cpu++)
+	{
+		write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
 	}
+#elif defined HAVE_X86_ADAPT_H
+	MERIC_INFO << "; using X86ADAPT\n";
+	int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
+	if (adaptHandler < 0)
+	{
+		std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
+		return;
+	}
+
+	for (; cpu<nodeSize; cpu++)
+	{
+		int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+		if (fd < 0)
+		{
+			std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//			exit(2);
+		}
+
+		if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
+		{
+			std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+//			exit(3);
+		}
+
+		if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+	}
+#elif defined HAVE_CPUFREQ_H
+	MERIC_INFO << "; using CPUFREQ\n";
+	for (; cpu < nodeSize; cpu++)
+	{
+		if(cpufreq_set_frequency(cpu,freq) != 0)
+		{
+			std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+		}
+	}
+	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
+#else
+	std::ofstream coreFile;
+	for (; cpu < nodeSize; cpu++)
+	{
+		coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
+		coreFile << freq / 1000;
+		coreFile.close();
+	}
+#endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
-	MERIC_INFO << "MERIC core frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+	MERIC_INFO << "MERIC CPU core frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 }
 
 void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket)
@@ -580,7 +629,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	if (maxFreq == 0 || minFreq == 0)
 		return;
 	
-	if (defaultSettings[SYS_OTHER].defaultUncoreFreq == -1)
+	if (!activatedUFS)
 		return; //UFS not supported
 		
 	if (maxFreq > defaultSettings[systemType].maxUncoreFreq || minFreq < defaultSettings[systemType].minUncoreFreq || maxFreq < minFreq)
@@ -590,83 +639,70 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		return;
 	}
 	usedUFS = true;
-
-	if (systemType == SYS_JETSON)
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq;
+	if (maxFreq != minFreq)
+		MERIC_INFO << " - " << minFreq;
+	int max = NODE_SIZE_SOCKET;
+	int die=0;
+	if (socket != -1 && socket < max)
 	{
-		std::ofstream uncoreFile;
-		uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
-		uncoreFile << maxFreq;
-		uncoreFile.close();
-		MERIC_INFO << "JETSON set uncore frequency to: "<< maxFreq << std::endl;
+		die = socket;
+		max = socket+1;
 	}
-	else
-	{
-#ifdef HAVE_MSR_CORE_H
-		MERIC_INFO << "LIBMSR set uncore frequency to: "<< maxFreq;
-		if (maxFreq != minFreq)
-			MERIC_INFO << " - " << minFreq;
-		int max = NODE_SIZE_SOCKET;
-		int die=0;
-		if (socket != -1 && socket < max)
-		{
-			die = socket;
-			max = socket+1;
-		}
-		MERIC_INFO << "; soc " << die << " - " << max-1<< std::endl;
-
-		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
-		for (; die<max; die++)
-		{
-			write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
-		}
-		
-#elif defined HAVE_X86_ADAPT_H
-		if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
-		{
-			std::cerr << "X86ADAPT ERROR: uncore frequency settings not allowed\n";
-			return;
-		}
-
-		MERIC_INFO << "X86ADAPT set uncore frequency to: "<< maxFreq;
-		if (maxFreq != minFreq)
-			MERIC_INFO << " - " << minFreq;
-		int max = NODE_SIZE_SOCKET;
-		int die=0;
-		if (socket != -1 && socket < max)
-		{
-			die = socket;
-			max = socket+1;
-		}
-		MERIC_INFO << "; soc " << die << " - " << max-1<< std::endl;
-		
-		int adaptHandlerUncoreMax = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
-		int adaptHandlerUncoreMin = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
-		for (; die<max; die++)
-		{
-			int fd = x86_adapt_get_device(X86_ADAPT_DIE, die);
-			if (fd < 0)
-			{
-				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//				exit(2);
-			}
-
-			auto setFreq = [&] (int adaptHandler, uint64_t freq)
-			{
-				if(x86_adapt_set_setting(fd, adaptHandler, freq) != 8)
-				{
-					std::cerr << "X86ADAPT ERROR: error while setting uncore frequency\n";
-//					exit(3);
-				}
-			};
-
-			setFreq(adaptHandlerUncoreMax, maxFreq/100000000);
-			setFreq(adaptHandlerUncoreMin, minFreq/100000000);
-		
-			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
-				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-		}
+	MERIC_INFO << "; soc " << die << " - " << max-1;
 #endif
+
+#ifdef HAVE_MSR_CORE_H
+	MERIC_INFO << "; using LIBMSR\n";
+
+	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
+	for (; die<max; die++)
+	{
+		write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
 	}
+#elif defined HAVE_X86_ADAPT_H
+	MERIC_INFO << "; using X86ADAPT\n";
+	if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
+	{
+		std::cerr << "X86ADAPT ERROR: uncore frequency settings not allowed\n";
+		return;
+	}
+	
+	int adaptHandlerUncoreMax = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
+	int adaptHandlerUncoreMin = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
+	for (; die<max; die++)
+	{
+		int fd = x86_adapt_get_device(X86_ADAPT_DIE, die);
+		if (fd < 0)
+		{
+			std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//			exit(2);
+		}
+
+		auto setFreq = [&] (int adaptHandler, uint64_t freq)
+		{
+			if(x86_adapt_set_setting(fd, adaptHandler, freq) != 8)
+			{
+				std::cerr << "X86ADAPT ERROR: error while setting uncore frequency\n";
+//				exit(3);
+			}
+		};
+
+		setFreq(adaptHandlerUncoreMax, maxFreq/100000000);
+		setFreq(adaptHandlerUncoreMin, minFreq/100000000);
+	
+		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
+			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+	}
+#else
+	// SYS_JETSON
+	std::ofstream uncoreFile;
+	uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
+	uncoreFile << maxFreq;
+	uncoreFile.close();
+	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq << std::endl;
+#endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
 	MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 }
@@ -767,7 +803,6 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 #endif
 	}
-
 }
 
 /**
@@ -775,38 +810,55 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
  **/
 void Environment::restoreSystemSettings()
 {
-	if (usedDVFS)
+	if (activatedDVFS)
 	{
-		frequency(defaultSettings[systemType].defaultCoreFreq);
-		if (CPUFREQ_GOVERNOR == true && originalGovernor == "userspace")
+		if (usedDVFS)
+			frequency(defaultSettings[systemType].defaultCoreFreq);
+		if (defaultGovernor != "userspace" && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 		{
 			std::ofstream governorFile;
 			for (int i=0; i<NODE_SIZE_CPU; i++)
 			{
 				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-				governorFile << originalGovernor;
+				governorFile << defaultGovernor;
 				governorFile.close();
 			}
 		}
 #ifdef HAVE_MSR_CORE_H
-		else
+		std::ofstream defSet;
+		MERIC_INFO << "Enable turbo logic of Intel P-state driver\n";
+		defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+		defSet << "0";
+		defSet.close();
+		
+		MERIC_INFO << "Enable scaling frequency of Intel P-state driver and set default energy performance bias\n";
+		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 		{
-			std::ofstream defSet;
-			MERIC_INFO << "Enable turbo logic of Intel P-state driver\n";
-			defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-			defSet << "0";
+			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+			defSet << defaultSettings[systemType].maxCoreFreq / 1000;
 			defSet.close();
-			
-			MERIC_INFO << "Enable scaling frequency of Intel P-state driver and set default energy performance bias\n";
-			for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
-			{
-				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				defSet << defaultSettings[systemType].maxCoreFreq / 1000;
-				defSet.close();
-				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, IA32_ENERGY_PERF_BIAS_default);
-			}
+			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS);
 		}
 #endif
+	}
+
+	if (activatedUFS)
+	{
+		if (systemType == SYS_JETSON)
+		{
+			if(usedUFS)
+				uncoreFrequency(defaultSettings[SYS_JETSON].defaultUncoreFreq, defaultSettings[SYS_JETSON].defaultUncoreFreq);	//TODO remove the last reason to use defaultSettings[SYS_JETSON]
+			//uncore
+			std::ofstream memTuningFile;
+			memTuningFile.open ("/sys/kernel/debug/clock/override.emc/state");
+			memTuningFile << "0";
+			memTuningFile.close();
+		}
+		else
+		{
+			if(usedUFS)
+				uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
+		}
 	}
 
 	if (usedPWRCAP)
@@ -842,29 +894,6 @@ void Environment::restoreSystemSettings()
 				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 		}
 #endif
-	}
-	
-	if (systemType == SYS_JETSON)
-	{
-		uncoreFrequency(defaultSettings[SYS_JETSON].defaultUncoreFreq, defaultSettings[SYS_JETSON].defaultUncoreFreq);
-	
-		std::ofstream governorFile;
-		//core
-		for (int i=0; i<NODE_SIZE_CPU; i++)
-		{
-			governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-			governorFile << "ondemand";
-			governorFile.close();
-		}
-		//uncore
-		governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
-		governorFile << "0";
-		governorFile.close();
-	}
-	else
-	{
-		if(usedUFS)
-			uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
 	}
 }
 
