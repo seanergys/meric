@@ -61,7 +61,7 @@ Intel processors with RAPL energy measurement system provides possibility to spe
 	
 MERIC requires requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) to be able change the power limits. Currently only PKG power cap is supported.
 	
-Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usualy a fraction of microsecond and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. Due to that it might be impossible to set exactly the window size you have specified.
+Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. Due to that it might be impossible to set exactly the window size you have specified.
 
 
 ## Number of active OMP threads ##
@@ -69,7 +69,7 @@ Using OpenMP API.
 
 
 ## ARM Jetson memory frequency ##
-To simplify MERIC's interface, the memory frequnecy is set the same way as Intel CPU uncore frequency using MERIC_UNCORE_FREQUENCY environment variable.
+To simplify MERIC's interface, the memory frequency is set the same way as Intel CPU uncore frequency using MERIC_UNCORE_FREQUENCY environment variable.
 
 
 --------------------------------------------------------------------------------
@@ -88,17 +88,17 @@ In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/
 
 
 ## HDEEM ##
-High Definition Energy Efficiency Monitoring (HDEEM) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM sytem, or when the application run is over, without any impact on the application run.
+High Definition Energy Efficiency Monitoring (HDEEM) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run.
 
 
 ## DiG ##
-Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accesed through the [EXAMON]{http://projects.eees.dei.unibo.it/monitoring/wordpress/} framework.
+Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON]{http://projects.eees.dei.unibo.it/monitoring/wordpress/} framework.
 
-To activate posibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
+To activate possibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
 
 
 ## BSC ARM Jetson ##
-Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consuption of the instrumented regions when the application run is over (MERIC_CONTINUAL=1 must be exported). 10 samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
+Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over (MERIC_CONTINUAL=1 must be exported). 10 samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
 
 ## BSC ARM ThunderX ##
@@ -355,7 +355,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"MERIC_PWRCAP_POWER" : 10,
+			"PWRCAP_POWER" : 10,
 			"NUM_THREADS" : 2
 		}
 	}
