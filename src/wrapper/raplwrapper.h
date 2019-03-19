@@ -50,7 +50,6 @@ public:
 private:
 		//list of counters
 	static std::map<std::string, unsigned long long int> counters;
-	static std::map<std::string, double> units;
 	static std::string suffix;
 	static uint64_t SOCKET_SIZE_CPU;
 	static bool detailedMode;
@@ -78,6 +77,7 @@ private:
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #endif
+	static std::map<std::string, double> units;
 	static uint64_t NODE_SIZE_SOCKET;
 };
 

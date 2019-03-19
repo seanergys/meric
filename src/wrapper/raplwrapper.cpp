@@ -79,10 +79,10 @@ std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 uint64_t RAPL::NODE_SIZE_SOCKET = 1;
+std::map<std::string, double> RAPL::units;
 
 #if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
 std::map<std::string, unsigned long long int> RAPL::counters;
-std::map<std::string, double> RAPL::units;
 uint64_t RAPL::SOCKET_SIZE_CPU = 1;
 
 // solve counter overflow and add baseline energy consumption
