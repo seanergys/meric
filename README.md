@@ -2,76 +2,110 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library originally developed for x86 systems (tested on HSW, BDW and KNL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for x86 systems (tested on HSW, BDW and KNL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
 <!--> master branch links
- 1. [Content of src folder](https://code.it4i.cz/vys0053/meric#1-content-of-src-folder)
- 2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
- 3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#3-meric-binary-instrumentation)
- 4. [Compilation](https://code.it4i.cz/vys0053/meric#4-compilation)
- 5. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#5-meric-input-parameters)
- 6. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#6-content-of-test-folder-and-example-application-run)
- 7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#7-code-dynamism-investigation)
- 8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#8-meric-with-a-fortran-code)
- 9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric#9-using-meric-on-bsc-arm-systems)
-10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric#10-using-meric-on-cineca-davide-system)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
-12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
+ 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
+ 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
+ 3. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-and-timeprof-interface-and-shared-score-pmeric-api)
+ 4. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#4-meric-binary-instrumentation)
+ 5. [Compilation](https://code.it4i.cz/vys0053/meric#5-compilation)
+ 6. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#6-meric-input-parameters)
+ 7. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#7-content-of-test-folder-and-example-application-run)
+ 8. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#8-code-dynamism-investigation)
+ 9. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#9-meric-with-a-fortran-code)
+10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#10-tool-for-static-tuning)
+11. [Acknowledgement](https://code.it4i.cz/vys0053/meric#11-acknowledgement)
  <!-->
 <!--> dev branch links <!-->
- 1. [Content of src folder](https://code.it4i.cz/vys0053/meric/tree/dev#1-content-of-src-folder)
- 2. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#2-meric-and-timeprof-interface-and-shared-score-pmeric-api)
- 3. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-binary-instrumentation)
- 4. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#4-compilation)
- 5. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-input-parameters)
- 6. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#6-content-of-test-folder-and-example-application-run)
- 7. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#7-code-dynamism-investigation)
- 8. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#8-meric-with-a-fortran-code)
- 9. [Using MERIC on BSC ARM systems](https://code.it4i.cz/vys0053/meric/tree/dev#9-using-meric-on-bsc-arm-systems)
-10. [Using MERIC on D.A.V.I.D.E. system](https://code.it4i.cz/vys0053/meric/tree/dev#10-using-meric-on-cineca-davide-system)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
-12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
+ 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
+ 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
+ 3. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-and-timeprof-interface-and-shared-score-pmeric-api)
+ 4. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#4-meric-binary-instrumentation)
+ 5. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#5-compilation)
+ 6. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#6-meric-input-parameters)
+ 7. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#7-content-of-test-folder-and-example-application-run)
+ 8. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#8-code-dynamism-investigation)
+ 9. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#9-meric-with-a-fortran-code)
+10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#10-tool-for-static-tuning)
+11. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#11-acknowledgement)
 
 
 --------------------------------------------------------------------------------
-#     1] Content of src folder                                                 #
+#     1] System parameters tuning                                              #
 --------------------------------------------------------------------------------
-* basis    - Input parser.
-* meric    - Base classes of the library.
-* store    - Different types of the store class. To store new type of the data, 
-             new class inherited from class StoreBase (store.h) is required.
-* timeprof - Lightweight time-profiling library desined to identify functions 
-             to instrument with MERIC.
-* wrapper
-	- environmentwrapper
-		= Thread switching, CPU core and uncore frequencies settings using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [cpufreq](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils) or [libmsr](https://github.com/LLNL/libmsr) + [msr-safe](https://github.com/LLNL/msr-safe).
+MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` application (part of the MERIC repository, located in the tools/ directory).
 
-	- hdeemwrapper
-		= Energy measurement using [HDEEM](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/EnergyMeasurement).
 
-	- perfeventwrapper
-		= Hardware counters provided by [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html).
-	
-	- papiwrapper
-		= Hardware counters provided by [PAPI](http://icl.cs.utk.edu/papi/).
-		
-	- raplwrapper
-		= Intel RAPL counters read by [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+## CPU core frequency ##
+MERIC provides several ways how to change the CPU core frequency:
+	* Under Intel P-State using [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe), requires write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+	* Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+	* Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
+	* Using direct write to the `/sys/devices/system/cpu/cpu<ID>/cpufreq/scaling_setspeed`.
 
-	- davidewrapper
-		= Support for OpenPOWER system [DAVIDE](http://www.hpc.cineca.it/content/davide).
+
+## CPU uncore frequency ##
+Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
+
+MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) to be able to change the system uncore frequency. 
+
+When using msr-safe to tune uncore frequency, it may happen, that the MSR_UNCORE_RATIO_LIMIT register is not available. In that case add `0x620 0x7F7F` to the system's whitelist.
+
+
+## Intel RAPL power capping ##
+Intel processors with RAPL energy measurement system provides possibility to specify average power consumption of the PKG or DRAM in a specific time window.
 	
-	- jetsonwrapper and thunderwrapper
-		= Support for [ARM machines](http://montblanc-project.eu/prototypes).
+MERIC requires requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) to be able change the power limits. Currently only PKG power cap is supported.
 	
-	- counters
-		= List of supported HW counters (PAPI, perfevent, RAPL).
+Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usualy a fraction of microsecond and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. Due to that it might be impossible to set exactly the window size you have specified.
+
+
+## Number of active OMP threads ##
+Using OpenMP API.
+
+
+## ARM Jetson memory frequency ##
+To simplify MERIC's interface, the memory frequnecy is set the same way as Intel CPU uncore frequency using MERIC_UNCORE_FREQUENCY environment variable.
+
 
 --------------------------------------------------------------------------------
-#     2] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
+#     2] Supported energy measurement systems                                  #
+--------------------------------------------------------------------------------
+Energy measurement system can be selected using `MERIC_MODE` environment variable.
+
+## Intel RAPL ##
+From the Sandy Bridge microarchitecture all contemporary Intel processors provides software-based energy meter with sampling frequency 1 kHz of the PKG (CPUs) and DRAM. The system does not cover energy consumption of the node itself.
+
+Since we are speaking about counters, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size.
+
+Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
+	
+In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
+
+
+## HDEEM ##
+High Definition Energy Efficiency Monitoring (HDEEM) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM sytem, or when the application run is over, without any impact on the application run.
+
+
+## DiG ##
+Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accesed through the [EXAMON]{http://projects.eees.dei.unibo.it/monitoring/wordpress/} framework.
+
+To activate posibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
+
+
+## BSC ARM Jetson ##
+Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consuption of the instrumented regions when the application run is over (MERIC_CONTINUAL=1 must be exported). 10 samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
+
+
+## BSC ARM ThunderX ##
+BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. To run MERIC on the ThunderX export MERIC_CONTINUAL=1.
+
+--------------------------------------------------------------------------------
+#     3] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
@@ -167,7 +201,7 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 READEX interface doesn't contain all Score-P API functions, because there is no support for these in MERIC. For the rest functionality user may use usual Score-P API, the functions will be ignored if the code will be compiled without Score-P.
 
 --------------------------------------------------------------------------------
-#     3] MERIC binary instrumentation                                          #
+#     4] MERIC binary instrumentation                                          #
 --------------------------------------------------------------------------------
 Manual application instrumentation is straightforward, however it requires at least some basic knowledge about the target application, access to the source files and also time to instrument the code. All these steps can be overcome when using static binary instrumentation (SBI). MERIC repository contains several tools for binary analysis placed in `tools/DBI` directory, all of them are compiled separately from the MERIC compilation, using Makefile located ibidem. For SBI there are two tools based on [Dyninst library](https://dyninst.org/) `dinst_profile.cpp` (make dinst) and `dins_instrument.cpp` (make sbi). The `dinst_profile` tool provides list of all functions that are defined in the binary (shared libraries are not take into account) and provides information whether the function can or cannot be instrumented.
 
@@ -189,7 +223,7 @@ export LD_LIBRARY_PATH+=:$DYNINST_HOME/build/dyninstAPI_RT/
  * If instrumented application is compiled with the same list of modules as the dininst tools, sometimes the new binary is corrupted. Can be tested using `ldd` command. If it happens, we suggest to use different set of modules for the application or the Dyninst tool.
 
 --------------------------------------------------------------------------------
-#    4] Compilation                                                            #
+#    5] Compilation                                                            #
 --------------------------------------------------------------------------------
 MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, a Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
 
@@ -216,15 +250,20 @@ Beside these libraries waf requires Python.
 Default compilation expects Intel compiler, if you want to compile using GCC use `make gcc` instead of `make`. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If a MPI application without OpenMP should be analyzed, compilation with `--noopenmp` must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
 
 --------------------------------------------------------------------------------
-#     5] MERIC input parameters                                                #
+#     6] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
+Specify following parameters to zero if you don't want to use th
 	export MERIC_FREQUENCY=2400MHz
 	export MERIC_UNCORE_FREQUENCY=2GHz
-		- both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz
+		- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
 	export MERIC_NUM_THREADS=24
 		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
+	export MERIC_PWRCAP_POWER=100
+		- Average processor PKG power [W] in the selected time window.
+	export MERIC_PWRCAP_TIME=10
+		- Time window size for power capping specified in microseconds.
 
 ## SET MERIC WORKING MODE ##
 	export MERIC_MODE=0
@@ -238,8 +277,8 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 		7 = time - storing runtime of the regions only
 
 	export MERIC_ITERATION=0
-		- if runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
-		- always start with 0
+		- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
+		- Always starts with 0.
 
 	export MERIC_BARRIERS=all
 		all  = all barriers are applied (default)
@@ -286,9 +325,9 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 	export MERIC_OUTPUT_DIR="hdeemMeasurement"
-		- default name is mericMeasurement
+		- Default name is mericMeasurement.
 	export MERIC_OUTPUT_FILENAME="log"
-		- name of the output file is set automatically according specified values of core and uncore CPU frequencies and number of active OpenMP threads, but this is a way how to add filename suffix
+		- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
 
 ## ADVANCED SETTINGS ##
 Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.
@@ -316,8 +355,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"FREQUENCY" : 2500MHz,
-			"UNCORE_FREQUENCY" : 2GHz,
+			"MERIC_PWRCAP_POWER" : 10,
 			"NUM_THREADS" : 2
 		}
 	}
@@ -325,7 +363,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
-#     6] Content of test folder and example application run                    #
+#     7] Content of test folder and example application run                    #
 --------------------------------------------------------------------------------
 * source codes
 	* test.cpp
@@ -370,13 +408,15 @@ Specify the mandatory MERIC's parameters and run you instrumented application or
 export MERIC_FREQUENCY=0         # no CPU core frequency tuning
 export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
 export MERIC_NUM_THREADS=0       # non-OpenMP application
+export MERIC_PWRCAP_POWER=0      # no RAPL power capping
+export MERIC_PWRCAP_TIME=0       # no RAPL power capping
 export MERIC_MODE=7              # time measurement only
 
 ./test                           # run the application as usual
 ```
 
 --------------------------------------------------------------------------------
-#      7] Code dynamism investigation                                          #
+#      8] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
 MERIC's output is stored in the directory in default named `mericMeasurement` that contains result files in folders with names of the regions. To change output folder name export MERIC_OUTPUT_DIR="NEW_NAME".
 Each csv file carry 3 types of data:
@@ -425,40 +465,14 @@ To find the best settings for each region, you should run your code with several
 
 
 --------------------------------------------------------------------------------
-#      8] MERIC with a Fortran code                                            #
+#      9] MERIC with a Fortran code                                            #
 --------------------------------------------------------------------------------
 There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
 
 To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
 	
 --------------------------------------------------------------------------------
-#      9] Using MERIC on BSC ARM systems                                       #
---------------------------------------------------------------------------------
-To compile MERIC on Jetson, use gcc and PAPI modules and Makefile option arm. The only difference when running a test on Jetson is an energy measurement. There is python energy measurement script that runs on node background and effects CPU. 10 samples per second was selected in the measurement script as a compromise - this samples rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py. 
-
-Export MERIC_MODE=4 to activate MERIC on Jetson - otherwise it isn't possible to change frequencies and measure energy consumption. Since Jetson doesn't have non-continual energy measurement interface exporting MERIC_CONTINUAL=0 turns off the energy consumption measurement. To start energy measurement one must export MERIC_CONTINUAL=1.
-
-ARM core and uncore frequencies are much lower than Haswell's. To easily set these frequencies, input values are in kHz. Default frequencies are 518400 kHz core and 408000 kHz uncore. It is recommended to set frequencies from a list made by administrators, see:
-
-	core: /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies [kHz]
-	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000
-
-	uncore:	/sys/kernel/debug/clock/emc/possible_rates [kHz]
-	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
-
-Another supported ARM system is ThunderX. This system is much more powerfull in compare to Jetson/TX1 and it has energy measurement system that doesn't effects the CPUs. Its measurement system measure the energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Unfortunately, the frequency scaling is not supported. To run MERIC on the ThunderX export MERIC_CONTINUAL=1, MERIC_MODE=5.
-
-At BSC ARM systems it is possible to load modules at login node only - it is necessary to load them before running a job. See run-jetson.sh script in the test directory, that shows how to run a test on Jetson.
-
---------------------------------------------------------------------------------
-#     10] Using MERIC on CINECA D.A.V.I.D.E. system                            #
---------------------------------------------------------------------------------
-To activate posibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
-
-Available CPU core frequencies available on IBM Power8+ are: 4.02, 3.99, 3.96, 3.92, 3.89, 3.86, 3.82, 3.79, 3.76, 3.72, 3.69, 3.66, 3.62, 3.59, 3.56, 3.52, 3.49, 3.46, 3.42, 3.39, 3.36, 3.33, 3.29, 3.26, 3.23, 3.19, 3.16, 3.13, 3.09, 3.06, 3.03, 2.99, 2.96, 2.93, 2.89, 2.86, 2.83, 2.79, 2.76, 2.73, 2.69, 2.66, 2.63, 2.59, 2.56, 2.53, 2.49, 2.46, 2.43, 2.39, 2.36, 2.33, 2.29, 2.26, 2.23, 2.19, 2.16, 2.13, 2.09, 2.06 GHz. For the frequency tuning no extra library is necessary.
-
---------------------------------------------------------------------------------
-#     11] Tool for static tuning                                               #
+#     10] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and CPU frequencies setting. It is located in the tools/staticMERICtool/ and is compiled separately from the MERIC library.
 
@@ -467,7 +481,7 @@ Binaries energyMeasureStart and energyMeasureStop provides RAPL energy measureme
 For a static analysis of a selected application, the directory with the tool contain `staticAnalysis.sh` bash script too. It not only runs the application in variety of available HW settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
 --------------------------------------------------------------------------------
-#     12] Acknowledgement                                                      #
+#     11] Acknowledgement                                                      #
 --------------------------------------------------------------------------------
 MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
 Please, open an issue, if you meet any problem. 

@@ -1,6 +1,7 @@
-### 18.02.2019 #################################################################
+### XX.XX.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
   - user should not specify CPU core frequency, uncore frequency and number of active threads in the name of the output file any more - it is done automatically
+  - MERIC supports Intel RAPL PKG power capping - MERIC_PWRCAP_POWER and MERIC_PWRCAP_TIME must be set to run an instrumented application
   - together with MERIC_Init() starts automatically a first region and ends with MERIC_Close()
   - directory with measured data contain measurementInfo.json, for data description
   - new MERIC API RAII function for scope measurement MERIC_captureScope(const char * region)
@@ -14,7 +15,8 @@
   - default MERIC mode is RUN (3) instead of HDEEM (0)
   - CPU core and uncore frequency may be specified without unit in Hz or with unit
   - removed mericMeasurementCounters - when runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
-  - support for msrsafe RAPL reading, DVFS and UFS
+  - support for msr-safe RAPL reading, DVFS, UFS and power cap
+  - new tool to show system parameters limits
 
 ### 05.06.2018 #################################################################
   - fixed single RAPL overflow
