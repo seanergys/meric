@@ -42,10 +42,10 @@ MERIC allows to set selected system parameters for the whole application run or 
 
 ### CPU core frequency ###
 MERIC provides several ways how to change the CPU core frequency:
-	* Under Intel P-State using [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe), requires write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
-	* Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
-	* Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
-	* Using direct write to the `/sys/devices/system/cpu/cpu<ID>/cpufreq/scaling_setspeed`.
+ *  Under Intel P-State using [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe), requires write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+ *  Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+ *  Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
+ *  Using direct write to the `/sys/devices/system/cpu/cpu<ID>/cpufreq/scaling_setspeed`.
 
 
 ### CPU uncore frequency ###
