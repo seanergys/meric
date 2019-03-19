@@ -236,7 +236,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe)
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
-* optionally - [numa](https://github.com/numactl/numactl) (mandatory if x86_adapt is missing)
+* optionally - [numa](https://github.com/numactl/numactl) (mandatory if both msr-safe and x86_adapt are not available)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) (mandatory for DiG energy measurement system)
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
