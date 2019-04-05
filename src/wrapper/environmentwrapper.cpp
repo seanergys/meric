@@ -348,9 +348,9 @@ void Environment::getSystemDefaultSettings()
 		std::ifstream ucfRestoreFile;
 		ucfRestoreFile.open (uncoreFrequencyDefaultFile);
 		ucfRestoreFile >> ucfString;
-		defaultSettings[systemType].minUncoreFreq = std::stoi(ucfString);
+		defaultSettings[systemType].minUncoreFreq = std::stol(ucfString);
 		ucfRestoreFile >> ucfString;
-		defaultSettings[systemType].maxUncoreFreq = std::stoi(ucfString);
+		defaultSettings[systemType].maxUncoreFreq = std::stol(ucfString);
 		ucfRestoreFile.close();
 		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 	}

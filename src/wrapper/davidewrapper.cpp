@@ -231,7 +231,7 @@ int DAVIDE::getSamples()
 	{
 		struct json_array_element_s* arr = ((struct json_array_s*)data->value->payload)->start;
 		data = ((struct json_object_s*)arr->value->payload)->start;
-		long long numOfSamples = std::stoi(std::string(((struct json_string_s*)data->value->payload)->string));
+		long long numOfSamples = std::stoll(std::string(((struct json_string_s*)data->value->payload)->string));
 		if (numOfSamples == 0)
 		{
 			std::cerr << "MERIC ERROR: no power samples from DiG\n";
