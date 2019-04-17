@@ -71,7 +71,7 @@ arm:
 	make install
 
 love:
-	./waf clean
+	./waf distclean
 
 clean:
 	make love

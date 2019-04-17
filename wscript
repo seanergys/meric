@@ -83,7 +83,7 @@ def build(ctx):
         source="tools/systemInfo.cpp",
         target="systemInfo",
         use="msr x86_adapt numa",
-        install_path = "tools"
+        install_path = ctx.path.abspath()+"/tools"
     )
 
     ctx.objects(
@@ -101,14 +101,14 @@ def build(ctx):
             source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
             target       = "meric",
             use          = "basis",
-            install_path = "lib"
+            install_path = ctx.path.abspath()+"/lib"
         )
 
         ctx.shlib(
             source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
             target       = "meric",
             use          = "basis",
-            install_path = "lib"
+            install_path = ctx.path.abspath()+"/lib"
         )
 
         #TIMEPROF
@@ -116,14 +116,14 @@ def build(ctx):
             source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
             target       = "timeprof",
             use          = "basis",
-            install_path = "lib"
+            install_path = ctx.path.abspath()+"/lib"
         )
 
         ctx.shlib(
             source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
             target       = "timeprof",
             use          = "basis",
-            install_path = "lib"
+            install_path = ctx.path.abspath()+"/lib"
         )
         suffix=""
     else:
@@ -139,7 +139,7 @@ def build(ctx):
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
         target       = "mericmpi"+suffix,
         use          = "basis",
-        install_path = "lib",
+        install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
 
@@ -147,7 +147,7 @@ def build(ctx):
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
         target       = "mericmpi"+suffix,
         use          = "basis",
-        install_path = "lib",
+        install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
     
@@ -156,7 +156,7 @@ def build(ctx):
         source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
         target       = "timeprofmpi"+suffix,
         use          = "basis",
-        install_path = "lib",
+        install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
 
@@ -164,7 +164,7 @@ def build(ctx):
         source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
         target       = "timeprofmpi"+suffix,
         use          = "basis",
-        install_path = "lib",
+        install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
 
