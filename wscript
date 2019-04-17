@@ -34,13 +34,6 @@ def configure(ctx):
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-
-    ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
-
-    if ctx.options.debug:
-        ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
-    if ctx.options.verbose:
-        ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
    
     if((not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=True, errmsg="not found - When both x86_adapt and msr-safe are missing, numactl is mandatory!")
@@ -55,6 +48,18 @@ def configure(ctx):
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 #    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
+
+    configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
+    for dep in ctx.env.DEFINES:
+        if dep[:5] == "HAVE_":
+            configFile.write(dep[5:-4]+"\n")
+    configFile.close()
+
+    ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
+    if ctx.options.debug:
+        ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
+    if ctx.options.verbose:
+        ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
 
     if ctx.options.noopenmp:
         ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True)
