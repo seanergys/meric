@@ -1,12 +1,11 @@
 
 #include "timeprof.h"
-#include <cstdlib>
+#include "../basis/utils.h"
+
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <map>
 #include <time.h>
-
 
 #ifdef HAVE_OMP_H
 	#include <omp.h>
@@ -139,9 +138,12 @@ double regionStop(const char * regionName)
  * to the file 'fileName' stores a list of regions with a runtime longer than the trashold [ms]
  * if fileName not specified the output will go to the std::cerr
  **/
-//void TIMEPROF_evaluate(unsigned int timeThreshold, const char * fileName)
-void evaluate(unsigned int timeThreshold, const char * fileName)
+//void TIMEPROF_evaluate()
+void evaluate()
 {
+	unsigned int timeThreshold = meric::mutils::getenv<unsigned int>("TIMEPROF_TIME", 0);
+	std::string fileName = meric::mutils::getenv("TIMEPROF_OUTPUT", std::string("TIMEPROF.log"));
+
 	printout << "E1 "<< TIMEPROF_rank << std::endl;
 	if (TIMEPROF_rank == MASTER)
 	{
@@ -149,7 +151,7 @@ void evaluate(unsigned int timeThreshold, const char * fileName)
 		{
 			double timeLimit = timeThreshold/1000.0;
 			std::ofstream of;
-			if (fileName != NULL && fileName[0] != '\0')
+			if (fileName != "")
 			{
 				of.open(fileName);
 			}
@@ -157,7 +159,6 @@ void evaluate(unsigned int timeThreshold, const char * fileName)
 			if (!of.is_open())
 				raii.~outputStream();
 			
-	
 			for (auto& funcRecord : funcPROBEDList)
 			{
 				if (funcRecord.second.minDuration > timeLimit)

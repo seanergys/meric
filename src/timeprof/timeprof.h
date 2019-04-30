@@ -4,7 +4,7 @@
 namespace timeprof{
 void regionStart(const char * regionName);
 double regionStop(const char * regionName);
-void evaluate(unsigned int timeThreshold, const char * fileName);
+void evaluate();
 double getLastRegionDuration();
 }
 
