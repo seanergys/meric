@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <sys/stat.h>
 #include <algorithm>
+#include <limits.h>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout

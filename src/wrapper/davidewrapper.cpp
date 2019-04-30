@@ -20,8 +20,8 @@ RestClient::Connection* DAVIDE::conn_samples;
 void DAVIDE::init()
 {
 
-	char hostname[50];
-   	gethostname(hostname, 50);
+	char hostname[HOST_NAME_MAX];
+   	gethostname(hostname, HOST_NAME_MAX);
    	std::string davideHostname = std::string(hostname);
    	std::string::iterator it = davideHostname.begin();
 	while (it != davideHostname.end() && !std::isdigit(*it))

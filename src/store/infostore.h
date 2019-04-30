@@ -96,8 +96,8 @@ public:
 			{
 				std::ofstream oFile(dataInfoFileName);
 
-				char hostname[50];
-				gethostname(hostname, 50);
+				char hostname[HOST_NAME_MAX];
+				gethostname(hostname, HOST_NAME_MAX);
 				time_t now_t = time(0);
 	   			std::string now_s = std::string(ctime(&now_t));
 	   			now_s.pop_back();
