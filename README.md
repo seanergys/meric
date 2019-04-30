@@ -110,30 +110,45 @@ BSC's ThunderX energy measurement system doesn't effects the CPUs, however it me
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
 
-	void MERIC_Init()
-		Initialization of the library. Insert directly after MPI_Init().
-		MERIC automatically starts a region called same as the analyzed application binary with suffix "_static".
-	void MERIC_Close()
-		Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
-		Ends the region that started at the MERIC_Init() time.
-	void MERIC_MeasureStart(const char * regionName)
-		Starting measurement of a reagion.
-		Please, do not use **#** and **@** in names of regions.
-	double MERIC_MeasureStop()
-		End of the measurement of the last started region.
-		Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
-	double MERIC_MeasureStopStart(const char * regionName)
-		End of the measurement of the last started region and start of a new region.
-		Removes environment switching to configuration of the region the application is nested in.
-		Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
-	void MERIC_CaptureScope(const char * regionName)
-		C++ and C (no support for Fortran) function to start measurement which will be stopped automatically at the end of the scope. Useful to capture a function that has several return statements.
-		This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique and if it should be used for instrumentation of a C application, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag.
-	void MERIC_IgnoreStart()
-		From this point MERIC doesn't store resources consumption of the following regions but the requested settings of the nested regions is set.
-		It is not possible to nest ignore sections of the code.
-	void MERIC_IgnoreStop()
-		Cancels the ignore section of the code.
+ *	`void MERIC_Init()`
+
+	Initialization of the library. Insert directly after MPI_Init().
+	MERIC automatically starts a region called same as the analyzed application binary with suffix "_static".
+
+ *	`void MERIC_Close()`
+
+	Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
+	Ends the region that started at the MERIC_Init() time.
+
+ *	`void MERIC_MeasureStart(const char * regionName)`
+
+	Starting measurement of a reagion.
+	Please, do not use **#** and **@** in names of regions.
+
+ *	`double MERIC_MeasureStop()`
+
+	End of the measurement of the last started region.
+	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+
+ *	`double MERIC_MeasureStopStart(const char * regionName)`
+
+	End of the measurement of the last started region and start of a new region.
+	Removes environment switching to configuration of the region the application is nested in.
+	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+
+ *	`void MERIC_CaptureScope(const char * regionName)`
+
+	C++ and C (no support for Fortran) function to start measurement which will be stopped automatically at the end of the scope. Useful to capture a function that has several return statements.
+	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique and if it should be used for instrumentation of a C application, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag.
+
+ *	`void MERIC_IgnoreStart()`
+
+	From this point MERIC doesn't store resources consumption of the following regions but the requested settings of the nested regions is set.
+	It is not possible to nest ignore sections of the code.
+
+ *	`void MERIC_IgnoreStop()`
+
+	Cancels the ignore section of the code.
 
 If you want to insert MERIC regions into code you don't know, instead of MERIC probes insert into the code MPI and OpenMP barriers and make sure, that the code works fine. After that replace barriers with Meric_MeasureStart/Stop.
 
@@ -159,23 +174,32 @@ There is one more restriction in placing probes into the code. In current versio
 ## TIMEPROF interface ##
 The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0. The interface is defined in `include/timeprof.h`. 
 
-	void TIMEPROF_regionStart(const char * regionName);
-		Start time measurement of region called regionName
-	double TIMEPROF_regionStop(const char * regionName);
-		End of the time measurement, returns region duration in seconds.
-	void TIMEPROF_evaluate();
-		At the end of the application run should be called this function 
-		to evaluate the measurements. It will produce a list of the regions 
-		with duration longer than time threshold (export environment variable 
-		TIMEPROF_TIME [ms]) and store it to the fileName (export environment 
-		variable TIMEPROF_OUTPUT).
-		If no threshold provided, it will print complete list of measured functions with its minimum runtime.
-		If no output file specified, the list of functions will be printed to stdout.
-	void TIMEPROF_captureScope(const char * regionName);
-		[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
-		In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
-	double TIMEPROF_getLastRegionDuration();
-		Since scope time measurement does not return the time measured, it can be obtained using this function.
+ *	`void TIMEPROF_regionStart(const char * regionName)`
+
+	Start time measurement of region called regionName
+
+ *	`double TIMEPROF_regionStop(const char * regionName)`
+ 
+	End of the time measurement, returns region duration in seconds.
+
+ *	`void TIMEPROF_evaluate()`
+
+	At the end of the application run should be called this function 
+	to evaluate the measurements. It will produce a list of the regions 
+	with duration longer than time threshold (export environment variable 
+	`TIMEPROF_TIME` [ms]) and store it to the fileName (export environment 
+	variable `TIMEPROF_OUTPUT`).
+	If no threshold provided, it will print complete list of measured functions with its minimum runtime.
+	If no output file specified, the list of functions will be printed to stdout.
+
+ *	`void TIMEPROF_captureScope(const char * regionName)`
+
+	[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
+	In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+
+ *	`double TIMEPROF_getLastRegionDuration()`
+
+	Since scope time measurement does not return the time measured, it can be obtained using this function.
 
 
 ## Shared MERIC/Score-P interface ##
