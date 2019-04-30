@@ -163,15 +163,17 @@ The time measurement provided by TIMEPROF is done by master thread of the proces
 		Start time measurement of region called regionName
 	double TIMEPROF_regionStop(const char * regionName);
 		End of the time measurement, returns region duration in seconds.
-	void TIMEPROF_evaluate (unsigned int timeThreshold = 0, const char * fileName = "");
-		At the end of the application run might be called this function 
+	void TIMEPROF_evaluate();
+		At the end of the application run should be called this function 
 		to evaluate the measurements. It will produce a list of the regions 
-		with duration longer than timeThreshold [ms] and store it to the fileName.
+		with duration longer than time threshold (export environment variable 
+		TIMEPROF_TIME [ms]) and store it to the fileName (export environment 
+		variable TIMEPROF_OUTPUT).
 		If no threshold provided, it will print complete list of measured functions with its minimum runtime.
 		If no output file specified, the list of functions will be printed to stdout.
 	void TIMEPROF_captureScope(const char * regionName);
 		[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
-		In case of C applications , the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+		In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
 	double TIMEPROF_getLastRegionDuration();
 		Since scope time measurement does not return the time measured, it can be obtained using this function.
 
