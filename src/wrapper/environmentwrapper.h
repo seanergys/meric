@@ -175,7 +175,7 @@ struct SocketsRegionParameters {
 	{
 		free(socket);
 	}
-//*/
+*/
 };
 
 
