@@ -72,13 +72,42 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H=1" ])
 
     ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
-#    print(ctx.env)
     if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
+    env = ctx.env
+    ctx.setenv('start', env)
+    ctx.env.append_unique("DEFINES", [ "START" ])
+    ctx.setenv('stop', env)
+    ctx.env.append_unique("DEFINES", [ "STOP" ])
+#    print ctx.env
+#    print ctx.all_envs['start']
+#    print ctx.all_envs['stop']
 
 ################################################################################
 def build(ctx):
-    # SYSTEM INFO TOOL
+    # STATIC MERIC TOOL
+    ctx.program(
+        source= 
+            ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
+            ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp'),
+        target="energyMeasureStart",
+        use="msr x86_adapt numa",
+        env=ctx.all_envs['start'].derive(),
+        install_path = ctx.path.abspath()+"/tools/staticMERICtool"
+    )
+    ctx.program(
+        source= 
+            ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
+            ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp'),
+        target="energyMeasureStop",
+        use="msr x86_adapt numa",
+        env=ctx.all_envs['stop'].derive(),
+        install_path = ctx.path.abspath()+"/tools/staticMERICtool"
+    )
+
+    # SYSTEM INFO TOOL    
     ctx.program(
         source="tools/systemInfo.cpp",
         target="systemInfo",
