@@ -38,11 +38,10 @@ struct Tparametres{
 	bool omplib;
 	bool timeprof;
 	bool meric;
-	uint trashold;
 	uint instlimit;
 	std::vector <const char *> argv;
 };
-Tparametres params = {"", "instrumentedBin", "", "", "", "", false, true, false, false, 100, 128, {}};
+Tparametres params = {"", "instrumentedBin", "", "", "", "", false, true, false, false, 128, {}};
 
 struct TfuncName{
 	std::string demangled;
@@ -84,7 +83,6 @@ void printHelp()
 		<< "\t --funclist=file\n"
 		<< "\t      = input file with functions to instrument, function name per line\n"
 		<< "\t      for TIMEPROF file can be empty - will instrument all available functons\n"
-//		<< "\t      for profiling this will be the output file\n"
 		<< "\n"
 		<< "OPTIONAL PARAMETERS:\n"
 		<< "\t --output=binary\n"
@@ -106,9 +104,6 @@ void printHelp()
 		<< "\t      if not specified full list of libraries is applied\n"
 		<< "\n"
 		<< "OPTIONAL PARAMETERS - TIMEPROF ONLY:\n"
-		<< "\t --trashold=miliseconds\n"
-		<< "\t      = minimum function runtime to be added to the list of function\n"
-		<< "\t      that should be instrumented, default value 100ms\n"
 		<< "\t --instlimit=value\n"
 		<< "\t      = minimum number of instructions per function to function be unstrumented\n"
 		<< "\t      if not specified default value 128 inctructions per functions is used\n"
@@ -138,19 +133,6 @@ void handleParameters(int argc, char *argv[])
 		else if (flag[0] == "--meric")
 		{
 			params.meric = true;
-		}
-		else if (flag[0] == "--trashold")
-		{
-			if(flag.size() != 2)
-				printHelp();
-			try
-			{
-				params.trashold = std::stoi(flag[1]);
-			}
-			catch (...)
-			{
-				printHelp();
-			}
 		}
 		else if (flag[0] == "--input")
 		{
@@ -493,10 +475,6 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 	}
 	else //params.timeprof
 	{
-		BPatch_snippet* param1 = new BPatch_constExpr(params.trashold);
-		BPatch_snippet* param2 = new BPatch_constExpr(params.funclist.c_str());
-		funcArgs.push_back(param1);
-		funcArgs.push_back(param2);
 		appImage->findFunction("TIMEPROF_evaluate", closeFuncs, true, true, true);
 
 		if (closeFuncs.empty())
