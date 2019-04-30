@@ -427,7 +427,15 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	initHWSizes();
 	RAPL::initCountersUnits();
 	systemType = system;
-	
+//SET AFFINITY
+	#pragma omp parallel
+	{
+		cpu_set_t cpu_set;
+		CPU_ZERO(&cpu_set);
+		CPU_SET(sched_getcpu(), &cpu_set);
+		sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
+	}
+
 	if(!rank)
 	{
 		getSystemDefaultSettings();
