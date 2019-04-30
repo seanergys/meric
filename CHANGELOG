@@ -1,4 +1,4 @@
-### 04.30.2019 #################################################################
+### 30.04.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
   - user should not specify value of requested CPU core frequency, uncore frequency and number of active threads in the name of the output file any more - it is done automatically
   - MERIC supports Intel RAPL PKG power capping - MERIC_PWRCAP_POWER and MERIC_PWRCAP_TIME must be set to run an instrumented application
