@@ -17,7 +17,7 @@
   - removed mericMeasurementCounters - when runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
   - support for msr-safe RAPL reading, DVFS, UFS and power cap
   - systemInfo - new tool to show system parameters limits
-  - energyMeasureStart/Stop all 
+  - energyMeasureStart/Stop tuning the same system parameteres as MERIC
   - energyMeasureStart/Stop now compile together with MERIC
 
 ### 05.06.2018 #################################################################
