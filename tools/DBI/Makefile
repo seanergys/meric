@@ -15,6 +15,7 @@ pin:
 
 
 DYNINST_INC_PATHS=-I/usr/local/include \
+-I${DYNINST_HOME}/build/include/ \
 -I${DYNINST_HOME}/build/tbb/include/ \
 -I${DYNINST_HOME}/tbb/include \
 -I${DYNINST_HOME}/boost/src/boost \
@@ -27,6 +28,7 @@ DYNINST_INC_PATHS=-I/usr/local/include \
 -I${DYNINST_HOME}/dataflowAPI/h/ \
 -I${DYNINST_HOME}/instructionAPI/h/
 DYNINST_LIB_PATHS=-L/usr/local/lib \
+-L${DYNINST_HOME}/build/lib/ \
 -L${DYNINST_HOME}/build/instructionAPI/ \
 -L${DYNINST_HOME}/build/dyninstAPI/ \
 -L${DYNINST_HOME}/build/patchAPI/ \
