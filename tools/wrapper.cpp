@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <fstream>
 
-const std::string APPLICATION="mpirun -n 2 ./testmpi";
+const std::string APPLICATION="/home/vys0053/readex/meric/test/test";
 std::string MERIC_OUTPUT_DIR;
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
@@ -146,36 +146,19 @@ export MERIC_ITERATION=0
 export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 */
 
-	std::string MERIC_ITERATION="MERIC_ITERATION=0";
-	std::string MERIC_MODE="MERIC_MODE=7";
-	putenv(&MERIC_ITERATION[0]);
-	putenv(&MERIC_MODE[0]);
-
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
-	MERIC_OUTPUT_DIR = "MERIC_OUTPUT_DIR=MERICwrapper-"+std::to_string(timeNow.tv_sec);
-	putenv(&MERIC_OUTPUT_DIR[0]);
+	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec);
+	setenv("MERIC_OUTPUT_DIR", MERIC_OUTPUT_DIR.c_str(), 1);
+
+	setenv("MERIC_COUNTERS", "papi", 1);
+	setenv("MERIC_MODE", "1", 1);
+	setenv("MERIC_ITERATION", "0", 1);
 }
-
-/*
-void runDefault()
-{
-	putenv("MERIC_FREQUENCY=0");
-	putenv("MERIC_UNCORE_FREQUENCY=0");
-	putenv("MERIC_NUM_THREADS=0");
-	putenv("MERIC_PWRCAP_POWER=0");
-	putenv("MERIC_PWRCAP_TIME=0");
-
-	putenv("MERIC_COUNTERS=papi");
-	unsetenv("MERIC_REGION_OPTIONS");
-
-	system (APPLICATION);
-}
-*/
 
 void constructCallPath()
 {
-	//TODO - nacteni seznamu regionu
+	//TODO - read list of application's regions
 	DIR *dir;
 	struct dirent *ent;
 	if ((dir = opendir(MERIC_OUTPUT_DIR.c_str())) != NULL)
@@ -183,21 +166,23 @@ void constructCallPath()
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
 			printf ("%s\n", ent->d_name);
-			appRegions.push_back(std::string(ent->d_name)); //navic zde bude JSON
+			appRegions.push_back(std::string(ent->d_name)); //TODO there is extra JSON file
 		}
 		closedir (dir);
 	}
 	else
 		return;
 	
-	//TODO - vytvoreni stromu volani
+	//TODO - construct callpath graph
 	// ...
 }
 
 systemLimits constructStateSpace()
 {
 	//TODO code based 
-	systemLimits limit = {24, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
+systemLimits limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
+
+//	systemLimits limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
 
 	selectedParams.threads=1;
 	selectedParams.coreFreq = 1;
@@ -226,12 +211,12 @@ configuration decodeConfigVector (std::vector<long> values)
 	
 	configuration v;
 	int iter = 0;
-	if (selectedParams.threads)
-		v.threads = values[iter++];
-	if (selectedParams.coreFreq)
-		v.coreFreq = values[iter++];
 	if (selectedParams.uncoreFreq)
 		v.uncoreFreq = values[iter++];
+	if (selectedParams.coreFreq)
+		v.coreFreq = values[iter++];
+	if (selectedParams.threads)
+		v.threads = values[iter++];
 	if (selectedParams.powerCapPKG)
 		v.powerCapPKG = values[iter++];
 	if (selectedParams.powerCapPKGtime)
@@ -294,12 +279,12 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 				//open file that has measurement results for the region in the specified configuration
 
 				std::string cfgStr = "";
-				if (xx.regConfiguration.threads)
-					cfgStr += xx.regConfiguration.threads+"_";
 				if (xx.regConfiguration.coreFreq)
 					cfgStr += xx.regConfiguration.coreFreq+"_";
 				if (xx.regConfiguration.uncoreFreq)
 					cfgStr += xx.regConfiguration.uncoreFreq+"_";
+				if (xx.regConfiguration.threads)
+					cfgStr += xx.regConfiguration.threads+"_";
 				if (xx.regConfiguration.powerCapPKG)
 					cfgStr += xx.regConfiguration.powerCapPKG+"_";
 				if (xx.regConfiguration.powerCapPKGtime)
@@ -316,10 +301,14 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 						# Blade summary
 						...
 						Energy consumption [J],1549.86
+					 * or
+						# COUNTERS - RAPL: 
+						...
+						Energy summary [J],410
 					*/
 					std::string element;
 					//TODO runtime
-					const std::string label = "Energy consumption [J]";
+					const std::string label = "Energy summary [J]";
 					while (inputfile >> element)
 						if (element.find(label) != std::string::npos)
 						{
@@ -362,7 +351,8 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
 		//threads
-		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t--) //TODO stepSize
+//		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t--) //TODO stepSize
+		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t-= limit.coresPerSocket) //TODO stepSize
 		{
 			cfg.push_back(t);
 			std::cout << "T: "<<t<<std::endl;
@@ -406,31 +396,33 @@ std::cout << std::endl << std::endl;
 
 void runApplication(appConfiguration testRun)
 {
+
 	//testRun.size() == 0 ??
 	
 	if (testRun.size() == 1 && testRun[0].regName == "")
 	{
-		putenv(&(("MERIC_FREQUENCY="+std::to_string(testRun[0].regConfiguration.coreFreq))[0]));
-		putenv(&(("MERIC_UNCORE_FREQUENCY="+std::to_string(testRun[0].regConfiguration.uncoreFreq))[0]));
-		putenv(&(("MERIC_NUM_THREADS="+std::to_string(testRun[0].regConfiguration.threads))[0]));
-		putenv(&(("MERIC_PWRCAP_POWER="+std::to_string(testRun[0].regConfiguration.powerCapPKG))[0]));
-		putenv(&(("MERIC_PWRCAP_TIME="+std::to_string(testRun[0].regConfiguration.powerCapPKGtime))[0]));
-		putenv(&(std::string("MERIC_COUNTERS=papi"))[0]);
+		std::cout << "Running: C" <<  testRun[0].regConfiguration.coreFreq << " U" << testRun[0].regConfiguration.uncoreFreq << " T" << testRun[0].regConfiguration.threads << std::endl;
+
+		setenv("MERIC_FREQUENCY", std::to_string(testRun[0].regConfiguration.coreFreq).c_str(), 1);
+		setenv("MERIC_UNCORE_FREQUENCY", std::to_string(testRun[0].regConfiguration.uncoreFreq).c_str(), 1);
+		setenv("MERIC_NUM_THREADS", std::to_string(testRun[0].regConfiguration.threads).c_str(), 1);
+		setenv("MERIC_PWRCAP_POWER", std::to_string(testRun[0].regConfiguration.powerCapPKG).c_str(), 1);
+		setenv("MERIC_PWRCAP_TIME", std::to_string(testRun[0].regConfiguration.powerCapPKGtime).c_str(), 1);
 		unsetenv("MERIC_REGION_OPTIONS");
 	}
 	else
 	{
 		const std::string MERIC_OUTPUT_FILENAME = MERIC_OUTPUT_DIR+"/MERICwrapperTestconfiguration.json";
 		generateConfigFile(testRun, MERIC_OUTPUT_FILENAME);
-		putenv(&(std::string("MERIC_FREQUENCY=0"))[0]);
-		putenv(&(std::string("MERIC_UNCORE_FREQUENCY=0"))[0]);
-		putenv(&(std::string("MERIC_NUM_THREADS=0"))[0]);
-		putenv(&(std::string("MERIC_PWRCAP_POWER=0"))[0]);
-		putenv(&(std::string("MERIC_PWRCAP_TIME=0"))[0]);
-		putenv(&(std::string("MERIC_COUNTERS=papi"))[0]);
-		putenv(&("MERIC_REGION_OPTIONS="+MERIC_OUTPUT_FILENAME)[0]);
+		setenv("MERIC_FREQUENCY", "0", 1);
+		setenv("MERIC_UNCORE_FREQUENCY", "0", 1);
+		setenv("MERIC_NUM_THREADS", "0", 1);
+		setenv("MERIC_PWRCAP_POWER", "0", 1);
+		setenv("MERIC_PWRCAP_TIME", "0", 1);
+		setenv("MERIC_REGION_OPTIONS", MERIC_OUTPUT_FILENAME.c_str(), 1);
 	}
 
+	system ("printenv");
 	system (APPLICATION.c_str());
 	//TODO remove the test configuration file
 }
@@ -439,7 +431,6 @@ void runApplication(appConfiguration testRun)
 int main()
 {
 	readParameters();
-//	runDefault();
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, 0.0, 0.0 }};
 	runApplication(defaultRun);
 
