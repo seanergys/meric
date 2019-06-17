@@ -10,6 +10,7 @@
 
 #include <unistd.h>
 #include <fstream>
+#include <limits> 
 
 const std::string APPLICATION="/home/vys0053/readex/meric/test/test";
 std::string MERIC_OUTPUT_DIR;
@@ -81,7 +82,7 @@ std::vector <std::string> appRegions; //list of regions of the application
 */
 void generateConfigFile(appConfiguration config, const std::string fileName)
 {
-	std::string content = "}";
+	std::string content = "{";
 	for (regionConfiguration region : config)
 	{
 		content += "\"" + region.regName + "\" : {\n";
@@ -95,17 +96,13 @@ void generateConfigFile(appConfiguration config, const std::string fileName)
 			content += "\"PWRCAP_POWER\" : " + std::to_string(region.regConfiguration.powerCapPKG) + ",\n";
 		if (region.regConfiguration.powerCapPKGtime)
 			content += "\"PWRCAP_TIME\" : " + std::to_string(region.regConfiguration.powerCapPKGtime) + "\n"; // + ",\n";
-		if (content.substr(content.size()-2) == ",\n")
-			content = content.substr(0,content.size()-3);
-//		if (content[:-2] == ",\n")
-//			content = content[-2:];
+		if (content.size() > 2 && content[content.size()-2] == ',')
+			content = content.substr(0,content.size()-2);
 		content += "},\n";
 	}
-		if (content.back() == ',')
-			content = content.substr(0,content.size()-2);
-//	if (content[-1] == ",")
-//			content = content[-1:];
-	content += "}\n";
+	if (content.size() > 2 && content[content.size()-2] == ',')
+		content = content.substr(0,content.size()-2);
+	content += "\n}\n";
 
 	//store to a file
 	std::ofstream configFile (fileName.c_str());
@@ -158,15 +155,21 @@ export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, 
 
 void constructCallPath()
 {
-	//TODO - read list of application's regions
+	//read list of application's regions
 	DIR *dir;
 	struct dirent *ent;
 	if ((dir = opendir(MERIC_OUTPUT_DIR.c_str())) != NULL)
 	{
-		/* print all the files and directories within directory */
-		while ((ent = readdir(dir)) != NULL) {
-			printf ("%s\n", ent->d_name);
-			appRegions.push_back(std::string(ent->d_name)); //TODO there is extra JSON file
+		while ((ent = readdir(dir)) != NULL)
+		{
+			if (ent->d_type == DT_DIR)
+			{
+				if (ent->d_name[0] != '.')
+				{
+//					std::cout << ent->d_name << std::endl;
+					appRegions.push_back(std::string(ent->d_name));
+				}
+			}
 		}
 		closedir (dir);
 	}
@@ -232,7 +235,7 @@ void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::
 		v.push_back(vecConfig[size][elem]);
 		if (size == 0)
 		{
-			struct regionConfiguration c = {"", decodeConfigVector(v), 0.0, 0.0 };
+			struct regionConfiguration c = {"", decodeConfigVector(v), std::numeric_limits<double>::max(), 0.0 };
 			appConfiguration a = {c};
 			testConfigurationsToTry.push_back(a);
 			v.pop_back();
@@ -258,7 +261,7 @@ size_t getRegionIndex(std::string region)
 	}
 	if (regIndex == -1)
 	{
-		optimalConfiguration.push_back({ region, {0, 0, 0, 0, 0}, 0.0, 0.0 });
+		optimalConfiguration.push_back({ region, {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 });
 		regIndex = optimalConfiguration.size()-1;
 	}
 	return regIndex;
@@ -268,77 +271,99 @@ size_t getRegionIndex(std::string region)
 size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 {
 	//identify so-far the best configurations - exhaustive
+	//currently default behavior is not evaluated
 	if (newconfigurations != 0)
 	{
+/*
+- nactu posledni konfigurace z testConfigurationsDone, dle velikosti newconfigurations
+- pro kazdy region urcim jestli v dane konfiguraci je spotreba energie mensi nez doposud nejnizsi hodnota
+- ulozim konfiguraci, spotrebu regionu, runtime, rozdil runtime oproti default
+	+ v pripade nastaveni maximalni performance penalty je treba zaznamenat kombinace konfiguraci, ktere mohou vest k uspore energie ale prodluzuji runtime - kombinace, ktera prodlouzi runtime o 1-x %
+	
+	+ musim si spocitat o kolik sekund muzu protahnout runtime + kolik procent (skupin) to je
+	+ seradim si vyrazene konfigurace jednotlivych regionu podle toho jaky maji dopad na runtime - z tohoto sezanamu vyberu vsechny konfigurace s dopadem mensim, nez uvedeny limit a nasledne beru v potaz dalsi konfigurace ze seznamu, v poradi dle dopadu na runtime. ty konfigurace musim srovnat se senamem konfiguraci ktere mely vetsi dopad a jejihz soucet dopadu na cas je vetsi nebo roven dopadu porovnavane konfigurace. takto muze dojit k vyrazeni konfiguraece, ktera runtime ovlivni jen minimalne, ale jeste by se do limitu vlezla (dopad dalsiho nahrazovani konfigurace), takze proces je treba jeste zopakovat - dokud se budou provadet zmeny.
+	+ presto muze jit o suboptimalni reseni!!!
+	
+	+ obdoba algoritmu, pro nakladani auta
+*/
+
+
+		auto compareWithTheBest = [&] (std::string regName, configuration config)
+		{
+			size_t regIndex = getRegionIndex(regName);
+			//open file that has measurement results for the region in the specified configuration
+
+			std::string cfgStr = "";
+			if (config.coreFreq)
+				cfgStr += std::to_string(config.coreFreq)+"_";
+			if (config.uncoreFreq)
+				cfgStr += std::to_string(config.uncoreFreq)+"_";
+			if (config.threads)
+				cfgStr += std::to_string(config.threads)+"_";
+			if (config.powerCapPKG)
+				cfgStr += std::to_string(config.powerCapPKG)+"_";
+			if (config.powerCapPKGtime)
+				cfgStr += std::to_string(config.powerCapPKGtime);
+			if (cfgStr.back() == '_')
+				cfgStr.pop_back();
+
+			const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
+			std::ifstream inputfile (fileName);
+			if(inputfile.is_open())
+			{
+				/*
+				 * e.g.
+					# Blade summary
+					...
+					Energy consumption [J],1549.86
+				 * or
+					# COUNTERS - RAPL: 
+					...
+					Energy summary [J],410
+				*/
+				std::string element;
+				//TODO runtime
+				const std::string label = "Energy summary [J]";
+				while (!inputfile.eof())
+				{
+					getline(inputfile,element);
+					if (element.find(label) != std::string::npos)
+					{
+						double val = std::stod(element.substr(label.size()+1));
+//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
+						if (val < optimalConfiguration[regIndex].energy)
+						{
+							optimalConfiguration[regIndex].energy = val;
+							optimalConfiguration[regIndex].regConfiguration = config;
+						}
+
+						break; //TODO just the first one
+					}
+				}
+				inputfile.close();
+			}
+		};
+
+
+std::cout << "searching for the best config so-far\n";
+	
 		size_t i = testConfigurationsDone.size() - newconfigurations;
 		for (; newconfigurations > 0; newconfigurations--)
 		{
-			for (auto xx : testConfigurationsDone[i])
+			for (regionConfiguration xx : testConfigurationsDone[i])
 			{
-				size_t regIndex = getRegionIndex(xx.regName);
-				//open file that has measurement results for the region in the specified configuration
-
-				std::string cfgStr = "";
-				if (xx.regConfiguration.coreFreq)
-					cfgStr += xx.regConfiguration.coreFreq+"_";
-				if (xx.regConfiguration.uncoreFreq)
-					cfgStr += xx.regConfiguration.uncoreFreq+"_";
-				if (xx.regConfiguration.threads)
-					cfgStr += xx.regConfiguration.threads+"_";
-				if (xx.regConfiguration.powerCapPKG)
-					cfgStr += xx.regConfiguration.powerCapPKG+"_";
-				if (xx.regConfiguration.powerCapPKGtime)
-					cfgStr += xx.regConfiguration.powerCapPKGtime;
-				if (cfgStr.back() == '_')
-					cfgStr.pop_back();
-		
-				const std::string fileName = MERIC_OUTPUT_DIR+"/"+xx.regName+"/"+cfgStr+".csv";
-				std::ifstream inputfile (fileName);
-				if(inputfile.is_open())
+				if (xx.regName == "")
 				{
-					/*
-					 * e.g.
-						# Blade summary
-						...
-						Energy consumption [J],1549.86
-					 * or
-						# COUNTERS - RAPL: 
-						...
-						Energy summary [J],410
-					*/
-					std::string element;
-					//TODO runtime
-					const std::string label = "Energy summary [J]";
-					while (inputfile >> element)
-						if (element.find(label) != std::string::npos)
-						{
-							double val = std::stod(element.substr(label.size()));
-							if (val < optimalConfiguration[regIndex].energy)
-							{
-								optimalConfiguration[regIndex].energy = val;
-								optimalConfiguration[regIndex].regConfiguration = xx.regConfiguration;
-							}
-
-							break; //TODO just the first one
-						}
-					inputfile.close();
+					for (std::string regName : appRegions)
+						compareWithTheBest(regName, xx.regConfiguration);
+				}
+				else
+				{
+					compareWithTheBest(xx.regName, xx.regConfiguration);
 				}
 			}
-			i--;
+			i++;
 		}
-		newconfigurations = 0;
-		/*
-		- nactu posledni konfigurace z testConfigurationsDone, dle velikosti newconfigurations
-		- pro kazdy region urcim jestli v dane konfiguraci je spotreba energie mensi nez doposud nejnizsi hodnota
-		- ulozim konfiguraci, spotrebu regionu, runtime, rozdil runtime oproti default
-			+ v pripade nastaveni maximalni performance penalty je treba zaznamenat kombinace konfiguraci, ktere mohou vest k uspore energie ale prodluzuji runtime - kombinace, ktera prodlouzi runtime o 1-x %
-			
-			+ musim si spocitat o kolik sekund muzu protahnout runtime + kolik procent (skupin) to je
-			+ seradim si vyrazene konfigurace jednotlivych regionu podle toho jaky maji dopad na runtime - z tohoto sezanamu vyberu vsechny konfigurace s dopadem mensim, nez uvedeny limit a nasledne beru v potaz dalsi konfigurace ze seznamu, v poradi dle dopadu na runtime. ty konfigurace musim srovnat se senamem konfiguraci ktere mely vetsi dopad a jejihz soucet dopadu na cas je vetsi nebo roven dopadu porovnavane konfigurace. takto muze dojit k vyrazeni konfiguraece, ktera runtime ovlivni jen minimalne, ale jeste by se do limitu vlezla (dopad dalsiho nahrazovani konfigurace), takze proces je treba jeste zopakovat - dokud se budou provadet zmeny.
-			+ presto muze jit o suboptimalni reseni!!!
-			
-			+ obdoba algoritmu, pro nakladani auta
-		*/
 	}
 	
 	//EVO - EXHAUSTIVE - PSO
@@ -422,7 +447,7 @@ void runApplication(appConfiguration testRun)
 		setenv("MERIC_REGION_OPTIONS", MERIC_OUTPUT_FILENAME.c_str(), 1);
 	}
 
-	system ("printenv");
+//	system ("printenv");
 	system (APPLICATION.c_str());
 	//TODO remove the test configuration file
 }
@@ -431,7 +456,7 @@ void runApplication(appConfiguration testRun)
 int main()
 {
 	readParameters();
-	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, 0.0, 0.0 }};
+	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
 	runApplication(defaultRun);
 
 //state space
@@ -451,6 +476,7 @@ int main()
 	}
 //store optimal configuration
 	generateConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
+std::cout << MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json" << std::endl;
 	return 0;
 }
 
