@@ -183,9 +183,9 @@ void constructCallPath()
 systemLimits constructStateSpace()
 {
 	//TODO code based 
-systemLimits limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
+//systemLimits limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
 
-//	systemLimits limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
+	systemLimits limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
 
 	selectedParams.threads=1;
 	selectedParams.coreFreq = 1;
@@ -268,6 +268,7 @@ size_t getRegionIndex(std::string region)
 }
 
 
+//EVO - EXHAUSTIVE - PSO
 size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 {
 	//identify so-far the best configurations - exhaustive
@@ -365,13 +366,82 @@ std::cout << "searching for the best config so-far\n";
 			i++;
 		}
 	}
-	
-	//EVO - EXHAUSTIVE - PSO
+/// EVO ////////////////////////////////////////////////////////////////////////
+	if (alg == EVO)
+	{
+		/*
+			INITIAL GENERATION
+		*/
+		if (!testConfigurationsDone.size())
+		{
+			configuration v = {0, 0, 0, 0, 0};
+			if (selectedParams.uncoreFreq)
+				v.uncoreFreq = limit.maxUncoreFreq;
+			if (selectedParams.coreFreq)
+				v.coreFreq = limit.maxCoreFreq;
+			if (selectedParams.threads)
+				v.threads = limit.coresPerSocket * limit.socketsPerNode;
+			if (selectedParams.powerCapPKG)
+				v.powerCapPKG = limit.maxPowerCapPKG;
+			if (selectedParams.powerCapPKGtime)
+				v.powerCapPKGtime = limit.maxPowerCapPKGtime;
+
+			struct regionConfiguration c = {"", v, std::numeric_limits<double>::max(), 0.0 }; //max
+			testConfigurationsToTry.push_back({c});
+			
+			
+			if (selectedParams.uncoreFreq)
+			{
+				long range = limit.maxUncoreFreq - limit.minUncoreFreq;
+				if (range > 3)
+				{
+					range /= 3;	//TODO 3 = STEP SIZE
+					for (int i=0; i<3; i++)
+					{
+						c.regConfiguration.uncoreFreq = limit.minUncoreFreq + range*i;
+						testConfigurationsToTry.push_back({c});
+					}
+				}
+				c.regConfiguration.uncoreFreq = limit.maxUncoreFreq;
+			}
+			
+			if (selectedParams.coreFreq)
+			{
+				long range = limit.maxCoreFreq - limit.minCoreFreq;
+				if (range > 3)
+				{
+					range /= 3;	//TODO
+					for (int i=0; i<3; i++)
+					{
+						c.regConfiguration.coreFreq = limit.minCoreFreq + range*i;
+						testConfigurationsToTry.push_back({c});
+					}
+				}
+				c.regConfiguration.coreFreq = limit.maxCoreFreq;
+			}
+			
+			if (selectedParams.threads)
+			{
+				c.regConfiguration.threads = 1;
+				testConfigurationsToTry.push_back({c});
+				for (int i=1; i<limit.socketsPerNode; i++)
+				{
+					c.regConfiguration.threads = i*limit.coresPerSocket;
+					testConfigurationsToTry.push_back({c});
+				}
+				c.regConfiguration.threads = limit.coresPerSocket * limit.socketsPerNode;
+			}
+			
+			//TODO RAPLpowercap
+		}
+		else
+		{
+			;
+		}
+	}
+/// EXHAUSTIVE /////////////////////////////////////////////////////////////////
 	if (alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
 	{
-	
-		configuration selectedParams = {0, 0, 0, 0, 0};
-
 		std::vector <std::string> parameterName;
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
@@ -415,7 +485,7 @@ std::cout << std::endl << std::endl;
 		EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
 	}
 
-	return testConfigurationsToTry.size();
+	return testConfigurationsToTry.size();	//this should be the only return statement in this function
 }
 
 
@@ -455,6 +525,11 @@ void runApplication(appConfiguration testRun)
 
 int main()
 {
+//   TODO   //
+// // // // //
+ALGORITHM alg = EVO; //EXHAUSTIVE;
+// // // // //
+
 	readParameters();
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
 	runApplication(defaultRun);
@@ -464,7 +539,7 @@ int main()
 	const systemLimits limit = constructStateSpace();
 
 //analyzis	
-	while (generateConfigurationsToTest(limit, EXHAUSTIVE))
+	while (generateConfigurationsToTest(limit, alg))
 	{
 		while(testConfigurationsToTry.size())
 		{
