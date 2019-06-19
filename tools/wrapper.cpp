@@ -304,7 +304,6 @@ size_t getRegionIndex(std::string region)
 	return regIndex;
 }
 
-//void openConfigFile(std::string regName, configuration config, std::ifstream& inputFile)
 std::string constructConfigFileName(std::string regName, configuration config)
 {
 	std::string cfgStr = "";
@@ -322,8 +321,6 @@ std::string constructConfigFileName(std::string regName, configuration config)
 		cfgStr.pop_back();
 
 	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
-//	const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
-//	inputFile.open(fileName);
 }
 
 
@@ -426,7 +423,7 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 				conf.uncoreFreq += 100000000;
 			else
 			{
-				if (conf.uncoreFreq > limit.maxUncoreFreq)
+				if (conf.uncoreFreq > limit.minUncoreFreq)
 					conf.uncoreFreq -= 100000000;
 				else
 					conf.uncoreFreq += 100000000;
@@ -442,7 +439,7 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 				conf.coreFreq += 100000000;
 			else
 			{
-				if (conf.coreFreq > limit.maxCoreFreq)
+				if (conf.coreFreq > limit.minCoreFreq)
 					conf.coreFreq -= 100000000;
 				else
 					conf.coreFreq += 100000000;
@@ -458,7 +455,7 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 				conf.threads += 1;
 			else
 			{
-				if (conf.threads > limit.coresPerSocket * limit.socketsPerNode)
+				if (conf.threads > 2)
 					conf.threads -= 1;
 				else
 					conf.threads += 1;
@@ -496,26 +493,7 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 			size_t regIndex = getRegionIndex(regName);
 			//open file that has measurement results for the region in the specified configuration
 			double energyConsumption = 0.0;
-			/*
-			std::string cfgStr = "";
-			if (config.coreFreq)
-				cfgStr += std::to_string(config.coreFreq)+"_";
-			if (config.uncoreFreq)
-				cfgStr += std::to_string(config.uncoreFreq)+"_";
-			if (config.threads)
-				cfgStr += std::to_string(config.threads)+"_";
-			if (config.powerCapPKG)
-				cfgStr += std::to_string(config.powerCapPKG)+"_";
-			if (config.powerCapPKGtime)
-				cfgStr += std::to_string(config.powerCapPKGtime);
-			if (cfgStr.back() == '_')
-				cfgStr.pop_back();
-
-			const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
-			std::ifstream inputfile (fileName);
-			*/
 			std::ifstream inputfile (constructConfigFileName(regName, config));
-			//openConfigFile(regName, config), inputfile);
 			if(inputfile.is_open())
 			{
 				/*
@@ -537,7 +515,7 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 					if (element.find(label) != std::string::npos)
 					{
 						energyConsumption = std::stod(element.substr(label.size()+1));
-		//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
+//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
 						//we have found better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
@@ -601,7 +579,6 @@ std::cout << "searching for the best config so-far\n";
 			
 			while (testConfigurationsToTry.size() < EVO_POPULATION_SIZE)
 			{
-std::cout << "EVO size - " << testConfigurationsToTry.size() << std::endl;
 				appConfiguration ac;
 				//for (std::string regName : appRegs)
 				std::string regName = "";
@@ -618,23 +595,26 @@ std::cout << "EVO size - " << testConfigurationsToTry.size() << std::endl;
 		{
 			std::vector <std::list<regionConfiguration>> population;
 			population.resize(appRegions.size());
-			
+
 			//associate the value (energy) with each member of the population
 			//each region has its own population
 			for (size_t i = testConfigurationsDone.size()-newconfigurations; i<testConfigurationsDone.size(); i++)
 			{
 				for (size_t zz = 0; zz < testConfigurationsDone[i].size(); zz++)
 				{
-					population[getRegionIndex(testConfigurationsDone[i][zz].regName)].push_back(testConfigurationsDone[i][zz]);
+					if (testConfigurationsDone[i][zz].regName != "")
+					{
+						population[getRegionIndex(testConfigurationsDone[i][zz].regName)].push_back(testConfigurationsDone[i][zz]);
+					}
 				}
 			}
 			
 			testConfigurationsToTry.resize(EVO_POPULATION_SIZE);
-			//for (auto pop : population)
 			for (std::string regName : appRegions)
 			{
 				size_t regIndex = getRegionIndex(regName);
 				auto pop = population[regIndex];
+std::cout << "select members for crossover" << std::endl;
 				//select members for crossover - 50%
 				//worse solutions will be removed with higher propability
 				pop.sort();
@@ -642,7 +622,7 @@ std::cout << "EVO size - " << testConfigurationsToTry.size() << std::endl;
 				{
 					//pop.erase(1+rand() % (pop.size()-1));
 					std::list<regionConfiguration>::iterator it = pop.begin();
-					size_t removeIndex = ceil(sqrt(rand()%(int)pow(pop.size(),2.0)));
+					size_t removeIndex = floor(sqrt(rand()%(int)pow(pop.size(),2.0)));
 					for (int j=0;j<removeIndex;j++)
 						it++;
 					pop.erase(it);
@@ -667,13 +647,13 @@ std::cout << "EVO size - " << testConfigurationsToTry.size() << std::endl;
 
 					//crossover
 					configuration newConf = EVO_crossover(it1->regConfiguration, it2->regConfiguration);
-					
+
 					//mutation - test if the configuration haven't been tested yet
 					while (testIfConfigExists(regName, newConf, true))
 					{
 						EVO_mute(newConf, limit);
 					}
-					
+
 					//push them to testConfigurationsToTry
 					testConfigurationsToTry[i].push_back({regName, newConf, std::numeric_limits<double>::max(), 0.0});
 				}
@@ -732,7 +712,7 @@ std::cout << std::endl << std::endl;
 }
 
 
-void runApplication(appConfiguration testRun)
+void runApplication(appConfiguration testRun, const systemLimits limit)
 {
 
 	//testRun.size() == 0 ??
@@ -752,12 +732,36 @@ void runApplication(appConfiguration testRun)
 	{
 		const std::string MERIC_OUTPUT_FILENAME = MERIC_OUTPUT_DIR+"/MERICwrapperTestconfiguration.json";
 		generateConfigFile(testRun, MERIC_OUTPUT_FILENAME);
-		setenv("MERIC_FREQUENCY", "0", 1);
-		setenv("MERIC_UNCORE_FREQUENCY", "0", 1);
-		setenv("MERIC_NUM_THREADS", "0", 1);
-		setenv("MERIC_PWRCAP_POWER", "0", 1);
-		setenv("MERIC_PWRCAP_TIME", "0", 1);
+
+//could be set if the behavior will change in MERIC, that will alow the tuning when the static parameters not set and just config file provided
+		if (selectedParams.uncoreFreq)
+			setenv("MERIC_UNCORE_FREQUENCY", std::to_string(limit.maxUncoreFreq).c_str(), 1);
+		else
+			setenv("MERIC_UNCORE_FREQUENCY", "0", 1);
+			
+		if (selectedParams.coreFreq)
+			setenv("MERIC_FREQUENCY", std::to_string(limit.maxCoreFreq).c_str(), 1);
+		else
+			setenv("MERIC_FREQUENCY", "0", 1);
+			
+		if (selectedParams.threads)
+			setenv("MERIC_NUM_THREADS", std::to_string(limit.coresPerSocket * limit.socketsPerNode).c_str(), 1);
+		else
+			setenv("MERIC_NUM_THREADS", "0", 1);
+			
+		if (selectedParams.powerCapPKG)
+			setenv("MERIC_PWRCAP_POWER", std::to_string(limit.maxPowerCapPKG).c_str(), 1);
+		else
+			setenv("MERIC_PWRCAP_POWER", "0", 1);
+			
+		if (selectedParams.powerCapPKGtime)
+			setenv("MERIC_PWRCAP_TIME", std::to_string(limit.maxPowerCapPKGtime).c_str(), 1);
+		else
+			setenv("MERIC_PWRCAP_TIME", "0", 1);
+
 		setenv("MERIC_REGION_OPTIONS", MERIC_OUTPUT_FILENAME.c_str(), 1);
+
+		std::cout << "Running: dynamic configuration - " << MERIC_OUTPUT_FILENAME << std::endl;
 	}
 
 //	system ("printenv");
@@ -774,13 +778,11 @@ ALGORITHM alg = EVO;
 //ALGORITHM alg = EXHAUSTIVE;
 // // // // //
 
+	const systemLimits limit = constructStateSpace();
 	readParameters();
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
-	runApplication(defaultRun);
-
-//state space
+	runApplication(defaultRun, limit);
 	constructCallPath();
-	const systemLimits limit = constructStateSpace();
 
 std::cout << "RUN ANALYSIS\n";
 //analyzis
@@ -788,7 +790,7 @@ std::cout << "RUN ANALYSIS\n";
 	{
 		while(testConfigurationsToTry.size())
 		{
-			runApplication(testConfigurationsToTry[0]);
+			runApplication(testConfigurationsToTry[0], limit);
 			testConfigurationsDone.push_back(testConfigurationsToTry[0]);
 			testConfigurationsToTry.erase(testConfigurationsToTry.begin());
 			newconfigurations++;
