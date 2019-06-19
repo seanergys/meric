@@ -13,6 +13,8 @@
 #include <fstream>
 #include <limits>
 #include <time.h>
+#include <math.h>
+#include <sys/stat.h>
 
 const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
 std::string MERIC_OUTPUT_DIR;
@@ -48,6 +50,11 @@ struct configuration{	// single HW configuration
 	long powerCapPKG;
 	long powerCapPKGtime;
 	
+	configuration() : 
+		threads(0), coreFreq(0), uncoreFreq(0), powerCapPKG(0), powerCapPKGtime(0) {}
+	configuration(int t, long c, long u, long p, long pt) : 
+		threads(t), coreFreq(c), uncoreFreq(u), powerCapPKG(p), powerCapPKGtime(pt) {}
+	
 	bool operator==(const configuration& c) const
 	{
 		if (this->threads != c.threads)
@@ -64,7 +71,7 @@ struct configuration{	// single HW configuration
 	}
 };
 
-configuration selectedParams = {0, 0, 0, 0, 0}; //which parameteres will be tuned
+configuration selectedParams;// = {0, 0, 0, 0, 0}; //which parameteres will be tuned
 
 struct regionConfiguration{ //configuration for a region
 	std::string regName;
@@ -86,6 +93,13 @@ std::vector <appConfiguration> testConfigurationsDone;
 unsigned long newconfigurations;
 
 std::vector <std::string> appRegions; //list of regions of the application
+
+//EXHAUSTIVE
+//EVO
+	//population ?
+	int EVOimprovedSolutionCounter = 0;
+//PSO
+
 
 // FUNCTIONS ///////////////////////////////////////////////////////////////////
 /*
@@ -226,7 +240,7 @@ systemLimits constructStateSpace()
 	return limit;
 }
 
-configuration decodeConfigVector (std::vector<long> values)
+configuration decodeConfigVector (std::vector<long> values)	//EXHAUSTIVE only
 {
 	////////////////////////////
 	std::cout << "@: ";
@@ -290,9 +304,38 @@ size_t getRegionIndex(std::string region)
 	return regIndex;
 }
 
-bool testIfConfigExists(std::string regName, configuration c)
-{	//TODO in the finished configurations
+//void openConfigFile(std::string regName, configuration config, std::ifstream& inputFile)
+std::string constructConfigFileName(std::string regName, configuration config)
+{
+	std::string cfgStr = "";
+	if (config.coreFreq)
+		cfgStr += std::to_string(config.coreFreq)+"_";
+	if (config.uncoreFreq)
+		cfgStr += std::to_string(config.uncoreFreq)+"_";
+	if (config.threads)
+		cfgStr += std::to_string(config.threads)+"_";
+	if (config.powerCapPKG)
+		cfgStr += std::to_string(config.powerCapPKG)+"_";
+	if (config.powerCapPKGtime)
+		cfgStr += std::to_string(config.powerCapPKGtime);
+	if (cfgStr.back() == '_')
+		cfgStr.pop_back();
+
+	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
+//	const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
+//	inputFile.open(fileName);
+}
+
+
+bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished = false) //EVO only
+{
 	bool find = false;
+	if (searchInFinished)
+	{
+		struct stat buffer;
+		find = (stat(constructConfigFileName(regName, c).c_str(), &buffer) == 0); 
+	}
+
 	size_t index = 0;
 	while (index < testConfigurationsToTry.size() && find == false)
 	{
@@ -309,85 +352,123 @@ bool testIfConfigExists(std::string regName, configuration c)
 	return find;
 }
 
-configuration getRandomConfig(const systemLimits limit)
+configuration getRandomConfig(const systemLimits limit)	//EVO only
 {
-	configuration c = {0, 0, 0, 0, 0};
+	configuration c;// = {0, 0, 0, 0, 0};
 	if (selectedParams.uncoreFreq)
 	{
-		int max = (limit.maxUncoreFreq - limit.minUncoreFreq)/100000000;
+		int max = (limit.maxUncoreFreq - limit.minUncoreFreq)/100000000; //TODO step size
 		long val = rand() % max;
 		c.uncoreFreq = limit.minUncoreFreq + val*100000000;
 	}
 	if (selectedParams.coreFreq)
 	{
-		int max = (limit.maxCoreFreq - limit.minCoreFreq)/100000000;
+		int max = (limit.maxCoreFreq - limit.minCoreFreq)/100000000; //TODO
 		long val = rand() % max;
 		c.coreFreq = limit.minCoreFreq + val * 100000000;
 	}
 	if (selectedParams.threads)
 	{
-		c.threads = rand() % (limit.coresPerSocket * limit.socketsPerNode)+1;
+		c.threads = rand() % (limit.coresPerSocket * limit.socketsPerNode)+1; //TODO
 	}
 /*	//TODO
 	if (selectedParams.powerCapPKG)
-		c.powerCapPKG = limit.maxPowerCapPKG;
+		...
 	if (selectedParams.powerCapPKGtime)
-		c.powerCapPKGtime = limit.maxPowerCapPKGtime;
+		...
 */
 
-std::cout << "GENcfg: " << c.uncoreFreq << " " << c.coreFreq << " " << c.threads << std::endl;
+	std::cout << "GENcfg: " << c.uncoreFreq << " " << c.coreFreq << " " << c.threads << std::endl;
 	return c;
 }
 
-/*
-		double compareWithTheBest (std::string regName, configuration config)
+//UNIFORM crossover
+configuration EVO_crossover(configuration c1, configuration c2)
+{
+	configuration conf;
+	if (rand()%10 < 5)
+		conf.uncoreFreq = c1.uncoreFreq;
+	else
+		conf.uncoreFreq = c2.uncoreFreq;
+
+	if (rand()%10 < 5)
+		conf.coreFreq = c1.coreFreq;
+	else
+		conf.coreFreq = c2.coreFreq;
+	
+	if (rand()%10 < 5)
+		conf.threads = c1.threads;
+	else
+		conf.threads = c2.threads;
+
+	if (rand()%10 < 5)
+		conf.powerCapPKG = c1.powerCapPKG;
+	else
+		conf.powerCapPKG = c2.powerCapPKG;
+
+	if (rand()%10 < 5)
+		conf.powerCapPKG = c1.powerCapPKG;
+	else
+		conf.powerCapPKG = c2.powerCapPKG;		
+
+	return conf;
+}
+
+void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
+{
+	int director;
+	if (selectedParams.uncoreFreq)
+	{
+		director = rand()%100;
+		if (director < 50)
 		{
-			size_t regIndex = getRegionIndex(regName);
-			//open file that has measurement results for the region in the specified configuration
-
-			std::string cfgStr = "";
-			if (config.coreFreq)
-				cfgStr += std::to_string(config.coreFreq)+"_";
-			if (config.uncoreFreq)
-				cfgStr += std::to_string(config.uncoreFreq)+"_";
-			if (config.threads)
-				cfgStr += std::to_string(config.threads)+"_";
-			if (config.powerCapPKG)
-				cfgStr += std::to_string(config.powerCapPKG)+"_";
-			if (config.powerCapPKGtime)
-				cfgStr += std::to_string(config.powerCapPKGtime);
-			if (cfgStr.back() == '_')
-				cfgStr.pop_back();
-
-			double energyConsumption = 0.0;
-			const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
-			std::ifstream inputfile (fileName);
-			if(inputfile.is_open())
+			if (director < 25 && conf.uncoreFreq < limit.maxUncoreFreq)
+				conf.uncoreFreq += 100000000;
+			else
 			{
-				std::string element;
-				//TODO runtime
-				const std::string label = "Energy summary [J]";
-				while (!inputfile.eof())
-				{
-					getline(inputfile,element);
-					if (element.find(label) != std::string::npos)
-					{
-						energyConsumption = std::stod(element.substr(label.size()+1));
-//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
-						if (energyConsumption < optimalConfiguration[regIndex].energy)
-						{
-							optimalConfiguration[regIndex].energy = energyConsumption;
-							optimalConfiguration[regIndex].regConfiguration = config;
-						}
-
-						break; //TODO just the first one
-					}
-				}
-				inputfile.close();
+				if (conf.uncoreFreq > limit.maxUncoreFreq)
+					conf.uncoreFreq -= 100000000;
+				else
+					conf.uncoreFreq += 100000000;
 			}
-			return energyConsumption;
+		}	
+	}
+	if (selectedParams.coreFreq)
+	{
+		director = rand()%100;
+		if (director < 50)
+		{
+			if (director < 25 && conf.coreFreq < limit.maxCoreFreq)
+				conf.coreFreq += 100000000;
+			else
+			{
+				if (conf.coreFreq > limit.maxCoreFreq)
+					conf.coreFreq -= 100000000;
+				else
+					conf.coreFreq += 100000000;
+			}
 		}
-*/
+	}
+	if (selectedParams.threads)
+	{
+		director = rand()%100;
+		if (director < 50)
+		{
+			if (director < 25 && conf.threads < limit.coresPerSocket * limit.socketsPerNode)
+				conf.threads += 1;
+			else
+			{
+				if (conf.threads > limit.coresPerSocket * limit.socketsPerNode)
+					conf.threads -= 1;
+				else
+					conf.threads += 1;
+			}
+		}
+	}
+	//TODO RAPL
+}
+
+
 
 //EVO - EXHAUSTIVE - PSO
 size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
@@ -396,6 +477,7 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 	//currently default behavior is not evaluated
 	if (newconfigurations != 0)
 	{
+		EVOimprovedSolutionCounter++;
 /*
 - nactu posledni konfigurace z testConfigurationsDone, dle velikosti newconfigurations
 - pro kazdy region urcim jestli v dane konfiguraci je spotreba energie mensi nez doposud nejnizsi hodnota
@@ -409,12 +491,12 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 	+ obdoba algoritmu, pro nakladani auta
 */
 
-		///*
 		auto compareWithTheBest = [&] (std::string regName, configuration config)
 		{
 			size_t regIndex = getRegionIndex(regName);
 			//open file that has measurement results for the region in the specified configuration
-
+			double energyConsumption = 0.0;
+			/*
 			std::string cfgStr = "";
 			if (config.coreFreq)
 				cfgStr += std::to_string(config.coreFreq)+"_";
@@ -429,9 +511,11 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 			if (cfgStr.back() == '_')
 				cfgStr.pop_back();
 
-			double energyConsumption = 0.0;
 			const std::string fileName = MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
 			std::ifstream inputfile (fileName);
+			*/
+			std::ifstream inputfile (constructConfigFileName(regName, config));
+			//openConfigFile(regName, config), inputfile);
 			if(inputfile.is_open())
 			{
 				/*
@@ -454,10 +538,12 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 					{
 						energyConsumption = std::stod(element.substr(label.size()+1));
 		//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
+						//we have found better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
 							optimalConfiguration[regIndex].energy = energyConsumption;
 							optimalConfiguration[regIndex].regConfiguration = config;
+							EVOimprovedSolutionCounter = 0;
 						}
 
 						break; //TODO just the first one
@@ -467,9 +553,6 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 			}
 			return energyConsumption;
 		};
-		//*/
-
-
 
 std::cout << "searching for the best config so-far\n";
 	
@@ -490,20 +573,6 @@ std::cout << "searching for the best config so-far\n";
 					testConfigurationsDone[i][zz].energy = compareWithTheBest(testConfigurationsDone[i][zz].regName, testConfigurationsDone[i][zz].regConfiguration);
 				}
 			}
-/*			
-			for (regionConfiguration xx : testConfigurationsDone[i])
-			{
-				if (xx.regName == "")
-				{
-					for (std::string regName : appRegions)
-						compareWithTheBest(regName, xx.regConfiguration);
-				}
-				else
-				{
-					compareWithTheBest(xx.regName, xx.regConfiguration);
-				}
-			}
-*/
 			i++;
 		}
 	}
@@ -511,11 +580,13 @@ std::cout << "searching for the best config so-far\n";
 /// EVO ////////////////////////////////////////////////////////////////////////
 	if (alg == EVO)
 	{
+		const int EVO_POPULATION_SIZE = 10;
+		const int EVO_END_CONDITION = 2; //-times the best configuration has not been improved
+
 		//INITIAL GENERATION
 		if (!testConfigurationsDone.size())
 		{
-			const int EVO_POPULATION_SIZE = 10;
-			configuration v = {0, 0, 0, 0, 0};
+			configuration v;// = {0, 0, 0, 0, 0};
 			if (selectedParams.uncoreFreq)
 				v.uncoreFreq = limit.maxUncoreFreq;
 			if (selectedParams.coreFreq)
@@ -543,42 +614,75 @@ std::cout << "EVO size - " << testConfigurationsToTry.size() << std::endl;
 				testConfigurationsToTry.push_back(ac);
 			}
 		}
-		else
+		else if (EVOimprovedSolutionCounter < EVO_END_CONDITION)
 		{
-/*
-struct regionConfiguration{ //configuration for a region
-	std::string regName;
-	struct configuration regConfiguration;
-	double energy;
-	double runtime;
-};
-*/
-
-			//TODO move the init somewhere
 			std::vector <std::list<regionConfiguration>> population;
 			population.resize(appRegions.size());
-
-			/*
-			size_t i = testConfigurationsDone.size() - newconfigurations;
-
-			for (size_t newbies = newconfigurations; newbies > 0; newbies--)
+			
+			//associate the value (energy) with each member of the population
+			//each region has its own population
+			for (size_t i = testConfigurationsDone.size()-newconfigurations; i<testConfigurationsDone.size(); i++)
 			{
 				for (size_t zz = 0; zz < testConfigurationsDone[i].size(); zz++)
 				{
-					if (testConfigurationsDone[i][zz].regName == "")
-					{
-						for (std::string regName : appRegions)
-							testConfigurationsDone[i].push_back({regName, testConfigurationsDone[i][zz].regConfiguration, compareWithTheBest(regName, testConfigurationsDone[i][zz].regConfiguration), 0.0});
-						break;
-					}
+					population[getRegionIndex(testConfigurationsDone[i][zz].regName)].push_back(testConfigurationsDone[i][zz]);
 				}
 			}
-			*/
 			
+			testConfigurationsToTry.resize(EVO_POPULATION_SIZE);
+			//for (auto pop : population)
+			for (std::string regName : appRegions)
+			{
+				size_t regIndex = getRegionIndex(regName);
+				auto pop = population[regIndex];
+				//select members for crossover - 50%
+				//worse solutions will be removed with higher propability
+				pop.sort();
+				for (int i = 0; i<EVO_POPULATION_SIZE/2; i++)
+				{
+					//pop.erase(1+rand() % (pop.size()-1));
+					std::list<regionConfiguration>::iterator it = pop.begin();
+					size_t removeIndex = ceil(sqrt(rand()%(int)pow(pop.size(),2.0)));
+					for (int j=0;j<removeIndex;j++)
+						it++;
+					pop.erase(it);
+				}
+				//we add the best configuration so-far - elitism 
+				//might be there twice - if region's optimalConfiguration was updated from this population and if this member was not removed during the russian rulette
+				pop.push_back(optimalConfiguration[regIndex]);
+
+				//generate new population				
+				for (int i = 0; i<EVO_POPULATION_SIZE; i++)
+				{
+					//select 2 parents
+					size_t parent1 = rand() % pop.size();
+					size_t parent2 = rand() % pop.size();
+					std::list<regionConfiguration>::iterator it1, it2;
+					it1 = it2 = pop.begin();
+
+					for (int j=0;j<parent1;j++)
+						it1++;
+					for (int j=0;j<parent2;j++)
+						it2++;
+
+					//crossover
+					configuration newConf = EVO_crossover(it1->regConfiguration, it2->regConfiguration);
+					
+					//mutation - test if the configuration haven't been tested yet
+					while (testIfConfigExists(regName, newConf, true))
+					{
+						EVO_mute(newConf, limit);
+					}
+					
+					//push them to testConfigurationsToTry
+					testConfigurationsToTry[i].push_back({regName, newConf, std::numeric_limits<double>::max(), 0.0});
+				}
+			}
 		}
 	}
+	
 /// EXHAUSTIVE /////////////////////////////////////////////////////////////////
-	if (alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
+	else if (alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
 	{
 		std::vector <std::string> parameterName;
 		std::vector <std::vector<long>> exhConf;
