@@ -496,16 +496,15 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						
 						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
 						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
-						uint64_t REG_MAX_PSTATE = (defaultSettings[systemType].maxCoreFreq/100000000) << 8;
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
 							defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-							defSet << defaultSettings[systemType].minCoreFreq / 1000;
+							defSet << defaultSettings[systemType].minCoreFreq / 1000; //kHz
 							defSet.close();
-
-							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, IA32_ENERGY_PERF_BIAS_LEVEL);
-							write_msr_by_idx(cpu, IA32_PERF_CTL, REG_MAX_PSTATE);
+							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
 						}
+						//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
+						usleep(800000); //700 ms is not enough
 					}
 				}
 #endif

@@ -79,7 +79,6 @@ const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_mask = 0x3F000000000000;
 const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
 //CORE
 const uint64_t IA32_PERF_CTL_shift = 8;
-const uint64_t IA32_ENERGY_PERF_BIAS_LEVEL=6;
 //UNCORE
 const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
 const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
