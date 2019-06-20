@@ -503,7 +503,7 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 							defSet << defaultSettings[systemType].minCoreFreq / 1000;
 							defSet.close();
 
-							write_msr_by_idx(cpu, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default, 0);
+							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, IA32_ENERGY_PERF_BIAS_LEVEL);
 							write_msr_by_idx(cpu, IA32_PERF_CTL, REG_MAX_PSTATE);
 						}
 					}
