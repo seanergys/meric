@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 			{
 				try
 				{
-					defaultParameter.frequency = std::stoi(argv[++i]);
+					defaultParameter.frequency = std::stol(argv[++i]);
 				} catch (std::exception const &e)
 				{
 					printHelp();
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 			if (i + 1 < argc)
 			{
 				try{
-					defaultParameter.uncoreFrequency = std::stoul (argv[++i]);
+					defaultParameter.uncoreFrequency = std::stol (argv[++i]);
 				} catch (std::exception const &e)
 				{
 					printHelp();
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 			if (i + 1 < argc)
 			{
 				try{
-					defaultParameter.powerCapPKG = std::stoul (argv[++i]);
+					defaultParameter.powerCapPKG = std::stol (argv[++i]);
 				} catch (std::exception const &e)
 				{
 					printHelp();
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 			if (i + 1 < argc)
 			{
 				try{
-					defaultParameter.powerCapPKGtime = std::stoul (argv[++i]);
+					defaultParameter.powerCapPKGtime = std::stol (argv[++i]);
 				} catch (std::exception const &e)
 				{
 					printHelp();
