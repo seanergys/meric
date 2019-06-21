@@ -8,13 +8,13 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
     if (ctx.options.includes):
-        for path in ctx.options.includes.split(' '):
+        for path in ctx.options.includes.split():
             if len(path) > 2 and path[0:2] == "-I":
                 ctx.env.append_unique("CXXFLAGS",path)
             else:
                 ctx.env.append_unique("CXXFLAGS","-I"+path)
     if (ctx.options.libpaths):
-        for path in ctx.options.libpaths.split(' '):
+        for path in ctx.options.libpaths.split():
             if len(path) > 2 and path[0:2] == "-L":
                 ctx.env.append_unique("LINKFLAGS", path)
             else:
