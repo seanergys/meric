@@ -16,11 +16,12 @@
 #include <math.h>
 #include <sys/stat.h>
 
-const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
+//const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
+const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
 std::string MERIC_OUTPUT_DIR;
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
-enum ALGORITHM {EXHAUSTIVE=0, EVO=1, PSO=2};
+enum ALGORITHM {EXHAUSTIVE=0, EVO=1, PSO=2, NONE};
 
 struct systemLimits{
 	int  coresPerSocket;
@@ -42,6 +43,7 @@ struct systemLimits{
 
 	long maxPowerCapRAMtime;     //us
 };
+systemLimits limit;
 
 struct configuration{	// single HW configuration
 	int  threads;
@@ -69,9 +71,31 @@ struct configuration{	// single HW configuration
 			return false;
 		return true;
 	}
+	
+	configuration operator-(const configuration& c) const
+	{
+		configuration dis = {
+			c.threads - this->threads,
+			c.coreFreq - this->coreFreq,
+			c.uncoreFreq - this->uncoreFreq,
+			c.powerCapPKG - this->powerCapPKG,
+			c.powerCapPKGtime - this->powerCapPKGtime};
+		return dis;
+	}
+
+	configuration operator+(const configuration& c) const
+	{
+		configuration dis = {
+			c.threads + this->threads,
+			c.coreFreq + this->coreFreq,
+			c.uncoreFreq + this->uncoreFreq,
+			c.powerCapPKG + this->powerCapPKG,
+			c.powerCapPKGtime + this->powerCapPKGtime};
+		return dis;
+	}
 };
 
-configuration selectedParams;// = {0, 0, 0, 0, 0}; //which parameteres will be tuned
+configuration selectedParams; //which parameteres will be tuned
 
 struct regionConfiguration{ //configuration for a region
 	std::string regName;
@@ -81,7 +105,7 @@ struct regionConfiguration{ //configuration for a region
 
 	bool operator<(const regionConfiguration& c) const
 	{
-		return (this->energy < c.energy);
+		return (c.energy < this->energy);
 	}
 };
 
@@ -95,27 +119,36 @@ unsigned long newconfigurations;
 std::vector <std::string> appRegions; //list of regions of the application
 
 //EXHAUSTIVE
-//EVO
-	//population ?
-	int EVOimprovedSolutionCounter = 0;
+//EVO + PSO
+	int improvedSolutionCounter = 0;
 //PSO
+	const double Cp = 2.05;
+	const double Cg = 2.05;
+	const double omg = 0.5;
+	struct PSOparticleHistory{
+		struct configuration bestPosition;
+		double energy;
+		double runtime;
+		struct configuration velocity;
+				
+		PSOparticleHistory() :
+			bestPosition(), energy(std::numeric_limits<double>::max()), runtime(0.0), velocity() {}
+		
+		bool operator>(const regionConfiguration& c) const
+		{
+			return (c.energy > this->energy);
+		}
+		
+		bool operator<(const regionConfiguration& c) const
+		{
+			return (c.energy < this->energy);
+		}
+	};
 
+	std::vector<std::vector<PSOparticleHistory>> PSOhistory;
 
 // FUNCTIONS ///////////////////////////////////////////////////////////////////
-/*
-{
-	"DGEMM" : {
-		"FREQUENCY" : 1500MHz,
-		"UNCORE_FREQUENCY" : 1500MHz,
-		"NUM_THREADS" : 12
-	}
-	,
-	"DGEMV" : { 
-		"FREQUENCY" : 2300MHz,
-		"UNCORE_FREQUENCY" : 2300MHz
-	}
-}
-*/
+
 void generateConfigFile(appConfiguration config, const std::string fileName)
 {
 	std::string content = "{";
@@ -146,25 +179,16 @@ void generateConfigFile(appConfiguration config, const std::string fileName)
 		configFile << content;
 }
 
-
-/*
-void processFile(std::string fileName, std::vector<std::string> * elements)
+void printHelp()
 {
-	if(fileName != "")
-	{
-		std::ifstream inputfile (fileName.c_str());
-		if(inputfile.is_open())
-		{
-			std::string element;
-			while (inputfile >> element)
-				(*elements).push_back(element);
-			inputfile.close();
-		}
-	}
+	std::cerr << "MERICwrapper" <<std::endl
+	          << "select from an algorithm to search for the optimal configuration" << std::endl
+	          << "\t-x = exhaustive" << std::endl
+	          << "\t-e = evolution" << std::endl
+	          << "\t-p = particle swarm optimization" << std::endl;
 }
-*/
 
-void readParameters()
+ALGORITHM readParameters(int argc, char **argv)
 {
 /*
 # TODO - nacteni parametru
@@ -178,6 +202,23 @@ void readParameters()
 export MERIC_ITERATION=0
 export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 */
+	ALGORITHM alg = NONE;
+	if (argc == 1)
+		printHelp();
+	for (int i = 1; i < argc; ++i)
+	{
+		std::string arg = argv[i];
+		if (arg == "-x")
+			alg = EXHAUSTIVE;
+		else if (arg == "-e")
+			alg = EVO;
+		else if (arg == "-p")
+			alg = PSO;
+		else
+		{
+			printHelp();
+		}
+	}
 
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
@@ -187,6 +228,8 @@ export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, 
 	setenv("MERIC_COUNTERS", "papi", 1);
 	setenv("MERIC_MODE", "1", 1);
 	setenv("MERIC_ITERATION", "0", 1);
+	
+	return alg;
 }
 
 void constructCallPath()
@@ -216,13 +259,13 @@ void constructCallPath()
 	// ...
 }
 
-systemLimits constructStateSpace()
+void constructStateSpace()
 {
 	//TODO code based 
 //systemLimits limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
 
 //	systemLimits limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
-	systemLimits limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
+	limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
 
 	selectedParams.threads=1;
 	selectedParams.coreFreq = 1;
@@ -237,18 +280,10 @@ systemLimits constructStateSpace()
 	//RAPLwindow
 
 	newconfigurations = 0;
-	return limit;
 }
 
 configuration decodeConfigVector (std::vector<long> values)	//EXHAUSTIVE only
 {
-	////////////////////////////
-	std::cout << "@: ";
-	for (auto e : values)
-		std::cout << e << " ";
-	std::cout << std::endl;
-	////////////////////////////
-	
 	configuration v;
 	int iter = 0;
 	if (selectedParams.uncoreFreq)
@@ -349,7 +384,7 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 	return find;
 }
 
-configuration getRandomConfig(const systemLimits limit)	//EVO only
+configuration getRandomConfig()
 {
 	configuration c;// = {0, 0, 0, 0, 0};
 	if (selectedParams.uncoreFreq)
@@ -375,9 +410,10 @@ configuration getRandomConfig(const systemLimits limit)	//EVO only
 		...
 */
 
-	std::cout << "GENcfg: " << c.uncoreFreq << " " << c.coreFreq << " " << c.threads << std::endl;
+//	std::cout << "GENcfg: " << c.coreFreq << " " << c.uncoreFreq << " " << c.threads << std::endl;
 	return c;
 }
+
 
 //UNIFORM crossover
 configuration EVO_crossover(configuration c1, configuration c2)
@@ -411,15 +447,15 @@ configuration EVO_crossover(configuration c1, configuration c2)
 	return conf;
 }
 
-void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
+void EVO_mute(configuration& conf)	//TODO stepsize
 {
 	int director;
 	if (selectedParams.uncoreFreq)
 	{
 		director = rand()%100;
-		if (director < 50)
+		if (director < 10)
 		{
-			if (director < 25 && conf.uncoreFreq < limit.maxUncoreFreq)
+			if (director < 5 && conf.uncoreFreq < limit.maxUncoreFreq)
 				conf.uncoreFreq += 100000000;
 			else
 			{
@@ -433,9 +469,9 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 	if (selectedParams.coreFreq)
 	{
 		director = rand()%100;
-		if (director < 50)
+		if (director < 10)
 		{
-			if (director < 25 && conf.coreFreq < limit.maxCoreFreq)
+			if (director < 5 && conf.coreFreq < limit.maxCoreFreq)
 				conf.coreFreq += 100000000;
 			else
 			{
@@ -449,9 +485,9 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 	if (selectedParams.threads)
 	{
 		director = rand()%100;
-		if (director < 50)
+		if (director < 10)
 		{
-			if (director < 25 && conf.threads < limit.coresPerSocket * limit.socketsPerNode)
+			if (director < 5 && conf.threads < limit.coresPerSocket * limit.socketsPerNode)
 				conf.threads += 1;
 			else
 			{
@@ -465,16 +501,91 @@ void EVO_mute(configuration& conf, const systemLimits limit)	//TODO stepsize
 	//TODO RAPL
 }
 
+void limitVelocity(configuration &c)
+{
+	if (c.uncoreFreq > 200000000)
+		c.uncoreFreq = 200000000;
+	else if(c.uncoreFreq < -200000000)
+		c.uncoreFreq = -200000000;
+	
+	if (c.coreFreq > 200000000)
+		c.coreFreq = 200000000;
+	else if (c.coreFreq < -200000000)
+		c.coreFreq = -200000000;
 
+	if (c.threads > 2)
+		c.threads = 2;
+	else if (c.threads < -2)
+		c.threads = -2;
+			
+	//TODO RAPL
+}
+
+configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm)
+{
+	//double Rp = (rand()%100) / 100.0;
+	//double Rg = (rand()%100) / 100.0;
+	//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
+	//x_k_new = x_k_old + v_k_new
+	configuration c;
+
+	if (selectedParams.uncoreFreq)
+	{
+		c.uncoreFreq = (((long)(omg * v_k_old.uncoreFreq
+			+ Cp*((rand()%100)/100.0) * (best_k.uncoreFreq - x_k_old.uncoreFreq)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.uncoreFreq - x_k_old.uncoreFreq)
+			)) / 100000000) * 100000000;
+	}
+	if (selectedParams.coreFreq)
+	{
+		c.coreFreq = ((long)(omg * v_k_old.coreFreq
+			+ Cp*((rand()%100)/100.0) * (best_k.coreFreq - x_k_old.coreFreq)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.coreFreq - x_k_old.coreFreq)
+			) / 100000000) * 100000000;
+	}
+	if (selectedParams.threads)
+	{
+		c.threads = (omg * v_k_old.threads
+			+ Cp*((rand()%100)/100.0) * (best_k.threads - x_k_old.threads)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.threads - x_k_old.threads)
+			);
+	}
+
+	//TODO RAPL
+	//if (selectedParams.powerCapPKG){}
+	//if (selectedParams.powerCapPKGtime) {}
+
+	limitVelocity(c);
+	return c;
+}
+
+bool PSO_configurationValidation(configuration c)
+{
+	if (c.uncoreFreq < limit.minUncoreFreq || c.uncoreFreq > limit.maxUncoreFreq
+	|| c.coreFreq < limit.minCoreFreq || c.coreFreq > limit.maxCoreFreq
+	|| c.threads < 1 || c.threads > (limit.coresPerSocket * limit.socketsPerNode)
+	|| c.powerCapPKG < limit.minPowerCapPKG || c.powerCapPKG > limit.maxPowerCapPKG
+	|| c.powerCapPKGtime < 0 || c.powerCapPKGtime > limit.maxPowerCapPKGtime)
+		return false;
+	else
+		return true;
+}
 
 //EVO - EXHAUSTIVE - PSO
-size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
+size_t generateConfigurationsToTest(ALGORITHM alg)
 {
+/// EVO + PSO //////////////////////////////////////////////////////////////////
+	const int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
+	const int END_CONDITION = 3; //-times the best configuration has not been improved
+////////////////////////////////////////////////////////////////////////////////
+
+	//TODO take also into acount that all the possible configurations had been tested, so it will cause a deadlock in generation of new configurations
+
 	//identify so-far the best configurations - exhaustive
 	//currently default behavior is not evaluated
 	if (newconfigurations != 0)
 	{
-		EVOimprovedSolutionCounter++;
+		improvedSolutionCounter++;
 /*
 - nactu posledni konfigurace z testConfigurationsDone, dle velikosti newconfigurations
 - pro kazdy region urcim jestli v dane konfiguraci je spotreba energie mensi nez doposud nejnizsi hodnota
@@ -515,13 +626,12 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 					if (element.find(label) != std::string::npos)
 					{
 						energyConsumption = std::stod(element.substr(label.size()+1));
-//std::cout << regName << " - " << cfgStr << " : " << val << std::endl;
 						//we have found better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
 							optimalConfiguration[regIndex].energy = energyConsumption;
 							optimalConfiguration[regIndex].regConfiguration = config;
-							EVOimprovedSolutionCounter = 0;
+							improvedSolutionCounter = 0;
 						}
 
 						break; //TODO just the first one
@@ -532,7 +642,7 @@ size_t generateConfigurationsToTest(const systemLimits limit, ALGORITHM alg)
 			return energyConsumption;
 		};
 
-std::cout << "searching for the best config so-far\n";
+std::cout << "evaluation of the finished runs\n";
 	
 		size_t i = testConfigurationsDone.size() - newconfigurations;
 
@@ -555,43 +665,120 @@ std::cout << "searching for the best config so-far\n";
 		}
 	}
 
-/// EVO ////////////////////////////////////////////////////////////////////////
-	if (alg == EVO)
+	//RANDOM INITIAL GENERATION
+	auto generateRandomGeneration = [&] ()
 	{
-		const int EVO_POPULATION_SIZE = 10;
-		const int EVO_END_CONDITION = 2; //-times the best configuration has not been improved
-
-		//INITIAL GENERATION
-		if (!testConfigurationsDone.size())
+		configuration v;// = {0, 0, 0, 0, 0};
+		if (selectedParams.uncoreFreq)
+			v.uncoreFreq = limit.maxUncoreFreq;
+		if (selectedParams.coreFreq)
+			v.coreFreq = limit.maxCoreFreq;
+		if (selectedParams.threads)
+			v.threads = limit.coresPerSocket * limit.socketsPerNode;
+		if (selectedParams.powerCapPKG)
+			v.powerCapPKG = limit.maxPowerCapPKG;
+		if (selectedParams.powerCapPKGtime)
+			v.powerCapPKGtime = limit.maxPowerCapPKGtime;
+		testConfigurationsToTry.push_back({{"", v, std::numeric_limits<double>::max(), 0.0 }});//MAX
+		
+		while (testConfigurationsToTry.size() < POPULATION_SIZE)
 		{
-			configuration v;// = {0, 0, 0, 0, 0};
-			if (selectedParams.uncoreFreq)
-				v.uncoreFreq = limit.maxUncoreFreq;
-			if (selectedParams.coreFreq)
-				v.coreFreq = limit.maxCoreFreq;
-			if (selectedParams.threads)
-				v.threads = limit.coresPerSocket * limit.socketsPerNode;
-			if (selectedParams.powerCapPKG)
-				v.powerCapPKG = limit.maxPowerCapPKG;
-			if (selectedParams.powerCapPKGtime)
-				v.powerCapPKGtime = limit.maxPowerCapPKGtime;
-			testConfigurationsToTry.push_back({{"", v, std::numeric_limits<double>::max(), 0.0 }});//MAX
-			
-			while (testConfigurationsToTry.size() < EVO_POPULATION_SIZE)
+			appConfiguration ac;
+			//for (std::string regName : appRegs)
+			std::string regName = "";
+			{
+				configuration c = getRandomConfig();
+				while (testIfConfigExists(regName, c))
+					c = getRandomConfig();
+				ac.push_back({regName, c, std::numeric_limits<double>::max(), 0.0});
+			}
+			testConfigurationsToTry.push_back(ac);
+		}
+	};
+
+/// PSO ////////////////////////////////////////////////////////////////////////	
+	if (alg == PSO)
+	{
+		if (!testConfigurationsDone.size())	//INITIAL GENERATION
+		{
+			generateRandomGeneration();
+			PSOhistory.resize(appRegions.size());
+			//for (int idx=0; idx<appRegions.size(); idx++)
+			for (std::string regName : appRegions)
+			{
+				size_t idx = getRegionIndex(regName);
+				PSOhistory[idx].resize(POPULATION_SIZE);
+				for (int i = 0; i<POPULATION_SIZE; i++)
+				{
+					PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
+					PSOhistory[idx][i].velocity = getRandomConfig() - getRandomConfig();
+					limitVelocity(PSOhistory[idx][i].velocity);
+				}
+			}
+		}
+		else if (improvedSolutionCounter < END_CONDITION)
+		{
+				//update particle history
+			for (size_t i = 0; i<testConfigurationsDone.size(); i++)
+			{
+				for (size_t j = 0; j < testConfigurationsDone[i].size(); j++)
+				{
+					if (testConfigurationsDone[i][j].regName != "")
+					{
+						size_t regIDX = getRegionIndex(testConfigurationsDone[i][j].regName);
+						if (PSOhistory[regIDX][i].energy > testConfigurationsDone[i][j].energy)
+						{
+							PSOhistory[regIDX][i].bestPosition = testConfigurationsDone[i][j].regConfiguration;
+							PSOhistory[regIDX][i].energy = testConfigurationsDone[i][j].energy;
+							PSOhistory[regIDX][i].runtime = testConfigurationsDone[i][j].runtime;
+						}			
+					}
+				}
+			}//the best position must be evaluated before we set new position
+
+					//set new position
+			for (size_t i = 0; i < POPULATION_SIZE; i++)
 			{
 				appConfiguration ac;
-				//for (std::string regName : appRegs)
-				std::string regName = "";
+				for (std::string regName : appRegions)
 				{
-					configuration c = getRandomConfig(limit);
-					while (testIfConfigExists(regName, c))
-						c = getRandomConfig(limit);
-					ac.push_back({regName, c, std::numeric_limits<double>::max(), 0.0});
+					size_t regIdx = getRegionIndex(regName);
+					configuration x_k_new;
+/*					configuration v_k_new;
+					configuration v_k_old = PSOhistory[regIdx][i].velocity;
+					configuration x_k_old = testConfigurationsDone[i][<regIndex>].regConfiguration;
+					configuration best_k = PSOhistory[regIdx][i].bestPosition;
+					configuration best_swarm = optimalConfiguration[regIndex].regConfiguration;
+					double Rp = (rand()%100) / 100.0;
+					double Rg = (rand()%100) / 100.0;
+					//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
+					//x_k_new = x_k_old + v_k_new
+*/
+					for (auto x_k_old : testConfigurationsDone[i])
+					{
+						if (x_k_old.regName == regName)
+						{
+							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
+							x_k_new = x_k_old.regConfiguration + PSOhistory[regIdx][i].velocity;
+
+							if (!PSO_configurationValidation(x_k_new))
+								x_k_new = getRandomConfig();
+							break;
+						}
+					}
+					ac.push_back({ regName, x_k_new, std::numeric_limits<double>::max(), 0.0 });
 				}
 				testConfigurationsToTry.push_back(ac);
 			}
+			testConfigurationsDone.clear(); //only PSO removes old configurations
 		}
-		else if (EVOimprovedSolutionCounter < EVO_END_CONDITION)
+	}
+/// EVO ////////////////////////////////////////////////////////////////////////
+	else if (alg == EVO)
+	{
+		if (!testConfigurationsDone.size())	//INITIAL GENERATION
+			generateRandomGeneration();
+		else if (improvedSolutionCounter < END_CONDITION) //EVERY OTHER GENERATION of SOLUTIONS
 		{
 			std::vector <std::list<regionConfiguration>> population;
 			population.resize(appRegions.size());
@@ -609,18 +796,16 @@ std::cout << "searching for the best config so-far\n";
 				}
 			}
 			
-			testConfigurationsToTry.resize(EVO_POPULATION_SIZE);
+			testConfigurationsToTry.resize(POPULATION_SIZE);
 			for (std::string regName : appRegions)
 			{
 				size_t regIndex = getRegionIndex(regName);
 				auto pop = population[regIndex];
-std::cout << "select members for crossover" << std::endl;
 				//select members for crossover - 50%
 				//worse solutions will be removed with higher propability
 				pop.sort();
-				for (int i = 0; i<EVO_POPULATION_SIZE/2; i++)
+				for (int i = 0; i<POPULATION_SIZE/2; i++)
 				{
-					//pop.erase(1+rand() % (pop.size()-1));
 					std::list<regionConfiguration>::iterator it = pop.begin();
 					size_t removeIndex = floor(sqrt(rand()%(int)pow(pop.size(),2.0)));
 					for (int j=0;j<removeIndex;j++)
@@ -632,7 +817,7 @@ std::cout << "select members for crossover" << std::endl;
 				pop.push_back(optimalConfiguration[regIndex]);
 
 				//generate new population				
-				for (int i = 0; i<EVO_POPULATION_SIZE; i++)
+				for (int i = 0; i<POPULATION_SIZE; i++)
 				{
 					//select 2 parents
 					size_t parent1 = rand() % pop.size();
@@ -651,7 +836,7 @@ std::cout << "select members for crossover" << std::endl;
 					//mutation - test if the configuration haven't been tested yet
 					while (testIfConfigExists(regName, newConf, true))
 					{
-						EVO_mute(newConf, limit);
+						EVO_mute(newConf);
 					}
 
 					//push them to testConfigurationsToTry
@@ -668,11 +853,10 @@ std::cout << "select members for crossover" << std::endl;
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
 		//threads
-//		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t--) //TODO stepSize
-		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t-= limit.coresPerSocket) //TODO stepSize
+		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t--) //TODO stepSize
+//		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t-= limit.coresPerSocket) //TODO stepSize
 		{
 			cfg.push_back(t);
-			std::cout << "T: "<<t<<std::endl;
 		}
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
@@ -680,9 +864,9 @@ std::cout << "select members for crossover" << std::endl;
 
 		//CF
 		for (long c = limit.maxCoreFreq; c >= limit.minCoreFreq; c-= 100000000) //TODO
+//		for (long c = limit.maxCoreFreq; c >= limit.minCoreFreq; c -= limit.maxCoreFreq-limit.minCoreFreq) //TODO
 		{
 			cfg.push_back(c);
-			std::cout << "C: "<<c<<std::endl;
 		}
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
@@ -690,9 +874,9 @@ std::cout << "select members for crossover" << std::endl;
 
 		//UCF
 		for (long u = limit.maxUncoreFreq; u >= limit.minUncoreFreq; u-=100000000) //TODO
+//		for (long u = limit.maxUncoreFreq; u >= limit.minUncoreFreq; u -= limit.maxUncoreFreq-limit.minUncoreFreq) //TODO
 		{
 			cfg.push_back(u);
-			std::cout << "U: "<<u<<std::endl;
 		}
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
@@ -701,25 +885,23 @@ std::cout << "select members for crossover" << std::endl;
 		//TODO RAPL
 */
 
-std::cout << std::endl << std::endl;
-		
 		std::vector <long> v;
 		EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
 	}
-
+////////////////////////////////////////////////////////////////////////////////
 	newconfigurations = 0;
 	return testConfigurationsToTry.size();	//this should be the only return statement in this function
 }
 
 
-void runApplication(appConfiguration testRun, const systemLimits limit)
+void runApplication(appConfiguration testRun)
 {
 
 	//testRun.size() == 0 ??
 	
 	if (testRun.size() == 1 && testRun[0].regName == "")
 	{
-		std::cout << "Running: C" <<  testRun[0].regConfiguration.coreFreq << " U" << testRun[0].regConfiguration.uncoreFreq << " T" << testRun[0].regConfiguration.threads << std::endl;
+		std::cerr << "Running: C" <<  testRun[0].regConfiguration.coreFreq << " U" << testRun[0].regConfiguration.uncoreFreq << " T" << testRun[0].regConfiguration.threads << std::endl;
 
 		setenv("MERIC_FREQUENCY", std::to_string(testRun[0].regConfiguration.coreFreq).c_str(), 1);
 		setenv("MERIC_UNCORE_FREQUENCY", std::to_string(testRun[0].regConfiguration.uncoreFreq).c_str(), 1);
@@ -761,7 +943,7 @@ void runApplication(appConfiguration testRun, const systemLimits limit)
 
 		setenv("MERIC_REGION_OPTIONS", MERIC_OUTPUT_FILENAME.c_str(), 1);
 
-		std::cout << "Running: dynamic configuration - " << MERIC_OUTPUT_FILENAME << std::endl;
+		std::cerr << "Running: dynamic configuration - " << MERIC_OUTPUT_FILENAME << std::endl;
 	}
 
 //	system ("printenv");
@@ -770,27 +952,23 @@ void runApplication(appConfiguration testRun, const systemLimits limit)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
-//   TODO   //
-// // // // //
-ALGORITHM alg = EVO;
-//ALGORITHM alg = EXHAUSTIVE;
-// // // // //
-
-	const systemLimits limit = constructStateSpace();
-	readParameters();
+	constructStateSpace();
+	ALGORITHM alg = readParameters(argc, argv);
+	if (alg == NONE)
+		return 1;
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
-	runApplication(defaultRun, limit);
+	runApplication(defaultRun);
 	constructCallPath();
 
-std::cout << "RUN ANALYSIS\n";
 //analyzis
-	while (generateConfigurationsToTest(limit, alg))
+	std::cerr << "RUN ANALYSIS\n";
+	while (generateConfigurationsToTest(alg))
 	{
 		while(testConfigurationsToTry.size())
 		{
-			runApplication(testConfigurationsToTry[0], limit);
+			runApplication(testConfigurationsToTry[0]);
 			testConfigurationsDone.push_back(testConfigurationsToTry[0]);
 			testConfigurationsToTry.erase(testConfigurationsToTry.begin());
 			newconfigurations++;
@@ -798,7 +976,7 @@ std::cout << "RUN ANALYSIS\n";
 	}
 //store optimal configuration
 	generateConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
-std::cout << MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json" << std::endl;
+	std::cerr << MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json" << std::endl;
 	return 0;
 }
 
