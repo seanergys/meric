@@ -17,7 +17,8 @@
 #include <sys/stat.h>
 
 //const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
-const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
+//const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
+const std::string APPLICATION="mpirun $BIND_TO_SOCKETS /scratch/work/user/vys0053/SOFTWARE/readex-apps/readex-repository/benchmark_apps/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
 std::string MERIC_OUTPUT_DIR;
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
@@ -124,7 +125,7 @@ std::vector <std::string> appRegions; //list of regions of the application
 //PSO
 	const double Cp = 2.05;
 	const double Cg = 2.05;
-	const double omg = 0.5;
+	const double omg = 0.9;
 	struct PSOparticleHistory{
 		struct configuration bestPosition;
 		double energy;
@@ -262,10 +263,10 @@ void constructCallPath()
 void constructStateSpace()
 {
 	//TODO code based 
-//systemLimits limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
+// limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
 
-//	systemLimits limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
-	limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
+limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
+//	limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
 
 	selectedParams.threads=1;
 	selectedParams.coreFreq = 1;
