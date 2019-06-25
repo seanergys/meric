@@ -276,12 +276,6 @@ limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0
 	selectedParams.uncoreFreq = 1;
 	selectedParams.powerCapPKG = 0;
 	selectedParams.powerCapPKGtime = 0;
-	
-	//threads
-	//CF
-	//UnCF
-	//RAPLpower
-	//RAPLwindow
 
 	newconfigurations = 0;
 }
@@ -512,7 +506,7 @@ void EVO_mute(configuration& conf)	//TODO stepsize
 	//TODO RAPL
 }
 
-void limitVelocity(configuration &c)
+void limitVelocity(configuration &c)	//PSO
 {
 	if (c.uncoreFreq > 200000000)
 		c.uncoreFreq = 200000000;
@@ -676,6 +670,11 @@ std::cerr << "evaluation of the finished runs\n";
 			}
 			i++;
 		}
+		//store current optimal configuration - for the case of job kill
+		if (improvedSolutionCounter == 0)
+		{
+			generateConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
+		}
 	}
 
 	//RANDOM INITIAL GENERATION
@@ -692,13 +691,13 @@ std::cerr << "evaluation of the finished runs\n";
 			v.powerCapPKG = limit.maxPowerCapPKG;
 		if (selectedParams.powerCapPKGtime)
 			v.powerCapPKGtime = limit.maxPowerCapPKGtime;
-		testConfigurationsToTry.push_back({{"", v, std::numeric_limits<double>::max(), 0.0 }});//MAX
+		testConfigurationsToTry.push_back({{"", v, std::numeric_limits<double>::max(), 0.0 }});
 		
 		while (testConfigurationsToTry.size() < POPULATION_SIZE)
 		{
 			appConfiguration ac;
 			//for (std::string regName : appRegs)
-			std::string regName = "";
+			std::string regName = "";	//static configuration
 			{
 				configuration c = getRandomConfig();
 				while (testIfConfigExists(regName, c))
@@ -716,7 +715,6 @@ std::cerr << "evaluation of the finished runs\n";
 		{
 			generateRandomGeneration();
 			PSOhistory.resize(appRegions.size());
-			//for (int idx=0; idx<appRegions.size(); idx++)
 			for (std::string regName : appRegions)
 			{
 				size_t idx = getRegionIndex(regName);
@@ -731,7 +729,7 @@ std::cerr << "evaluation of the finished runs\n";
 		}
 		else if (improvedSolutionCounter < END_CONDITION)
 		{
-				//update particle history
+			//update particle history
 			for (size_t i = 0; i<testConfigurationsDone.size(); i++)
 			{
 				for (size_t j = 0; j < testConfigurationsDone[i].size(); j++)
@@ -747,9 +745,9 @@ std::cerr << "evaluation of the finished runs\n";
 						}			
 					}
 				}
-			}//the best position must be evaluated before we set new position
+			}
 
-					//set new position
+			//set new position
 			for (size_t i = 0; i < POPULATION_SIZE; i++)
 			{
 				appConfiguration ac;
@@ -914,6 +912,7 @@ void runApplication(appConfiguration testRun)
 
 	//testRun.size() == 0 ??
 	
+	std::string MERIC_OUTPUT_FILENAME = "";
 	if (testRun.size() == 1 && testRun[0].regName == "")
 	{
 		std::cerr << "Running: C" <<  testRun[0].regConfiguration.coreFreq << " U" << testRun[0].regConfiguration.uncoreFreq << " T" << testRun[0].regConfiguration.threads << std::endl;
@@ -927,7 +926,7 @@ void runApplication(appConfiguration testRun)
 	}
 	else
 	{
-		const std::string MERIC_OUTPUT_FILENAME = MERIC_OUTPUT_DIR+"/MERICwrapperTestconfiguration.json";
+		MERIC_OUTPUT_FILENAME = MERIC_OUTPUT_DIR+"/MERICwrapperTestconfiguration.json";
 		generateConfigFile(testRun, MERIC_OUTPUT_FILENAME);
 
 //could be set if the behavior will change in MERIC, that will alow the tuning when the static parameters not set and just config file provided
@@ -961,9 +960,9 @@ void runApplication(appConfiguration testRun)
 		std::cerr << "Running: dynamic configuration - " << MERIC_OUTPUT_FILENAME << std::endl;
 	}
 
-//	system ("printenv");
 	system (APPLICATION.c_str());
-	//TODO remove the test configuration file
+	if (MERIC_OUTPUT_FILENAME != "")
+		remove(MERIC_OUTPUT_FILENAME.c_str());
 }
 
 
@@ -977,7 +976,6 @@ int main(int argc, char **argv)
 	runApplication(defaultRun);
 	constructCallPath();
 
-//analyzis
 	std::cerr << "RUN ANALYSIS\n";
 	while (generateConfigurationsToTest(alg))
 	{
@@ -989,8 +987,7 @@ int main(int argc, char **argv)
 			newconfigurations++;
 		}
 	}
-//store optimal configuration
-	generateConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
+
 	std::cerr << MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json" << std::endl;
 	return 0;
 }
