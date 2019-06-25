@@ -16,10 +16,13 @@
 #include <math.h>
 #include <sys/stat.h>
 
+//const std::string APPLICATION = "mpirun -n 2 /home/vys0053/readex/meric/test/test_mpi";
+const bool MPI_APP = true;
 //const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
 //const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
 const std::string APPLICATION="mpirun $BIND_TO_SOCKETS /scratch/work/user/vys0053/SOFTWARE/readex-apps/readex-repository/benchmark_apps/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
 std::string MERIC_OUTPUT_DIR;
+
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
 enum ALGORITHM {EXHAUSTIVE=0, EVO=1, PSO=2, NONE};
@@ -356,6 +359,13 @@ std::string constructConfigFileName(std::string regName, configuration config)
 	if (cfgStr.back() == '_')
 		cfgStr.pop_back();
 
+	if (MPI_APP)
+	{
+		char hostname[HOST_NAME_MAX];
+		gethostname(hostname, HOST_NAME_MAX);
+		cfgStr = std::string(hostname) +"_"+ cfgStr;
+	}
+	
 	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
 }
 
@@ -624,15 +634,17 @@ size_t generateConfigurationsToTest(ALGORITHM alg)
 				while (!inputfile.eof())
 				{
 					getline(inputfile,element);
-					if (element.find(label) != std::string::npos)
+					size_t position = element.find(label);
+					if (position != std::string::npos)
 					{
-						energyConsumption = std::stod(element.substr(label.size()+1));
+						energyConsumption = std::stod(element.substr(label.size()+1+position));
 						//we have found better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
 							optimalConfiguration[regIndex].energy = energyConsumption;
 							optimalConfiguration[regIndex].regConfiguration = config;
 							improvedSolutionCounter = 0;
+std::cerr << regName << " - improved solution\n";
 						}
 
 						break; //TODO just the first one
@@ -643,7 +655,7 @@ size_t generateConfigurationsToTest(ALGORITHM alg)
 			return energyConsumption;
 		};
 
-std::cout << "evaluation of the finished runs\n";
+std::cerr << "evaluation of the finished runs\n";
 	
 		size_t i = testConfigurationsDone.size() - newconfigurations;
 
@@ -890,6 +902,8 @@ std::cout << "evaluation of the finished runs\n";
 		EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
 	}
 ////////////////////////////////////////////////////////////////////////////////
+std::cerr << "improvedSolutionCounter = " << improvedSolutionCounter << std::endl;
+
 	newconfigurations = 0;
 	return testConfigurationsToTry.size();	//this should be the only return statement in this function
 }
