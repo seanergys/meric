@@ -117,9 +117,9 @@ int Meric::getDefaultParameters()
 		return ret;
 
 //OPTIONAL SECTION
-	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << " Hz\n";
+	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << " Hz\n";
-	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << "\n";
+	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << " Hz\n";
 	MERIC_INFO << "Default powercap: " << defaultParameter.powerCapPKG << " W\t" << defaultParameter.powerCapPKGtime << " us\n";
 
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
