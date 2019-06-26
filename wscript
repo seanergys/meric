@@ -1,5 +1,6 @@
 
 from waflib import Logs
+import os
 
 def configure(ctx):
     ctx.load(ctx.options.cpp)
@@ -54,6 +55,9 @@ def configure(ctx):
         if dep[:5] == "HAVE_":
             configFile.write(dep[5:-4]+"\n")
     configFile.close()
+    
+    if os.path.exists(ctx.path.abspath()+"/build/systemDefault.json"):
+        os.remove(ctx.path.abspath()+"/build/systemDefault.json")
 
     ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
     if ctx.options.debug:
@@ -90,7 +94,8 @@ def build(ctx):
         source= 
             ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
-            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp'),
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
         use="msr x86_adapt numa",
         env=ctx.all_envs['start'].derive(),
@@ -100,7 +105,8 @@ def build(ctx):
         source= 
             ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
-            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp'),
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
         use="msr x86_adapt numa",
         env=ctx.all_envs['stop'].derive(),

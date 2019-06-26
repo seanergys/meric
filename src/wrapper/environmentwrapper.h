@@ -2,6 +2,7 @@
 #define SRC_WRAPPER_ENVIRONMENTWRAPPER_H_
 
 #include "../basis/utils.h"
+#include "../basis/json.h"
 
 #ifdef HAVE_CPUFREQ_H
 	#include <cpufreq.h>
@@ -144,6 +145,7 @@ public:
 private:
 	static void initHWSizes();
 	static void getSystemDefaultSettings();
+	static void storeSystemDefaultSettings();
 
 	static systemLimits defaultSettings [5];
 	static bool usedDVFS;

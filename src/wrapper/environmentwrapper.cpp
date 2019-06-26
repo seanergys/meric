@@ -290,121 +290,228 @@ void Environment::initHWSizes()
  **/
 void Environment::getSystemDefaultSettings()
 {
-	//CORE freq
-	std::ifstream frequencyBounderyFile;
-	std::string freqBound; //files have the value in KHz
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-	frequencyBounderyFile >> freqBound;
-	frequencyBounderyFile.close();
-	defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
-	defaultSettings[systemType].defaultCoreFreq = defaultSettings[systemType].maxCoreFreq;
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-	frequencyBounderyFile >> freqBound;
-	frequencyBounderyFile.close();
-	defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
 
-	//UnCORE freq
+//TODO POWERcap limits - MSR-SAFE only /////////////////////////////////////////
+//TODO store the values to the json ////////////////////////////////////////////
 #ifdef HAVE_MSR_CORE_H
-	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
-	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
-
-	defaultSettings[systemType].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-	defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
-	defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-#elif defined HAVE_X86_ADAPT_H
-	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
-	uint64_t setting;
-	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	defaultSettings[systemType].maxUncoreFreq = setting * 100000000;
-	defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
-	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
-	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	defaultSettings[systemType].minUncoreFreq = setting * 100000000;
-#endif
-
-#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
-	if (defaultSettings[systemType].defaultUncoreFreq != -1)
-		activatedUFS = true;
-	struct stat info;
-	std::string uncoreFrequencyDefaultFile = std::string(MERIC_PATH)+"/build/ucfRestore.csv";
-	if(stat(uncoreFrequencyDefaultFile.c_str(), &info ) != 0)
-	{
-		if (defaultSettings[systemType].minUncoreFreq != defaultSettings[systemType].maxUncoreFreq)
-		{
-			std::ofstream ucfRestoreFile;
-			ucfRestoreFile.open (uncoreFrequencyDefaultFile);
-			ucfRestoreFile << defaultSettings[systemType].minUncoreFreq << " " << defaultSettings[systemType].maxUncoreFreq << std::endl;
-			ucfRestoreFile.close();
-		}
-		else
-		{
-			std::cerr << "MERIC error: system does not have correctly set uncore frequency range\n";
-		}
-	}
-	else if (defaultSettings[systemType].minUncoreFreq == defaultSettings[systemType].maxUncoreFreq)
-	{
-		std::string ucfString;
-		std::ifstream ucfRestoreFile;
-		ucfRestoreFile.open (uncoreFrequencyDefaultFile);
-		ucfRestoreFile >> ucfString;
-		defaultSettings[systemType].minUncoreFreq = std::stol(ucfString);
-		ucfRestoreFile >> ucfString;
-		defaultSettings[systemType].maxUncoreFreq = std::stol(ucfString);
-		ucfRestoreFile.close();
-		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
-	}
-#endif
-	MERIC_INFO << "CORE FREQ limits   [Hz]: " << defaultSettings[systemType].maxCoreFreq << "\t" << defaultSettings[systemType].minCoreFreq << std::endl;
-	MERIC_INFO << "UNCORE FREQ limits [Hz]: " << defaultSettings[systemType].maxUncoreFreq << "\t" << defaultSettings[systemType].minUncoreFreq<< std::endl;
-
-
-#ifdef HAVE_MSR_CORE_H
-// power capping limits - MSR-SAFE only, due to that we do not control them now TODO
-// PKG
+	// PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 	defaultSettings[systemType].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
 	defaultSettings[systemType].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
 	defaultSettings[systemType].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
 
-// DRAM
+	// DRAM
 	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 	defaultSettings[systemType].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
 	defaultSettings[systemType].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
 	defaultSettings[systemType].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
 #endif
+////////////////////////////////////////////////////////////////////////////////
 
-	//Default power-cap PKG a RAM
-	uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
-	uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
+	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+	struct stat info;
+	//read a file that holds the system's default settings
+	//we have created this file during a previous MERIC run
+	struct json_value_s* root = NULL;
+	if(stat(defaultSettingFile.c_str(), &info) == 0)
+	{
+		std::ifstream jsonFile (defaultSettingFile);
+		std::string line, jsonString = "";
+		if (jsonFile.is_open())
+		{
+			while (getline(jsonFile,line))
+			{
+				jsonString += " " + line;
+			}
+			jsonFile.close();
+		}
+		const char * json = jsonString.c_str();
+		struct json_value_s* root = json_parse(json, strlen(json));
+		if (root ==  NULL)
+		{
+			std::cerr << "MERIC ERROR: invalid " << defaultSettingFile << std::endl;
+			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
+		}
+		else
+		{
+			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+
+			while(data != NULL)
+			{
+				MERIC_INFO << "<>"<< data->name->string <<"\n";
+				if (std::string(data->name->string) == "DVFS")
+				{
+					struct json_object_element_s* dvfs = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						MERIC_INFO << "\t* " << std::string(dvfs->name->string) << std::endl;
+						if (std::string(dvfs->name->string) == "GOVERNOR")
+						{
+							defaultGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
+						}
+						else if (std::string(dvfs->name->string) == "MAX")
+						{
+							defaultSettings[systemType].maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "MIN")
+						{
+							defaultSettings[systemType].minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "DEFAULT")
+						{
+							defaultSettings[systemType].defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
+						{
+							defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+						}
+						dvfs = dvfs->next;
+					}while(dvfs != NULL);
+				}
+				else if (std::string(data->name->string) == "UFS")
+				{
+					struct json_object_element_s* ufs = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(ufs->name->string) == "MAX")
+						{
+							defaultSettings[systemType].maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+						}
+						else if (std::string(ufs->name->string) == "MIN")
+						{
+							defaultSettings[systemType].minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+						}
+						ufs = ufs->next;
+					}while(ufs != NULL);
+					defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
+				}
+				else if (std::string(data->name->string) == "PWRCAP")
+				{
+					struct json_object_element_s* pwr = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(pwr->name->string) == "PKG")
+						{
+							defaultSettings[systemType].defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+						}
+						else if (std::string(pwr->name->string) == "DRAM")
+						{
+							defaultSettings[systemType].defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+						}
+						pwr = pwr->next;
+					}while(pwr != NULL);
+				}
+				data = data->next;
+			}
+		}
+	}
+	
+	if (root != NULL)
+		free(root);
+	else	//the json file does not exists or is corrupted - we have to read the default settings from the system
+	{
+// CORE freq -----------------------------------------------------------------//
+		std::ifstream governorFile;
+		governorFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+		governorFile >> defaultGovernor;
+		governorFile.close();
 
 #ifdef HAVE_MSR_CORE_H
-	read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
-	read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
-#elif defined HAVE_X86_ADAPT_H
-	int adaptRegisterHandler;
-	uint64_t MSR_PKG_1_POWER_LIMIT_bits, MSR_PKG_2_POWER_LIMIT_bits;
-	
-	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_1_POWER_LIMIT_bits);
-	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
-	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_2_POWER_LIMIT_bits);
-	MSR_PKG_POWER_LIMIT_bits = MSR_PKG_1_POWER_LIMIT_bits | MSR_PKG_2_POWER_LIMIT_bits;
-	
-	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
-	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
-
-	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 #endif
-	defaultSettings[systemType].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
-	defaultSettings[systemType].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
-	if (MSR_PKG_POWER_LIMIT_bits != 0x0)
-		activatedPWRCAP = true;
 
-	MERIC_INFO << "Default PKG powercap bits: " << MSR_PKG_POWER_LIMIT_bits << std::endl
-	           << "Default RAM powercap bits: " << MSR_DRAM_POWER_LIMIT_bits << std::endl;
+		std::ifstream frequencyBounderyFile;
+		std::string freqBound; //files have the value in KHz
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
+		defaultSettings[systemType].defaultCoreFreq = defaultSettings[systemType].maxCoreFreq;
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
+
+// UnCORE freq ---------------------------------------------------------------//
+#ifdef HAVE_MSR_CORE_H
+		uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
+		read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+
+		defaultSettings[systemType].minUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
+		defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+#elif defined HAVE_X86_ADAPT_H
+		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+		int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
+		uint64_t setting;
+		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+		defaultSettings[systemType].maxUncoreFreq = setting * 100000000;
+		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
+		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
+		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+		defaultSettings[systemType].minUncoreFreq = setting * 100000000;
+#endif
+
+// POWERcap ------------------------------------------------------------------//
+		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
+		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
+#ifdef HAVE_MSR_CORE_H
+		read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+		read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
+#elif defined HAVE_X86_ADAPT_H
+		int adaptRegisterHandler;
+		uint64_t MSR_PKG_1_POWER_LIMIT_bits, MSR_PKG_2_POWER_LIMIT_bits;
+		
+		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
+		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_1_POWER_LIMIT_bits);
+		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_2_POWER_LIMIT_bits);
+		MSR_PKG_POWER_LIMIT_bits = MSR_PKG_1_POWER_LIMIT_bits | MSR_PKG_2_POWER_LIMIT_bits;
+		
+		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
+		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
+
+		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#endif
+		defaultSettings[systemType].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
+		defaultSettings[systemType].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+	}
+
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+	if (defaultSettings[systemType].defaultUncoreFreq != -1)
+		activatedUFS = true;
+#endif
+	if (defaultSettings[systemType].defaultPowerCapPKG != 0x0)
+		activatedPWRCAP = true;
+}
+
+void Environment::storeSystemDefaultSettings()
+{
+	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+	struct stat info;
+	if(stat(defaultSettingFile.c_str(), &info ) != 0 && (activatedDVFS || activatedUFS || activatedPWRCAP))
+	{
+		std::ofstream defaultRestoreFile;
+		defaultRestoreFile.open (defaultSettingFile);
+	
+		std::string content  = "{\n";
+		content += "\t\"DVFS\" : {\n\t\t\"GOVERNOR\" : \"" + defaultGovernor + "\",\n"
+			     + "\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxCoreFreq) + ",\n"
+			     + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minCoreFreq) + ",\n"
+			     + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultCoreFreq) + ",\n"
+			     + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
+
+		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxUncoreFreq) + ",\n"
+			     + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + "\n\t},\n";
+
+		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings[systemType].defaultPowerCapPKG) + ",\n"
+			    + "\t\t\"DRAM\" : " +std::to_string(defaultSettings[systemType].defaultPowerCapRAM) +"\n\t}";
+		content += "\n}\n";
+		defaultRestoreFile << content;
+		defaultRestoreFile.close();
+	}
 }
 
 void Environment::init(int system, RegionParameters defaultParameter, int rank)
@@ -443,9 +550,6 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 		std::ifstream governorFileI;
 		if (defaultParameter.frequency != 0)
 		{
-			governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
-			governorFileI >> defaultGovernor;
-			governorFileI.close();
 			//using userspace governor
 			if (defaultGovernor == "userspace")
 			{
@@ -495,7 +599,6 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 						defSet.close();
 						
 						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
-						read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
 						{
 							defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
@@ -526,6 +629,8 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 				MERIC_INFO << "MERIC: unCORE FREQUENCY scaling activated\n";
 			}
 		}
+		
+		storeSystemDefaultSettings();
 
 		//set the settings that user want to apply for the application
 		frequency(defaultParameter.frequency);
