@@ -139,7 +139,7 @@ public:
 	static void threadNumber(int nthreads);
 	static void powercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
 	static void init(int system, RegionParameters defaultParameter, int rank);
-	static void restoreSystemSettings();
+	static void restoreSystemSettings(bool hardReset = false);
 	static void close();
 
 private:

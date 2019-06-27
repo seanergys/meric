@@ -311,6 +311,7 @@ void Environment::getSystemDefaultSettings()
 
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
 	struct stat info;
+	bool readFromSystem = false;
 	//read a file that holds the system's default settings
 	//we have created this file during a previous MERIC run
 	struct json_value_s* root = NULL;
@@ -332,6 +333,7 @@ void Environment::getSystemDefaultSettings()
 		{
 			std::cerr << "MERIC ERROR: invalid " << defaultSettingFile << std::endl;
 			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
+			readFromSystem = true;
 		}
 		else
 		{
@@ -339,13 +341,11 @@ void Environment::getSystemDefaultSettings()
 
 			while(data != NULL)
 			{
-				MERIC_INFO << "<>"<< data->name->string <<"\n";
 				if (std::string(data->name->string) == "DVFS")
 				{
 					struct json_object_element_s* dvfs = ((struct json_object_s*)data->value->payload)->start;
 					do
 					{
-						MERIC_INFO << "\t* " << std::string(dvfs->name->string) << std::endl;
 						if (std::string(dvfs->name->string) == "GOVERNOR")
 						{
 							defaultGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
@@ -404,12 +404,13 @@ void Environment::getSystemDefaultSettings()
 				}
 				data = data->next;
 			}
+			free(root);
 		}
 	}
+	else
+		readFromSystem = true;
 	
-	if (root != NULL)
-		free(root);
-	else	//the json file does not exists or is corrupted - we have to read the default settings from the system
+	if (readFromSystem) //the json file does not exists or is corrupted - we have to read the default settings from the system
 	{
 // CORE freq -----------------------------------------------------------------//
 		std::ifstream governorFile;
@@ -438,7 +439,7 @@ void Environment::getSystemDefaultSettings()
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 		read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
-		defaultSettings[systemType].minUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+		defaultSettings[systemType].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 		defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
 #elif defined HAVE_X86_ADAPT_H
@@ -485,6 +486,22 @@ void Environment::getSystemDefaultSettings()
 #endif
 	if (defaultSettings[systemType].defaultPowerCapPKG != 0x0)
 		activatedPWRCAP = true;
+
+	MERIC_INFO
+		<< "CF"  << std::endl
+		<< "\tGOV " << defaultGovernor << std::endl
+		<< "\tMAX " << defaultSettings[systemType].maxCoreFreq << std::endl
+		<< "\tMIN " << defaultSettings[systemType].minCoreFreq << std::endl
+		<< "\tDEF " << defaultSettings[systemType].defaultCoreFreq << std::endl
+		<< "\tBIA " << defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default << std::endl
+		<< "UnCF" << std::endl
+		<< "\tMAX " << defaultSettings[systemType].maxUncoreFreq << std::endl
+		<< "\tMIN " << defaultSettings[systemType].minUncoreFreq << std::endl
+		<< "\tDEF " << defaultSettings[systemType].defaultUncoreFreq << std::endl
+		<< "PWRcap" << std::endl
+		<< "\tPKG " << defaultSettings[systemType].defaultPowerCapPKG << std::endl
+		<< "\tRAM " << defaultSettings[systemType].defaultPowerCapRAM << std::endl;
+
 }
 
 void Environment::storeSystemDefaultSettings()
@@ -920,11 +937,11 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 /**
  * sets default governor, CPU core frequency, CPU uncore frequency limits and powercap limits
  **/
-void Environment::restoreSystemSettings()
+void Environment::restoreSystemSettings(bool hardReset)
 {
-	if (activatedDVFS)
+	if (activatedDVFS || hardReset)
 	{
-		if (usedDVFS)
+		if (usedDVFS || hardReset)
 			frequency(defaultSettings[systemType].defaultCoreFreq);
 		if (defaultGovernor != "userspace" && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 		{

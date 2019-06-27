@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 	std::map<std::string, unsigned long long int> recordOld;
 	double timeOld = readStoredValues(recordOld);
 	printValues(recordOld, recordNow, mutils::timeToDouble(timeNow)-timeOld, verbose);
-	Environment::restoreSystemSettings();
+	Environment::restoreSystemSettings(true);
 #endif
 	Environment::close();
 
