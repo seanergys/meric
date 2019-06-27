@@ -7,6 +7,8 @@
 #include <map>
 #include <fstream>
 #include <string.h>
+#include <sys/stat.h>
+#include "../src/wrapper/environmentwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_core.h>
@@ -188,44 +190,28 @@ const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
 const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
 const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
 
-const uint64_t MSR_DRAM_POWER_LIMIT_mask = 0x7FFF;
-const uint64_t MSR_DRAM_POWER_LIMIT_enable_mask  = 0x8000;
-const uint64_t MSR_DRAM_POWER_LIMIT_enable_shift = 15;
-const uint64_t MSR_DRAM_POWER_LIMIT_clamping_mask = 0x10000;
-const uint64_t MSR_DRAM_POWER_LIMIT_clamping_shift = 16;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_f_mask  = 0xC00000;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_y_mask  = 0x3E0000;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_f_shift = 22;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_y_shift = 17;
-
-const uint64_t MSR_PKG_POWER_LIMIT_mask = 0x7FFF;
-const uint64_t MSR_PKG_POWER_LIMIT_shift = 0;
-const uint64_t MSR_PKG_POWER_LIMIT_enable_mask = 0x8000;
-const uint64_t MSR_PKG_POWER_LIMIT_enable_shift = 15;
-const uint64_t MSR_PKG_POWER_LIMIT_clamping_mask = 0x10000;
-const uint64_t MSR_PKG_POWER_LIMIT_clamping_shift = 16;
-const uint64_t MSR_PKG_POWER_LIMIT_time_y_mask = 0x3E0000;
-const uint64_t MSR_PKG_POWER_LIMIT_time_y_shift = 17;
-const uint64_t MSR_PKG_POWER_LIMIT_time_z_mask = 0xC00000;
-const uint64_t MSR_PKG_POWER_LIMIT_time_z_shift = 22;
-
-const uint64_t MSR_PKG_POWER_LIMIT_power1_shift = 0;
-const uint64_t MSR_PKG_POWER_LIMIT_power2_shift = 32; //use "half register-length" shift instead of specifying all the mask and shifts for the second half of the register
-
-const uint64_t MSR_PKG_POWER_LIMIT_lock_mask  = 0x8000000000000000;
-const uint64_t MSR_DRAM_POWER_LIMIT_lock_mask = 0x80000000;
-
-const uint64_t MSR_PKG_DRAM_POWER_INFO_min_power_mask = 0x7FFF0000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_min_power_shift = 16;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_power_mask = 0x7FF700000000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_power_shift = 32;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_mask = 0x3F000000000000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
-
-const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
-const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
-const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 ////////////////////////////////////////////////////////////////////////////////
+struct systemLimits{
+	long maxCoreFreq;            //Hz
+	long defaultCoreFreq;        //Hz
+	long minCoreFreq;            //Hz
+	long maxUncoreFreq;          //Hz
+	long defaultUncoreFreq;      //Hz
+	long minUncoreFreq;          //Hz
+
+	long maxPowerCapPKG;         //W
+	long minPowerCapPKG;         //W
+	long maxPowerCapPKGtime;     //us
+	uint64_t defaultPowerCapPKG; //raw register value
+
+	long maxPowerCapRAM;         //W
+	long minPowerCapRAM;         //W
+	long maxPowerCapRAMtime;     //us
+	uint64_t defaultPowerCapRAM; //raw register value
+
+	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
+	std::string governor;
+};
 std::map<std::string, double> unit;
 
 enum MODE
@@ -354,8 +340,9 @@ void sysInfoSize()
 		          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
 }
 
-void sysInfoFrequencies()
+bool sysInfoFrequencies(systemLimits& limits)
 {
+	bool ok = true;
 	std::cout << "\n# CPU FREQUENCIES\n";
 	std::ifstream frequencyBounderyFile;
 	std::string freqBound;
@@ -364,6 +351,8 @@ void sysInfoFrequencies()
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
 	std::cout << "\tCurrent governor:           " << freqBound << std::endl;
+	if (freqBound != limits.governor)
+		ok = false;
 	
 	freqBound = "";
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
@@ -405,15 +394,23 @@ void sysInfoFrequencies()
 			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n";
 	}
 	
+	long freq = 0;
 	//files have the CPU core frequency in KHz
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	std::cout << "\tMax CPU Core Frequency:     " << std::stol(freqBound) * 1000 << " Hz\n";
+	freq = std::stol(freqBound) * 1000;
+	std::cout << "\tMax CPU Core Frequency:     " << freq << " Hz\n";
+	if (freq != limits.maxCoreFreq)
+		ok = false;
+
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
-	std::cout << "\tMin CPU Core Frequency:     " << std::stol(freqBound) * 1000 << " Hz\n";
+	freq = std::stol(freqBound) * 1000;
+	std::cout << "\tMin CPU Core Frequency:     " << freq << " Hz\n";
+	if (freq != limits.minCoreFreq)
+		ok = false;
 
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
@@ -428,35 +425,58 @@ void sysInfoFrequencies()
 		std::cout << "\tNominal CPU Core Frequency: " << nominalFreq << " Hz\n";
 
 #ifdef HAVE_MSR_CORE_H
+	if (ok)
+	{
+		uint64_t IA32_ENERGY_PERF_BIAS_bits;
+		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
+		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
+			ok = false;
+	}
+#endif
+
+#ifdef HAVE_MSR_CORE_H
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
-	std::cout << "\tMax CPU Uncore Frequency:   " << (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000 << " Hz\n";
-	std::cout << "\tMin CPU Uncore Frequency:   " << ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000 << " Hz\n";
+	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.maxUncoreFreq)
+		ok = false;
+	freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.minUncoreFreq)
+		ok = false;
 #elif defined HAVE_X86_ADAPT_H
 	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 	uint64_t setting;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	std::cout << "\tMax CPU Uncore Frequency:   " << setting * 100000000 << " Hz\n";
+	freq = setting * 100000000;
+	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.maxUncoreFreq)
+		ok = false;
 		
 	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-	std::cout << "\tMin CPU Uncore Frequency:   " << setting * 100000000 << " Hz\n";
-#else
+	freq = setting * 100000000;
+	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.minUncoreFreq)
+		ok = false;
+#elif defined #ifdef __x86_64 //intel CPUs only
 	std::cout << "\n# CPU Uncore frequency NOT available - install msr-safe or x86_adapt\n\n";
 #endif
+	return ok;
 }
 
-void sysInfoPowercap()
+bool sysInfoPowercap(systemLimits& limits)
 {
 // /sys/class/powercap/intel-rapl/intel-rapl\:0
-
+	bool ok = true;
 	if (unit.size() == 0)
 	{
 		std::cout << "\n# RAPL power capping NOT available\n\n";
-		return;
+		return ok;
 	}
 
 #ifdef HAVE_MSR_CORE_H
@@ -570,6 +590,7 @@ void sysInfoPowercap()
 	std::cout << "\tDRAM time window:   "
 		      << unit["MSR_DRAM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
 		      << " s\n";
+	return ok;
 }
 
 void getRAPLunits()
@@ -623,9 +644,118 @@ void sysEnergyMeasurement()
 		std::cout << "\tNONE\n";
 }
 
-//****************************************************************************//
-int main()
+void readRestoreFile(systemLimits& limits)
 {
+	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+	struct stat info;
+	//read a file that holds the system's default settings
+	//we have created this file during a previous MERIC run
+	struct json_value_s* root = NULL;
+	if(stat(defaultSettingFile.c_str(), &info) == 0)
+	{
+		std::ifstream jsonFile (defaultSettingFile);
+		std::string line, jsonString = "";
+		if (jsonFile.is_open())
+		{
+			while (getline(jsonFile,line))
+			{
+				jsonString += " " + line;
+			}
+			jsonFile.close();
+		}
+		const char * json = jsonString.c_str();
+		struct json_value_s* root = json_parse(json, strlen(json));
+		if (root ==  NULL)
+		{
+			std::cerr << "ERROR: invalid " << defaultSettingFile << std::endl;
+			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
+			return;
+		}
+		else
+		{
+			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+
+			while(data != NULL)
+			{
+				if (std::string(data->name->string) == "DVFS")
+				{
+					struct json_object_element_s* dvfs = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(dvfs->name->string) == "GOVERNOR")
+						{
+							limits.governor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
+						}
+						else if (std::string(dvfs->name->string) == "MAX")
+						{
+							limits.maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "MIN")
+						{
+							limits.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "DEFAULT")
+						{
+							limits.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+						}
+						else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
+						{
+							limits.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+						}
+						dvfs = dvfs->next;
+					}while(dvfs != NULL);
+				}
+				else if (std::string(data->name->string) == "UFS")
+				{
+					struct json_object_element_s* ufs = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(ufs->name->string) == "MAX")
+						{
+							limits.maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+						}
+						else if (std::string(ufs->name->string) == "MIN")
+						{
+							limits.minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+						}
+						ufs = ufs->next;
+					}while(ufs != NULL);
+				}
+				else if (std::string(data->name->string) == "PWRCAP")
+				{
+					struct json_object_element_s* pwr = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(pwr->name->string) == "PKG")
+						{
+							limits.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+						}
+						else if (std::string(pwr->name->string) == "DRAM")
+						{
+							limits.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+						}
+						pwr = pwr->next;
+					}while(pwr != NULL);
+				}
+				data = data->next;
+			}
+			free(root);
+		}
+	}
+}
+
+
+//****************************************************************************//
+int main(int argc, char **argv)
+{
+	bool restore = false;
+	for (int i = 1; i < argc; ++i)
+	{
+		std::string arg = argv[i];
+		if (arg == "-r")
+			restore = true;
+	}
+
 	MODE status = USING_NONE;
 	#ifdef HAVE_MSR_CORE_H
 	status = USING_MSR;
@@ -650,11 +780,27 @@ int main()
 			#endif
 		}
 	}
+	bool systemInTheDefaultSettings = true;
+	systemLimits limits;
+	readRestoreFile(limits);
 	getRAPLunits();
 	sysInfoSize();
-	sysInfoFrequencies();
-	sysInfoPowercap();
+	systemInTheDefaultSettings = sysInfoFrequencies(limits);
+	systemInTheDefaultSettings = systemInTheDefaultSettings && sysInfoPowercap(limits);
 	sysEnergyMeasurement();
+	
+	if (!systemInTheDefaultSettings)
+	{
+		if (restore)
+		{
+			meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+			meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
+			meric::Environment::restoreSystemSettings(true);
+		}
+		else
+			std::cerr << "\n\tWARNING: system not in the default settings!"
+			          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+	}
 
 	if (status == USING_MSR)
 	{

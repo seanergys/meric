@@ -115,7 +115,11 @@ def build(ctx):
 
     # SYSTEM INFO TOOL    
     ctx.program(
-        source="tools/systemInfo.cpp",
+        source=
+            ctx.path.ant_glob('tools/systemInfo.cpp') +
+            ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/basis/json.cpp'),
         target="systemInfo",
         use="msr x86_adapt numa",
         install_path = ctx.path.abspath()+"/tools"
