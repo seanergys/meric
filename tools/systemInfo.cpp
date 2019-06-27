@@ -463,7 +463,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
-#elif defined #ifdef __x86_64 //intel CPUs only
+#elif defined __x86_64 //intel CPUs only
 	std::cout << "\n# CPU Uncore frequency NOT available - install msr-safe or x86_adapt\n\n";
 #endif
 	return ok;
