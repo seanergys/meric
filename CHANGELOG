@@ -1,5 +1,6 @@
 ### XX.XX.XXXX #################################################################
   - fixed restore of the system hardware settings in the energyMeasureStop
+  - systemInfo tool provides posibility to restore the system settings
 
 ### 30.04.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
