@@ -8,6 +8,7 @@
 #include <string.h>
 #include <iostream>
 #include <dirent.h> //list of files in a dir
+#include <algorithm>
 
 #include <unistd.h>
 #include <fstream>
@@ -15,6 +16,9 @@
 #include <time.h>
 #include <math.h>
 #include <sys/stat.h>
+
+#include "../src/wrapper/environmentwrapper.h"
+
 
 //const std::string APPLICATION = "mpirun -n 2 /home/vys0053/readex/meric/test/test_mpi";
 const bool MPI_APP = true;
@@ -46,6 +50,33 @@ struct systemLimits{
 	long minPowerCapRAM;         //W
 
 	long maxPowerCapRAMtime;     //us
+
+	systemLimits(meric::systemLimits l) :
+		coresPerSocket(1),
+		socketsPerNode(1),
+		maxCoreFreq(l.maxCoreFreq),
+		minCoreFreq(l.minCoreFreq),
+		maxUncoreFreq(l.maxUncoreFreq),
+		minUncoreFreq(l.minUncoreFreq),
+		maxPowerCapPKG(l.maxPowerCapPKG),
+		minPowerCapPKG(l.minPowerCapPKG),
+		maxPowerCapPKGtime(l.maxPowerCapPKGtime),
+		maxPowerCapRAM(l.maxPowerCapRAM),
+		minPowerCapRAM(l.minPowerCapRAM),
+		maxPowerCapRAMtime(l.maxPowerCapRAMtime) {}
+	systemLimits() :
+		coresPerSocket(1),
+		socketsPerNode(1),
+		maxCoreFreq(0),
+		minCoreFreq(0),
+		maxUncoreFreq(0),
+		minUncoreFreq(0),
+		maxPowerCapPKG(0),
+		minPowerCapPKG(0),
+		maxPowerCapPKGtime(0),
+		maxPowerCapRAM(0),
+		minPowerCapRAM(0),
+		maxPowerCapRAMtime(0) {}
 };
 systemLimits limit;
 
@@ -151,9 +182,104 @@ std::vector <std::string> appRegions; //list of regions of the application
 
 	std::vector<std::vector<PSOparticleHistory>> PSOhistory;
 
-// FUNCTIONS ///////////////////////////////////////////////////////////////////
 
-void generateConfigFile(appConfiguration config, const std::string fileName)
+struct Tparametres{
+	ALGORITHM alg;
+	bool MPI;
+	bool generateCfg;
+};
+Tparametres params = {NONE, false, false};
+////////////////////////////////////////////////////////////////////////////////
+// FUNCTIONS ///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+void generateDefaultWrapperConfigFile()
+{
+	std::ifstream frequencyBounderyFile;
+	std::string freqBound = "";
+	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
+	if (frequencyBounderyFile.is_open())
+	{
+		getline(frequencyBounderyFile, freqBound);
+		frequencyBounderyFile.close();
+		while(freqBound.back() == ' ')
+			freqBound.pop_back();
+		std::replace(freqBound.begin(),freqBound.end(), ' ', ',');
+	}
+
+
+	std::string content = "{\n";
+	content +="\t\"MPI\" : \"true\",\n";
+
+	content+="\t\"PARAMETERS\" : {\n";
+
+		content+=std::string("\t\t\"FREQUENCY\" : {\n")
+				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxCoreFreq)+",\n"
+				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minCoreFreq)+",\n";
+		if (freqBound == "") //TODO
+			content+= "\t\t\t\"STEP\":  100000000,\n";
+		else
+			content+= "\t\t\t\"AVILABLE\" : [\n" + freqBound +"\n\t\t\t]\n";
+		content+="\t\t},\n";
+
+		if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
+			content+=std::string("\t\t\"UNCORE_FREQENCY\" : {\n")
+					+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxUncoreFreq)+",\n"
+					+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"
+					+ "\t\t\t\"STEP\":  100000000\n" //TODO
+					+ "\t\t},\n";
+
+		content+=std::string("\t\t\"THREADS\" : {\n")
+				+ "\t\t\t\"MAX\" : "+std::to_string(limit.coresPerSocket * limit.socketsPerNode)+",\n"
+				+ "\t\t\t\"MIN\" :  1,\n"
+				+ "\t\t\t\"STEP\":  1\n"
+				+ "\t\t}\n";
+
+	content += "\t}\n"; //end PARAMETERS
+
+
+	content+= std::string("\t\"ALGORITHM\" : {\n")
+			+ "\t\t\"NAME\" : \"EVO\",\n"
+			+ "\t\t\"PARAMETERS\" : {\n"
+			+ "\t\t\t\"END_CONDITION\" : 2,\n"
+			+ "\t\t\t\"POPULATION\" : 10\n"
+			+ "\t\t}\n"
+			+ "\t},\n"
+			+ "\t\"ALGORITHM\" : {\n"
+			+ "\t\t\"NAME\" : \"EXHAUSTIVE\"\n"
+			+ "\t},\n"
+			+ "\t\"ALGORITHM\" : {\n"
+			+ "\t\t\"NAME\" : \"PSO\",\n"
+			+ "\t\t\"PARAMETERS\" : {\n"
+			+ "\t\t\t\"END_CONDITION\" : 2,\n"
+			+ "\t\t\t\"PARTICLES\" : 10,\n"
+			+ "\t\t\t\"CONST_CP\"  : 2.05,\n"
+			+ "\t\t\t\"CONST_CG\"  : 2.05,\n"
+			+ "\t\t\t\"CONST_W\"   : 0.9\n"
+			+ "\t\t}\n"
+			+ "\t},\n";
+
+	content+= std::string("\t\"MERIC\" : {\n")
+			+ "\t\t\"MODE\" : 1,\n"	//TODO
+			+ "\t\t\"COUNTERS\" : \"papi\",\n" //TODO
+			+ "\t\t\"AGGREGATE\" : 1,\n"
+			+ "\t\t\"CONTINUAL\" : 1,\n"
+			+ "\t\t\"DETAILED\" : 1,\n"
+			+ "\t\t\"SAMPLES\" : 0,\n"
+			+ "\t\t\"BARRIERS\" : \"all\",\n"
+			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
+			+ "\t}\n";
+
+	content+= "}\"\n";
+
+
+	std::ofstream configFile ("defaultWrapperConfig.json");
+	configFile << content;
+	configFile.close();
+	std::cerr << "MERICwrapper - default config file generated: defaultWrapperConfig.json\n";
+}
+
+void generateMERICConfigFile(appConfiguration config, const std::string fileName)
 {
 	std::string content = "{";
 	for (regionConfiguration region : config)
@@ -183,16 +309,18 @@ void generateConfigFile(appConfiguration config, const std::string fileName)
 		configFile << content;
 }
 
+
 void printHelp()
 {
 	std::cerr << "MERICwrapper" <<std::endl
+	          << "\t-g = generates a default config file" << std::endl
 	          << "select from an algorithm to search for the optimal configuration" << std::endl
 	          << "\t-x = exhaustive" << std::endl
 	          << "\t-e = evolution" << std::endl
 	          << "\t-p = particle swarm optimization" << std::endl;
 }
 
-ALGORITHM readParameters(int argc, char **argv)
+int readParameters(int argc, char **argv)
 {
 /*
 # TODO - nacteni parametru
@@ -206,21 +334,38 @@ ALGORITHM readParameters(int argc, char **argv)
 export MERIC_ITERATION=0
 export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 */
-	ALGORITHM alg = NONE;
+
+/*
+struct Tparametres{
+	ALGORITHM alg;
+	bool MPI;
+	bool generateCfg;
+};
+Tparametres params = {NONE, false, false};
+*/
+
+
 	if (argc == 1)
 		printHelp();
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
+
 		if (arg == "-x")
-			alg = EXHAUSTIVE;
+			params.alg = EXHAUSTIVE;
 		else if (arg == "-e")
-			alg = EVO;
+			params.alg = EVO;
 		else if (arg == "-p")
-			alg = PSO;
+			params.alg = PSO;
+		else if (arg == "-g")
+		{
+			generateDefaultWrapperConfigFile();
+			return 1;
+		}
 		else
 		{
 			printHelp();
+			return 1;
 		}
 	}
 
@@ -232,8 +377,14 @@ export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, 
 	setenv("MERIC_COUNTERS", "papi", 1);
 	setenv("MERIC_MODE", "1", 1);
 	setenv("MERIC_ITERATION", "0", 1);
-	
-	return alg;
+
+
+	selectedParams.threads=1;
+	selectedParams.coreFreq = 1;
+	selectedParams.uncoreFreq = 1;
+	selectedParams.powerCapPKG = 0;
+	selectedParams.powerCapPKGtime = 0;
+
 }
 
 void constructCallPath()
@@ -265,21 +416,45 @@ void constructCallPath()
 
 void constructStateSpace()
 {
-	//TODO code based 
-// limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0};
+	meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+	meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
+//		RAPL::init(true);
+	limit = systemLimits(meric::Environment::getSystemSettings());
+	meric::Environment::close();
 
-limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
-//	limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
 
-	selectedParams.threads=1;
-	selectedParams.coreFreq = 1;
-	selectedParams.uncoreFreq = 1;
-	selectedParams.powerCapPKG = 0;
-	selectedParams.powerCapPKGtime = 0;
+#ifdef HAVE_MSR_CORE_H
+	int Hthreads;
+	uint64_t cs = 0;
+	uint64_t ss = 0;
+	core_config(&cs, NULL, &ss, NULL);
+	limit.socketsPerNode = ss;
+	limit.coresPerSocket  = cs;
+#elif defined HAVE_X86_ADAPT_H
+	limit.coresPerSocket = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
+	limit.socketsPerNode = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+	limit.coresPerSocket /= limit.socketsPerNode;
+#else //ifdef HAVE_NUMA_H
+	limit.coresPerSocket = sysconf(_SC_NPROCESSORS_ONLN);
+	limit.socketsPerNode = numa_node_of_cpu(limit.coresPerSocket-1)+1;
 
+	if (limit.socketsPerNode <= 0)
+		limit.socketsPerNode=1;
+	limit.coresPerSocket /= limit.socketsPerNode;
+#endif
+
+
+// limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0}; //test
+// limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
+// limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
 	newconfigurations = 0;
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 configuration decodeConfigVector (std::vector<long> values)	//EXHAUSTIVE only
 {
 	configuration v;
@@ -577,7 +752,7 @@ bool PSO_configurationValidation(configuration c)
 }
 
 //EVO - EXHAUSTIVE - PSO
-size_t generateConfigurationsToTest(ALGORITHM alg)
+size_t generateConfigurationsToTest()
 {
 /// EVO + PSO //////////////////////////////////////////////////////////////////
 	const int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
@@ -673,7 +848,7 @@ std::cerr << "evaluation of the finished runs\n";
 		//store current optimal configuration - for the case of job kill
 		if (improvedSolutionCounter == 0)
 		{
-			generateConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
+			generateMERICConfigFile(optimalConfiguration, MERIC_OUTPUT_DIR+"/MERICoptimalConfiguration.json");
 		}
 	}
 
@@ -709,7 +884,7 @@ std::cerr << "evaluation of the finished runs\n";
 	};
 
 /// PSO ////////////////////////////////////////////////////////////////////////	
-	if (alg == PSO)
+	if (params.alg == PSO)
 	{
 		if (!testConfigurationsDone.size())	//INITIAL GENERATION
 		{
@@ -785,7 +960,7 @@ std::cerr << "evaluation of the finished runs\n";
 		}
 	}
 /// EVO ////////////////////////////////////////////////////////////////////////
-	else if (alg == EVO)
+	else if (params.alg == EVO)
 	{
 		if (!testConfigurationsDone.size())	//INITIAL GENERATION
 			generateRandomGeneration();
@@ -858,7 +1033,7 @@ std::cerr << "evaluation of the finished runs\n";
 	}
 	
 /// EXHAUSTIVE /////////////////////////////////////////////////////////////////
-	else if (alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
+	else if (params.alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
 	{
 		std::vector <std::string> parameterName;
 		std::vector <std::vector<long>> exhConf;
@@ -927,7 +1102,7 @@ void runApplication(appConfiguration testRun)
 	else
 	{
 		MERIC_OUTPUT_FILENAME = MERIC_OUTPUT_DIR+"/MERICwrapperTestconfiguration.json";
-		generateConfigFile(testRun, MERIC_OUTPUT_FILENAME);
+		generateMERICConfigFile(testRun, MERIC_OUTPUT_FILENAME);
 
 //could be set if the behavior will change in MERIC, that will alow the tuning when the static parameters not set and just config file provided
 		if (selectedParams.uncoreFreq)
@@ -969,15 +1144,16 @@ void runApplication(appConfiguration testRun)
 int main(int argc, char **argv)
 {
 	constructStateSpace();
-	ALGORITHM alg = readParameters(argc, argv);
-	if (alg == NONE)
-		return 1;
+	int ret = readParameters(argc, argv);
+	if (ret != 0)
+		return ret;
+	return 0;
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
 	runApplication(defaultRun);
 	constructCallPath();
 
 	std::cerr << "RUN ANALYSIS\n";
-	while (generateConfigurationsToTest(alg))
+	while (generateConfigurationsToTest())
 	{
 		while(testConfigurationsToTry.size())
 		{

@@ -141,6 +141,7 @@ public:
 	static void init(int system, RegionParameters defaultParameter, int rank);
 	static void restoreSystemSettings(bool hardReset = false);
 	static void close();
+	static systemLimits getSystemSettings() { return defaultSettings[systemType]; };
 
 private:
 	static void initHWSizes();
