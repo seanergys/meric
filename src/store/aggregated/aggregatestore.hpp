@@ -32,7 +32,7 @@ void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t>
 		sumEnergy += _buffer[i].energy;
 	}
 
-	ss << "\n# Blade summary - hdeem\n"
+	ss << "\n# Blade summary\n"
 	   << "Average energy consumption [J]," << sumEnergy/this->_size << '\n'
 	   << "Maximal energy consumption [J]," << maxEnergy << '\n'
 	   << "Minimal energy consumption [J]," << minEnergy << '\n'

@@ -46,7 +46,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	{
 		if (printSamples)
 		{
-			ss << "# Blade samples" << std::endl;
+			ss << "# Blade samples (" << HDEEM::storeLabel <<") [W]"<< std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
@@ -81,7 +81,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 		{
 			if(printSamples)
 			{
-				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples" << std::endl;
+				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples [W]" << std::endl;
 				std::vector<double> samples;
 				HDEEM::getSamplesList(sensorID, firstVR, lastVR, samples);
 				size_t it = firstVR;

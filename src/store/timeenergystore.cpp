@@ -97,14 +97,14 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     // Blade values //
     //////////////////
 
-	if(printSamples)
-		ss << "# Blade samples - " << HDEEM::storeLabel << std::endl;
+//	if(printSamples)
+//		ss << "# Blade samples (" << HDEEM::storeLabel <<") [W]"<< std::endl;
 
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples)
 		{
-			ss << "# Blade samples - " << HDEEM::storeLabel << std::endl;
+			ss << "# Blade samples (" << HDEEM::storeLabel <<") [W]"<< std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			for (size_t it = firstBlade; it < lastBlade; it++)
@@ -144,7 +144,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		{
 			if(printSamples)
 			{
-				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples" << std::endl;
+				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples [W]" << std::endl;
 				std::vector<double> samples;
 				HDEEM::getSamplesList(sensorID, firstVR, lastVR, samples);
 				for (size_t it = firstVR; it < lastVR; it++)
