@@ -140,7 +140,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	{
 		if (printSamples)
 		{
-			ss << "# Blade samples (" << TSystem::storeLabel <<") [W]"<< std::endl;
+			ss << "# Blade (" << TSystem::storeLabel <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;

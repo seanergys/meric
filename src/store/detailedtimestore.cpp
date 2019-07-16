@@ -46,7 +46,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	{
 		if (printSamples)
 		{
-			ss << "# Blade samples (" << HDEEM::storeLabel <<") [W]"<< std::endl;
+			ss << "# Blade (" << HDEEM::storeLabel <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
