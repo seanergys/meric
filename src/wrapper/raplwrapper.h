@@ -9,9 +9,14 @@
 
 #ifdef HAVE_X86_ADAPT_H
 	#include <x86_adapt.h>
-#elif defined (HAVE_MSR_CORE_H)
+#elif defined HAVE_MSR_CORE_H
 	#include <msr_core.h>
 	#include <msr_rapl.h>
+#elif defined HAVE_GEOPM_H
+	#include <geopm/PlatformTopo.hpp>
+	#include <geopm/PlatformIO.hpp>
+	#include <geopm_hash.h>
+	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
 #include "counters.h"
@@ -20,7 +25,7 @@
 
 #ifdef HAVE_X86_ADAPT_H
 	using namespace X86ADAPT_RAPL_COUNTERS;
-#elif defined (HAVE_MSR_CORE_H)
+#elif defined HAVE_MSR_CORE_H
 	using namespace MSR_RAPL_COUNTERS;
 #elif defined HAVE_GEOPM_H
 	using namespace GEOPM_RAPL_COUNTERS;
@@ -32,7 +37,7 @@
 namespace meric {
 
 class RAPL {
-#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 public:
 	static const int RAPL_BASELINE = 0; // NOT USED at the MERIC side now
 	static void init(bool detailed = false);

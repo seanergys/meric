@@ -81,7 +81,7 @@ unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 uint64_t RAPL::NODE_SIZE_SOCKET = 1;
 std::map<std::string, double> RAPL::units;
 
-#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 std::map<std::string, unsigned long long int> RAPL::counters;
 uint64_t RAPL::SOCKET_SIZE_CPU = 1;
 
@@ -120,6 +120,9 @@ void RAPL::init(bool detailed)
 #elif defined HAVE_X86_ADAPT_H
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	//SOCKET_SIZE_CPU is not used when using adapt
+#elif defined HAVE_GEOPM_H
+	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
+	NODE_SIZE_SOCKET = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
 #endif
 	initMap(counters);
 	//initCountersUnits() is already called from environmentwrapper
@@ -141,6 +144,8 @@ void RAPL::initCountersUnits()
 	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#elif defined HAVE_GEOPM_H
+	MSR_RAPL_POWER_UNIT_bits = geopm_signal_to_field(pio.read_signal("MSR::RAPL_POWER_UNIT#", pio.signal_domain_type("MSR::RAPL_POWER_UNIT#"), 0));
 #endif
 	if (MSR_RAPL_POWER_UNIT_bits != 0)
 	{
@@ -226,7 +231,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#elif  defined HAVE_MSR_CORE_H
+#elif defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -243,7 +248,11 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				if ((iterator->first.back()-'0') != die)
 					continue;
 				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);
-				read_msr_by_idx(die * SOCKET_SIZE_CPU, counterDefines[itemName], &dieEnergy);
+				#ifdef HAVE_MSR_CORE_H
+					read_msr_by_idx(die * SOCKET_SIZE_CPU, counterDefines[itemName], &dieEnergy);
+				#elif defined HAVE_GEOPM_H
+					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), die * SOCKET_SIZE_CPU));
+				#endif
 				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
 			}
 		}
@@ -255,7 +264,11 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
-				read_msr_by_idx(die * SOCKET_SIZE_CPU, counterDefines[iterator->first], &dieEnergy);
+				#ifdef HAVE_MSR_CORE_H
+					read_msr_by_idx(die * SOCKET_SIZE_CPU, counterDefines[iterator->first], &dieEnergy);
+				#elif defined HAVE_GEOPM_H
+					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), die * SOCKET_SIZE_CPU));
+				#endif
 				record [iterator->first] += (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
 			}
 		}	

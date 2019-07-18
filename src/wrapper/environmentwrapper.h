@@ -28,13 +28,6 @@
 	#endif
 #endif
 
-#ifdef HAVE_GEOPM_H
-	#include <geopm/PlatformTopo.hpp>
-	#include <geopm/PlatformIO.hpp>
-	#include <geopm_hash.h>
-	static geopm::PlatformIO &pio = geopm::platform_io();
-#endif
-
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
