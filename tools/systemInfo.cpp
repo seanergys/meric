@@ -211,6 +211,7 @@ struct systemLimits{
 
 	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
 	std::string governor;
+	bool restoreFile;
 };
 std::map<std::string, double> unit;
 
@@ -653,6 +654,7 @@ void readRestoreFile(systemLimits& limits)
 	struct json_value_s* root = NULL;
 	if(stat(defaultSettingFile.c_str(), &info) == 0)
 	{
+		limits.restoreFile = true;
 		std::ifstream jsonFile (defaultSettingFile);
 		std::string line, jsonString = "";
 		if (jsonFile.is_open())
@@ -742,6 +744,8 @@ void readRestoreFile(systemLimits& limits)
 			free(root);
 		}
 	}
+	else
+		limits.restoreFile = false;
 }
 
 
@@ -786,10 +790,10 @@ int main(int argc, char **argv)
 	getRAPLunits();
 	sysInfoSize();
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
-	systemInTheDefaultSettings = systemInTheDefaultSettings && sysInfoPowercap(limits);
+	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
 	
-	if (!systemInTheDefaultSettings)
+	if (!systemInTheDefaultSettings && limits.restoreFile)
 	{
 		if (restore)
 		{
