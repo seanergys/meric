@@ -22,6 +22,8 @@
 	using namespace X86ADAPT_RAPL_COUNTERS;
 #elif defined (HAVE_MSR_CORE_H)
 	using namespace MSR_RAPL_COUNTERS;
+#elif defined HAVE_GEOPM_H
+	using namespace GEOPM_RAPL_COUNTERS;
 #else
 	using namespace X86ADAPT_RAPL_COUNTERS;
 #endif

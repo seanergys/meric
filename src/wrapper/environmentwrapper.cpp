@@ -214,6 +214,7 @@ bool Environment::activatedDVFS = false;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
 
+
 /**
  * change number of active threads
  **/
@@ -251,10 +252,10 @@ void Environment::threadNumber(int nthreads)
 
 /**
  * reads HW system sizes:
- *  - socket per node
- *  - CPUs per socket
- *  - threads per CPU
- *  - hyper-threading enabled
+ *  NODE_SIZE_SOCKET - sockets per node
+ *  NODE_SIZE_CPU    - CPUs per node
+ *  SOCKET_SIZE_CPU  - CPUs per socket
+ *  NODE_SIZE_THREAD - threads per node
  **/
 void Environment::initHWSizes()
 {
@@ -273,6 +274,12 @@ void Environment::initHWSizes()
 	NODE_SIZE_CPU    = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
 	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	//NODE_SIZE_THREAD = 1;	TODO get real number of avail threads per core - not used now
+	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
+#elif defined HAVE_GEOPM_H
+	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
+	NODE_SIZE_CPU = topo.num_domain(GEOPM_DOMAIN_CORE);
+	NODE_SIZE_SOCKET = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
+	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
 	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
 #else //ifdef HAVE_NUMA_H
 	NODE_SIZE_CPU    = sysconf(_SC_NPROCESSORS_ONLN);
@@ -452,6 +459,11 @@ void Environment::getSystemDefaultSettings()
 		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 		defaultSettings[systemType].minUncoreFreq = setting * 100000000;
+#elif defined HAVE_GEOPM_H
+		defaultSettings[systemType].minUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
+		
+		defaultSettings[systemType].maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
+		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 #endif
 
 // POWERcap ------------------------------------------------------------------//
@@ -475,6 +487,10 @@ void Environment::getSystemDefaultSettings()
 
 		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#elif defined HAVE_GEOPM_H
+		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
+		
+		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_RAM_POWER_LIMIT, pio.signal_domain_type(RAPL_RAM_POWER_LIMIT), 0));
 #endif
 		defaultSettings[systemType].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
 		defaultSettings[systemType].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
@@ -547,6 +563,8 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 		std::cerr << "LIBMSR ERROR: Unable to initialize\n";
 //		exit(1);
 	}
+#elif defined HAVE_GEOPM_H
+	pio.save_control();
 #endif
 	initHWSizes();
 	RAPL::initCountersUnits();
@@ -737,6 +755,10 @@ void Environment::frequency(uint64_t freq, int socket)
 		}
 	}
 	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
+#elif defined HAVE_GEOPM_H
+	MERIC_INFO << "; using GEOPM\n";
+	for (; cpu < nodeSize; cpu++)
+		pio.write_control("FREQUENCY", pio.signal_domain_type("FREQUENCY"), cpu, freq);
 #else
 	std::ofstream coreFile;
 	for (; cpu < nodeSize; cpu++)
@@ -768,7 +790,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		return;
 	}
 	usedUFS = true;
-#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq;
 	if (maxFreq != minFreq)
 		MERIC_INFO << " - " << minFreq;
@@ -824,6 +846,13 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 	}
+#elif defined HAVE_GEOPM_H
+	MERIC_INFO << "; using GEOPM\n";
+	for (; die<max; die++)
+	{
+		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), die, minFreq);
+		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), die, maxFreq);
+	}
 #else
 	// SYS_JETSON
 	std::ofstream uncoreFile;
@@ -852,6 +881,8 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	MERIC_INFO << "LIBMSR set powercap to: "<< power << " W";
 #elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "X86ADAPT set powercap to: "<< power << " W";
+#elif defined HAVE_GEOPM_H
+	MERIC_INFO << "GEOPM set powercap to: "<< power << " W";
 #else
 	return;
 #endif
@@ -884,10 +915,14 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#elif defined HAVE_GEOPM_H
+	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
 #endif
 	
 	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / RAPL::getUnit(RAPL_PCKG_POWER_LIMIT))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
 
+
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 	if (timeWindow != 0)
 	{
 		/** PKG Time window size equation
@@ -915,9 +950,9 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 
 	for (; die<max; die++)
 	{
-#ifdef HAVE_MSR_CORE_H
+	#ifdef HAVE_MSR_CORE_H
 		write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
-#elif defined HAVE_X86_ADAPT_H
+	#elif defined HAVE_X86_ADAPT_H
 		fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 		if (fd < 0)
 		{
@@ -930,8 +965,17 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-#endif
+	#endif
 	}
+#elif defined HAVE_GEOPM_H
+	for (; die<max; die++)
+	{
+		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power);
+
+		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.signal_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow*1000000.0);
+	}
+#endif
+
 }
 
 /**
@@ -939,6 +983,11 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
  **/
 void Environment::restoreSystemSettings(bool hardReset)
 {
+#ifdef HAVE_GEOPM_H
+	if (activatedDVFS || hardReset || activatedUFS || usedPWRCAP)
+		pio.restore_control();
+#endif
+
 	if (activatedDVFS || hardReset)
 	{
 		if (usedDVFS || hardReset)

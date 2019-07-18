@@ -48,6 +48,7 @@ def configure(ctx):
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
+    ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)
 #    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
@@ -97,7 +98,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
-        use="msr x86_adapt numa",
+        use="msr x86_adapt numa geopm",
         env=ctx.all_envs['start'].derive(),
         install_path = ctx.path.abspath()+"/tools/staticMERICtool"
     )
@@ -108,7 +109,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
-        use="msr x86_adapt numa",
+        use="msr x86_adapt numa geopm",
         env=ctx.all_envs['stop'].derive(),
         install_path = ctx.path.abspath()+"/tools/staticMERICtool"
     )
@@ -121,7 +122,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="systemInfo",
-        use="msr x86_adapt numa",
+        use="msr x86_adapt numa geopm",
         install_path = ctx.path.abspath()+"/tools"
     )
 

@@ -28,12 +28,19 @@
 	#endif
 #endif
 
+#ifdef HAVE_GEOPM_H
+	#include <geopm/PlatformTopo.hpp>
+	#include <geopm/PlatformIO.hpp>
+	#include <geopm_hash.h>
+	static geopm::PlatformIO &pio = geopm::platform_io();
+#endif
+
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
 
 #ifdef HAVE_CILK_CILK_API_H
-	#include <cilk/cilk_api.h> 
+	#include <cilk/cilk_api.h>
 #endif
 
 #ifdef HAVE_OMP_H
