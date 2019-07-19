@@ -52,7 +52,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.powerCapPKG     = mutils::getenv("MERIC_PWRCAP_POWER", -1);
 	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
 
-#if defined (HAVE_CPUFREQ_H) || defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	if (defaultParameter.frequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
@@ -62,10 +62,9 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="CF_";
 	}
-	
 #endif
 
-#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	if (defaultParameter.uncoreFrequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY [Hz]\n";
@@ -90,7 +89,7 @@ int Meric::getDefaultParameters()
 	}
 #endif
 
-#if defined (HAVE_X86_ADAPT_H) || defined (HAVE_MSR_CORE_H)
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	if (defaultParameter.powerCapPKG < 0 || defaultParameter.powerCapPKGtime < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_POWER [W] and MERIC_PWRCAP_TIME [us]\n";
