@@ -142,7 +142,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	
-	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
+	if (Meric::MODE == MODE_JETSON)
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -152,13 +152,13 @@ DistributedMeric::DistributedMeric()
 		else
 			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
-	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_THUNDER)
 	{
 		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);	//_supportComm currently used by THUNDER only, so the split is here to make it obvious
 		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm));
 		_storeList.back()->setMPIWrite(!_MPIglobalRank);
 	}
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -223,21 +223,21 @@ DistributedMeric::DistributedMeric()
 		currentState.socket[socket] = defaultParameter;
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
-	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
+	if (Meric::MODE == MODE_JETSON)
 	{
 		if (!_MPInodeRank)
 			JETSON::init();
 		sleep(5);
 	}
-	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_THUNDER)
 	{
 		if (!_MPIglobalRank)
 			THUNDER::init();
 		sleep(5);
 	}
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE)
 	{
-		if (!_MPIglobalRank)
+		if (!_MPInodeRank)
 			DAVIDE::init();
 		DAVIDE::start(_startTime);	//TODO << test if it is neccessary to have a start here, also for all procs?
 	}
@@ -273,7 +273,7 @@ DistributedMeric::~DistributedMeric()
 	{
 		HDEEM::close();
 	}
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL && (!_MPInodeRank))
+	else if (Meric::MODE == MODE_DAVIDE && (!_MPInodeRank))
 	{
 		DAVIDE::close();
 	}

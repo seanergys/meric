@@ -98,11 +98,11 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 
 
 ### BSC ARM Jetson ###
-Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over (MERIC_CONTINUAL=1 must be exported). 10 samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
+Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
 
 ### BSC ARM ThunderX ###
-BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. To run MERIC on the ThunderX export MERIC_CONTINUAL=1.
+BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
 
 --------------------------------------------------------------------------------
 #     3] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
@@ -282,79 +282,70 @@ Default compilation expects Intel compiler, if you want to compile using GCC use
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
 Specify following parameters to zero if you do not want to tune the selected system parameter.
 
-	export MERIC_FREQUENCY=2400MHz
-	export MERIC_UNCORE_FREQUENCY=2GHz
-		- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
-	export MERIC_NUM_THREADS=24
-		- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
-	export MERIC_PWRCAP_POWER=100
-		- Average processor PKG power [W] in the selected time window.
-	export MERIC_PWRCAP_TIME=10
-		- Time window size for power capping specified in microseconds.
+* `export MERIC_FREQUENCY=2400MHz`
+* `export MERIC_UNCORE_FREQUENCY=2GHz`
+	- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
+* `export MERIC_NUM_THREADS=24`
+	- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
+* `export MERIC_PWRCAP_POWER=100`
+	- Average processor PKG power [W] in the selected time window.
+* `export MERIC_PWRCAP_TIME=10`
+	- Time window size for power capping specified in microseconds.
 
 ## SET MERIC WORKING MODE ##
-	export MERIC_MODE=0
-		0 = hdeem - uses hdeem to measure energy consumption
-		1 = rapl - uses rapl counters to measure energy consumption
-		2 = hdeem & rapl - uses hdeem and rapl at the same time
-		3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
-		4 = jetson - energy measurement on BSC Jetson TX1 system
-		5 = thunder - energy measurement on BSC ThunderX system
-		6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
-		7 = time - storing runtime of the regions only
+* `export MERIC_MODE=0`
+	- 0 = hdeem - uses hdeem to measure energy consumption
+	- 1 = rapl - uses rapl counters to measure energy consumption
+	- 2 = hdeem & rapl - uses hdeem and rapl at the same time
+	- 3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
+	- 4 = jetson - energy measurement on BSC Jetson TX1 system
+	- 5 = thunder - energy measurement on BSC ThunderX system
+	- 6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
+	- 7 = time - storing runtime of the regions only
 
-	export MERIC_ITERATION=0
-		- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
-		- Always starts with 0.
+* `export MERIC_ITERATION=0`
+	- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
+	- Always starts with 0.
 
-	export MERIC_BARRIERS=all
-		all  = all barriers are applied (default)
-		mpi  = use MPI barriers only
-		omp  = use OpenMP barriers only
-		none = do not use barriers
+* `export MERIC_BARRIERS=all`
+	- all  = all barriers are applied (default)
+	- mpi  = use MPI barriers only
+	- omp  = use OpenMP barriers only
+	- none = do not use barriers
 
 ## SET ONE OF MERIC OUTPUT FORMAT ##
-	export MERIC_CONTINUAL=1
-		- Single samples are stored in HDEEM internal memory and read at the end of the runtime
-		  (with frequency 1000 samples per 1 second for blade and 100 samples in detailed mode for VRs).
-		- Minimal overhead - only times of the beginning and the end of measurement
-		  are stored (samples are processed after the measurement).
-		- in noncontinual mode (MERIC_CONTINUAL=0) energy consumption measured directly 
-		  (with HDEEM internal delay) at each region start and end.
+* `export MERIC_CONTINUAL=0`
+	- Some energy measurement systems support two modes how they operate.
+	- In the continual mode (MERIC_CONTINUAL=1) the systems stores power samples in an internal memory, MERIC stores only timestamps during an application run and evaluate the energy consumption at the end of the application run.
+	- In the non-continual mode (MERIC_CONTINUAL=0) the energy measurement system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to continual mode.
+	- Currently both modes are available for the HDEEM only.
 
-	export MERIC_DETAILED=1
-		- HDEEM gives us not only data from blade, but data from Voltage Regulators (VR-CPU1,
-		  VR-CPU0, VR-DIMMGH, VR-DIMMEF, VR-DIMMCD, VR-DIMMAB) are stored too.
-		- In detailed mode RAPL returns values also for each CPU, not only energy consumption for a node.
+* `export MERIC_DETAILED=1`
+	- If energy measurement system provides not only data from blade, but also data from Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
 
-	export MERIC_DEBUG=1
-		- Data are taken both from samples and Stats structure, so we can compare them.
-		- Data are taken from blade and Voltage Regulators too.
-		- Only for measurement check - there can be larger overhead because of two
-		  types of data processing performed simultaneously.
+* `export MERIC_DEBUG=1`
+	- Data are taken both from samples and Stats structure, so we can compare them.
+	- Data are taken from blade and Voltage Regulators too.
+	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
 
-	export MERIC_SAMPLES=1
-		- When using HDEEM samples to read the energy consumption, MERIC prints 
-		  each sample to the output file, if MERIC_SAMPLES is set.
-		- Files can become very big when measured regions run for a long time.
+* `export MERIC_SAMPLES=1`
+	- If the energy measurement system stores power samples, MERIC will add the corresponding samples to the output files.
+	- WARNING: Output files may become very big when measured regions run for a long time.
 
-	export MERIC_AGGREGATE=0
-		- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
-		- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
+* `export MERIC_AGGREGATE=0`
+	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
+	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
 
-	export MERIC_COUNTERS=papi or perfevent
-		- If set you can read HW counters using PAPI or perfevent.
-		- When using counters, there is not only counter value but also an information.
-		  about average CPU core frequency during the region runtime, computational
-		  and arithmetic intensity (if possible to measure).
-		- To add a counter you want to measure it is necessary to follow 
-		  the instructions in wrapper/counters.h.
+* `export MERIC_COUNTERS=papi` or `perfevent`
+	- If set you can read HW counters using PAPI or perfevent.
+	- When using counters, there is not only counter value but also an information about average CPU core frequency during the region runtime, computational and arithmetic intensity (if possible to measure).
+	- To add a counter you want to measure it is necessary to follow the instructions in wrapper/counters.h.
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
-	export MERIC_OUTPUT_DIR="hdeemMeasurement"
-		- Default name is mericMeasurement.
-	export MERIC_OUTPUT_FILENAME="log"
-		- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
+* `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
+	- Default name is mericMeasurement.
+* `export MERIC_OUTPUT_FILENAME="log"`
+	- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
 
 ## ADVANCED SETTINGS ##
 Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.

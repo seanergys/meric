@@ -38,15 +38,15 @@ SharedMeric::SharedMeric()
 		_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES));
 	}
 	
-	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
+	if (Meric::MODE == MODE_JETSON)
 	{
 		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
 	}
-	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_THUNDER)
 	{
 		_storeList.push_back(new TimeStore<THUNDER>(Meric::SAMPLES));
 	}
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		_storeList.push_back(new TimeStore<DAVIDE>(Meric::SAMPLES));
 	}
@@ -93,11 +93,11 @@ SharedMeric::SharedMeric()
 //			RAPL::detailed();
 		RAPL::init(Meric::DETAILED);
 	}
-	if (Meric::MODE == MODE_JETSON && Meric::CONTINUAL)
+	if (Meric::MODE == MODE_JETSON)
 		JETSON::init();
-	else if (Meric::MODE == MODE_THUNDER && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_THUNDER)
 		THUNDER::init();
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		DAVIDE::init();
 		DAVIDE::start(_startTime);
@@ -121,7 +121,7 @@ SharedMeric::~SharedMeric()
 	{
 		HDEEM::close();
 	}
-	else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		DAVIDE::close();
 	}
