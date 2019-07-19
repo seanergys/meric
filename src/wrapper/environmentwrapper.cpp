@@ -758,7 +758,7 @@ void Environment::frequency(uint64_t freq, int socket)
 #elif defined HAVE_GEOPM_H
 	MERIC_INFO << "; using GEOPM\n";
 	for (; cpu < nodeSize; cpu++)
-		pio.write_control("FREQUENCY", pio.signal_domain_type("FREQUENCY"), cpu, freq);
+		pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
 #else
 	std::ofstream coreFile;
 	for (; cpu < nodeSize; cpu++)
@@ -850,8 +850,8 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	MERIC_INFO << "; using GEOPM\n";
 	for (; die<max; die++)
 	{
-		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), die, minFreq);
-		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), die, maxFreq);
+		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), die, minFreq);
+		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), die, maxFreq);
 	}
 #else
 	// SYS_JETSON
@@ -970,9 +970,9 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 #elif defined HAVE_GEOPM_H
 	for (; die<max; die++)
 	{
-		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power);
+		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power);
 
-		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.signal_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow*1000000.0);
+		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow*1000000.0);
 	}
 #endif
 
