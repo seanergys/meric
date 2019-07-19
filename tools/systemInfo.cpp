@@ -183,12 +183,18 @@ increment.
 #ifndef MSR_UNCORE_CURRENT_RATIO
 	#define MSR_UNCORE_CURRENT_RATIO   0x621
 #endif
+#ifndef PLATFORM_INFO_ADDR
+	#define PLATFORM_INFO_ADDR	0xCE
+#endif
 
 const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
 const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
 const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
+const uint64_t PLATFORM_INFO_ADDR_mask          = 0xFF00;
+const uint64_t PLATFORM_INFO_ADDR_shift         = 8;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 struct systemLimits{
@@ -223,7 +229,16 @@ enum MODE
 	USING_NONE
 };
 
-#ifdef __x86_64
+#ifdef HAVE_MSR_CORE_H
+
+unsigned long discover_nominal_frequency()
+{
+	uint64_t PLATFORM_INFO_ADDR_bits;
+	read_msr_by_idx(0, PLATFORM_INFO_ADDR, &PLATFORM_INFO_ADDR_bits);
+	return ((PLATFORM_INFO_ADDR_bits & PLATFORM_INFO_ADDR_mask) >> PLATFORM_INFO_ADDR_shift) * 100000000;
+};
+
+#elif defined __x86_64
 //#define _GNU_SOURCE
 enum reg_cpuid
 {
