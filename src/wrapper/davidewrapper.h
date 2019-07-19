@@ -5,16 +5,8 @@
 #include "../basis/spline.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
-#include <cstdlib>
 #include <iostream>
-#include <time.h>
-#include <ctime>
 #include <unistd.h>
-#include <climits>
-#include <array>
-#include <map>
-#include <cmath>
-#include <vector>
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 	// *** KairosDB setup for DAVIDE monitoring system 
