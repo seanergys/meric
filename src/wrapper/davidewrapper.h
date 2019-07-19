@@ -2,21 +2,22 @@
 #ifndef SRC_WRAPPER_DAVIDEWRAPPER_H_
 #define SRC_WRAPPER_DAVIDEWRAPPER_H_
 
+#include "../basis/spline.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
 #include <cstdlib>
 #include <iostream>
 #include <time.h>
 #include <ctime>
-#include <array>
-#include <vector>
-#include <map>
 #include <unistd.h>
-#include <cmath>
 #include <climits>
+#include <array>
+#include <map>
+#include <cmath>
+#include <vector>
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-	// *** KairosDB setup for DAVIDE ponitoring system 
+	// *** KairosDB setup for DAVIDE monitoring system 
 	#define KAIROSDB_SERVER "192.168.1.97"
 	#define KAIROSDB_PORT   "8083"
 	#define KAIROSDB_USER   "admin"
@@ -33,13 +34,13 @@ class DAVIDE {
 
 public:
 
-	static std::string getCountersLabel() {	return "DAVIDE";};
 	static const int FREQUENCY = 1000;
-	static const int PROBE_NUMBER = 1;	//BLADE + {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"}; kolik zarizeni merime
+	static const int PROBE_NUMBER = 1;	//no voltage regulators, just blade
+	static std::vector<std::string> vrSensorLabel;	//voltage regulator vector
 	static std::string storeLabel;
-	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
-	static void deleteSamples() {};
-	
+
+	static std::string getCountersLabel() {	return storeLabel;};
+	static void deleteSamples() {};	
 	static void start(timespec & time)
 	{
 		clock_gettime(CLOCK_REALTIME, &time);

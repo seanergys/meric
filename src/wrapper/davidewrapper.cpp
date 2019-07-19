@@ -1,5 +1,3 @@
-
-#include "../basis/spline.h"
 #include "davidewrapper.h"
 
 using namespace meric;
@@ -10,7 +8,7 @@ unsigned long long DAVIDE::_startTime;
 unsigned long long DAVIDE::_stopTime;
 std::vector<long long> DAVIDE::time_samples; // vector will contain all time stamps from the specified interval 
 std::vector<double>    DAVIDE::power_samples; // vector will contain power samples corelated to timestamps 
-std::string DAVIDE::storeLabel = "davide";
+std::string DAVIDE::storeLabel = "DAVIDE";
 std::vector<std::string> DAVIDE::vrSensorLabel = {"blade"};
 //const int DAVIDE::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 std::string DAVIDE::url_samples;
@@ -19,7 +17,6 @@ std::string DAVIDE::url_samples;
 RestClient::Connection* DAVIDE::conn_samples;
 void DAVIDE::init()
 {
-
 	char hostname[HOST_NAME_MAX];
    	gethostname(hostname, HOST_NAME_MAX);
    	std::string davideHostname = std::string(hostname);
@@ -35,31 +32,22 @@ void DAVIDE::init()
 	else
 		davideHostname = "";
 	node_n = "davide" + davideHostname;
-	
-	//MERIC_INFO << "Using hardcoded machine name due to problems with hostnames on DAVIDE\n"; 
-	//node_n = std::string(hostname); //"davide43";
-	//node_n = std::string("davide1");
-	MERIC_INFO << "Hostname : " << node_n << "\n";
-
 	metric = "power";
 	url_samples = std::string("http://") + std::string(KAIROSDB_SERVER) + std::string(":") + std::string(KAIROSDB_PORT) + std::string("/api/v1/") + std::string("datapoints/query");
-	// initialize RestClient
+	MERIC_INFO << "Hostname : " << node_n << "\n"
+	           << "Server : " << KAIROSDB_SERVER << "\n"
+	           << "URL is : " << url_samples << "\n";
+	// initialize RestClient and get a connection object
 	RestClient::init();
-
-	MERIC_INFO << "Server : " << KAIROSDB_SERVER << "\n"; 
-	MERIC_INFO << "URL is : " << url_samples << "\n";
-	// get a connection object
 	conn_samples = new RestClient::Connection(url_samples);
 
 	// configure basic auth
-	conn_samples->SetBasicAuth("admin", "k41r0sdb768");
+	conn_samples->SetBasicAuth(KAIROSDB_USER, KAIROSDB_PWD);
 
 	// set connection timeout to 5s
 	conn_samples->SetTimeout(30);
 }
 
-
-//metoda pro ziskani energie pro pozadovany region na zaklade pocatecniho a koncoveho casu
 std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
 	MERIC_INFO << " ***************************************************************************\n";
@@ -76,73 +64,79 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 
 
 	MERIC_INFO << "StartTime  : " << ts << "\n";
-	if (dur_t == 0) {	
+	if (dur_t == 0)
+	{	
 		MERIC_INFO << "Duration   : < 1 sample\n";
-	} else {
+	}
+	else
+	{
 		MERIC_INFO << "Duration   : " << dur_t << " samples\n";
 	}
-	MERIC_INFO << "firstBlade : " << *firstBlade << "\n";
-	MERIC_INFO << "lastBlade  : " << *lastBlade  << "\n";
-	MERIC_INFO << "# of Samples:" << n_samples << "\n";
+	MERIC_INFO << "firstBlade : " << *firstBlade << "\n"
+	           << "lastBlade  : " << *lastBlade  << "\n"
+	           << "# of Samples:" << n_samples << "\n";
 
 	// sub-sample measurement 
 	
 	std::vector <double> tmp_t, tmp_w;
 
-	if (dur_t < 10) {	
-
+	if (dur_t < 10)
+	{
 		// Sub sampling setup
 		int  n_subsamples 			  = dur_t*20;
 		int  hallo_size   			  = 10;  
 		bool use_linear_interpolation = false; // if false spline interpolation is used 
 		// END - Sub sampling setup
 
-
-		MERIC_INFO << "  Subsample energy consumption estimation:\n";
-		MERIC_INFO << "  StartTime  : " << (long long)(FREQUENCY*startTime*1000.0) << "\n";
-		MERIC_INFO << "  StopTime   : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n";
-		MERIC_INFO << "  Duration   : " << (long long)(FREQUENCY*duration*1000.0) << " us\n";
+		MERIC_INFO << "  Subsample energy consumption estimation:\n"
+		           << "  StartTime  : " << (long long)(FREQUENCY*startTime*1000.0) << "\n"
+		           << "  StopTime   : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n"
+		           << "  Duration   : " << (long long)(FREQUENCY*duration*1000.0) << " us\n";
 
 		int  buf_size = 2*hallo_size+dur_t+2;
 		tmp_t.reserve(buf_size); 
 		tmp_w.reserve(buf_size);
 
-		for (size_t i = 0; i < buf_size; i++ ) {
+		for (size_t i = 0; i < buf_size; i++ )
+		{
 			tmp_t.push_back((double)  time_samples [*firstBlade - hallo_size + i]); 
 			tmp_w.push_back(          power_samples[*firstBlade - hallo_size + i]);
 
 			MERIC_INFO << "    Time: " << time_samples [*firstBlade - hallo_size + i] << "    [ms]; power: " 
-			                       << power_samples[*firstBlade - hallo_size + i] << " W \n";
+			                           << power_samples[*firstBlade - hallo_size + i] << " W \n";
 		}
 
 		tk::spline s;
 
-		if (use_linear_interpolation) {
+		if (use_linear_interpolation)
+		{
 			s.set_points(tmp_t,tmp_w, false);  // void set_points(const std::vector<double>& x, const std::vector<double>& y, bool cubic_spline=true);
-		} else {
+		}
+		else
+		{
 			s.set_points(tmp_t,tmp_w, true); 
 		}
 
 		double inc = duration / double(n_subsamples); 
 
 		MERIC_INFO << "    ------------------------\n";
-		for (size_t i = 0; i < n_subsamples+1; i++) {
-			
-			double sub_time     = (startTime + (double)i * inc ) * (double)FREQUENCY;
+		for (size_t i = 0; i < n_subsamples+1; i++)
+		{
+			double sub_time     = (startTime + (double)i * inc) * (double)FREQUENCY;
 			double interp_power = s(sub_time);
 
-			if (i == 0) {
+			if (i == 0)
+			{
 				energy[0]   = interp_power;
 				maxWatts[0] = interp_power;
 				minWatts[0] = interp_power;
-			} else {
-
+			}
+			else
+			{
 				if (interp_power > maxWatts[0])
 					maxWatts[0] = interp_power;
-			
 				if (interp_power < minWatts[0])
 					minWatts[0] = interp_power; 
-
 				energy[0] += interp_power;
 			}
  
@@ -153,16 +147,16 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 		maxWatts[0]-= GPU_offset;
 		minWatts[0]-= GPU_offset;
 
-		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n";
-		MERIC_INFO << "maxWatts : " << maxWatts[0] << " W\n";
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
+		           << "maxWatts : " << maxWatts[0] << " W\n";
 
 		double avgWatts = (energy[0] / double(n_subsamples+1)) - GPU_offset;
-		MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n";	
-		energy[0] = avgWatts * duration * 1000.0; // the * 1000.0 is for mW to W conversion from hdeem
-		MERIC_INFO << "energy   : " << avgWatts * duration << " J\n";		
-
-	} else {
-
+		energy[0] = avgWatts * 1000.0 * duration; // the * 1000.0 is for mW to W conversion from HDEEM
+		MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n"
+		           << "energy   : " << avgWatts * duration << " J\n";
+	}
+	else
+	{
 		energy[0]   = 0.0;
 		maxWatts[0] = power_samples[*firstBlade];
 		minWatts[0] = power_samples[*firstBlade];
@@ -184,13 +178,11 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 		maxWatts[0]-= GPU_offset;
 		minWatts[0]-= GPU_offset;
 
-		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n";
-		MERIC_INFO << "maxWatts : " << maxWatts[0] << " W\n";
-
-		MERIC_INFO << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";	
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
+		           << "maxWatts : " << maxWatts[0] << " W\n"
+		           << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";	
 		energy[0] = ((energy[0] / ((double)(n_samples)) ) - GPU_offset ) * duration * 1000.0; // the * 1000.0 is for MW to W conversion from hdeem
 		MERIC_INFO << "energy   : " << energy[0] / 1000.0 << " J\n";
-
 	}	
 
 	return errMessage;	
@@ -198,24 +190,20 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 
 int DAVIDE::getSamples()
 {
-	
-	MERIC_INFO << "Start time is   : "  << _startTime << " ms\n";
-	MERIC_INFO << "Stop time is    : "  << _stopTime << " ms\n";
-	MERIC_INFO << "Duration  is    : "  << _stopTime - _startTime << " ms\n";
-
+	MERIC_INFO << "Start time is   : "  << _startTime << " ms\n"
+	           << "Stop time is    : "  << _stopTime << " ms\n"
+	           << "Duration  is    : "  << _stopTime - _startTime << " ms\n";
 
 	std::string stop_t  = std::to_string(_stopTime);    
 	std::string start_t = std::to_string(_startTime);  
 
 	std::string querry = "{\"cache_time\":0,\"end_absolute\":" + stop_t+ ",\"metrics\":[{\"group_by\":[{\"name\":\"tag\",\"tags\":[\"node\",\"cluster\",\"org\",\"plugin\"]}],\"name\":\""+metric+"\",\"tags\":{\"node\":[\""+node_n+"\"],\"plugin\":[\"bbb_pub\"],\"ts\":[\"1ms\"],\"chnl\":[\"data\"],\"cluster\":[\"davide\"],\"org\":[\"e4\"]}}],\"time_zone\":\"Europe/Rome\",\"start_absolute\":" +start_t+ "}";
 
-	int slt = 5; 
+	const int slt = 5;
 	MERIC_INFO << "Waiting " << slt<<"s for KairosDB to get all samples." << "\n";		
 	sleep(slt); //wait for smaples to be loaded into DB
-	//MERIC_INFO << "Querry is : "  << querry << "\n";
 
 	RestClient::Response r = conn_samples->post("", querry);
-
 	//MERIC_INFO << "Server message code: "    << r.code     << "\n\n"; 
 	//MERIC_INFO << "Server message body: "    << r.body     << "\n\n"; 
 
@@ -239,8 +227,8 @@ int DAVIDE::getSamples()
 		}
 		
 		long long duration = _stopTime - _startTime;
-		MERIC_INFO << "# of samples is : "  << numOfSamples << "\n";
-		MERIC_INFO << "# of lost smpls.: "  << duration - numOfSamples << "\n";
+		MERIC_INFO << "# of samples is : "  << numOfSamples << "\n"
+		           << "# of lost smpls.: "  << duration - numOfSamples << "\n";
 
 		time_samples.resize (duration + 1);
 		power_samples.resize(duration + 1);
@@ -316,7 +304,6 @@ int DAVIDE::getSamples()
 }
 
 
-//sensorId bude 0 - blade
 void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples)
 {
 	if (power_samples.size() > last)
