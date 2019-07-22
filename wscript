@@ -36,9 +36,11 @@ def configure(ctx):
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
    
-    if((not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
+    if((not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False))):
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=True, errmsg="not found - When both x86_adapt and msr-safe are missing, numactl is mandatory!")
-        ctx.check_cc(header_name="cpufreq.h", execute=False, mandatory=False)
+        if ctx.check_cxx(lib="cpufreq", mandatory=False):
+            ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
+            ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
     else:
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
     if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
@@ -48,7 +50,6 @@ def configure(ctx):
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
-    ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)
 #    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
