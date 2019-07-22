@@ -971,7 +971,13 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	for (; die<max; die++)
 	{
 		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power/1000.0);
-		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow/1000.0);
+	}
+	if (timeWindow != 0)
+	{
+		for (; die<max; die++)
+		{
+			pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow/1000.0);
+		}
 	}
 #endif
 
@@ -983,7 +989,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 void Environment::restoreSystemSettings(bool hardReset)
 {
 #ifdef HAVE_GEOPM_H
-	if (activatedDVFS || hardReset || activatedUFS || usedPWRCAP)
+	if (!hardReset && (activatedDVFS || activatedUFS || usedPWRCAP))
 		pio.restore_control();
 #endif
 
@@ -1031,14 +1037,13 @@ void Environment::restoreSystemSettings(bool hardReset)
 			memTuningFile << "0";
 			memTuningFile.close();
 		}
-		else
+		else if(usedUFS || hardReset)
 		{
-			if(usedUFS)
-				uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
+			uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
 		}
 	}
 
-	if (usedPWRCAP)
+	if (usedPWRCAP || hardReset)
 	{
 #ifdef HAVE_MSR_CORE_H
 		for (int die=0; die<NODE_SIZE_SOCKET; die++)
@@ -1047,6 +1052,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 //			write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_DRAM_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapRAM);
 		}
 #elif defined HAVE_X86_ADAPT_H
+
 		for (int die=0; die<NODE_SIZE_SOCKET; die++)
 		{
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -1069,6 +1075,24 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+		}
+#elif defined HAVE_GEOPM_H
+		if (hardReset)
+		{
+			for (int die=0; die<NODE_SIZE_SOCKET; die++)
+			{
+				double val = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift;
+				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE"), die, val);
+				val = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift;
+				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_LIMIT_ENABLE", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_LIMIT_ENABLE"), die, val);
+				val = ((defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask) >> MSR_PKG_POWER_LIMIT_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT"), die, val);
+
+				uint64_t time_y = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift;
+				uint64_t time_z = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift;
+				val = pow(2.0, time_y) * (1.0 + time_z/4.0) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW);
+				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW"), die, val);
+			}
 		}
 #endif
 	}
