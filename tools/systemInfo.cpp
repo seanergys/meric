@@ -23,6 +23,13 @@
 	#include <x86_adapt.h>
 #endif
 
+#ifdef HAVE_GEOPM_H
+	#include <geopm/PlatformTopo.hpp>
+	#include <geopm/PlatformIO.hpp>
+	#include <geopm_hash.h>
+	static geopm::PlatformIO &pio = geopm::platform_io();
+#endif
+
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
@@ -221,10 +228,11 @@ struct systemLimits{
 };
 std::map<std::string, double> unit;
 
-enum MODE
+enum MODE	//this application keeps this order
 {
 	USING_MSR,
 	USING_ADAPT,
+	USING_GEOPM,
 	USING_NUMA,
 	USING_NONE
 };
@@ -341,6 +349,12 @@ void sysInfoSize()
 #elif defined HAVE_X86_ADAPT_H
 	sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 	cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
+#elif defined HAVE_GEOPM_H
+	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
+	cores = topo.num_domain(GEOPM_DOMAIN_CORE);
+	sockets = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
+//	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
+	cores = cores / sockets;
 #elif defined HAVE_NUMA_H
 	cores = sysconf(_SC_NPROCESSORS_ONLN); //cores per node
 	sockets = numa_node_of_cpu(cores-1)+1;
@@ -479,6 +493,16 @@ bool sysInfoFrequencies(systemLimits& limits)
 	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
+#elif defined HAVE_GEOPM_H
+	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
+	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.maxUncoreFreq)
+		ok = false;
+	
+	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
+	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	if (ok && freq != limits.minUncoreFreq)
+		ok = false;	
 #elif defined __x86_64 //intel CPUs only
 	std::cout << "\n# CPU Uncore frequency NOT available - install msr-safe or x86_adapt\n\n";
 #endif
@@ -544,6 +568,8 @@ bool sysInfoPowercap(systemLimits& limits)
 
 	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
 	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+#elif defined HAVE_GEOPM_H
+	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & MSR_PKG_POWER_LIMIT_mask;
 #endif
 	std::cout << "\tPKG power limit #1: " 
 		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
@@ -564,15 +590,15 @@ bool sysInfoPowercap(systemLimits& limits)
 #elif defined HAVE_X86_ADAPT_H
 	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
 	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+#elif defined HAVE_GEOPM_H
+		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
 #endif
-
 	std::cout << "\tPKG power limit #2: " 
 		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 		<< " + clamping "
 		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 		<< std::endl
 		<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
-
 
 	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
@@ -591,8 +617,9 @@ bool sysInfoPowercap(systemLimits& limits)
 
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#elif defined HAVE_GEOPM_H
+	MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::DRAM_POWER_LIMIT#", pio.signal_domain_type("MSR::DRAM_POWER_LIMIT#"), 0));
 #endif
-
 	std::cout << "\tDRAM power limit:   " 
 		<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 		<< " + clamping "
@@ -625,6 +652,8 @@ void getRAPLunits()
 	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+#elif defined HAVE_GEOPM_H
+	MSR_RAPL_POWER_UNIT_bits = geopm_signal_to_field(pio.read_signal("MSR::RAPL_POWER_UNIT#", pio.signal_domain_type("MSR::RAPL_POWER_UNIT#"), 0));
 #endif
 	if (MSR_RAPL_POWER_UNIT_bits != 0)
 	{
@@ -641,7 +670,7 @@ void sysEnergyMeasurement()
 	int systems = 0;
 	std::cout << "\n# AVAILABLE ENERGY MEASUREMENT SYSTEMS\n";
 
-#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
 #endif
@@ -794,7 +823,9 @@ int main(int argc, char **argv)
 		else
 		#endif
 		{
-			#ifdef HAVE_NUMA_H
+			#ifdef HAVE_GEOPM_H
+			status = USING_GEOPM;
+			#elif defined HAVE_NUMA_H
 			status = USING_NUMA;
 			#endif
 		}
