@@ -7,7 +7,7 @@ The library was originally developed for x86 systems (tested on HSW, BDW and KNL
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
-<!--> master branch links <!-->
+<!--> master branch links 
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
  3. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-and-timeprof-interface-and-shared-score-pmeric-api)
@@ -19,6 +19,7 @@ The library was originally developed for x86 systems (tested on HSW, BDW and KNL
  9. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#9-meric-with-a-fortran-code)
 10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#10-tool-for-static-tuning)
 11. [Acknowledgement](https://code.it4i.cz/vys0053/meric#11-acknowledgement)
+<!-->
 
 <!--> dev branch links <!-->
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
@@ -51,7 +52,7 @@ MERIC provides several ways how to change the CPU core frequency:
 ### CPU uncore frequency ###
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
 
-MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) to be able to change the system uncore frequency. 
+MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
 
 When using msr-safe to tune uncore frequency, it may happen, that the MSR_UNCORE_RATIO_LIMIT register is not available. In that case add `0x620 0x7F7F` to the system's whitelist.
 
@@ -59,7 +60,7 @@ When using msr-safe to tune uncore frequency, it may happen, that the MSR_UNCORE
 ### Intel RAPL power capping ###
 Intel processors with RAPL energy measurement system provides possibility to specify average power consumption of the PKG or DRAM in a specific time window.
 	
-MERIC requires requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) to be able change the power limits. Currently only PKG power cap is supported.
+MERIC requires requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap is supported.
 	
 Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. Due to that it might be impossible to set exactly the window size you have specified.
 
@@ -84,7 +85,7 @@ Since we are speaking about counters, overflow may happen during the application
 
 Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
 	
-In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
+In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
 
 
 ### HDEEM ###
@@ -123,7 +124,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
  *	`void MERIC_MeasureStart(const char * regionName)`
 
 	Starting measurement of a reagion.
-	Please, do not use **#** and **@** in names of regions.
+	Please, do not use `#` and `@` in names of regions.
 
  *	`double MERIC_MeasureStop()`
 
@@ -262,7 +263,8 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe)
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
-* optionally - [numa](https://github.com/numactl/numactl) (mandatory if both msr-safe and x86_adapt are not available)
+* optionally - [GEOPM](https://geopm.github.io/)
+* optionally - [numa](https://github.com/numactl/numactl) (mandatory if all msr-safe, x86_adapt and GEOPM are not available)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) (mandatory for DiG energy measurement system)
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
@@ -288,9 +290,9 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_NUM_THREADS=24`
 	- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
 * `export MERIC_PWRCAP_POWER=100000`
-	- Average processor PKG power in miliwatts under the selected time window.
+	- Average processor PKG power in milliwatts under the selected time window.
 * `export MERIC_PWRCAP_TIME=3000`
-	- Time window size for power capping specified in miliseconds.
+	- Time window size for power capping specified in milliseconds.
 
 ## SET MERIC WORKING MODE ##
 * `export MERIC_MODE=0`
@@ -373,7 +375,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"PWRCAP_POWER" : 100000,
+			"PWRCAP_POWER" : 10000,
 			"NUM_THREADS" : 2
 		}
 	}
@@ -444,43 +446,41 @@ Each csv file carry 3 types of data:
 
 To find the best settings for each region, you should run your code with several possible settings. The content of the MERIC's output directories, can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
 
-	# Run an application in several configurations you want to test - in test directory are provided example scripts `run.sh` or `run-mpi.sh`
-		```
-		export MERIC_MODE=1
-		for thread in {24..1..1}
+## Run an application in several configurations you want to test ##
+In test directory are provided example scripts `run.sh` or `run-mpi.sh`
+	```
+	export MERIC_MODE=1
+	for thread in {24..1..1}
+	do
+		for cpu_freq in {25..12..1}
 		do
-			for cpu_freq in {25..12..1}
+			for uncore_freq in {30..12..1} # or {30..12..2}
 			do
-				for uncore_freq in {30..12..1} # or {30..12..2}
+				for iter in {0..3}
 				do
-					for iter in {0..3}
-					do
-						export MERIC_NUM_THREADS=$thread
-						export MERIC_FREQUENCY=${cpu_freq}00MHz
-						export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-						export MERIC_ITERATION=$iter
-						./test
-					done
+					export MERIC_NUM_THREADS=$thread
+					export MERIC_FREQUENCY=${cpu_freq}00MHz
+					export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
+					export MERIC_ITERATION=$iter
+					./test
 				done
 			done
 		done
-		```
+	done
+	```
 	
-	# Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information what you have measured.
-		```
-		{
-			"Timestamp" : "Thu Dec  6 15:37:23 2018",
-			"System"    : "IT4I Salomon",
-			"DataFormat": "node_CF_UnCF_thrds",
-			"Note"      : ""
-		}
-		```
+Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information about the measurement.
+	```
+	{
+		"Timestamp" : "Thu Dec  6 15:37:23 2018",
+		"System"    : "IT4I Salomon",
+		"DataFormat": "node_CF_UnCF_thrds",
+		"Note"      : ""
+	}
+	```
 
-	# Process the results using RADAR tool
-		Repository URL: https://code.it4i.cz/bes0030/readex-radar.git
-		1) Set variables in config.py file (description is included in the file)
-		2) Launch python3 ./printFullReport.py -configFile path/to/config.py
-
+## Process the results using RADAR tools ##
+We have implemented a python tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI] (https://code.it4i.cz/vys0053/SGS18-READEX).
 
 --------------------------------------------------------------------------------
 #      9] MERIC with a Fortran code                                            #
