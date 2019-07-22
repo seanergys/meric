@@ -448,39 +448,39 @@ To find the best settings for each region, you should run your code with several
 
 ## Run an application in several configurations you want to test ##
 In test directory are provided example scripts `run.sh` or `run-mpi.sh`
-	```
-	export MERIC_MODE=1
-	for thread in {24..1..1}
+```
+export MERIC_MODE=1
+for thread in {24..1..1}
+do
+	for cpu_freq in {25..12..1}
 	do
-		for cpu_freq in {25..12..1}
+		for uncore_freq in {30..12..1} # or {30..12..2}
 		do
-			for uncore_freq in {30..12..1} # or {30..12..2}
+			for iter in {0..3}
 			do
-				for iter in {0..3}
-				do
-					export MERIC_NUM_THREADS=$thread
-					export MERIC_FREQUENCY=${cpu_freq}00MHz
-					export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-					export MERIC_ITERATION=$iter
-					./test
-				done
+				export MERIC_NUM_THREADS=$thread
+				export MERIC_FREQUENCY=${cpu_freq}00MHz
+				export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
+				export MERIC_ITERATION=$iter
+				./test
 			done
 		done
 	done
-	```
+done
+```
 	
 Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information about the measurement.
-	```
-	{
-		"Timestamp" : "Thu Dec  6 15:37:23 2018",
-		"System"    : "IT4I Salomon",
-		"DataFormat": "node_CF_UnCF_thrds",
-		"Note"      : ""
-	}
-	```
+```
+{
+	"Timestamp" : "Thu Dec  6 15:37:23 2018",
+	"System"    : "IT4I Salomon",
+	"DataFormat": "node_CF_UnCF_thrds",
+	"Note"      : ""
+}
+```
 
 ## Process the results using RADAR tools ##
-We have implemented a python tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI] (https://code.it4i.cz/vys0053/SGS18-READEX).
+We have implemented a python tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI](https://code.it4i.cz/vys0053/SGS18-READEX).
 
 --------------------------------------------------------------------------------
 #      9] MERIC with a Fortran code                                            #
