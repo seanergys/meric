@@ -1,8 +1,10 @@
 ### XX.XX.XXXX #################################################################
+  - powercap is now set in miliwatts and miliseconds instead of watts and microsecond
   - fixed restore of the system hardware settings in the energyMeasureStop
   - systemInfo tool provides posibility to restore the system settings
   - HW tuning and RAPL energy measurement using GEOPM
   - continual mode is now delault and also it is not necessary any more to set MERIC_CONTINUAL for energy measurement systems that does not support non-continual measurement
+
 
 ### 30.04.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation

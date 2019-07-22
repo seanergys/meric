@@ -287,10 +287,10 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
 * `export MERIC_NUM_THREADS=24`
 	- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
-* `export MERIC_PWRCAP_POWER=100`
-	- Average processor PKG power [W] in the selected time window.
-* `export MERIC_PWRCAP_TIME=10`
-	- Time window size for power capping specified in microseconds.
+* `export MERIC_PWRCAP_POWER=100000`
+	- Average processor PKG power in miliwatts under the selected time window.
+* `export MERIC_PWRCAP_TIME=3000`
+	- Time window size for power capping specified in miliseconds.
 
 ## SET MERIC WORKING MODE ##
 * `export MERIC_MODE=0`
@@ -373,7 +373,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
 		"@CHANGE" : {
-			"PWRCAP_POWER" : 10,
+			"PWRCAP_POWER" : 100000,
 			"NUM_THREADS" : 2
 		}
 	}

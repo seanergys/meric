@@ -867,8 +867,8 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 
 /**
  * RAPL power capping - PKG only
- * power [W]
- * timeWindow [us]
+ * power [mW]
+ * timeWindow [ms]
  *
  * NOTE: if power limit is not specified timeWindow is ignored
  **/
@@ -878,16 +878,16 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 		return;
 
 #ifdef HAVE_MSR_CORE_H
-	MERIC_INFO << "LIBMSR set powercap to: "<< power << " W";
+	MERIC_INFO << "LIBMSR set powercap to: "<< power << " mW";
 #elif defined HAVE_X86_ADAPT_H
-	MERIC_INFO << "X86ADAPT set powercap to: "<< power << " W";
+	MERIC_INFO << "X86ADAPT set powercap to: "<< power << " mW";
 #elif defined HAVE_GEOPM_H
-	MERIC_INFO << "GEOPM set powercap to: "<< power << " W";
+	MERIC_INFO << "GEOPM set powercap to: "<< power << " mW";
 #else
 	return;
 #endif
 	if (timeWindow != 0)
-		MERIC_INFO << " for " << timeWindow << " us";
+		MERIC_INFO << " for " << timeWindow << " ms";
 	usedPWRCAP = true;
 	int max = NODE_SIZE_SOCKET;
 	int die=0;
@@ -919,7 +919,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
 #endif
 	
-	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / RAPL::getUnit(RAPL_PCKG_POWER_LIMIT))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
+	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / (1000*RAPL::getUnit(RAPL_PCKG_POWER_LIMIT)))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
 
 
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
@@ -933,7 +933,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 		 **/
 		uint64_t Y = 0;
 		uint64_t Z = 0;
-		timeWindow = timeWindow/(1000000 * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW));
+		timeWindow = timeWindow/(1000 * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW));
 		if (timeWindow > 1)
 		{
 			Y = log2(timeWindow);
@@ -970,9 +970,8 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 #elif defined HAVE_GEOPM_H
 	for (; die<max; die++)
 	{
-		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power);
-
-		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow*1000000.0);
+		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power/1000.0);
+		pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow/1000.0);
 	}
 #endif
 
