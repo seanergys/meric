@@ -1,5 +1,3 @@
-//g++ -std=c++11 wrapper.cpp 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -9,23 +7,25 @@
 #include <iostream>
 #include <dirent.h> //list of files in a dir
 #include <algorithm>
-
 #include <unistd.h>
 #include <fstream>
 #include <limits>
 #include <time.h>
 #include <math.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 #include "../src/wrapper/environmentwrapper.h"
+#include "../src/basis/utils.h"
+#include "../src/basis/json.h"
 
 
 //const std::string APPLICATION = "mpirun -n 2 /home/vys0053/readex/meric/test/test_mpi";
-const bool MPI_APP = true;
 //const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
 //const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
-const std::string APPLICATION="mpirun $BIND_TO_SOCKETS /scratch/work/user/vys0053/SOFTWARE/readex-apps/readex-repository/benchmark_apps/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
-std::string MERIC_OUTPUT_DIR;
+//const std::string APPLICATION="mpirun $BIND_TO_SOCKETS /scratch/work/user/vys0053/SOFTWARE/readex-apps/readex-repository/benchmark_apps/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
+
+
 
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
@@ -153,13 +153,17 @@ unsigned long newconfigurations;
 
 std::vector <std::string> appRegions; //list of regions of the application
 
+std::string APPLICATION = "";
+std::string MERIC_OUTPUT_DIR = "";
 //EXHAUSTIVE
 //EVO + PSO
 	int improvedSolutionCounter = 0;
+	int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
+	int END_CONDITION = 3; //-times the best configuration has not been improved
 //PSO
-	const double Cp = 2.05;
-	const double Cg = 2.05;
-	const double omg = 0.9;
+	double Cp = 2.05;
+	double Cg = 2.05;
+	double omg = 0.9;
 	struct PSOparticleHistory{
 		struct configuration bestPosition;
 		double energy;
@@ -187,10 +191,36 @@ struct Tparametres{
 	ALGORITHM alg;
 	bool MPI;
 	bool generateCfg;
+	
+	Tparametres() :
+		alg(NONE),
+		MPI(false),
+		generateCfg(false) {}
+	
 };
-Tparametres params = {NONE, false, false};
+Tparametres params; // = {NONE, false, false};
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS ///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void generateDefaultWrapperConfigFile();
+void generateMERICConfigFile(appConfiguration config, const std::string fileName);
+void printHelp();
+int readParameters(int argc, char **argv);
+void constructCallPath();
+void constructStateSpace();
+configuration decodeConfigVector (std::vector<long> values);	//EXHAUSTIVE
+void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::vector<long>> vecConfig, std::vector <long> v);
+size_t getRegionIndex(std::string region);
+std::string constructConfigFileName(std::string regName, configuration config);
+bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished); //EVO
+configuration getRandomConfig();
+configuration EVO_crossover(configuration c1, configuration c2);
+void EVO_mute(configuration& conf);
+void limitVelocity(configuration &c);	//PSO
+configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
+bool PSO_configurationValidation(configuration c);
+size_t generateConfigurationsToTest();
+void runApplication(appConfiguration testRun);
 ////////////////////////////////////////////////////////////////////////////////
 
 void generateDefaultWrapperConfigFile()
@@ -217,13 +247,13 @@ void generateDefaultWrapperConfigFile()
 				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxCoreFreq)+",\n"
 				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minCoreFreq)+",\n";
 		if (freqBound == "") //TODO
-			content+= "\t\t\t\"STEP\":  100000000,\n";
+			content+= "\t\t\t\"STEP\":  100000000\n";
 		else
 			content+= "\t\t\t\"AVILABLE\" : [\n" + freqBound +"\n\t\t\t]\n";
 		content+="\t\t},\n";
 
 		if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
-			content+=std::string("\t\t\"UNCORE_FREQENCY\" : {\n")
+			content+=std::string("\t\t\"UNCORE_FREQUENCY\" : {\n")
 					+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxUncoreFreq)+",\n"
 					+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"
 					+ "\t\t\t\"STEP\":  100000000\n" //TODO
@@ -235,7 +265,7 @@ void generateDefaultWrapperConfigFile()
 				+ "\t\t\t\"STEP\":  1\n"
 				+ "\t\t}\n";
 
-	content += "\t}\n"; //end PARAMETERS
+	content += "\t},\n"; //end PARAMETERS
 
 
 	content+= std::string("\t\"ALGORITHM\" : {\n")
@@ -260,8 +290,20 @@ void generateDefaultWrapperConfigFile()
 			+ "\t},\n";
 
 	content+= std::string("\t\"MERIC\" : {\n")
-			+ "\t\t\"MODE\" : 1,\n"	//TODO
-			+ "\t\t\"COUNTERS\" : \"papi\",\n" //TODO
+#ifdef HAVE_HDEEM_H
+			+ "\t\t\"MODE\" : 0,\n"
+#elif defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+			+ "\t\t\"MODE\" : 1,\n"
+#elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+			+ "\t\t\"MODE\" : 6,\n"
+#else //just time measurement
+			+ "\t\t\"MODE\" : 7,\n"
+#endif
+#ifdef HAVE_PAPI_H
+			+ "\t\t\"COUNTERS\" : \"papi\",\n"
+#elif defined HAVE_PERFEVENT_H
+			+ "\t\t\"COUNTERS\" : \"perfevent\",\n"
+#endif
 			+ "\t\t\"AGGREGATE\" : 1,\n"
 			+ "\t\t\"CONTINUAL\" : 1,\n"
 			+ "\t\t\"DETAILED\" : 1,\n"
@@ -270,7 +312,7 @@ void generateDefaultWrapperConfigFile()
 			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
 			+ "\t}\n";
 
-	content+= "}\"\n";
+	content+= "}\n";
 
 
 	std::ofstream configFile ("defaultWrapperConfig.json");
@@ -312,12 +354,16 @@ void generateMERICConfigFile(appConfiguration config, const std::string fileName
 
 void printHelp()
 {
-	std::cerr << "MERICwrapper" <<std::endl
-	          << "\t-g = generates a default config file" << std::endl
-	          << "select from an algorithm to search for the optimal configuration" << std::endl
-	          << "\t-x = exhaustive" << std::endl
-	          << "\t-e = evolution" << std::endl
-	          << "\t-p = particle swarm optimization" << std::endl;
+	std::cerr << std::endl << "MERICwrapper" << std::endl
+	          << "----------------------------------------"
+	          << "----------------------------------------" << std::endl
+	          << "./wrapper -c config.json -- mpirun -np 2 ./a.out -a -x" << std::endl
+	          << "----------------------------------------"
+	          << "----------------------------------------" << std::endl
+	          << "\t-d = generate a default config file 'defaultWrapperConfig.json'" << std::endl
+	          << "\t-c = configuration file" << std::endl
+	          << "\t-- = command to run the application to analyze" << std::endl;
+	exit(1);
 }
 
 int readParameters(int argc, char **argv)
@@ -326,65 +372,306 @@ int readParameters(int argc, char **argv)
 # TODO - nacteni parametru
 # - command spoustejici aplikaci
 # - pocet iteraci se stejnou konfiguraci
-# - energy measurement system
-# - algoritmus prohledavani SP
-# - systemove parametry ktere se maji ladit, krok s jakym prohledavat SP daneho parametru
+# - krok s jakym prohledavat SP daneho parametru
 # - maximalni vliv konfigurace na cas
-
-export MERIC_ITERATION=0
-export MERIC_MODE=7	#enum {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 */
-
-/*
-struct Tparametres{
-	ALGORITHM alg;
-	bool MPI;
-	bool generateCfg;
-};
-Tparametres params = {NONE, false, false};
-*/
-
-
 	if (argc == 1)
 		printHelp();
+	std::string settingsFile = "";
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
-
-		if (arg == "-x")
-			params.alg = EXHAUSTIVE;
-		else if (arg == "-e")
-			params.alg = EVO;
-		else if (arg == "-p")
-			params.alg = PSO;
-		else if (arg == "-g")
+		if (arg == "-d")
 		{
 			generateDefaultWrapperConfigFile();
 			return 1;
 		}
-		else
+		else if (arg == "-c")
 		{
-			printHelp();
-			return 1;
+			settingsFile = std::string(argv[++i]);
 		}
+		else if (arg == "--")
+		{
+			for (; i < argc; ++i)
+				APPLICATION += " " + std::string(argv[++i]);
+		}
+		else
+			printHelp();
 	}
-
+	if (settingsFile == "" || APPLICATION == "")
+	{
+		std::cerr << "ERROR: wrong input parameters\n";
+		printHelp();
+	}
+//----------------------------------------------------------------------------//
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
-	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec);
+	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec); //default name
+
+	struct stat info;
+	struct json_value_s* root = NULL;
+	if(stat(settingsFile.c_str(), &info) == 0)
+	{
+		std::ifstream jsonFile (settingsFile);
+		std::string line, jsonString = "";
+		if (jsonFile.is_open())
+		{
+			while (getline(jsonFile,line))
+			{
+				jsonString += " " + line;
+			}
+			jsonFile.close();
+		}
+		const char * json = jsonString.c_str();
+		struct json_value_s* root = json_parse(json, strlen(json));
+		if (root ==  NULL)
+		{
+			std::cerr << "ERROR: invalid " << settingsFile << std::endl;
+			return 1;
+		}
+		else
+		{
+			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+			while(data != NULL)
+			{
+				if (std::string(data->name->string) == "MPI")	//OK
+				{
+					std::string val = std::string(((struct json_string_s*)data->value->payload)->string);
+					std::transform(val.begin(), val.end(), val.begin(), ::toupper);
+					if (val == "TRUE")
+						params.MPI = true;
+				}
+				else if (std::string(data->name->string) == "PARAMETERS")
+				{
+					struct json_object_element_s* prms = ((struct json_object_s*)data->value->payload)->start;
+					do{
+						if (std::string(prms->name->string) == "FREQUENCY")
+						{
+							selectedParams.coreFreq = 1;
+							struct json_object_element_s* freq = ((struct json_object_s*)prms->value->payload)->start;
+							do
+							{
+								if (std::string(freq->name->string) == "MAX")
+								{
+									long freqVal = 
+									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (limit.maxCoreFreq > freqVal && freqVal > limit.minCoreFreq)
+										limit.maxCoreFreq = freqVal;
+								}
+								else if (std::string(freq->name->string) == "MIN")
+								{
+									long freqVal = 
+									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (limit.maxCoreFreq > freqVal && freqVal > limit.minCoreFreq)
+										limit.minCoreFreq = freqVal;
+								}
+								else if (std::string(freq->name->string) == "STEP")	//TODO STEP
+								{
+									std::cerr << "WARNING: specifying of frequency step size not supported yet" << std::endl;
+								}
+								else
+								{
+									std::cerr << "ERROR: invalid config file - FREQUENCY parameter - " << freq->name->string << std::endl;
+									return 2;
+								}
+								freq = freq->next;
+							}while(freq != NULL);
+						}
+						else if (std::string(prms->name->string) == "UNCORE_FREQUENCY")
+						{
+							selectedParams.uncoreFreq = 1;
+							struct json_object_element_s* freq = ((struct json_object_s*)prms->value->payload)->start;
+							do{
+								if (std::string(freq->name->string) == "MAX")
+								{
+									long freqVal = 
+									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
+										limit.maxUncoreFreq = freqVal;
+								}
+								else if (std::string(freq->name->string) == "MIN")
+								{
+									long freqVal = 
+									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
+										limit.minUncoreFreq = freqVal;
+								}
+								else if (std::string(freq->name->string) == "STEP")	//TODO STEP
+								{
+									std::cerr << "WARNING: specifying of uncore frequency step size not supported yet" << std::endl;
+								}
+								else
+								{
+									std::cerr << "ERROR: invalid config file - UNCORE_FREQUENCY parameter - " << freq->name->string << std::endl;
+									return 2;
+								}
+								freq = freq->next;
+							}while(freq != NULL);
+						}
+						else if (std::string(prms->name->string) == "THREADS")
+						{
+							selectedParams.threads=1;
+							struct json_object_element_s* thrds = ((struct json_object_s*)prms->value->payload)->start;
+							do{
+								if (std::string(thrds->name->string) == "MAX")
+								{
+									int thrdsVal = 
+									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));	//TODO
+		//							if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
+		//								limit.maxUncoreFreq = freqVal;
+								}
+								else if (std::string(thrds->name->string) == "MIN")
+								{
+									int thrdsVal = 
+									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
+		//							if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
+		//								limit.minUncoreFreq = freqVal;
+								}
+								else if (std::string(thrds->name->string) == "STEP")	//TODO STEP
+								{
+									std::cerr << "WARNING: specifying of threads step size not supported yet" << std::endl;
+								}
+								else
+								{
+									std::cerr << "ERROR: invalid config file - THREADS parameter - "<< thrds->name->string << std::endl;
+									return 2;
+								}
+								thrds = thrds->next;
+							}while(thrds != NULL);
+						}
+						else
+						{
+							std::cerr << "ERROR: invalid config file - PARAMETERS parameter - " << prms->name->string << std::endl;
+							return 2;
+						}
+						prms = prms->next;
+					}while (prms != NULL);
+				}
+				else if (std::string(data->name->string) == "ALGORITHM")
+				{
+					struct json_object_element_s* alg = ((struct json_object_s*)data->value->payload)->start;
+					do{
+						if (std::string(alg->name->string) == "NAME")
+						{
+							std::string algName = std::string(((struct json_string_s*)alg->value->payload)->string);
+							if (params.alg == NONE)
+							{
+								if (algName == "EXHAUSTIVE")
+									params.alg = EXHAUSTIVE;
+								else if (algName == "EVO")
+									params.alg = EVO;
+								else if (algName == "PSO")
+									params.alg = PSO;
+								else
+								{
+									std::cerr << "ERROR: invalid config file - ALGORITHM - " << algName << std::endl;
+									return 2;
+								}
+							}
+							else
+							{
+								std::cerr << "ERROR config file: more than one search algorithm specified" << std::endl;
+								return 2;
+							}
+						}
+						else if (std::string(alg->name->string) == "PARAMETERS")
+						{
+							if (params.alg == EVO)
+							{
+								struct json_object_element_s* algPar = ((struct json_object_s*)alg->value->payload)->start;
+								do{
+									if (std::string(algPar->name->string) == "END_CONDITION")
+										END_CONDITION = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else if (std::string(algPar->name->string) == "POPULATION")
+										POPULATION_SIZE = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else
+									{
+										std::cerr << "ERROR: invalid config file - ALGORITMH PARAMETERS - "<< algPar->name->string << std::endl;
+										return 2;
+									}
+									algPar = algPar->next;
+								}while(algPar != NULL);
+									
+							}
+							else if (params.alg == PSO)
+							{
+								struct json_object_element_s* algPar = ((struct json_object_s*)alg->value->payload)->start;
+								do{
+									if (std::string(algPar->name->string) == "END_CONDITION")
+										END_CONDITION = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else if (std::string(algPar->name->string) == "PARTICLES")
+										POPULATION_SIZE = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else if (std::string(algPar->name->string) == "CONST_CP")
+										Cp = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else if (std::string(algPar->name->string) == "CONST_CG")
+										Cg = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else if (std::string(algPar->name->string) == "CONST_W")
+										omg = std::stoi(std::string(((struct json_string_s*)algPar->value->payload)->string));
+									else
+									{
+										std::cerr << "ERROR: invalid config file - ALGORITMH PARAMETERS - "<< algPar->name->string << std::endl;
+										return 2;
+									}
+									algPar = algPar->next;
+								}while(algPar != NULL);
+							}
+						}
+						else
+						{
+							std::cerr << "ERROR: invalid config file - ALGORITMH parameter - "<< alg->name->string << std::endl;
+							return 2;
+						}
+						alg = alg->next;
+					}while (alg != NULL);
+				}
+				else if (std::string(data->name->string) == "MERIC")	//OK
+				{
+					struct json_object_element_s* meric = ((struct json_object_s*)data->value->payload)->start;
+					do
+					{
+						if (std::string(meric->name->string) == "MODE")
+							setenv("MERIC_MODE", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "COUNTERS")
+							setenv("MERIC_COUNTERS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "AGGREGATE")
+							setenv("MERIC_AGGREGATE", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "CONTINUAL")
+							setenv("MERIC_CONTINUAL", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "DETAILED")
+							setenv("MERIC_DETAILED", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "SAMPLES")
+							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "BARRIERS")
+							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "OUTPUT_DIR")
+							MERIC_OUTPUT_DIR = std::string(((struct json_string_s*)meric->value->payload)->string);
+						else
+						{
+							std::cerr << "ERROR: invalid config file - MERIC parameter - "<< meric->name->string << std::endl;
+							return 2;
+						}
+						meric = meric->next;
+					}while (meric != NULL);
+				}
+				else
+				{
+					std::cerr << "ERROR: invalid config file - "<< data->name->string << std::endl;
+					return 2;
+				}
+				data = data->next;
+			}
+		}
+	}
+	else
+	{
+		std::cerr << "ERROR: Configuration file "<< settingsFile <<" cannot be open\n";
+		return 1;
+	}
 	setenv("MERIC_OUTPUT_DIR", MERIC_OUTPUT_DIR.c_str(), 1);
 
-	setenv("MERIC_COUNTERS", "papi", 1);
-	setenv("MERIC_MODE", "1", 1);
-	setenv("MERIC_ITERATION", "0", 1);
-
-
-	selectedParams.threads=1;
-	selectedParams.coreFreq = 1;
-	selectedParams.uncoreFreq = 1;
+	//TODO power capping
 	selectedParams.powerCapPKG = 0;
 	selectedParams.powerCapPKGtime = 0;
-
 }
 
 void constructCallPath()
@@ -528,7 +815,7 @@ std::string constructConfigFileName(std::string regName, configuration config)
 	if (cfgStr.back() == '_')
 		cfgStr.pop_back();
 
-	if (MPI_APP)
+	if (params.MPI)
 	{
 		char hostname[HOST_NAME_MAX];
 		gethostname(hostname, HOST_NAME_MAX);
@@ -755,8 +1042,8 @@ bool PSO_configurationValidation(configuration c)
 size_t generateConfigurationsToTest()
 {
 /// EVO + PSO //////////////////////////////////////////////////////////////////
-	const int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
-	const int END_CONDITION = 3; //-times the best configuration has not been improved
+//	const int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
+//	const int END_CONDITION = 3; //-times the best configuration has not been improved
 ////////////////////////////////////////////////////////////////////////////////
 
 	//TODO take also into acount that all the possible configurations had been tested, so it will cause a deadlock in generation of new configurations
