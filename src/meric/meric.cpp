@@ -46,13 +46,8 @@ int Meric::getDefaultParameters()
 {
 	int ret=0;
 //OBLIGATORY SECTION
-	defaultParameter.nthreads        = mutils::getenv("MERIC_NUM_THREADS", -1);
-	defaultParameter.frequency       = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
-	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
-	defaultParameter.powerCapPKG     = mutils::getenv("MERIC_PWRCAP_POWER", -1);
-	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
-
 #if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+	defaultParameter.frequency = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
 	if (defaultParameter.frequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
@@ -62,9 +57,12 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="CF_";
 	}
+#else
+	defaultParameter.frequency = 0;
 #endif
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
 	if (defaultParameter.uncoreFrequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_UNCORE_FREQUENCY [Hz]\n";
@@ -74,9 +72,12 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="UnCF_";
 	}
+#else
+	defaultParameter.uncoreFrequency = 0;
 #endif
 
 #ifdef HAVE_OMP_H
+	defaultParameter.nthreads = mutils::getenv("MERIC_NUM_THREADS", -1);
 	if (defaultParameter.nthreads < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_NUM_THREADS\n"
@@ -87,9 +88,13 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="thrds_";
 	}
+#else
+	defaultParameter.nthreads = 0;
 #endif
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+	defaultParameter.powerCapPKG     = mutils::getenv("MERIC_PWRCAP_POWER", -1);
+	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
 	if (defaultParameter.powerCapPKG < 0 || defaultParameter.powerCapPKGtime < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_POWER [W] and MERIC_PWRCAP_TIME [us]\n";
@@ -106,6 +111,9 @@ int Meric::getDefaultParameters()
 		std::cerr << "MERIC ERROR: MERIC_PWRCAP_POWER [W] must be set to change MERIC_PWRCAP_TIME [us]\n";
 		ret = 1;
 	}
+#else
+	defaultParameter.powerCapPKG = 0;
+	defaultParameter.powerCapPKGtime = 0;
 #endif
 
 #ifndef HAVE_HDF5_H
@@ -119,7 +127,7 @@ int Meric::getDefaultParameters()
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << " Hz\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << " Hz\n";
-	MERIC_INFO << "Default powercap: " << defaultParameter.powerCapPKG << " W\t" << defaultParameter.powerCapPKGtime << " us\n";
+	MERIC_INFO << "Default powercap: " << defaultParameter.powerCapPKG << " mW\t" << defaultParameter.powerCapPKGtime << " ms\n";
 
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
 	if (outputFilenameSuffix.size() == 0)
