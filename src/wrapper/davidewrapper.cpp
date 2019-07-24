@@ -153,10 +153,9 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
 			       << "maxWatts : " << maxWatts[0] << " W\n";
 
-		double avgWatts = (energy[0] / double(n_subsamples+1)) - GPU_offset;
-		energy[0] = avgWatts * 1000.0 * duration; // the * 1000.0 is for mW to W conversion from HDEEM
-		MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n"
-			       << "energy   : " << avgWatts * duration << " J\n";
+		
+		double avgWatts = energy[0] / double(n_subsamples+1);
+		energy[0] = (avgWatts - GPU_offset) * n_samples;
 	}
 	else
 	{
@@ -184,8 +183,7 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
 			       << "maxWatts : " << maxWatts[0] << " W\n"
 			       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";
-		energy[0] = ((energy[0] / ((double)(n_samples)) ) - GPU_offset ) * duration * 1000.0; // the * 1000.0 is for MW to W conversion from hdeem
-		MERIC_INFO << "energy   : " << energy[0] / 1000.0 << " J\n";
+		energy[0] -= n_samples * GPU_offset;
 	}
 
 	return errMessage;
