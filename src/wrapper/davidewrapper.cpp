@@ -79,116 +79,115 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	           << "lastBlade   : " << *lastBlade  << "\n"
 	           << "# of Samples: " << n_samples << "\n";
 
-	// sub-sample measurement
+	// sub-sampling measurement setup
 	std::vector <double> tmp_t, tmp_w;
+	int  n_subsamples = dur_t*20;
+	int  hallo_size = 10;
+	int buf_size = 2*hallo_size+dur_t+2;
+	bool use_linear_interpolation = false; // if false spline interpolation is used 
 
-	if (dur_t != 0)
+	if (dur_t == 0)
+		return errMessage;
+
+	if (dur_t < 10 && *firstBlade > hallo_size && time_samples.size() >= (*firstBlade - hallo_size + buf_size -1))
 	{
-	/*	if (dur_t < 10)
+		tmp_t.reserve(buf_size);
+		tmp_w.reserve(buf_size);
+		
+		MERIC_INFO << "  Subsample energy consumption estimation:\n"
+			       << "  StartTime   : " << (long long)(FREQUENCY*startTime*1000.0) << "\n"
+			       << "  StopTime    : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n"
+			       << "  Duration    : " << (long long)(FREQUENCY*duration*1000.0) << " us\n"
+			       << "  Start sample: " << *firstBlade - hallo_size << std::endl
+			       << "  Stop sample : " << *firstBlade - hallo_size + buf_size -1 << std::endl;
+
+		for (size_t i = 0; i < buf_size; i++ )
 		{
-			// Sub sampling setup
-			int  n_subsamples 			  = dur_t*20;
-			int  hallo_size   			  = 10;
-			bool use_linear_interpolation = false; // if false spline interpolation is used 
-			// END - Sub sampling setup
+			tmp_t.push_back((double)  time_samples [*firstBlade - hallo_size + i]);
+			tmp_w.push_back(          power_samples[*firstBlade - hallo_size + i]);
 
-			MERIC_INFO << "  Subsample energy consumption estimation:\n"
-				       << "  StartTime  : " << (long long)(FREQUENCY*startTime*1000.0) << "\n"
-				       << "  StopTime   : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n"
-				       << "  Duration   : " << (long long)(FREQUENCY*duration*1000.0) << " us\n";
+			MERIC_INFO << "    Time: " << time_samples [*firstBlade - hallo_size + i] << "    [ms]; power: " 
+				                       << power_samples[*firstBlade - hallo_size + i] << " W \n";
+		}
 
-			int  buf_size = 2*hallo_size+dur_t+2;
-			tmp_t.reserve(buf_size);
-			tmp_w.reserve(buf_size);
+		tk::spline s;
+		if (use_linear_interpolation)
+		{
+			s.set_points(tmp_t,tmp_w, false);  // void set_points(const std::vector<double>& x, const std::vector<double>& y, bool cubic_spline=true);
+		}
+		else
+		{
+			s.set_points(tmp_t,tmp_w, true); 
+		}
 
-			for (size_t i = 0; i < buf_size; i++ )
+		double inc = duration / double(n_subsamples); 
+
+		MERIC_INFO << "    ------------------------\n";
+		for (size_t i = 0; i < n_subsamples+1; i++)
+		{
+			double sub_time     = (startTime + (double)i * inc) * (double)FREQUENCY;
+			double interp_power = s(sub_time);
+
+			if (i == 0)
 			{
-				tmp_t.push_back((double)  time_samples [*firstBlade - hallo_size + i]);
-				tmp_w.push_back(          power_samples[*firstBlade - hallo_size + i]);
-
-				MERIC_INFO << "    Time: " << time_samples [*firstBlade - hallo_size + i] << "    [ms]; power: " 
-					                       << power_samples[*firstBlade - hallo_size + i] << " W \n";
-			}
-
-			tk::spline s;
-
-			if (use_linear_interpolation)
-			{
-				s.set_points(tmp_t,tmp_w, false);  // void set_points(const std::vector<double>& x, const std::vector<double>& y, bool cubic_spline=true);
+				energy[0]   = interp_power;
+				maxWatts[0] = interp_power;
+				minWatts[0] = interp_power;
 			}
 			else
 			{
-				s.set_points(tmp_t,tmp_w, true); 
-			}
-
-			double inc = duration / double(n_subsamples); 
-
-			MERIC_INFO << "    ------------------------\n";
-			for (size_t i = 0; i < n_subsamples+1; i++)
-			{
-				double sub_time     = (startTime + (double)i * inc) * (double)FREQUENCY;
-				double interp_power = s(sub_time);
-
-				if (i == 0)
-				{
-					energy[0]   = interp_power;
+				if (interp_power > maxWatts[0])
 					maxWatts[0] = interp_power;
-					minWatts[0] = interp_power;
-				}
-				else
-				{
-					if (interp_power > maxWatts[0])
-						maxWatts[0] = interp_power;
-					if (interp_power < minWatts[0])
-						minWatts[0] = interp_power; 
-					energy[0] += interp_power;
-				}
-	 
-				MERIC_INFO << "    Time: " << (long long) (sub_time*1000.0) <<  " [us]; power: " << interp_power << " W (sub-sample)\n"; 
+				if (interp_power < minWatts[0])
+					minWatts[0] = interp_power; 
+				energy[0] += interp_power;
 			}
-			MERIC_INFO << "    ------------------------\n";
-
-			maxWatts[0]-= GPU_offset;
-			minWatts[0]-= GPU_offset;
-
-			MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
-				       << "maxWatts : " << maxWatts[0] << " W\n";
-
-			double avgWatts = (energy[0] / double(n_subsamples+1)) - GPU_offset;
-			energy[0] = avgWatts * 1000.0 * duration; // the * 1000.0 is for mW to W conversion from HDEEM
-			MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n"
-				       << "energy   : " << avgWatts * duration << " J\n";
+ 
+			MERIC_INFO << "    Time: " << (long long) (sub_time*1000.0) <<  " [us]; power: " << interp_power << " W (sub-sample)\n"; 
 		}
-		else
-*/		{
-			energy[0]   = 0.0;
-			maxWatts[0] = power_samples[*firstBlade];
-			minWatts[0] = power_samples[*firstBlade];
+		MERIC_INFO << "    ------------------------\n";
 
-			double valTmp = power_samples[*firstBlade];
-			for (size_t it=*firstBlade; it <*lastBlade; it++)
-			{
-				valTmp = power_samples[it];
+		maxWatts[0]-= GPU_offset;
+		minWatts[0]-= GPU_offset;
 
-				if (valTmp > maxWatts[0])
-					maxWatts[0] = valTmp;
-				
-				if (valTmp < minWatts[0]) //&& valTmp > 0.0)
-					minWatts[0] = valTmp;
-				
-				energy[0] += valTmp;
-			}
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
+			       << "maxWatts : " << maxWatts[0] << " W\n";
 
-			maxWatts[0]-= GPU_offset;
-			minWatts[0]-= GPU_offset;
-
-			MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
-				       << "maxWatts : " << maxWatts[0] << " W\n"
-				       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";
-			energy[0] = ((energy[0] / ((double)(n_samples)) ) - GPU_offset ) * duration * 1000.0; // the * 1000.0 is for MW to W conversion from hdeem
-			MERIC_INFO << "energy   : " << energy[0] / 1000.0 << " J\n";
-		}
+		double avgWatts = (energy[0] / double(n_subsamples+1)) - GPU_offset;
+		energy[0] = avgWatts * 1000.0 * duration; // the * 1000.0 is for mW to W conversion from HDEEM
+		MERIC_INFO << "avgWatts : " << avgWatts << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W)) \n"
+			       << "energy   : " << avgWatts * duration << " J\n";
 	}
+	else
+	{
+		energy[0]   = 0.0;
+		maxWatts[0] = power_samples[*firstBlade];
+		minWatts[0] = power_samples[*firstBlade];
+
+		double valTmp = power_samples[*firstBlade];
+		for (size_t it=*firstBlade; it <*lastBlade; it++)
+		{
+			valTmp = power_samples[it];
+
+			if (valTmp > maxWatts[0])
+				maxWatts[0] = valTmp;
+			
+			if (valTmp < minWatts[0]) //&& valTmp > 0.0)
+				minWatts[0] = valTmp;
+			
+			energy[0] += valTmp;
+		}
+
+		maxWatts[0]-= GPU_offset;
+		minWatts[0]-= GPU_offset;
+
+		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
+			       << "maxWatts : " << maxWatts[0] << " W\n"
+			       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";
+		energy[0] = ((energy[0] / ((double)(n_samples)) ) - GPU_offset ) * duration * 1000.0; // the * 1000.0 is for MW to W conversion from hdeem
+		MERIC_INFO << "energy   : " << energy[0] / 1000.0 << " J\n";
+	}
+
 	return errMessage;
 }
 
