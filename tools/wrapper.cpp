@@ -36,17 +36,20 @@ struct systemLimits{
 	int  socketsPerNode;
 	int  maxThrds;
 	int  minThrds;
+	int  stepThrds;
 	
 	long maxCoreFreq;            //Hz
 	long minCoreFreq;            //Hz
+	long stepCoreFreq;           //Hz
 
 	long maxUncoreFreq;          //Hz
 	long minUncoreFreq;          //Hz
+	long stepUncoreFreq;         //Hz
 
-	long maxPowerCapPKG;         //W
-	long minPowerCapPKG;         //W
+	long maxPowerCapPKG;         //mW
+	long minPowerCapPKG;         //mW
 
-	long maxPowerCapPKGtime;     //us
+	long maxPowerCapPKGtime;     //ms
 
 	long maxPowerCapRAM;         //W
 	long minPowerCapRAM;         //W
@@ -58,10 +61,13 @@ struct systemLimits{
 		socketsPerNode(1),
 		maxThrds(1),
 		minThrds(1),
+		stepThrds(1),
 		maxCoreFreq(l.maxCoreFreq),
 		minCoreFreq(l.minCoreFreq),
+		stepCoreFreq(100000000),	//0.1 GHz
 		maxUncoreFreq(l.maxUncoreFreq),
 		minUncoreFreq(l.minUncoreFreq),
+		stepUncoreFreq(100000000),	//0.1 GHz
 		maxPowerCapPKG(l.maxPowerCapPKG),
 		minPowerCapPKG(l.minPowerCapPKG),
 		maxPowerCapPKGtime(l.maxPowerCapPKGtime),
@@ -73,10 +79,13 @@ struct systemLimits{
 		socketsPerNode(1),
 		maxThrds(1),
 		minThrds(1),
+		stepThrds(1),
 		maxCoreFreq(0),
 		minCoreFreq(0),
+		stepCoreFreq(0),
 		maxUncoreFreq(0),
 		minUncoreFreq(0),
+		stepUncoreFreq(0),
 		maxPowerCapPKG(0),
 		minPowerCapPKG(0),
 		maxPowerCapPKGtime(0),
@@ -209,7 +218,7 @@ struct Tparametres{
 		alg(NONE),
 		MPI(false),
 		generateCfg(false),
-		MERIC_MODE(MODE_TIME),
+		MERIC_MODE(meric::MODE_TIME),
 		MERIC_PWRCAP_POWER(""),
 		MERIC_PWRCAP_TIME(""),
 		MERIC_FREQUENCY(""),
@@ -256,35 +265,30 @@ void generateDefaultWrapperConfigFile()
 		std::replace(freqBound.begin(),freqBound.end(), ' ', ',');
 	}
 
-
 	std::string content = "{\n";
 	content +="\t\"MPI\" : \"true\",\n";
 
-	content+="\t\"PARAMETERS\" : {\n";
-
-		content+=std::string("\t\t\"FREQUENCY\" : {\n")
-				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxCoreFreq)+",\n"
-				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minCoreFreq)+",\n";
-		if (freqBound == "") //TODO
-			content+= "\t\t\t\"STEP\":  100000000\n";
-		else
-			content+= "\t\t\t\"AVILABLE\" : [\n" + freqBound +"\n\t\t\t]\n";
-		content+="\t\t},\n";
-
-		if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
-			content+=std::string("\t\t\"UNCORE_FREQUENCY\" : {\n")
-					+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxUncoreFreq)+",\n"
-					+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"
-					+ "\t\t\t\"STEP\":  100000000\n" //TODO
-					+ "\t\t},\n";
-
-		content+=std::string("\t\t\"THREADS\" : {\n")
-				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxThrds)+",\n"
-				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minThrds)+",\n"
-				+ "\t\t\t\"STEP\":  1\n"	//TODO
-				+ "\t\t}\n";
-
-	content += "\t},\n"; //end PARAMETERS
+	content+=std::string("\t\"PARAMETERS\" : {\n")
+	       + "\t\t\"FREQUENCY\" : {\n"
+	       + "\t\t\t\"MAX\" : "+std::to_string(limit.maxCoreFreq)+",\n"
+	       + "\t\t\t\"MIN\" : "+std::to_string(limit.minCoreFreq)+",\n";
+	if (freqBound == "")
+		content+= "\t\t\t\"STEP\":  100000000\n";
+	else
+		content+= "\t\t\t\"AVILABLE\" : [\n" + freqBound +"\n\t\t\t]\n";
+	content+="\t\t},\n";
+	if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
+		content+=std::string("\t\t\"UNCORE_FREQUENCY\" : {\n")
+				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxUncoreFreq)+",\n"
+				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"
+				+ "\t\t\t\"STEP\":  100000000\n"
+				+ "\t\t},\n";
+	content+=std::string("\t\t\"THREADS\" : {\n")
+			+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxThrds)+",\n"
+			+ "\t\t\t\"MIN\" : "+std::to_string(limit.minThrds)+",\n"
+			+ "\t\t\t\"STEP\":  1\n"
+			+ "\t\t}\n"
+			+ "\t},\n"; //end PARAMETERS
 
 
 	content+= std::string("\t\"ALGORITHM\" : {\n")
@@ -657,33 +661,33 @@ int readParameters(int argc, char **argv)
 					{
 						if (std::string(meric->name->string) == "PWRCAP_POWER")
 						{
-							params.MERIC_PWRCAP_POWER = std::to_string(((struct json_string_s*)meric->value->payload)->string);
-							setenv("MERIC_PWRCAP_POWER", params.MERIC_PWRCAP_POWER, 1);
+							params.MERIC_PWRCAP_POWER = std::string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_PWRCAP_POWER", params.MERIC_PWRCAP_POWER.c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "PWRCAP_TIME")
 						{
-							params.MERIC_PWRCAP_TIME = std::to_string(((struct json_string_s*)meric->value->payload)->string);
-							setenv("MERIC_PWRCAP_TIME", params.MERIC_PWRCAP_TIME, 1);
+							params.MERIC_PWRCAP_TIME = std::string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_PWRCAP_TIME", params.MERIC_PWRCAP_TIME.c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "FREQUENCY")
 						{
-							params.MERIC_FREQUENCY = std::to_string(((struct json_string_s*)meric->value->payload)->string);
-							setenv("MERIC_FREQUENCY", params.MERIC_FREQUENCY, 1);
+							params.MERIC_FREQUENCY = std::string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_FREQUENCY", params.MERIC_FREQUENCY.c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "UNCORE_FREQUENCY")
 						{
-							params.MERIC_UNCORE_FREQUENCY = std::to_string(((struct json_string_s*)meric->value->payload)->string);
-							setenv("MERIC_UNCORE_FREQUENCY", params.MERIC_UNCORE_FREQUENCY, 1);
+							params.MERIC_UNCORE_FREQUENCY = std::string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_UNCORE_FREQUENCY", params.MERIC_UNCORE_FREQUENCY.c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "NUM_THREADS")
 						{
-							params.MERIC_NUM_THREADS = std::to_string(((struct json_string_s*)meric->value->payload)->string);
-							setenv("MERIC_NUM_THREADS", params.MERIC_NUM_THREADS, 1);
+							params.MERIC_NUM_THREADS = std::string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_NUM_THREADS", params.MERIC_NUM_THREADS.c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "MODE")
 						{
-							params.MODE = std::stoi(std::to_string(((struct json_string_s*)meric->value->payload)->string));
-							setenv("MERIC_MODE", params.MODE, 1);
+							params.MERIC_MODE = (meric::mode) std::stoi(std::string(((struct json_string_s*)meric->value->payload)->string));
+							setenv("MERIC_MODE", std::to_string(params.MERIC_MODE).c_str(), 1);
 						}
 						else if (std::string(meric->name->string) == "COUNTERS")
 							setenv("MERIC_COUNTERS", ((struct json_string_s*)meric->value->payload)->string, 1);
@@ -759,10 +763,8 @@ void constructStateSpace()
 {
 	meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
 	meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
-//		RAPL::init(true);
 	limit = systemLimits(meric::Environment::getSystemSettings());
 	meric::Environment::close();
-
 
 #ifdef HAVE_MSR_CORE_H
 	int Hthreads;
@@ -1119,7 +1121,7 @@ size_t generateConfigurationsToTest()
 			{
 				std::string element;
 				//TODO runtime
-				const std::string label = "Energy consumption [J]"
+				const std::string label = "Energy consumption [J]";
 				while (!inputfile.eof())
 				{
 					getline(inputfile,element);
@@ -1359,31 +1361,34 @@ std::cerr << "evaluation of the finished runs\n";
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
 		//threads
-		for (long t = limit.maxThrds; t >= limit.minThrds; t--) //TODO stepSize
-//		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t-= limit.coresPerSocket) //TODO stepSize
+		for (long t = limit.minThrds; t < limit.maxThrds; t+= limit.stepThrds)
 		{
 			cfg.push_back(t);
 		}
+		if (limit.maxThrds != 0)
+			cfg.push_back(limit.maxThrds);
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
 		cfg.clear();
 
 		//CF
-		for (long c = limit.maxCoreFreq; c >= limit.minCoreFreq; c-= 100000000) //TODO
-//		for (long c = limit.maxCoreFreq; c >= limit.minCoreFreq; c -= limit.maxCoreFreq-limit.minCoreFreq) //TODO
+		for (long c = limit.minCoreFreq; c < limit.maxCoreFreq; c+= limit.stepCoreFreq)
 		{
 			cfg.push_back(c);
 		}
+		if (limit.maxCoreFreq != 0)
+			cfg.push_back(limit.maxCoreFreq);
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
 		cfg.clear();
 
 		//UCF
-		for (long u = limit.maxUncoreFreq; u >= limit.minUncoreFreq; u-=100000000) //TODO
-//		for (long u = limit.maxUncoreFreq; u >= limit.minUncoreFreq; u -= limit.maxUncoreFreq-limit.minUncoreFreq) //TODO
+		for (long u = limit.minUncoreFreq; u < limit.maxUncoreFreq; u+= limit.stepUncoreFreq)
 		{
 			cfg.push_back(u);
 		}
+		if (limit.maxUncoreFreq != 0)
+			cfg.push_back(limit.maxUncoreFreq);
 		if (cfg.size() != 0)
 			exhConf.push_back(cfg);
 		cfg.clear();
