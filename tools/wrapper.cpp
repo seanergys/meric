@@ -639,7 +639,18 @@ int readParameters(int argc, char **argv)
 					struct json_object_element_s* meric = ((struct json_object_s*)data->value->payload)->start;
 					do
 					{
-						if (std::string(meric->name->string) == "MODE")
+
+						if (std::string(meric->name->string) == "PWRCAP_POWER")
+							setenv("MERIC_PWRCAP_POWER", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "PWRCAP_TIME")
+							setenv("MERIC_PWRCAP_TIME", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "FREQUENCY")
+							setenv("MERIC_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "UNCORE_FREQUENCY")
+							setenv("MERIC_UNCORE_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "NUM_THREADS")
+							setenv("MERIC_NUM_THREADS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "MODE")
 						{
 							int md = std::stoi(std::to_string(((struct json_string_s*)meric->value->payload)->string));
 							setenv("MERIC_MODE", md, 1);
@@ -657,10 +668,6 @@ int readParameters(int argc, char **argv)
 							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "BARRIERS")
 							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
-						else if (std::string(meric->name->string) == "PWRCAP_POWER")
-							setenv("MERIC_PWRCAP_POWER", ((struct json_string_s*)meric->value->payload)->string, 1);
-						else if (std::string(meric->name->string) == "PWRCAP_TIME")
-							setenv("MERIC_PWRCAP_TIME", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "OUTPUT_DIR")
 							MERIC_OUTPUT_DIR = std::string(((struct json_string_s*)meric->value->payload)->string);
 						else
