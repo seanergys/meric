@@ -34,6 +34,8 @@ enum ALGORITHM {EXHAUSTIVE=0, EVO=1, PSO=2, NONE};
 struct systemLimits{
 	int  coresPerSocket;
 	int  socketsPerNode;
+	int  maxThrds;
+	int  minThrds;
 	
 	long maxCoreFreq;            //Hz
 	long minCoreFreq;            //Hz
@@ -54,6 +56,8 @@ struct systemLimits{
 	systemLimits(meric::systemLimits l) :
 		coresPerSocket(1),
 		socketsPerNode(1),
+		maxThrds(1),
+		minThrds(1).
 		maxCoreFreq(l.maxCoreFreq),
 		minCoreFreq(l.minCoreFreq),
 		maxUncoreFreq(l.maxUncoreFreq),
@@ -67,6 +71,8 @@ struct systemLimits{
 	systemLimits() :
 		coresPerSocket(1),
 		socketsPerNode(1),
+		maxThrds(1),
+		minThrds(1).
 		maxCoreFreq(0),
 		minCoreFreq(0),
 		maxUncoreFreq(0),
@@ -191,11 +197,13 @@ struct Tparametres{
 	ALGORITHM alg;
 	bool MPI;
 	bool generateCfg;
+	meric::mode MODE;
 	
 	Tparametres() :
 		alg(NONE),
 		MPI(false),
-		generateCfg(false) {}
+		generateCfg(false),
+		MERIC_MODE(MODE_TIME) {}
 	
 };
 Tparametres params; // = {NONE, false, false};
@@ -260,8 +268,8 @@ void generateDefaultWrapperConfigFile()
 					+ "\t\t},\n";
 
 		content+=std::string("\t\t\"THREADS\" : {\n")
-				+ "\t\t\t\"MAX\" : "+std::to_string(limit.coresPerSocket * limit.socketsPerNode)+",\n"
-				+ "\t\t\t\"MIN\" :  1,\n"
+				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxThrds)+",\n"
+				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minThrds)+",\n"
 				+ "\t\t\t\"STEP\":  1\n"
 				+ "\t\t}\n";
 
@@ -516,16 +524,16 @@ int readParameters(int argc, char **argv)
 								if (std::string(thrds->name->string) == "MAX")
 								{
 									int thrdsVal = 
-									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));	//TODO
-		//							if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
-		//								limit.maxUncoreFreq = freqVal;
+									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
+									if (limit.maxThrds > thrdsVal && thrdsVal > limit.minThrds)
+										limit.maxThrds = thrdsVal;
 								}
 								else if (std::string(thrds->name->string) == "MIN")
 								{
 									int thrdsVal = 
 									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
-		//							if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
-		//								limit.minUncoreFreq = freqVal;
+									if (limit.maxThrds > thrdsVal && thrdsVal > limit.minThrds)
+										limit.minThrds = thrdsVal;
 								}
 								else if (std::string(thrds->name->string) == "STEP")	//TODO STEP
 								{
@@ -630,7 +638,11 @@ int readParameters(int argc, char **argv)
 					do
 					{
 						if (std::string(meric->name->string) == "MODE")
-							setenv("MERIC_MODE", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							int md = std::stoi(std::to_string(((struct json_string_s*)meric->value->payload)->string));
+							setenv("MERIC_MODE", md, 1);
+							params.MODE = md;
+						}
 						else if (std::string(meric->name->string) == "COUNTERS")
 							setenv("MERIC_COUNTERS", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "AGGREGATE")
@@ -729,18 +741,13 @@ void constructStateSpace()
 		limit.socketsPerNode=1;
 	limit.coresPerSocket /= limit.socketsPerNode;
 #endif
-
-
-// limit = {12, 2, 2500000000, 2300000000, 3000000000, 2800000000, 0, 0, 0, 0, 0, 0}; //test
-// limit = {12, 2, 2500000000, 1200000000, 3000000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Salomon
-// limit = {18, 2, 2300000000, 1200000000, 2800000000, 1200000000, 0, 0, 0, 0, 0, 0}; //Galileo
+	limit.maxThrds = limit.coresPerSocket * limit.socketsPerNode;
 	newconfigurations = 0;
 }
 
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 configuration decodeConfigVector (std::vector<long> values)	//EXHAUSTIVE only
 {
@@ -868,7 +875,7 @@ configuration getRandomConfig()
 	}
 	if (selectedParams.threads)
 	{
-		c.threads = rand() % (limit.coresPerSocket * limit.socketsPerNode)+1; //TODO
+		c.threads = rand() % (limit.maxThrds)+1; //TODO
 	}
 /*	//TODO
 	if (selectedParams.powerCapPKG)
@@ -954,7 +961,7 @@ void EVO_mute(configuration& conf)	//TODO stepsize
 		director = rand()%100;
 		if (director < 10)
 		{
-			if (director < 5 && conf.threads < limit.coresPerSocket * limit.socketsPerNode)
+			if (director < 5 && conf.threads < limit.maxThrds)
 				conf.threads += 1;
 			else
 			{
@@ -1030,7 +1037,7 @@ bool PSO_configurationValidation(configuration c)
 {
 	if (c.uncoreFreq < limit.minUncoreFreq || c.uncoreFreq > limit.maxUncoreFreq
 	|| c.coreFreq < limit.minCoreFreq || c.coreFreq > limit.maxCoreFreq
-	|| c.threads < 1 || c.threads > (limit.coresPerSocket * limit.socketsPerNode)
+	|| c.threads < limit.minThrds || c.threads > limit.maxThrds
 	|| c.powerCapPKG < limit.minPowerCapPKG || c.powerCapPKG > limit.maxPowerCapPKG
 	|| c.powerCapPKGtime < 0 || c.powerCapPKGtime > limit.maxPowerCapPKGtime)
 		return false;
@@ -1041,11 +1048,6 @@ bool PSO_configurationValidation(configuration c)
 //EVO - EXHAUSTIVE - PSO
 size_t generateConfigurationsToTest()
 {
-/// EVO + PSO //////////////////////////////////////////////////////////////////
-//	const int POPULATION_SIZE = 10;	//EVO 10, PSO 10-20-30-40
-//	const int END_CONDITION = 3; //-times the best configuration has not been improved
-////////////////////////////////////////////////////////////////////////////////
-
 	//TODO take also into acount that all the possible configurations had been tested, so it will cause a deadlock in generation of new configurations
 
 	//identify so-far the best configurations - exhaustive
@@ -1074,19 +1076,9 @@ size_t generateConfigurationsToTest()
 			std::ifstream inputfile (constructConfigFileName(regName, config));
 			if(inputfile.is_open())
 			{
-				/*
-				 * e.g.
-					# Blade summary
-					...
-					Energy consumption [J],1549.86
-				 * or
-					# COUNTERS - RAPL: 
-					...
-					Energy summary [J],410
-				*/
 				std::string element;
 				//TODO runtime
-				const std::string label = "Energy summary [J]";
+				const std::string label = "Energy consumption [J]"
 				while (!inputfile.eof())
 				{
 					getline(inputfile,element);
@@ -1094,7 +1086,7 @@ size_t generateConfigurationsToTest()
 					if (position != std::string::npos)
 					{
 						energyConsumption = std::stod(element.substr(label.size()+1+position));
-						//we have found better solution
+						//we have found a better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
 							optimalConfiguration[regIndex].energy = energyConsumption;
@@ -1148,7 +1140,7 @@ std::cerr << "evaluation of the finished runs\n";
 		if (selectedParams.coreFreq)
 			v.coreFreq = limit.maxCoreFreq;
 		if (selectedParams.threads)
-			v.threads = limit.coresPerSocket * limit.socketsPerNode;
+			v.threads = limit.maxThrds;
 		if (selectedParams.powerCapPKG)
 			v.powerCapPKG = limit.maxPowerCapPKG;
 		if (selectedParams.powerCapPKGtime)
@@ -1326,7 +1318,7 @@ std::cerr << "evaluation of the finished runs\n";
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
 		//threads
-		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t--) //TODO stepSize
+		for (long t = limit.maxThrds; t >= limit.minThrds; t--) //TODO stepSize
 //		for (long t = limit.coresPerSocket * limit.socketsPerNode; t >= 1; t-= limit.coresPerSocket) //TODO stepSize
 		{
 			cfg.push_back(t);
@@ -1403,7 +1395,7 @@ void runApplication(appConfiguration testRun)
 			setenv("MERIC_FREQUENCY", "0", 1);
 			
 		if (selectedParams.threads)
-			setenv("MERIC_NUM_THREADS", std::to_string(limit.coresPerSocket * limit.socketsPerNode).c_str(), 1);
+			setenv("MERIC_NUM_THREADS", std::to_string(limit.maxThrds).c_str(), 1);
 		else
 			setenv("MERIC_NUM_THREADS", "0", 1);
 			
