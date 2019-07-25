@@ -197,13 +197,24 @@ struct Tparametres{
 	ALGORITHM alg;
 	bool MPI;
 	bool generateCfg;
-	meric::mode MODE;
+
+	meric::mode MERIC_MODE;
+	std::string MERIC_PWRCAP_POWER;
+	std::string MERIC_PWRCAP_TIME;
+	std::string MERIC_FREQUENCY;
+	std::string MERIC_UNCORE_FREQUENCY;
+	std::string MERIC_NUM_THREADS;
 	
 	Tparametres() :
 		alg(NONE),
 		MPI(false),
 		generateCfg(false),
-		MERIC_MODE(MODE_TIME) {}
+		MERIC_MODE(MODE_TIME),
+		MERIC_PWRCAP_POWER(""),
+		MERIC_PWRCAP_TIME(""),
+		MERIC_FREQUENCY(""),
+		MERIC_UNCORE_FREQUENCY(""),
+		MERIC_NUM_THREADS(""){}
 	
 };
 Tparametres params; // = {NONE, false, false};
@@ -329,6 +340,7 @@ void generateDefaultWrapperConfigFile()
 	std::cerr << "MERICwrapper - default config file generated: defaultWrapperConfig.json\n";
 }
 
+// TODO add static configuration to the config file - currently not supported at the MERIC side
 void generateMERICConfigFile(appConfiguration config, const std::string fileName)
 {
 	std::string content = "{";
@@ -479,6 +491,10 @@ int readParameters(int argc, char **argv)
 								{
 									std::cerr << "WARNING: specifying of frequency step size not supported yet" << std::endl;
 								}
+								else if (std::string(freq->name->string) == "AVAILABLE")
+								{
+									std::cerr << "WARNING: specifying exact frequencies to try not supported yet" << std::endl;
+								}
 								else
 								{
 									std::cerr << "ERROR: invalid config file - FREQUENCY parameter - " << freq->name->string << std::endl;
@@ -518,7 +534,7 @@ int readParameters(int argc, char **argv)
 								freq = freq->next;
 							}while(freq != NULL);
 						}
-						else if (std::string(prms->name->string) == "THREADS")
+						else if (std::string(prms->name->string) == "NUM_THREADS")
 						{
 							selectedParams.threads=1;
 							struct json_object_element_s* thrds = ((struct json_object_s*)prms->value->payload)->start;
@@ -639,22 +655,35 @@ int readParameters(int argc, char **argv)
 					struct json_object_element_s* meric = ((struct json_object_s*)data->value->payload)->start;
 					do
 					{
-
 						if (std::string(meric->name->string) == "PWRCAP_POWER")
-							setenv("MERIC_PWRCAP_POWER", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							params.MERIC_PWRCAP_POWER = std::to_string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_PWRCAP_POWER", params.MERIC_PWRCAP_POWER, 1);
+						}
 						else if (std::string(meric->name->string) == "PWRCAP_TIME")
-							setenv("MERIC_PWRCAP_TIME", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							params.MERIC_PWRCAP_TIME = std::to_string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_PWRCAP_TIME", params.MERIC_PWRCAP_TIME, 1);
+						}
 						else if (std::string(meric->name->string) == "FREQUENCY")
-							setenv("MERIC_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							params.MERIC_FREQUENCY = std::to_string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_FREQUENCY", params.MERIC_FREQUENCY, 1);
+						}
 						else if (std::string(meric->name->string) == "UNCORE_FREQUENCY")
-							setenv("MERIC_UNCORE_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							params.MERIC_UNCORE_FREQUENCY = std::to_string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_UNCORE_FREQUENCY", params.MERIC_UNCORE_FREQUENCY, 1);
+						}
 						else if (std::string(meric->name->string) == "NUM_THREADS")
-							setenv("MERIC_NUM_THREADS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						{
+							params.MERIC_NUM_THREADS = std::to_string(((struct json_string_s*)meric->value->payload)->string);
+							setenv("MERIC_NUM_THREADS", params.MERIC_NUM_THREADS, 1);
+						}
 						else if (std::string(meric->name->string) == "MODE")
 						{
-							int md = std::stoi(std::to_string(((struct json_string_s*)meric->value->payload)->string));
-							setenv("MERIC_MODE", md, 1);
-							params.MODE = md;
+							params.MODE = std::stoi(std::to_string(((struct json_string_s*)meric->value->payload)->string));
+							setenv("MERIC_MODE", params.MODE, 1);
 						}
 						else if (std::string(meric->name->string) == "COUNTERS")
 							setenv("MERIC_COUNTERS", ((struct json_string_s*)meric->value->payload)->string, 1);
