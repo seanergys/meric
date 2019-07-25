@@ -57,7 +57,7 @@ struct systemLimits{
 		coresPerSocket(1),
 		socketsPerNode(1),
 		maxThrds(1),
-		minThrds(1).
+		minThrds(1),
 		maxCoreFreq(l.maxCoreFreq),
 		minCoreFreq(l.minCoreFreq),
 		maxUncoreFreq(l.maxUncoreFreq),
@@ -72,7 +72,7 @@ struct systemLimits{
 		coresPerSocket(1),
 		socketsPerNode(1),
 		maxThrds(1),
-		minThrds(1).
+		minThrds(1),
 		maxCoreFreq(0),
 		minCoreFreq(0),
 		maxUncoreFreq(0),
@@ -270,7 +270,7 @@ void generateDefaultWrapperConfigFile()
 		content+=std::string("\t\t\"THREADS\" : {\n")
 				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxThrds)+",\n"
 				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minThrds)+",\n"
-				+ "\t\t\t\"STEP\":  1\n"
+				+ "\t\t\t\"STEP\":  1\n"	//TODO
 				+ "\t\t}\n";
 
 	content += "\t},\n"; //end PARAMETERS
@@ -377,12 +377,13 @@ void printHelp()
 int readParameters(int argc, char **argv)
 {
 /*
-# TODO - nacteni parametru
-# - command spoustejici aplikaci
-# - pocet iteraci se stejnou konfiguraci
-# - krok s jakym prohledavat SP daneho parametru
-# - maximalni vliv konfigurace na cas
+# TODO - reading parameters
+# - number of iterations under one configuration
+# - step size for each tuned parameter
+# - maximum influence of the configuration to runtime
 */
+
+	//reading parameters from command line
 	if (argc == 1)
 		printHelp();
 	std::string settingsFile = "";
@@ -411,7 +412,8 @@ int readParameters(int argc, char **argv)
 		std::cerr << "ERROR: wrong input parameters\n";
 		printHelp();
 	}
-//----------------------------------------------------------------------------//
+
+	//reading configuration file
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
 	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec); //default name
@@ -655,6 +657,10 @@ int readParameters(int argc, char **argv)
 							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "BARRIERS")
 							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "PWRCAP_POWER")
+							setenv("MERIC_PWRCAP_POWER", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "PWRCAP_TIME")
+							setenv("MERIC_PWRCAP_TIME", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "OUTPUT_DIR")
 							MERIC_OUTPUT_DIR = std::string(((struct json_string_s*)meric->value->payload)->string);
 						else
@@ -860,22 +866,21 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 
 configuration getRandomConfig()
 {
-	configuration c;// = {0, 0, 0, 0, 0};
+	configuration c;
 	if (selectedParams.uncoreFreq)
 	{
-		int max = (limit.maxUncoreFreq - limit.minUncoreFreq)/100000000; //TODO step size
-		long val = rand() % max;
+		long val = rand() % ((limit.maxUncoreFreq - limit.minUncoreFreq)/100000000); //TODO step size
 		c.uncoreFreq = limit.minUncoreFreq + val*100000000;
 	}
 	if (selectedParams.coreFreq)
 	{
-		int max = (limit.maxCoreFreq - limit.minCoreFreq)/100000000; //TODO
-		long val = rand() % max;
+		long val = rand() % ((limit.maxCoreFreq - limit.minCoreFreq)/100000000); //TODO
 		c.coreFreq = limit.minCoreFreq + val * 100000000;
 	}
 	if (selectedParams.threads)
 	{
-		c.threads = rand() % (limit.maxThrds)+1; //TODO
+		int val = rand() % (limit.maxThrds - limit.minThrds);  //TODO
+		c.threads = limit.minThrds + val;
 	}
 /*	//TODO
 	if (selectedParams.powerCapPKG)
@@ -965,7 +970,7 @@ void EVO_mute(configuration& conf)	//TODO stepsize
 				conf.threads += 1;
 			else
 			{
-				if (conf.threads > 2)
+				if (conf.threads > limit.minThrds)
 					conf.threads -= 1;
 				else
 					conf.threads += 1;
@@ -1134,7 +1139,7 @@ std::cerr << "evaluation of the finished runs\n";
 	//RANDOM INITIAL GENERATION
 	auto generateRandomGeneration = [&] ()
 	{
-		configuration v;// = {0, 0, 0, 0, 0};
+		configuration v;
 		if (selectedParams.uncoreFreq)
 			v.uncoreFreq = limit.maxUncoreFreq;
 		if (selectedParams.coreFreq)
