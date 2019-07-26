@@ -246,8 +246,8 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 configuration getRandomConfig();
 configuration EVO_crossover(configuration c1, configuration c2);
 void EVO_mute(configuration& conf);
-void PSO_limitVelocity(configuration &c);
-configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
+//void PSO_limitVelocity(configuration &c);
+//configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
 bool PSO_configurationValidation(configuration c);
 size_t generateConfigurationsToTest();
 void runApplication(appConfiguration testRun);
@@ -1008,6 +1008,7 @@ void EVO_mute(configuration& conf)
 }
 
 //----------------------------------------------------------------------------//
+/*
 void PSO_limitVelocity(configuration &c)
 {
 	if (c.uncoreFreq > 200000000)
@@ -1027,7 +1028,60 @@ void PSO_limitVelocity(configuration &c)
 			
 	//TODO RAPL
 }
-
+*/
+void PSO_limitVelocity_NEW(configuration &c)
+{
+	if (selectedParams.uncoreFreq)
+	{
+		if (c.uncoreFreq > 2)
+			c.uncoreFreq = 2;
+		else if(c.uncoreFreq < -2)
+			c.uncoreFreq = -2;
+	}
+	else
+		c.uncoreFreq = 0;
+	
+	if (selectedParams.coreFreq)
+	{
+		if (c.coreFreq > 2)
+			c.coreFreq = 2;
+		else if (c.coreFreq < -2)
+			c.coreFreq = -2;
+	}
+	else
+		c.coreFreq = 0;
+	
+	if (selectedParams.threads)
+	{
+		if (c.threads > 2)
+			c.threads = 2;
+		else if (c.threads < -2)
+			c.threads = -2;
+	}
+	else
+		c.threads = 0;
+	
+	if (selectedParams.powerCapPKG)
+	{
+		if (c.powerCapPKG > 2)
+			c.powerCapPKG = 2;
+		else if (c.powerCapPKG < -2)
+			c.powerCapPKG = -2;
+	}
+	else
+		c.powerCapPKG = 0;
+	
+	if (selectedParams.powerCapPKGtime)
+	{
+		if (c.powerCapPKGtime > 2)
+			c.powerCapPKGtime = 2;
+		else if (c.powerCapPKGtime < -2)
+			c.powerCapPKGtime = -2;
+	}
+	else
+		c.powerCapPKGtime = 0;
+}
+/*
 configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm)
 {
 	//double Rp = (rand()%100) / 100.0;
@@ -1065,17 +1119,99 @@ configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, c
 	PSO_limitVelocity(c);
 	return c;
 }
+*/
+configuration PSO_getNewVelocity_NEW(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm)
+{
+	//double Rp = (rand()%100) / 100.0;
+	//double Rg = (rand()%100) / 100.0;
+	//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
+	//x_k_new = x_k_old + v_k_new
+	configuration c;
+
+	if (selectedParams.threads)
+	{
+		c.threads = (omg * v_k_old.threads
+			+ Cp*((rand()%100)/100.0) * (best_k.threads - x_k_old.threads)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.threads - x_k_old.threads)
+			);
+	}
+	if (selectedParams.coreFreq)
+	{
+		c.coreFreq = (omg * v_k_old.coreFreq
+			+ Cp*((rand()%100)/100.0) * (best_k.coreFreq - x_k_old.coreFreq)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.coreFreq - x_k_old.coreFreq)
+			);
+	}	
+	if (selectedParams.uncoreFreq)
+	{
+		c.uncoreFreq = (omg * v_k_old.uncoreFreq
+			+ Cp*((rand()%100)/100.0) * (best_k.uncoreFreq - x_k_old.uncoreFreq)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.uncoreFreq - x_k_old.uncoreFreq)
+			);
+	}
+	if (selectedParams.powerCapPKG)
+	{
+		c.powerCapPKG = (omg * v_k_old.powerCapPKG
+			+ Cp*((rand()%100)/100.0) * (best_k.powerCapPKG - x_k_old.powerCapPKG)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.powerCapPKG - x_k_old.powerCapPKG)
+			);
+	}
+	if (selectedParams.powerCapPKGtime)
+	{
+		c.powerCapPKGtime = (omg * v_k_old.powerCapPKGtime
+			+ Cp*((rand()%100)/100.0) * (best_k.powerCapPKGtime - x_k_old.powerCapPKGtime)
+			+ Cg*((rand()%100)/100.0) * (best_swarm.powerCapPKGtime - x_k_old.powerCapPKGtime)
+			);
+	}
+
+	PSO_limitVelocity_NEW(c);
+	return c;
+}
 
 bool PSO_configurationValidation(configuration c)
 {
-	if (c.uncoreFreq < limit.minUncoreFreq || c.uncoreFreq > limit.maxUncoreFreq
-	|| c.coreFreq < limit.minCoreFreq || c.coreFreq > limit.maxCoreFreq
-	|| c.threads < limit.minThrds || c.threads > limit.maxThrds
-	|| c.powerCapPKG < limit.minPowerCapPKG || c.powerCapPKG > limit.maxPowerCapPKG
-	|| c.powerCapPKGtime < 0 || c.powerCapPKGtime > limit.maxPowerCapPKGtime)
-		return false;
-	else
+	if (std::find(availConfigs[0].begin(), availConfigs[0].end(), c.threads) != availConfigs[0].end() &&
+	    std::find(availConfigs[1].begin(), availConfigs[1].end(), c.coreFreq) != availConfigs[1].end() &&
+	    std::find(availConfigs[2].begin(), availConfigs[2].end(), c.uncoreFreq) != availConfigs[2].end() &&
+	    std::find(availConfigs[3].begin(), availConfigs[3].end(), c.powerCapPKG) != availConfigs[3].end() &&
+	    std::find(availConfigs[4].begin(), availConfigs[4].end(), c.powerCapPKGtime) != availConfigs[4].end())
 		return true;
+	else
+		return false;
+}
+
+bool PSO_addVelocity(configuration conf, configuration velo, configuration &c)
+{
+	int idx = distance(availConfigs[0].begin(), std::find(availConfigs[0].begin(), availConfigs[0].end(), conf.threads)) + velo.threads;
+	if (idx > 0 && idx < availConfigs[0].size())
+		c.threads = availConfigs[0][idx];
+	else
+		return false;
+	
+	idx = distance(availConfigs[1].begin(), std::find(availConfigs[1].begin(), availConfigs[1].end(), conf.coreFreq)) + velo.coreFreq;
+	if (idx > 0 && idx < availConfigs[1].size())
+		c.coreFreq = availConfigs[1][idx];
+	else
+		return false;
+	
+	idx = distance(availConfigs[2].begin(), std::find(availConfigs[2].begin(), availConfigs[2].end(), conf.uncoreFreq)) + velo.uncoreFreq;
+	if (idx > 0 && idx < availConfigs[2].size())
+		c.uncoreFreq = availConfigs[2][idx];
+	else
+		return false;
+	
+	idx = distance(availConfigs[3].begin(), std::find(availConfigs[3].begin(), availConfigs[3].end(), conf.powerCapPKG)) + velo.powerCapPKG;
+	if (idx > 0 && idx < availConfigs[3].size())
+		c.powerCapPKG = availConfigs[3][idx];
+	else
+		return false;
+	
+	idx = distance(availConfigs[4].begin(), std::find(availConfigs[4].begin(), availConfigs[4].end(), conf.powerCapPKGtime)) + velo.powerCapPKGtime;
+	if (idx > 0 && idx < availConfigs[4].size())
+		c.powerCapPKGtime = availConfigs[4][idx];
+	else
+		return false;
+	return true;
 }
 
 //----------------------------------------------------------------------------//
@@ -1300,8 +1436,10 @@ std::cerr << "evaluation of the finished runs\n";
 				for (int i = 0; i<POPULATION_SIZE; i++)
 				{
 					PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
-					PSOhistory[idx][i].velocity = getRandomConfig() - getRandomConfig();
-					PSO_limitVelocity(PSOhistory[idx][i].velocity);
+//					PSOhistory[idx][i].velocity = getRandomConfig() - getRandomConfig();
+//					PSO_limitVelocity(PSOhistory[idx][i].velocity);
+					PSOhistory[idx][i].velocity = {(rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2};
+					PSO_limitVelocity_NEW(PSOhistory[idx][i].velocity);
 				}
 			}
 		}
@@ -1347,11 +1485,13 @@ std::cerr << "evaluation of the finished runs\n";
 					{
 						if (x_k_old.regName == regName)
 						{
-							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
-							x_k_new = x_k_old.regConfiguration + PSOhistory[regIdx][i].velocity;
-
-							if (!PSO_configurationValidation(x_k_new))
-								x_k_new = getRandomConfig();
+//							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
+							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity_NEW(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
+// 							x_k_new = x_k_old.regConfiguration + PSOhistory[regIdx][i].velocity;
+ 							if (!PSO_addVelocity(x_k_old.regConfiguration, PSOhistory[regIdx][i].velocity, x_k_new))
+ 								x_k_new = getRandomConfig();
+//							if (!PSO_configurationValidation(x_k_new))
+//								x_k_new = getRandomConfig();
 							break;
 						}
 					}
