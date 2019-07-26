@@ -226,7 +226,9 @@ struct Tparametres{
 		MERIC_NUM_THREADS(""){}
 	
 };
-Tparametres params; // = {NONE, false, false};
+Tparametres params;
+
+std::vector<long> availConfigs[5];
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS ///////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +238,7 @@ void printHelp();
 int readParameters(int argc, char **argv);
 void constructCallPath();
 void constructStateSpace();
-configuration decodeConfigVector (std::vector<long> values);	//EXHAUSTIVE
+configuration EXHAUSTIVE_decodeConfigVector (std::vector<long> values);
 void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::vector<long>> vecConfig, std::vector <long> v);
 size_t getRegionIndex(std::string region);
 std::string constructConfigFileName(std::string regName, configuration config);
@@ -244,7 +246,7 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 configuration getRandomConfig();
 configuration EVO_crossover(configuration c1, configuration c2);
 void EVO_mute(configuration& conf);
-void limitVelocity(configuration &c);	//PSO
+void PSO_limitVelocity(configuration &c);	//PSO
 configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
 bool PSO_configurationValidation(configuration c);
 size_t generateConfigurationsToTest();
@@ -275,7 +277,7 @@ void generateDefaultWrapperConfigFile()
 	if (freqBound == "")
 		content+= "\t\t\t\"STEP\":  100000000\n";
 	else
-		content+= "\t\t\t\"AVILABLE\" : [\n" + freqBound +"\n\t\t\t]\n";
+		content+= "\t\t\t\"LIST\" : [\n" + freqBound +"\n\t\t\t]\n";
 	content+="\t\t},\n";
 	if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
 		content+=std::string("\t\t\"UNCORE_FREQUENCY\" : {\n")
@@ -460,7 +462,7 @@ int readParameters(int argc, char **argv)
 			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
 			while(data != NULL)
 			{
-				if (std::string(data->name->string) == "MPI")	//OK
+				if (std::string(data->name->string) == "MPI")
 				{
 					std::string val = std::string(((struct json_string_s*)data->value->payload)->string);
 					std::transform(val.begin(), val.end(), val.begin(), ::toupper);
@@ -479,25 +481,30 @@ int readParameters(int argc, char **argv)
 							{
 								if (std::string(freq->name->string) == "MAX")
 								{
-									long freqVal = 
-									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
 									if (limit.maxCoreFreq > freqVal && freqVal > limit.minCoreFreq)
 										limit.maxCoreFreq = freqVal;
 								}
 								else if (std::string(freq->name->string) == "MIN")
 								{
-									long freqVal = 
-									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
 									if (limit.maxCoreFreq > freqVal && freqVal > limit.minCoreFreq)
 										limit.minCoreFreq = freqVal;
 								}
-								else if (std::string(freq->name->string) == "STEP")	//TODO STEP
+								else if (std::string(freq->name->string) == "STEP")
 								{
-									std::cerr << "WARNING: specifying of frequency step size not supported yet" << std::endl;
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (freqVal > 0 && freqVal <= limit.maxCoreFreq)
+										limit.stepCoreFreq = freqVal;
 								}
-								else if (std::string(freq->name->string) == "AVAILABLE")
+								else if (std::string(freq->name->string) == "LIST")
 								{
-									std::cerr << "WARNING: specifying exact frequencies to try not supported yet" << std::endl;
+									struct json_array_element_s* lst = ((struct json_array_s*)freq->value->payload)->start;
+									do
+									{
+										availConfigs[1].push_back(std::stol(std::string(((struct json_string_s*)lst->value->payload)->string)));
+										lst = lst->next;
+									}while(lst != NULL);
 								}
 								else
 								{
@@ -506,6 +513,15 @@ int readParameters(int argc, char **argv)
 								}
 								freq = freq->next;
 							}while(freq != NULL);
+							if (availConfigs[1].size() == 0 && limit.maxCoreFreq != 0)
+							{
+								for (long c = limit.minCoreFreq; c < limit.maxCoreFreq; c+= limit.stepCoreFreq)
+								{
+									availConfigs[1].push_back(c);
+								}
+								if (limit.maxCoreFreq != 0)
+									availConfigs[1].push_back(limit.maxCoreFreq);
+							}
 						}
 						else if (std::string(prms->name->string) == "UNCORE_FREQUENCY")
 						{
@@ -514,21 +530,30 @@ int readParameters(int argc, char **argv)
 							do{
 								if (std::string(freq->name->string) == "MAX")
 								{
-									long freqVal = 
-									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
 									if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
 										limit.maxUncoreFreq = freqVal;
 								}
 								else if (std::string(freq->name->string) == "MIN")
 								{
-									long freqVal = 
-									std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
 									if (limit.maxUncoreFreq > freqVal && freqVal > limit.minUncoreFreq)
 										limit.minUncoreFreq = freqVal;
 								}
-								else if (std::string(freq->name->string) == "STEP")	//TODO STEP
+								else if (std::string(freq->name->string) == "STEP")
 								{
-									std::cerr << "WARNING: specifying of uncore frequency step size not supported yet" << std::endl;
+									long freqVal = std::stol(std::string(((struct json_string_s*)freq->value->payload)->string));
+									if (freqVal > 0 && freqVal <= limit.maxUncoreFreq)
+										limit.stepUncoreFreq = freqVal;
+								}
+								else if (std::string(freq->name->string) == "LIST")
+								{
+									struct json_array_element_s* lst = ((struct json_array_s*)freq->value->payload)->start;
+									do
+									{
+										availConfigs[2].push_back(std::stol(std::string(((struct json_string_s*)lst->value->payload)->string)));
+										lst = lst->next;
+									}while(lst != NULL);
 								}
 								else
 								{
@@ -537,6 +562,15 @@ int readParameters(int argc, char **argv)
 								}
 								freq = freq->next;
 							}while(freq != NULL);
+							if (availConfigs[2].size() == 0 && limit.maxUncoreFreq != 0)
+							{
+								for (long c = limit.minUncoreFreq; c < limit.maxUncoreFreq; c+= limit.stepUncoreFreq)
+								{
+									availConfigs[2].push_back(c);
+								}
+								if (limit.maxUncoreFreq != 0)
+									availConfigs[2].push_back(limit.maxUncoreFreq);
+							}
 						}
 						else if (std::string(prms->name->string) == "NUM_THREADS")
 						{
@@ -545,21 +579,30 @@ int readParameters(int argc, char **argv)
 							do{
 								if (std::string(thrds->name->string) == "MAX")
 								{
-									int thrdsVal = 
-									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
+									int thrdsVal = std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
 									if (limit.maxThrds > thrdsVal && thrdsVal > limit.minThrds)
 										limit.maxThrds = thrdsVal;
 								}
 								else if (std::string(thrds->name->string) == "MIN")
 								{
-									int thrdsVal = 
-									std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
+									int thrdsVal = std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
 									if (limit.maxThrds > thrdsVal && thrdsVal > limit.minThrds)
 										limit.minThrds = thrdsVal;
 								}
-								else if (std::string(thrds->name->string) == "STEP")	//TODO STEP
+								else if (std::string(thrds->name->string) == "STEP")
 								{
-									std::cerr << "WARNING: specifying of threads step size not supported yet" << std::endl;
+									int thrdsVal = std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string));
+									if (thrdsVal > 0 && thrdsVal <= limit.maxThrds)
+										limit.stepThrds = thrdsVal;
+								}
+								else if (std::string(thrds->name->string) == "LIST")
+								{
+									struct json_array_element_s* lst = ((struct json_array_s*)thrds->value->payload)->start;
+									do
+									{
+										availConfigs[0].push_back(std::stoi(std::string(((struct json_string_s*)thrds->value->payload)->string)));
+										lst = lst->next;
+									}while(lst != NULL);
 								}
 								else
 								{
@@ -568,6 +611,15 @@ int readParameters(int argc, char **argv)
 								}
 								thrds = thrds->next;
 							}while(thrds != NULL);
+							if (availConfigs[0].size() == 0 && limit.maxThrds != 0)
+							{
+								for (long c = limit.minThrds; c < limit.maxThrds; c+= limit.stepThrds)
+								{
+									availConfigs[0].push_back(c);
+								}
+								if (limit.maxThrds != 0)
+									availConfigs[0].push_back(limit.maxThrds);
+							}
 						}
 						else
 						{
@@ -654,7 +706,7 @@ int readParameters(int argc, char **argv)
 						alg = alg->next;
 					}while (alg != NULL);
 				}
-				else if (std::string(data->name->string) == "MERIC")	//OK
+				else if (std::string(data->name->string) == "MERIC")
 				{
 					struct json_object_element_s* meric = ((struct json_object_s*)data->value->payload)->start;
 					do
@@ -793,7 +845,7 @@ void constructStateSpace()
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-configuration decodeConfigVector (std::vector<long> values)	//EXHAUSTIVE only
+configuration EXHAUSTIVE_decodeConfigVector (std::vector<long> values)
 {
 	configuration v;
 	int iter = 0;
@@ -818,7 +870,7 @@ void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::
 		v.push_back(vecConfig[size][elem]);
 		if (size == 0)
 		{
-			struct regionConfiguration c = {"", decodeConfigVector(v), std::numeric_limits<double>::max(), 0.0 };
+			struct regionConfiguration c = {"", EXHAUSTIVE_decodeConfigVector(v), std::numeric_limits<double>::max(), 0.0 };
 			appConfiguration a = {c};
 			testConfigurationsToTry.push_back(a);
 			v.pop_back();
@@ -831,106 +883,7 @@ void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::
 	}
 }
 
-size_t getRegionIndex(std::string region)
-{
-	size_t regIndex = -1;
-	for (int r=0; r < optimalConfiguration.size(); r++)
-	{
-		if (optimalConfiguration[r].regName == region)
-		{
-			regIndex = r;
-			break;
-		}
-	}
-	if (regIndex == -1)
-	{
-		optimalConfiguration.push_back({ region, {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 });
-		regIndex = optimalConfiguration.size()-1;
-	}
-	return regIndex;
-}
-
-std::string constructConfigFileName(std::string regName, configuration config)
-{
-	std::string cfgStr = "";
-	if (config.coreFreq)
-		cfgStr += std::to_string(config.coreFreq)+"_";
-	if (config.uncoreFreq)
-		cfgStr += std::to_string(config.uncoreFreq)+"_";
-	if (config.threads)
-		cfgStr += std::to_string(config.threads)+"_";
-	if (config.powerCapPKG)
-		cfgStr += std::to_string(config.powerCapPKG)+"_";
-	if (config.powerCapPKGtime)
-		cfgStr += std::to_string(config.powerCapPKGtime);
-	if (cfgStr.back() == '_')
-		cfgStr.pop_back();
-
-	if (params.MPI)
-	{
-		char hostname[HOST_NAME_MAX];
-		gethostname(hostname, HOST_NAME_MAX);
-		cfgStr = std::string(hostname) +"_"+ cfgStr;
-	}
-	
-	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
-}
-
-
-bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished = false) //EVO only
-{
-	bool find = false;
-	if (searchInFinished)
-	{
-		struct stat buffer;
-		find = (stat(constructConfigFileName(regName, c).c_str(), &buffer) == 0); 
-	}
-
-	size_t index = 0;
-	while (index < testConfigurationsToTry.size() && find == false)
-	{
-		for (regionConfiguration reg : testConfigurationsToTry[index])
-		{
-			if (reg.regName == regName)
-			{
-				find = (reg.regConfiguration == c);
-				break;
-			}
-		}
-		index++;
-	}
-	return find;
-}
-
-configuration getRandomConfig()
-{
-	configuration c;
-	if (selectedParams.uncoreFreq)
-	{
-		long val = rand() % ((limit.maxUncoreFreq - limit.minUncoreFreq)/100000000); //TODO step size
-		c.uncoreFreq = limit.minUncoreFreq + val*100000000;
-	}
-	if (selectedParams.coreFreq)
-	{
-		long val = rand() % ((limit.maxCoreFreq - limit.minCoreFreq)/100000000); //TODO
-		c.coreFreq = limit.minCoreFreq + val * 100000000;
-	}
-	if (selectedParams.threads)
-	{
-		int val = rand() % (limit.maxThrds - limit.minThrds);  //TODO
-		c.threads = limit.minThrds + val;
-	}
-/*	//TODO
-	if (selectedParams.powerCapPKG)
-		...
-	if (selectedParams.powerCapPKGtime)
-		...
-*/
-
-//	std::cout << "GENcfg: " << c.coreFreq << " " << c.uncoreFreq << " " << c.threads << std::endl;
-	return c;
-}
-
+//----------------------------------------------------------------------------//
 
 //UNIFORM crossover
 configuration EVO_crossover(configuration c1, configuration c2)
@@ -981,7 +934,7 @@ void EVO_mute(configuration& conf)	//TODO stepsize
 				else
 					conf.uncoreFreq += 100000000;
 			}
-		}	
+		}
 	}
 	if (selectedParams.coreFreq)
 	{
@@ -1016,9 +969,11 @@ void EVO_mute(configuration& conf)	//TODO stepsize
 		}
 	}
 	//TODO RAPL
+	
 }
 
-void limitVelocity(configuration &c)	//PSO
+//----------------------------------------------------------------------------//
+void PSO_limitVelocity(configuration &c)
 {
 	if (c.uncoreFreq > 200000000)
 		c.uncoreFreq = 200000000;
@@ -1072,7 +1027,7 @@ configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, c
 	//if (selectedParams.powerCapPKG){}
 	//if (selectedParams.powerCapPKGtime) {}
 
-	limitVelocity(c);
+	PSO_limitVelocity(c);
 	return c;
 }
 
@@ -1086,6 +1041,108 @@ bool PSO_configurationValidation(configuration c)
 		return false;
 	else
 		return true;
+}
+
+//----------------------------------------------------------------------------//
+
+size_t getRegionIndex(std::string region)	//ALL
+{
+	size_t regIndex = -1;
+	for (int r=0; r < optimalConfiguration.size(); r++)
+	{
+		if (optimalConfiguration[r].regName == region)
+		{
+			regIndex = r;
+			break;
+		}
+	}
+	if (regIndex == -1)
+	{
+		optimalConfiguration.push_back({ region, {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 });
+		regIndex = optimalConfiguration.size()-1;
+	}
+	return regIndex;
+}
+
+std::string constructConfigFileName(std::string regName, configuration config)	//ALL
+{
+	std::string cfgStr = "";
+	if (config.coreFreq)
+		cfgStr += std::to_string(config.coreFreq)+"_";
+	if (config.uncoreFreq)
+		cfgStr += std::to_string(config.uncoreFreq)+"_";
+	if (config.threads)
+		cfgStr += std::to_string(config.threads)+"_";
+	if (config.powerCapPKG)
+		cfgStr += std::to_string(config.powerCapPKG)+"_";
+	if (config.powerCapPKGtime)
+		cfgStr += std::to_string(config.powerCapPKGtime);
+	if (cfgStr.back() == '_')
+		cfgStr.pop_back();
+
+	if (params.MPI)
+	{
+		char hostname[HOST_NAME_MAX];
+		gethostname(hostname, HOST_NAME_MAX);
+		cfgStr = std::string(hostname) +"_"+ cfgStr;
+	}
+	
+	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
+}
+
+
+bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished = false) //EVO + PSO
+{
+	bool find = false;
+	if (searchInFinished)
+	{
+		struct stat buffer;
+		find = (stat(constructConfigFileName(regName, c).c_str(), &buffer) == 0); 
+	}
+
+	size_t index = 0;
+	while (index < testConfigurationsToTry.size() && find == false)
+	{
+		for (regionConfiguration reg : testConfigurationsToTry[index])
+		{
+			if (reg.regName == regName)
+			{
+				find = (reg.regConfiguration == c);
+				break;
+			}
+		}
+		index++;
+	}
+	return find;
+}
+
+configuration getRandomConfig()	//EVO+PSO
+{
+	configuration c;
+	if (selectedParams.uncoreFreq)
+	{
+		long val = rand() % ((limit.maxUncoreFreq - limit.minUncoreFreq)/100000000); //TODO step size
+		c.uncoreFreq = limit.minUncoreFreq + val*100000000;
+	}
+	if (selectedParams.coreFreq)
+	{
+		long val = rand() % ((limit.maxCoreFreq - limit.minCoreFreq)/100000000); //TODO
+		c.coreFreq = limit.minCoreFreq + val * 100000000;
+	}
+	if (selectedParams.threads)
+	{
+		int val = rand() % (limit.maxThrds - limit.minThrds);  //TODO
+		c.threads = limit.minThrds + val;
+	}
+/*	//TODO
+	if (selectedParams.powerCapPKG)
+		...
+	if (selectedParams.powerCapPKGtime)
+		...
+*/
+
+//	std::cout << "GENcfg: " << c.coreFreq << " " << c.uncoreFreq << " " << c.threads << std::endl;
+	return c;
 }
 
 //EVO - EXHAUSTIVE - PSO
@@ -1220,7 +1277,7 @@ std::cerr << "evaluation of the finished runs\n";
 				{
 					PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
 					PSOhistory[idx][i].velocity = getRandomConfig() - getRandomConfig();
-					limitVelocity(PSOhistory[idx][i].velocity);
+					PSO_limitVelocity(PSOhistory[idx][i].velocity);
 				}
 			}
 		}
@@ -1360,42 +1417,11 @@ std::cerr << "evaluation of the finished runs\n";
 		std::vector <std::string> parameterName;
 		std::vector <std::vector<long>> exhConf;
 		std::vector <long> cfg;
-		//threads
-		for (long t = limit.minThrds; t < limit.maxThrds; t+= limit.stepThrds)
-		{
-			cfg.push_back(t);
-		}
-		if (limit.maxThrds != 0)
-			cfg.push_back(limit.maxThrds);
-		if (cfg.size() != 0)
-			exhConf.push_back(cfg);
-		cfg.clear();
 
-		//CF
-		for (long c = limit.minCoreFreq; c < limit.maxCoreFreq; c+= limit.stepCoreFreq)
-		{
-			cfg.push_back(c);
-		}
-		if (limit.maxCoreFreq != 0)
-			cfg.push_back(limit.maxCoreFreq);
-		if (cfg.size() != 0)
-			exhConf.push_back(cfg);
-		cfg.clear();
-
-		//UCF
-		for (long u = limit.minUncoreFreq; u < limit.maxUncoreFreq; u+= limit.stepUncoreFreq)
-		{
-			cfg.push_back(u);
-		}
-		if (limit.maxUncoreFreq != 0)
-			cfg.push_back(limit.maxUncoreFreq);
-		if (cfg.size() != 0)
-			exhConf.push_back(cfg);
-		cfg.clear();
-/*
-		//TODO RAPL
-*/
-
+		for (int i = 0; i < 5; i++)
+			if (availConfigs[i].size() != 0)
+				exhConf.push_back(availConfigs[i]);
+		
 		std::vector <long> v;
 		EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
 	}
