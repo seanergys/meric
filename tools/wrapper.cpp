@@ -242,11 +242,11 @@ configuration EXHAUSTIVE_decodeConfigVector (std::vector<long> values);
 void EXHAUSTIVE_generateConfigurationInRecursive(size_t size, std::vector <std::vector<long>> vecConfig, std::vector <long> v);
 size_t getRegionIndex(std::string region);
 std::string constructConfigFileName(std::string regName, configuration config);
-bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished); //EVO
+bool testIfConfigExists(std::string regName, configuration c, bool searchInFinished);
 configuration getRandomConfig();
 configuration EVO_crossover(configuration c1, configuration c2);
 void EVO_mute(configuration& conf);
-void PSO_limitVelocity(configuration &c);	//PSO
+void PSO_limitVelocity(configuration &c);
 configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
 bool PSO_configurationValidation(configuration c);
 size_t generateConfigurationsToTest();
@@ -917,59 +917,94 @@ configuration EVO_crossover(configuration c1, configuration c2)
 	return conf;
 }
 
-void EVO_mute(configuration& conf)	//TODO stepsize
+void EVO_mute(configuration& conf)
 {
 	int director;
-	if (selectedParams.uncoreFreq)
+	if (selectedParams.threads)
 	{
+		int idx = distance(availConfigs[0].begin(), std::find(availConfigs[0].begin(), availConfigs[0].end(), conf.threads));
 		director = rand()%100;
 		if (director < 10)
 		{
-			if (director < 5 && conf.uncoreFreq < limit.maxUncoreFreq)
-				conf.uncoreFreq += 100000000;
+			if (director < 5 && idx+1 < availConfigs[0].size())
+				conf.threads = availConfigs[0][idx+1];
 			else
 			{
-				if (conf.uncoreFreq > limit.minUncoreFreq)
-					conf.uncoreFreq -= 100000000;
+				if (idx != 0)
+					conf.threads = availConfigs[0][idx-1];
 				else
-					conf.uncoreFreq += 100000000;
+					conf.threads = availConfigs[0][idx+1];
 			}
 		}
 	}
 	if (selectedParams.coreFreq)
 	{
+		int idx = distance(availConfigs[1].begin(), std::find(availConfigs[1].begin(), availConfigs[1].end(), conf.coreFreq));
 		director = rand()%100;
 		if (director < 10)
 		{
-			if (director < 5 && conf.coreFreq < limit.maxCoreFreq)
-				conf.coreFreq += 100000000;
+			if (director < 5 && idx+1 < availConfigs[1].size())
+				conf.coreFreq = availConfigs[1][idx+1];
 			else
 			{
-				if (conf.coreFreq > limit.minCoreFreq)
-					conf.coreFreq -= 100000000;
+				if (idx != 0)
+					conf.coreFreq = availConfigs[1][idx-1];
 				else
-					conf.coreFreq += 100000000;
+					conf.coreFreq = availConfigs[1][idx+1];
 			}
 		}
 	}
-	if (selectedParams.threads)
+	if (selectedParams.uncoreFreq)
 	{
+		int idx = distance(availConfigs[2].begin(), std::find(availConfigs[2].begin(), availConfigs[2].end(), conf.uncoreFreq));
 		director = rand()%100;
 		if (director < 10)
 		{
-			if (director < 5 && conf.threads < limit.maxThrds)
-				conf.threads += 1;
+			if (director < 5 && idx+1 < availConfigs[2].size())
+				conf.uncoreFreq = availConfigs[2][idx+1];
 			else
 			{
-				if (conf.threads > limit.minThrds)
-					conf.threads -= 1;
+				if (idx != 0)
+					conf.uncoreFreq = availConfigs[2][idx-1];
 				else
-					conf.threads += 1;
+					conf.uncoreFreq = availConfigs[2][idx+1];
 			}
 		}
 	}
-	//TODO RAPL
-	
+	if (selectedParams.powerCapPKG)
+	{
+		int idx = distance(availConfigs[3].begin(), std::find(availConfigs[3].begin(), availConfigs[3].end(), conf.powerCapPKG));
+		director = rand()%100;
+		if (director < 10)
+		{
+			if (director < 5 && idx+1 < availConfigs[3].size())
+				conf.powerCapPKG = availConfigs[3][idx+1];
+			else
+			{
+				if (idx != 0)
+					conf.powerCapPKG = availConfigs[3][idx-1];
+				else
+					conf.powerCapPKG = availConfigs[3][idx+1];
+			}
+		}
+	}
+	if (selectedParams.powerCapPKGtime)
+	{
+		int idx = distance(availConfigs[4].begin(), std::find(availConfigs[4].begin(), availConfigs[4].end(), conf.powerCapPKGtime));
+		director = rand()%100;
+		if (director < 10)
+		{
+			if (director < 5 && idx+1 < availConfigs[4].size())
+				conf.powerCapPKGtime = availConfigs[4][idx+1];
+			else
+			{
+				if (idx != 0)
+					conf.powerCapPKGtime = availConfigs[4][idx-1];
+				else
+					conf.powerCapPKGtime = availConfigs[4][idx+1];
+			}
+		}
+	}
 }
 
 //----------------------------------------------------------------------------//
@@ -1119,27 +1154,16 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 configuration getRandomConfig()	//EVO+PSO
 {
 	configuration c;
-	if (selectedParams.uncoreFreq)
-	{
-		long val = rand() % ((limit.maxUncoreFreq - limit.minUncoreFreq)/100000000); //TODO step size
-		c.uncoreFreq = limit.minUncoreFreq + val*100000000;
-	}
-	if (selectedParams.coreFreq)
-	{
-		long val = rand() % ((limit.maxCoreFreq - limit.minCoreFreq)/100000000); //TODO
-		c.coreFreq = limit.minCoreFreq + val * 100000000;
-	}
 	if (selectedParams.threads)
-	{
-		int val = rand() % (limit.maxThrds - limit.minThrds);  //TODO
-		c.threads = limit.minThrds + val;
-	}
-/*	//TODO
+		c.threads = availConfigs[0][rand() % availConfigs[0].size()];
+	if (selectedParams.coreFreq)
+		c.coreFreq = availConfigs[1][rand() % availConfigs[1].size()];
+	if (selectedParams.uncoreFreq)
+		c.uncoreFreq = availConfigs[2][rand() % availConfigs[2].size()];
 	if (selectedParams.powerCapPKG)
-		...
+		c.powerCapPKG = availConfigs[3][rand() % availConfigs[3].size()];
 	if (selectedParams.powerCapPKGtime)
-		...
-*/
+		c.powerCapPKGtime = availConfigs[4][rand() % availConfigs[4].size()];
 
 //	std::cout << "GENcfg: " << c.coreFreq << " " << c.uncoreFreq << " " << c.threads << std::endl;
 	return c;
