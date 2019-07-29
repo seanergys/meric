@@ -24,7 +24,6 @@ public:
 	static void close();
 	
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
-	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
@@ -34,6 +33,7 @@ public:
 private:
 	static void start();
 	static long openCounter(perf_event_attr attr);
+	static void initMap(std::map<std::string, unsigned long long int> & dict);
 		//list of counters
 	static std::map<std::string,unsigned long long int> counters;
 	static unsigned long long int COUNTERMAX;
@@ -48,7 +48,6 @@ public:
 	static void start() {};
 	static void stop() {};
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
-	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter);
 	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
@@ -56,6 +55,7 @@ public:
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios);
 private:
+	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static unsigned long long int COUNTERMAX;
 };
 #endif
