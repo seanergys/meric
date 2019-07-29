@@ -24,10 +24,8 @@ public:
 	
 	static double computationalIntensity(long long instructions, long long miss) {return miss ? instructions/miss : instructions; };
 
-	//average CPU core frequency in a specified time range [GHz]
-	static double CPU_FREQUENCY_FROM_CYCLES(long long cycles, double time) {return 1.0E-09*(cycles/time);};
-	
-	//[Hz]
+	//average CPU core frequency in a specified time range [Hz]
+	static double CPU_FREQUENCY_FROM_CYCLES(long long cycles, double time) {return cycles/time;};
 	static double CPU_FREQUENCY_FROM_Pstate_PERF(uint64_t aperf, uint64_t mperf, uint64_t nominal_freq) { return mperf ? (aperf/(double)mperf)*nominal_freq : 0; };
 	
 	//average CPU uncore frequency in a specified time range [Hz]

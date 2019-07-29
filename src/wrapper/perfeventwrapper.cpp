@@ -142,7 +142,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 
 	if (stop.count(PERFEVENT_COUNTERS::COUNTER_FREQ))
 	{
-		ratios["CPU frequency [GHz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(
+		ratios["CPU frequency [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(
 				stop[PERFEVENT_COUNTERS::COUNTER_FREQ] -
 				start[PERFEVENT_COUNTERS::COUNTER_FREQ],
 				runtime

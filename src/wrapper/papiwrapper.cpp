@@ -153,7 +153,7 @@ void PAPI::getRatios(std::map<std::string, unsigned long long int>& start, std::
 
 	if (stop.count(PAPI_COUNTERS::COUNTER_FREQ))
 	{
-		ratios["CPU frequency [GHz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(
+		ratios["CPU frequency [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(
 				stop[PAPI_COUNTERS::COUNTER_FREQ] -
 				start[PAPI_COUNTERS::COUNTER_FREQ],
 				runtime
