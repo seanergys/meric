@@ -16,12 +16,12 @@ const std::string COUNTER_CACHE_ACCESS = "PAPI_L3_TCA";
 const std::string COUNTER_HW_INSTRUCTIONS = "PAPI_TOT_INS";
 const std::string COUNTER_FREQ = "PAPI_TOT_CYC";
 
-static std::map<std::string, std::string> counterLabel = {
-	{ "perf_raw::r04C6", "COUNTER_AVX" },
-	{ "PAPI_L3_TCM", "COUNTER_L3_MISSES" },
-	{ "PAPI_L3_TCA", "COUNTER_L3_ACCESS" },
-	{ "PAPI_TOT_INS", "COUNTER_HW_INSTRUCTIONS" },
-	{ "PAPI_TOT_CYC", "COUNTER_CPU_CYCLES" }
+static std::map<const std::string, std::string> counterLabel = {
+	{ COUNTER_AVX,             "COUNTER_AVX"             },
+	{ COUNTER_CACHE_MISSES,    "COUNTER_L3_MISSES"       },
+	{ COUNTER_CACHE_ACCESS,    "COUNTER_L3_ACCESS"       },
+	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
+	{ COUNTER_FREQ,            "COUNTER_CPU_CYCLES"      }
 };
 
 }
@@ -41,14 +41,29 @@ const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
 const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 const std::string COUNTER_FREQ = "PERF_COUNT_HW_CPU_CYCLES";
 
-static std::map<std::string, std::string> counterLabel = {
-	{ "COUNTER_AVX", "COUNTER_AVX" },
-	{ "COUNTER_AVX_ALL", "COUNTER_AVX_ALL" },
-	{ "COUNTER_CACHE_MISSES", "COUNTER_CACHE_MISSES" },
-	{ "COUNTER_HW_INSTRUCTIONS", "COUNTER_HW_INSTRUCTIONS" },
-	{ "PERF_COUNT_HW_CPU_CYCLES", "COUNTER_CPU_CYCLES" }
+static std::map<const std::string, std::string> counterLabel = {
+	{ COUNTER_AVX,             "COUNTER_AVX"             },
+	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
+	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
+	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
+	{ COUNTER_FREQ,            "COUNTER_CPU_CYCLES"      }
 };
 
+}
+////////////////////////////////////////////////////////////////////////////////
+namespace MSR_COUNTERS {
+
+const std::string APERF = "APERF";
+const std::string MPERF = "MPERF";
+const std::string UCF_FREQ = "UCF_FREQ_CNT";
+
+#if defined HAVE_MSR_CORE_H && defined SRC_WRAPPER_MSRCOUNTERSWRAPPER_H_
+static std::map<const std::string, uint64_t> counterLabel = {
+	{ APERF,    IA32_APERF                },
+	{ MPERF,    IA32_MPERF                },
+	{ UCF_FREQ, MSR_U_PMON_UCLK_FIXED_CTR }
+};
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -65,7 +80,7 @@ const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
 const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
 const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
 /*
-const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";	//Taurus doesn't support
+const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";	//Haswell-EP doesn't support
 const std::string RAPL_DRAM_CH0    = "Intel_DRAM_ENERGY_STATUS_CH0";
 const std::string RAPL_DRAM_CH1    = "Intel_DRAM_ENERGY_STATUS_CH1";
 const std::string RAPL_DRAM_CH2    = "Intel_DRAM_ENERGY_STATUS_CH2";
@@ -76,14 +91,14 @@ const std::string RAPL_PCKG_POWER_LIMIT = "Intel_RAPL_PKG_POWER_LIMIT_1";
 const std::string RAPL_RAM_POWER_LIMIT  = "Intel_RAPL_RAM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "Intel_RAPL_POWER_UNIT_TIMEWINDOW";
 
-static std::map<std::string, std::string> counterLabel = {
-	{ "Intel_RAPL_Pckg_Energy",   "RAPL_PCKG [J]"          },
-	{ "Intel_RAPL_RAM_Energy",    "RAPL_RAM [J]"           },
-	{ "Intel_RAPL_Pckg_Energy_0", "RAPL_PCKG_0 [J]"        },
-	{ "Intel_RAPL_Pckg_Energy_1", "RAPL_PCKG_1 [J]"        },
-	{ "Intel_RAPL_RAM_Energy_0",  "RAPL_RAM_0 [J]"         },
-	{ "Intel_RAPL_RAM_Energy_1",  "RAPL_RAM_1 [J]"         },
-	{ "Energy consumption [J]",   "Energy consumption [J]" }
+static std::map<const std::string, std::string> counterLabel = {
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,26 +116,26 @@ const std::string RAPL_PCKG_POWER_LIMIT = "MSR_PKG_POWER_LIMIT";
 const std::string RAPL_RAM_POWER_LIMIT  = "MSR_DRAM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW";
 
-static std::map<std::string, std::string> counterLabel = {
-	{ "MSR_PKG_ENERGY_STATUS",    "RAPL_PCKG [J]"          },
-	{ "MSR_DRAM_ENERGY_STATUS",   "RAPL_RAM [J]"           },
-	{ "MSR_PKG_ENERGY_STATUS_0",  "RAPL_PCKG_0 [J]"        },
-	{ "MSR_PKG_ENERGY_STATUS_1",  "RAPL_PCKG_1 [J]"        },
-	{ "MSR_DRAM_ENERGY_STATUS_0", "RAPL_RAM_0 [J]"         },
-	{ "MSR_DRAM_ENERGY_STATUS_1", "RAPL_RAM_1 [J]"         },
-	{ "Energy consumption [J]",   "Energy consumption [J]" }
+static std::map<const std::string, std::string> counterLabel = {
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 
 #ifdef HAVE_MSR_CORE_H
 #include <master.h>
-static std::map<std::string, uint64_t> counterDefines = {
-	{ "MSR_PKG_ENERGY_STATUS",    MSR_PKG_ENERGY_STATUS  },
-	{ "MSR_DRAM_ENERGY_STATUS",   MSR_DRAM_ENERGY_STATUS },
-	{ "MSR_PKG_ENERGY_STATUS_0",  MSR_PKG_ENERGY_STATUS  },
-	{ "MSR_PKG_ENERGY_STATUS_1",  MSR_PKG_ENERGY_STATUS  },
-	{ "MSR_DRAM_ENERGY_STATUS_0", MSR_DRAM_ENERGY_STATUS },
-	{ "MSR_DRAM_ENERGY_STATUS_1", MSR_DRAM_ENERGY_STATUS },
-	{ "Energy consumption [J]",   0x0                    }
+static std::map<const std::string, uint64_t> counterDefines = {
+	{ RAPL_PCKG_ENERGY,      MSR_PKG_ENERGY_STATUS  },
+	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },
+	{ RAPL_PCKG_ENERGY+"_0", MSR_PKG_ENERGY_STATUS  },
+	{ RAPL_PCKG_ENERGY+"_1", MSR_PKG_ENERGY_STATUS  },
+	{ RAPL_RAM_ENERGY+"_0",  MSR_DRAM_ENERGY_STATUS },
+	{ RAPL_RAM_ENERGY+"_1",  MSR_DRAM_ENERGY_STATUS },
+	{ RAPL_SUM_ENERGY,       0x0                    }
 };
 #endif
 
@@ -137,14 +152,14 @@ const std::string RAPL_PCKG_POWER_LIMIT_1 = "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMI
 const std::string RAPL_RAM_POWER_LIMIT  = "MSR::DRAM_POWER_LIMIT:POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW";
 
-static std::map<std::string, std::string> counterLabel = {
-	{ "MSR::PKG_ENERGY_STATUS#",    "RAPL_PCKG [J]"          },
-	{ "MSR::DRAM_ENERGY_STATUS#",   "RAPL_RAM [J]"           },
-	{ "MSR::PKG_ENERGY_STATUS#_0",  "RAPL_PCKG_0 [J]"        },
-	{ "MSR::PKG_ENERGY_STATUS#_1",  "RAPL_PCKG_1 [J]"        },
-	{ "MSR::DRAM_ENERGY_STATUS#_0", "RAPL_RAM_0 [J]"         },
-	{ "MSR::DRAM_ENERGY_STATUS#_1", "RAPL_RAM_1 [J]"         },
-	{ "Energy consumption [J]",     "Energy consumption [J]" }
+static std::map<const std::string, std::string> counterLabel = {
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 }
 
