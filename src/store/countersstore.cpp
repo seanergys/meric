@@ -5,6 +5,7 @@
 #include "countersstore.h"
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
+#include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/raplwrapper.h"
 
 #ifdef HAVE_MPI_H
@@ -100,6 +101,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 
 template class CountersStore <PERFEVENT, unsigned long long int>;
 template class CountersStore <PAPI, unsigned long long int>;
+template class CountersStore <MSR, uint64_t>;
 template class CountersStore <RAPL, unsigned long long int>;
 template class CountersStore <HDEEM, double>;
 

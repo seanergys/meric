@@ -53,11 +53,12 @@ SharedMeric::SharedMeric()
 	
 	if (Meric::COUNTERS != "none")
 	{
-
 		if (Meric::COUNTERS == "perfevent")
 			_storeList.push_back(new CountersStore<PERFEVENT, unsigned long long int>(Meric::SAMPLES));
 		else if (Meric::COUNTERS == "papi")
 			_storeList.push_back(new CountersStore<PAPI, unsigned long long int>(Meric::SAMPLES));
+		else if (Meric::COUNTERS == "msr")
+			_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES));
 	}
 	
 	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
@@ -82,17 +83,15 @@ SharedMeric::SharedMeric()
 
 
 	//wrappers must be initialized after meric instantiation
-	//RAPL counter expects that environment::init() was already called
+	//RAPL + MSR wrappers expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")
 		PERFEVENT::init();
 	if (Meric::COUNTERS == "papi")
 		PAPI::init();
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
-	{
-//		if (Meric::DETAILED)
-//			RAPL::detailed();
 		RAPL::init(Meric::DETAILED);
-	}
+	if (Meric::COUNTERS == "msr")
+		MSR::init();
 	if (Meric::MODE == MODE_JETSON)
 		JETSON::init();
 	else if (Meric::MODE == MODE_THUNDER)

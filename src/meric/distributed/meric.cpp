@@ -195,6 +195,10 @@ DistributedMeric::DistributedMeric()
 			}
 			_storeList.back()->setMPIWrite(true);
 		}
+		else if (Meric::COUNTERS == "msr" && !Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES));
+		}
 	}
 	
 	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
@@ -243,18 +247,15 @@ DistributedMeric::DistributedMeric()
 	}
 	
 	//wrappers must be initialized after meric instantiation
-	//rapl counter expects that environment::init() was already called
+	//RAPL + MSR wrappers expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")
 		PERFEVENT::init();
 	if (Meric::COUNTERS == "papi")
 		PAPI::init();
-
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
-	{
-//		if (Meric::DETAILED)
-//			RAPL::detailed();
 		RAPL::init(Meric::DETAILED);
-	}
+	if (Meric::COUNTERS == "msr")
+		MSR::init();
 
 	std::string applicationMainRegion = std::string(program_invocation_name);
 	size_t n = applicationMainRegion.find_last_of("/");

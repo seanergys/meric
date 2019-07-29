@@ -183,7 +183,7 @@ int Meric::getDefaultParameters()
 	
 	if (Meric::COUNTERS != "none")
 	{
-		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent")
+		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent" && Meric::COUNTERS != "msr")
 		{
 			if (Meric::COUNTERS != "")
 				std::cerr << "MERIC WARNING: unknown counter type "<<Meric::COUNTERS<<std::endl;
