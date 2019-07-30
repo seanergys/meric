@@ -4,9 +4,9 @@
 using namespace meric;
 
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
+uint64_t MSR::nominal_freq = 0;
 
 #ifdef HAVE_MSR_CORE_H
-uint64_t MSR::nominal_freq = 0;
 std::map<std::string, uint64_t> MSR::counters;
 
 void MSR::init()
