@@ -51,6 +51,14 @@ static std::map<const std::string, std::string> counterLabel = {
 
 }
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * to add new MSR register to read:
+ *  the class is ready for reading the whole register without any shift or bitwise xor
+ *  the counterLabel map works the opposite way than in case of the others
+ *  a label of the register is a key for the register definition
+ *  adder register must be inited in MSR::initMap(std::map<std::string, uint64_t> & dict) 
+ *  accordig it is related to core/socket/node
+ **/
 namespace MSR_COUNTERS {
 
 const std::string APERF = "APERF";

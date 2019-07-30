@@ -338,10 +338,10 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
 
-* `export MERIC_COUNTERS=papi` or `perfevent`
-	- If set you can read HW counters using PAPI or perfevent.
-	- When using counters, there is not only counter value but also an information about average CPU core frequency during the region runtime, computational and arithmetic intensity (if possible to measure).
-	- To add a counter you want to measure it is necessary to follow the instructions in wrapper/counters.h.
+* `export MERIC_COUNTERS=papi` or `perfevent` or `msr`
+	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr-safe.
+	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
+	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 * `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
