@@ -291,7 +291,7 @@ void generateDefaultWrapperConfigFile()
 				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"
 				+ "\t\t\t\"STEP\":  100000000\n"
 				+ "\t\t},\n";
-	content+=std::string("\t\t\"THREADS\" : {\n")
+	content+=std::string("\t\t\"NUM_THREADS\" : {\n")
 			+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxThrds)+",\n"
 			+ "\t\t\t\"MIN\" : "+std::to_string(limit.minThrds)+",\n"
 			+ "\t\t\t\"STEP\":  1\n"
@@ -1366,6 +1366,10 @@ std::cerr << regName << " - improved solution\n";
 				}
 				inputfile.close();
 			}
+			else
+			{
+				std::cerr << "ERROR: "<< constructConfigFileName(regName, config) << " file cannot be open\n";
+			}
 			return energyConsumption;
 		};
 
@@ -1668,7 +1672,7 @@ int main(int argc, char **argv)
 	int ret = readParameters(argc, argv);
 	if (ret != 0)
 		return ret;
-	return 0;
+
 	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
 	runApplication(defaultRun);
 	constructCallPath();
