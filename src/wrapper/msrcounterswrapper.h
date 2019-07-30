@@ -61,7 +61,7 @@ public:
 	static void close() {};
 	static void getCounterValues(std::map<std::string, uint64_t> & record) {};
 	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter);
-	static void getSummaryValue(double time, uint64_t * counterSummary);
+	static void getSummaryValue(double time, unsigned long long int * counterSummary);
 	static std::string getSummaryCounterName();
 	static std::string getCountersLabel();
 	static std::string getCounterLabel(std::string counter);
@@ -69,6 +69,7 @@ public:
 private:
 	static void initMap(std::map<std::string, uint64_t> & dict);
 	static uint64_t COUNTERMAX;
+	static uint64_t nominal_freq;
 };
 
 
