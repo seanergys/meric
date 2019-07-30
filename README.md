@@ -85,7 +85,7 @@ Since we are speaking about counters, overflow may happen during the application
 
 Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
 	
-In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
+In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
 
 
 ### HDEEM ###
@@ -156,20 +156,20 @@ If you want to insert MERIC regions into code you don't know, instead of MERIC p
 There is one more restriction in placing probes into the code. In current version MERIC does not support recursively nested regions and regions with at least three starts where the first and the third calls are at the same level, but second call is at higher level. This case is shown in example:
 
 ```
-	MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in this example
-		MERIC_MeasureStart("A")	//first call of region A
-		MERIC_MeasureStop()
+MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in this example
+	MERIC_MeasureStart("A")	//first call of region A
+	MERIC_MeasureStop()
 
-		MERIC_MeasureStart("B")
-			MERIC_MeasureStart("A")	//region A called at higher nested level
-			MERIC_MeasureStop()
-		MERIC_MeasureStop()
-
-		MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
-			MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
-			MERIC_MeasureStop()	//region C will cause defect in its call tree
+	MERIC_MeasureStart("B")
+		MERIC_MeasureStart("A")	//region A called at higher nested level
 		MERIC_MeasureStop()
 	MERIC_MeasureStop()
+
+	MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
+		MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
+		MERIC_MeasureStop()	//region C will cause defect in its call tree
+	MERIC_MeasureStop()
+MERIC_MeasureStop()
 ```
 
 ## TIMEPROF interface ##
@@ -286,9 +286,9 @@ Specify following parameters to zero if you do not want to tune the selected sys
 
 * `export MERIC_FREQUENCY=2400MHz`
 * `export MERIC_UNCORE_FREQUENCY=2GHz`
-	- Both frequencies can be specified as integer in Hz (default), KHz, MHz or GHz.
+	- Both frequencies can be specified as integer in Hz (default), kHz, MHz or GHz.
 * `export MERIC_NUM_THREADS=24`
-	- To run a code in the default settings, without MERIC influence, set these three environment variables to zero.
+	- Number of openMP threads that should be used to run the application.
 * `export MERIC_PWRCAP_POWER=100000`
 	- Average processor PKG power in milliwatts under the selected time window.
 * `export MERIC_PWRCAP_TIME=3000`
@@ -315,7 +315,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- omp  = use OpenMP barriers only
 	- none = do not use barriers
 
-## SET ONE OF MERIC OUTPUT FORMAT ##
+## SET MERIC OUTPUT FORMAT ##
 * `export MERIC_CONTINUAL=0`
 	- Some energy measurement systems support two modes how they operate.
 	- In the continual mode (MERIC_CONTINUAL=1) the systems stores power samples in an internal memory, MERIC stores only timestamps during an application run and evaluate the energy consumption at the end of the application run.
