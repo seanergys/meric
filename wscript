@@ -115,6 +115,18 @@ def build(ctx):
         install_path = ctx.path.abspath()+"/tools/staticMERICtool"
     )
 
+    # MERICwrapper
+    ctx.program(
+        source= 
+            ctx.path.ant_glob('tools/wrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/basis/json.cpp'),
+        target="wrapper",
+        use="msr x86_adapt numa geopm",
+        install_path = ctx.path.abspath()+"/tools/"
+    )
+    
     # SYSTEM INFO TOOL    
     ctx.program(
         source=

@@ -14,6 +14,7 @@ tools/staticMERICtool/energyMeasureStart
 tools/staticMERICtool/energyMeasureStop
 tools/systemInfo
 tools/DBI/*
+tools/wrapper
 include/meric
 
 test/sleepTest

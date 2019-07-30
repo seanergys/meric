@@ -19,11 +19,17 @@
 #include "../src/basis/utils.h"
 #include "../src/basis/json.h"
 
+#ifdef HAVE_MSR_CORE_H
+	#include <msr_core.h>
+	#include <msr_rapl.h>
+	#include <msr_clocks.h>
+	#include <libmsr_error.h>
+#endif
 
-//const std::string APPLICATION = "mpirun -n 2 /home/vys0053/readex/meric/test/test_mpi";
-//const std::string APPLICATION="/galileo/home/userexternal/ovysocky/meric/test/test";
-//const std::string APPLICATION="srun --cpu_bind=verbose,sockets --nodes 1 --ntasks-per-node 2 --cpus-per-task 12 /galileo/home/userexternal/ovysocky/pool/blasbench/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
-//const std::string APPLICATION="mpirun $BIND_TO_SOCKETS /scratch/work/user/vys0053/SOFTWARE/readex-apps/readex-repository/benchmark_apps/blasbench/blasbench_meric --dgemv 300,8192 --dgemm 150,2048 --tan 60000 --phase 2";
+#ifdef HAVE_X86_ADAPT_H
+	#include <x86_adapt.h>
+#endif
+
 
 
 
