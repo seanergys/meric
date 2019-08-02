@@ -1395,171 +1395,169 @@ std::cerr << "evaluation of the finished runs\n";
 	};
 
 /// PSO ////////////////////////////////////////////////////////////////////////	
-	if (params.iterations)
+	if (params.alg == PSO) // && params.iterations) PSO now allows to run the same configuration several times
 	{
-		params.iterations--;
-		if (params.alg == PSO)
+		if (!testConfigurationsDone.size())	//INITIAL GENERATION
 		{
-			if (!testConfigurationsDone.size())	//INITIAL GENERATION
+			generateRandomGeneration();
+			PSOhistory.resize(appRegions.size());
+			for (std::string regName : appRegions)
 			{
-				generateRandomGeneration();
-				PSOhistory.resize(appRegions.size());
-				for (std::string regName : appRegions)
+				size_t idx = getRegionIndex(regName);
+				PSOhistory[idx].resize(POPULATION_SIZE);
+				for (int i = 0; i<POPULATION_SIZE; i++)
 				{
-					size_t idx = getRegionIndex(regName);
-					PSOhistory[idx].resize(POPULATION_SIZE);
-					for (int i = 0; i<POPULATION_SIZE; i++)
+					PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
+					PSOhistory[idx][i].velocity = {(rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2};
+					PSO_limitVelocity(PSOhistory[idx][i].velocity);
+				}
+			}
+		}
+		else if (improvedSolutionCounter < END_CONDITION)
+		{
+			//update particle history
+			for (size_t i = 0; i<testConfigurationsDone.size(); i++)
+			{
+				for (size_t j = 0; j < testConfigurationsDone[i].size(); j++)
+				{
+					if (testConfigurationsDone[i][j].regName != "")
 					{
-						PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
-						PSOhistory[idx][i].velocity = {(rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2};
-						PSO_limitVelocity(PSOhistory[idx][i].velocity);
+						size_t regIDX = getRegionIndex(testConfigurationsDone[i][j].regName);
+						if (PSOhistory[regIDX][i].energy > testConfigurationsDone[i][j].energy)
+						{
+							PSOhistory[regIDX][i].bestPosition = testConfigurationsDone[i][j].regConfiguration;
+							PSOhistory[regIDX][i].energy = testConfigurationsDone[i][j].energy;
+							PSOhistory[regIDX][i].runtime = testConfigurationsDone[i][j].runtime;
+						}			
 					}
 				}
 			}
-			else if (improvedSolutionCounter < END_CONDITION)
-			{
-				//update particle history
-				for (size_t i = 0; i<testConfigurationsDone.size(); i++)
-				{
-					for (size_t j = 0; j < testConfigurationsDone[i].size(); j++)
-					{
-						if (testConfigurationsDone[i][j].regName != "")
-						{
-							size_t regIDX = getRegionIndex(testConfigurationsDone[i][j].regName);
-							if (PSOhistory[regIDX][i].energy > testConfigurationsDone[i][j].energy)
-							{
-								PSOhistory[regIDX][i].bestPosition = testConfigurationsDone[i][j].regConfiguration;
-								PSOhistory[regIDX][i].energy = testConfigurationsDone[i][j].energy;
-								PSOhistory[regIDX][i].runtime = testConfigurationsDone[i][j].runtime;
-							}			
-						}
-					}
-				}
 
-				//set new position
-				for (size_t i = 0; i < POPULATION_SIZE; i++)
+			//set new position
+			for (size_t i = 0; i < POPULATION_SIZE; i++)
+			{
+				appConfiguration ac;
+				for (std::string regName : appRegions)
 				{
-					appConfiguration ac;
-					for (std::string regName : appRegions)
-					{
-						size_t regIdx = getRegionIndex(regName);
-						configuration x_k_new;
+					size_t regIdx = getRegionIndex(regName);
+					configuration x_k_new;
 /*						configuration v_k_new;
-						configuration v_k_old = PSOhistory[regIdx][i].velocity;
-						configuration x_k_old = testConfigurationsDone[i][<regIndex>].regConfiguration;
-						configuration best_k = PSOhistory[regIdx][i].bestPosition;
-						configuration best_swarm = optimalConfiguration[regIndex].regConfiguration;
-						double Rp = (rand()%100) / 100.0;
-						double Rg = (rand()%100) / 100.0;
-						//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
-						//x_k_new = x_k_old + v_k_new
+					configuration v_k_old = PSOhistory[regIdx][i].velocity;
+					configuration x_k_old = testConfigurationsDone[i][<regIndex>].regConfiguration;
+					configuration best_k = PSOhistory[regIdx][i].bestPosition;
+					configuration best_swarm = optimalConfiguration[regIndex].regConfiguration;
+					double Rp = (rand()%100) / 100.0;
+					double Rg = (rand()%100) / 100.0;
+					//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
+					//x_k_new = x_k_old + v_k_new
 */
-						for (auto x_k_old : testConfigurationsDone[i])
+					for (auto x_k_old : testConfigurationsDone[i])
+					{
+						if (x_k_old.regName == regName)
 						{
-							if (x_k_old.regName == regName)
-							{
-								PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
-	 							if (!PSO_addVelocity(x_k_old.regConfiguration, PSOhistory[regIdx][i].velocity, x_k_new))
-	 								x_k_new = getRandomConfig();
-								break;
-							}
+							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
+ 							if (!PSO_addVelocity(x_k_old.regConfiguration, PSOhistory[regIdx][i].velocity, x_k_new))
+ 								x_k_new = getRandomConfig();
+							break;
 						}
-						ac.push_back({ regName, x_k_new, std::numeric_limits<double>::max(), 0.0 });
 					}
-					testConfigurationsToTry.push_back(ac);
+					ac.push_back({ regName, x_k_new, std::numeric_limits<double>::max(), 0.0 });
 				}
-				testConfigurationsDone.clear(); //only PSO removes old configurations
+				testConfigurationsToTry.push_back(ac);
 			}
-		}
-/// EVO ////////////////////////////////////////////////////////////////////////
-		else if (params.alg == EVO)
-		{
-			if (!testConfigurationsDone.size())	//INITIAL GENERATION
-				generateRandomGeneration();
-			else if (improvedSolutionCounter < END_CONDITION) //EVERY OTHER GENERATION of SOLUTIONS
-			{
-				std::vector <std::list<regionConfiguration>> population;
-				population.resize(appRegions.size());
-
-				//associate the value (energy) with each member of the population
-				//each region has its own population
-				for (size_t i = testConfigurationsDone.size()-newconfigurations; i<testConfigurationsDone.size(); i++)
-				{
-					for (size_t zz = 0; zz < testConfigurationsDone[i].size(); zz++)
-					{
-						if (testConfigurationsDone[i][zz].regName != "")
-						{
-							population[getRegionIndex(testConfigurationsDone[i][zz].regName)].push_back(testConfigurationsDone[i][zz]);
-						}
-					}
-				}
-				
-				testConfigurationsToTry.resize(POPULATION_SIZE);
-				for (std::string regName : appRegions)
-				{
-					size_t regIndex = getRegionIndex(regName);
-					auto pop = population[regIndex];
-					//select members for crossover - 50%
-					//worse solutions will be removed with higher propability
-					pop.sort();
-					for (int i = 0; i<POPULATION_SIZE/2; i++)
-					{
-						std::list<regionConfiguration>::iterator it = pop.begin();
-						size_t removeIndex = floor(sqrt(rand()%(int)pow(pop.size(),2.0)));
-						for (int j=0;j<removeIndex;j++)
-							it++;
-						pop.erase(it);
-					}
-					//we add the best configuration so-far - elitism 
-					//might be there twice - if region's optimalConfiguration was updated from this population and if this member was not removed during the russian rulette
-					pop.push_back(optimalConfiguration[regIndex]);
-
-					//generate new population				
-					for (int i = 0; i<POPULATION_SIZE; i++)
-					{
-						//select 2 parents
-						size_t parent1 = rand() % pop.size();
-						size_t parent2 = rand() % pop.size();
-						std::list<regionConfiguration>::iterator it1, it2;
-						it1 = it2 = pop.begin();
-
-						for (int j=0;j<parent1;j++)
-							it1++;
-						for (int j=0;j<parent2;j++)
-							it2++;
-
-						//crossover
-						configuration newConf = EVO_crossover(it1->regConfiguration, it2->regConfiguration);
-
-						//mutation - test if the configuration haven't been tested yet
-						while (testIfConfigExists(regName, newConf, true))
-						{
-							EVO_mute(newConf);
-						}
-
-						//push them to testConfigurationsToTry
-						testConfigurationsToTry[i].push_back({regName, newConf, std::numeric_limits<double>::max(), 0.0});
-					}
-				}
-			}
-		}
-/// EXHAUSTIVE /////////////////////////////////////////////////////////////////
-		else if (params.alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
-		{
-			std::vector <std::string> parameterName;
-			std::vector <std::vector<long>> exhConf;
-			std::vector <long> cfg;
-
-			for (int i = 0; i < 5; i++)
-				if (availConfigs[i].size() != 0)
-					exhConf.push_back(availConfigs[i]);
-			
-			std::vector <long> v;
-			EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
+			testConfigurationsDone.clear(); //only PSO removes old configurations
 		}
 	}
+/// EVO ////////////////////////////////////////////////////////////////////////
+	else if (params.alg == EVO && params.iterations)
+	{
+		if (!testConfigurationsDone.size())	//INITIAL GENERATION
+			generateRandomGeneration();
+		else if (improvedSolutionCounter < END_CONDITION) //EVERY OTHER GENERATION of SOLUTIONS
+		{
+			std::vector <std::list<regionConfiguration>> population;
+			population.resize(appRegions.size());
+
+			//associate the value (energy) with each member of the population
+			//each region has its own population
+			for (size_t i = testConfigurationsDone.size()-newconfigurations; i<testConfigurationsDone.size(); i++)
+			{
+				for (size_t zz = 0; zz < testConfigurationsDone[i].size(); zz++)
+				{
+					if (testConfigurationsDone[i][zz].regName != "")
+					{
+						population[getRegionIndex(testConfigurationsDone[i][zz].regName)].push_back(testConfigurationsDone[i][zz]);
+					}
+				}
+			}
+			
+			testConfigurationsToTry.resize(POPULATION_SIZE);
+			for (std::string regName : appRegions)
+			{
+				size_t regIndex = getRegionIndex(regName);
+				auto pop = population[regIndex];
+				//select members for crossover - 50%
+				//worse solutions will be removed with higher propability
+				pop.sort();
+				for (int i = 0; i<POPULATION_SIZE/2; i++)
+				{
+					std::list<regionConfiguration>::iterator it = pop.begin();
+					size_t removeIndex = floor(sqrt(rand()%(int)pow(pop.size(),2.0)));
+					for (int j=0;j<removeIndex;j++)
+						it++;
+					pop.erase(it);
+				}
+				//we add the best configuration so-far - elitism 
+				//might be there twice - if region's optimalConfiguration was updated from this population and if this member was not removed during the russian rulette
+				pop.push_back(optimalConfiguration[regIndex]);
+
+				//generate new population				
+				for (int i = 0; i<POPULATION_SIZE; i++)
+				{
+					//select 2 parents
+					size_t parent1 = rand() % pop.size();
+					size_t parent2 = rand() % pop.size();
+					std::list<regionConfiguration>::iterator it1, it2;
+					it1 = it2 = pop.begin();
+
+					for (int j=0;j<parent1;j++)
+						it1++;
+					for (int j=0;j<parent2;j++)
+						it2++;
+
+					//crossover
+					configuration newConf = EVO_crossover(it1->regConfiguration, it2->regConfiguration);
+
+					//mutation - test if the configuration haven't been tested yet
+					while (testIfConfigExists(regName, newConf, true))
+					{
+						EVO_mute(newConf);
+					}
+
+					//push them to testConfigurationsToTry
+					testConfigurationsToTry[i].push_back({regName, newConf, std::numeric_limits<double>::max(), 0.0});
+				}
+			}
+		}
+	}
+/// EXHAUSTIVE /////////////////////////////////////////////////////////////////
+	else if (params.alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
+	{
+		std::vector <std::string> parameterName;
+		std::vector <std::vector<long>> exhConf;
+		std::vector <long> cfg;
+
+		for (int i = 0; i < 5; i++)
+			if (availConfigs[i].size() != 0)
+				exhConf.push_back(availConfigs[i]);
+		
+		std::vector <long> v;
+		EXHAUSTIVE_generateConfigurationInRecursive(exhConf.size(), exhConf, v);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////
-std::cerr << "improvedSolutionCounter = " << improvedSolutionCounter << std::endl;
+	params.iterations--;
+	std::cerr << "improvedSolutionCounter = " << improvedSolutionCounter << std::endl;
 
 	newconfigurations = 0;
 	return testConfigurationsToTry.size();	//this should be the only return statement in this function

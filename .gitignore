@@ -15,6 +15,7 @@ tools/staticMERICtool/energyMeasureStop
 tools/systemInfo
 tools/DBI/*
 tools/wrapper
+tools/*.json
 include/meric
 
 test/sleepTest
