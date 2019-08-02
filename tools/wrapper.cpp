@@ -258,8 +258,8 @@ bool testIfConfigExists(std::string regName, configuration c, bool searchInFinis
 configuration getRandomConfig();
 configuration EVO_crossover(configuration c1, configuration c2);
 void EVO_mute(configuration& conf);
-//void PSO_limitVelocity(configuration &c);
-//configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
+void PSO_limitVelocity(configuration &c);
+configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm);
 bool PSO_configurationValidation(configuration c);
 size_t generateConfigurationsToTest();
 void runApplication(appConfiguration testRun);
@@ -1037,28 +1037,7 @@ void EVO_mute(configuration& conf)
 }
 
 //----------------------------------------------------------------------------//
-/*
 void PSO_limitVelocity(configuration &c)
-{
-	if (c.uncoreFreq > 200000000)
-		c.uncoreFreq = 200000000;
-	else if(c.uncoreFreq < -200000000)
-		c.uncoreFreq = -200000000;
-	
-	if (c.coreFreq > 200000000)
-		c.coreFreq = 200000000;
-	else if (c.coreFreq < -200000000)
-		c.coreFreq = -200000000;
-
-	if (c.threads > 2)
-		c.threads = 2;
-	else if (c.threads < -2)
-		c.threads = -2;
-			
-	//TODO RAPL
-}
-*/
-void PSO_limitVelocity_NEW(configuration &c)
 {
 	if (selectedParams.uncoreFreq)
 	{
@@ -1110,46 +1089,8 @@ void PSO_limitVelocity_NEW(configuration &c)
 	else
 		c.powerCapPKGtime = 0;
 }
-/*
+
 configuration PSO_getNewVelocity(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm)
-{
-	//double Rp = (rand()%100) / 100.0;
-	//double Rg = (rand()%100) / 100.0;
-	//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
-	//x_k_new = x_k_old + v_k_new
-	configuration c;
-
-	if (selectedParams.uncoreFreq)
-	{
-		c.uncoreFreq = (((long)(omg * v_k_old.uncoreFreq
-			+ Cp*((rand()%100)/100.0) * (best_k.uncoreFreq - x_k_old.uncoreFreq)
-			+ Cg*((rand()%100)/100.0) * (best_swarm.uncoreFreq - x_k_old.uncoreFreq)
-			)) / 100000000) * 100000000;
-	}
-	if (selectedParams.coreFreq)
-	{
-		c.coreFreq = ((long)(omg * v_k_old.coreFreq
-			+ Cp*((rand()%100)/100.0) * (best_k.coreFreq - x_k_old.coreFreq)
-			+ Cg*((rand()%100)/100.0) * (best_swarm.coreFreq - x_k_old.coreFreq)
-			) / 100000000) * 100000000;
-	}
-	if (selectedParams.threads)
-	{
-		c.threads = (omg * v_k_old.threads
-			+ Cp*((rand()%100)/100.0) * (best_k.threads - x_k_old.threads)
-			+ Cg*((rand()%100)/100.0) * (best_swarm.threads - x_k_old.threads)
-			);
-	}
-
-	//TODO RAPL
-	//if (selectedParams.powerCapPKG){}
-	//if (selectedParams.powerCapPKGtime) {}
-
-	PSO_limitVelocity(c);
-	return c;
-}
-*/
-configuration PSO_getNewVelocity_NEW(configuration v_k_old, configuration x_k_old, configuration best_k, configuration best_swarm)
 {
 	//double Rp = (rand()%100) / 100.0;
 	//double Rg = (rand()%100) / 100.0;
@@ -1193,7 +1134,7 @@ configuration PSO_getNewVelocity_NEW(configuration v_k_old, configuration x_k_ol
 			);
 	}
 
-	PSO_limitVelocity_NEW(c);
+	PSO_limitVelocity(c);
 	return c;
 }
 
@@ -1337,8 +1278,6 @@ configuration getRandomConfig()	//EVO+PSO
 //EVO - EXHAUSTIVE - PSO
 size_t generateConfigurationsToTest()
 {
-	//TODO take also into acount that all the possible configurations had been tested, so it will cause a deadlock in generation of new configurations
-
 	//identify so-far the best configurations - exhaustive
 	//currently default behavior is not evaluated
 	if (newconfigurations != 0)
@@ -1472,10 +1411,8 @@ std::cerr << "evaluation of the finished runs\n";
 					for (int i = 0; i<POPULATION_SIZE; i++)
 					{
 						PSOhistory[idx][i].energy = std::numeric_limits<double>::max();
-	//					PSOhistory[idx][i].velocity = getRandomConfig() - getRandomConfig();
-	//					PSO_limitVelocity(PSOhistory[idx][i].velocity);
 						PSOhistory[idx][i].velocity = {(rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2, (rand()%5)-2};
-						PSO_limitVelocity_NEW(PSOhistory[idx][i].velocity);
+						PSO_limitVelocity(PSOhistory[idx][i].velocity);
 					}
 				}
 			}
@@ -1507,7 +1444,7 @@ std::cerr << "evaluation of the finished runs\n";
 					{
 						size_t regIdx = getRegionIndex(regName);
 						configuration x_k_new;
-	/*					configuration v_k_new;
+/*						configuration v_k_new;
 						configuration v_k_old = PSOhistory[regIdx][i].velocity;
 						configuration x_k_old = testConfigurationsDone[i][<regIndex>].regConfiguration;
 						configuration best_k = PSOhistory[regIdx][i].bestPosition;
@@ -1516,18 +1453,14 @@ std::cerr << "evaluation of the finished runs\n";
 						double Rg = (rand()%100) / 100.0;
 						//v_k_new = omg * v_k_old + Cp*Rp*(best_k - x_k_old) + Cg*Rg*(best_swarm - x_k_old)
 						//x_k_new = x_k_old + v_k_new
-	*/
+*/
 						for (auto x_k_old : testConfigurationsDone[i])
 						{
 							if (x_k_old.regName == regName)
 							{
-	//							PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
-								PSOhistory[regIdx][i].velocity = PSO_getNewVelocity_NEW(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
-	// 							x_k_new = x_k_old.regConfiguration + PSOhistory[regIdx][i].velocity;
+								PSOhistory[regIdx][i].velocity = PSO_getNewVelocity(PSOhistory[regIdx][i].velocity, x_k_old.regConfiguration, PSOhistory[regIdx][i].bestPosition, optimalConfiguration[regIdx].regConfiguration);
 	 							if (!PSO_addVelocity(x_k_old.regConfiguration, PSOhistory[regIdx][i].velocity, x_k_new))
 	 								x_k_new = getRandomConfig();
-	//							if (!PSO_configurationValidation(x_k_new))
-	//								x_k_new = getRandomConfig();
 								break;
 							}
 						}
