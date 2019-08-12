@@ -276,7 +276,11 @@ void generateDefaultWrapperConfigFile()
 		frequencyBounderyFile.close();
 		while(freqBound.back() == ' ')
 			freqBound.pop_back();
-		std::replace(freqBound.begin(),freqBound.end(), ' ', ',');
+		//std::replace(freqBound.begin(),freqBound.end(), ' ', ',');
+		size_t pos= std::string::npos;  //freqBound.find('.');
+		while ((pos = freqBound.find(' ')) != std::string::npos)
+			freqBound.replace(pos, 1, "000,");
+		freqBound += "000";
 	}
 
 	std::string content = "{\n";
@@ -291,7 +295,7 @@ void generateDefaultWrapperConfigFile()
 	else
 		content+= "\t\t\t\"LIST\" : [\n" + freqBound +"\n\t\t\t]\n";
 	content+="\t\t},\n";
-	if (limit.maxUncoreFreq != 0 || limit.minUncoreFreq != 0)
+	if (limit.maxUncoreFreq > 0 && limit.minUncoreFreq > 0)
 		content+=std::string("\t\t\"UNCORE_FREQUENCY\" : {\n")
 				+ "\t\t\t\"MAX\" : "+std::to_string(limit.maxUncoreFreq)+",\n"
 				+ "\t\t\t\"MIN\" : "+std::to_string(limit.minUncoreFreq)+",\n"

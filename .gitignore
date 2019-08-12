@@ -5,6 +5,7 @@ build
 *.o
 *.a
 *.mod
+*.json
 test/mericMeasurement*
 test/hdeemMeasurement*
 tools/__pycache__/
@@ -15,7 +16,6 @@ tools/staticMERICtool/energyMeasureStop
 tools/systemInfo
 tools/DBI/*
 tools/wrapper
-tools/*.json
 include/meric
 
 test/sleepTest
