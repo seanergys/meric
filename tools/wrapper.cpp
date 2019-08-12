@@ -797,7 +797,8 @@ int readParameters(int argc, char **argv)
 #if __cplusplus == 201703L
 	std::filesystem::remove_all(MERIC_OUTPUT_DIR);
 #else
-	system(("rm -rf "+MERIC_OUTPUT_DIR).c_str());
+	if (system(("rm -rf "+MERIC_OUTPUT_DIR).c_str()) != 0)
+		std::cerr << "MERICwrapper WARNING: could not remove old " << MERIC_OUTPUT_DIR << std::endl;
 #endif
 
 	//TODO power capping
@@ -1621,7 +1622,11 @@ void runApplication(appConfiguration testRun)
 		std::cerr << "Running: dynamic configuration - " << MERIC_OUTPUT_FILENAME << std::endl;
 	}
 
-	system (APPLICATION.c_str());
+	if (system(APPLICATION.c_str()) != 0)
+	{
+		std::cerr << "MERICwrapper ERROR: could not run `" << APPLICATION << "`\n";
+		exit(1);
+	}
 	if (MERIC_OUTPUT_FILENAME != "")
 		remove(MERIC_OUTPUT_FILENAME.c_str());
 }
