@@ -289,6 +289,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Both frequencies can be specified as integer in Hz (default), kHz, MHz or GHz.
 * `export MERIC_NUM_THREADS=24`
 	- Number of openMP threads that should be used to run the application.
+	- *IMPORTANT:* When using hyper-threading, thread pinning should be specified, otherwise DVFS may not work.
 * `export MERIC_PWRCAP_POWER=100000`
 	- Average processor PKG power in milliwatts under the selected time window.
 * `export MERIC_PWRCAP_TIME=3000`

@@ -569,14 +569,6 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 	initHWSizes();
 	RAPL::initCountersUnits();
 	systemType = system;
-//SET AFFINITY
-	#pragma omp parallel
-	{
-		cpu_set_t cpu_set;
-		CPU_ZERO(&cpu_set);
-		CPU_SET(sched_getcpu(), &cpu_set);
-		sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
-	}
 
 	if(!rank)
 	{
@@ -673,6 +665,19 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 		powercap(defaultParameter.powerCapPKG, defaultParameter.powerCapPKGtime);
 	}
 	threadNumber(defaultParameter.nthreads);
+
+/*	//Set affinity
+	#pragma omp parallel
+	{
+		#pragma omp critical
+		MERIC_INFO << omp_get_thread_num() << " -- " << sched_getcpu() << std::endl;
+		cpu_set_t cpu_set;
+		CPU_ZERO(&cpu_set);
+		CPU_SET(sched_getcpu(), &cpu_set); //current position
+		//CPU_SET(omp_get_thread_num(), &cpu_set); //position according its thread num
+		sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
+	}
+*/
 }
 
 
