@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string.h>
 #include <sys/stat.h>
+#include <thread>
 #include "../src/wrapper/environmentwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
@@ -343,31 +344,67 @@ void sysInfoSize()
     uint64_t cores = 0;
     uint64_t threads = 0;
 	uint64_t sockets = 0;
-	int Hthreads;
+	int Hthreads = 0;
 #ifdef HAVE_MSR_CORE_H
 	core_config(&cores, &threads, &sockets, &Hthreads);
-#elif defined HAVE_X86_ADAPT_H
-	sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-	cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
-#elif defined HAVE_GEOPM_H
-	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
-	cores = topo.num_domain(GEOPM_DOMAIN_CORE);
-	sockets = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
-//	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
-	cores = cores / sockets;
-#elif defined HAVE_NUMA_H
-	cores = sysconf(_SC_NPROCESSORS_ONLN); //cores per node
-	sockets = numa_node_of_cpu(cores-1)+1;
-	if (sockets <= 0)
-		sockets = 1;
-	cores = cores / sockets;
+#else
+
+	#if defined HAVE_X86_ADAPT_H
+		sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+		cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
+	#elif defined HAVE_GEOPM_H
+		const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
+		cores = topo.num_domain(GEOPM_DOMAIN_CORE);
+		sockets = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
+	//	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
+		cores = cores / sockets;
+	#elif defined HAVE_NUMA_H
+		cores = sysconf(_SC_NPROCESSORS_ONLN); //cores per node
+		sockets = numa_node_of_cpu(cores-1)+1;
+		if (sockets <= 0)
+			sockets = 1;
+		cores = cores / sockets;
+	#endif
+
+	std::string topoStr;
+	std::ifstream topoFile("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
+	topoFile >> topoStr;
+	topoFile.close();
+	
+	do
+	{
+		std::string num = topoStr;
+		size_t pos = std::string::npos;
+		if ((pos = topoStr.find(',')) != std::string::npos)
+		{
+			num = topoStr.substr(0,pos);
+			topoStr = topoStr.substr(pos+1);
+		}
+		else
+			topoStr = "";
+		
+		if ((pos = num.find('-')) != std::string::npos)
+		{
+			long start = std::stol(num.substr(0,pos));
+			long stop  = std::stol(num.substr(pos+1));
+			threads += stop - start +1;
+		}
+		else
+			threads++;
+	}while(topoStr.size());
+
+	if (threads != 1)
+	{
+		Hthreads = 1;
+		cores = cores/threads;
+	}
 #endif
+    
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tSockets per Node: " << sockets << std::endl
-	          << "\tCores per Socket: " << cores << std::endl;
-	if (threads != 0)         
-		std::cout << "\tThreads per Core: " << threads << std::endl
-		          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
+	          << "\tCores per Socket: " << cores << std::endl
+	          << "\tThreads per Core: " << threads << std::endl
+	          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
 }
 
 bool sysInfoFrequencies(systemLimits& limits)
@@ -377,7 +414,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	std::ifstream frequencyBounderyFile;
 	std::string freqBound;
 
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	frequencyBounderyFile >> freqBound;
 	frequencyBounderyFile.close();
 	std::cout << "\tCurrent governor:           " << freqBound << std::endl;
@@ -417,9 +454,9 @@ bool sysInfoFrequencies(systemLimits& limits)
 		if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) != 0 ||
 		   (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) != 0))
 			std::cout << "\tCPU Core Frequency scaling (DVFS) not available\n"
-			          << "\t\tadd userspace scaling governor and grand write access to:\n"
+			          << "\t\tadd userspace scaling governor and grant write access to:\n"
 			          << "\t\t - /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\n"
-			          << "\t\tor use Intel PState and grand write access to:\n"
+			          << "\t\tor use Intel PState and grant write access to:\n"
 			          << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
 			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n";
 	}
