@@ -415,11 +415,14 @@ bool sysInfoFrequencies(systemLimits& limits)
 	std::string freqBound;
 
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
-	frequencyBounderyFile >> freqBound;
-	frequencyBounderyFile.close();
-	std::cout << "\tCurrent governor:           " << freqBound << std::endl;
-	if (freqBound != limits.governor)
-		ok = false;
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		std::cout << "\tCurrent governor:           " << freqBound << std::endl;
+		if (freqBound != limits.governor)
+			ok = false;
+	}
 	
 	freqBound = "";
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
@@ -464,21 +467,27 @@ bool sysInfoFrequencies(systemLimits& limits)
 	long freq = 0;
 	//files have the CPU core frequency in KHz
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-	frequencyBounderyFile >> freqBound;
-	frequencyBounderyFile.close();
-	freq = std::stol(freqBound) * 1000;
-	std::cout << "\tMax CPU Core Frequency:     " << freq << " Hz\n";
-	if (freq != limits.maxCoreFreq)
-		ok = false;
-
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound) * 1000;
+		std::cout << "\tMax CPU Core Frequency:     " << freq << " Hz\n";
+		if (freq != limits.maxCoreFreq)
+			ok = false;
+	}
+	
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-	frequencyBounderyFile >> freqBound;
-	frequencyBounderyFile.close();
-	freq = std::stol(freqBound) * 1000;
-	std::cout << "\tMin CPU Core Frequency:     " << freq << " Hz\n";
-	if (freq != limits.minCoreFreq)
-		ok = false;
-
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound) * 1000;
+		std::cout << "\tMin CPU Core Frequency:     " << freq << " Hz\n";
+		if (freq != limits.minCoreFreq)
+			ok = false;
+	}
+	
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
