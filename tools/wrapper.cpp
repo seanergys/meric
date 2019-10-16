@@ -180,6 +180,8 @@ std::vector <std::string> appRegions; //list of regions of the application
 
 std::string APPLICATION = "";
 std::string MERIC_OUTPUT_DIR = "";
+std::string ConfigFileNamePrefix = "";
+std::string ConfigFileNameSuffix = "";
 //EXHAUSTIVE
 //EVO + PSO
 	int improvedSolutionCounter = 0;
@@ -340,7 +342,7 @@ void generateDefaultWrapperConfigFile()
 #else //just time measurement
 			+ "\t\t\"MODE\" : 7,\n"
 #endif
-#ifdef HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			+ "\t\t\"PWRCAP_POWER\" : 0,\n"
 			+ "\t\t\"PWRCAP_TIME\"  : 0,\n"
 #endif
@@ -356,6 +358,7 @@ void generateDefaultWrapperConfigFile()
 			+ "\t\t\"DETAILED\"   : 1,\n"
 			+ "\t\t\"SAMPLES\"    : 0,\n"
 			+ "\t\t\"BARRIERS\"   : \"all\",\n"
+//			+ "\t\t\"OUTPUT_FILENAME\" : \"\",\n"
 			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
 			+ "\t}\n";
 
@@ -775,6 +778,12 @@ int readParameters(int argc, char **argv)
 							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "BARRIERS")
 							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "OUTPUT_FILENAME")
+						{
+							ConfigFileNameSuffix = std::string(((struct json_string_s*)meric->value->payload)->string);
+							if (ConfigFileNameSuffix.size() && ConfigFileNameSuffix[0] != '_')
+								ConfigFileNameSuffix = "_" + ConfigFileNameSuffix;
+						}
 						else if (std::string(meric->name->string) == "OUTPUT_DIR")
 							MERIC_OUTPUT_DIR = std::string(((struct json_string_s*)meric->value->payload)->string);
 						else
@@ -1239,7 +1248,7 @@ std::string constructConfigFileName(std::string regName, configuration config)	/
 		cfgStr = std::string(hostname) +"_"+ cfgStr;
 	}
 	
-	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+".csv";
+	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+ConfigFileNameSuffix+".csv";
 }
 
 
