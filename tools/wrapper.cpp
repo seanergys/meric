@@ -340,16 +340,22 @@ void generateDefaultWrapperConfigFile()
 #else //just time measurement
 			+ "\t\t\"MODE\" : 7,\n"
 #endif
+#ifdef HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+			+ "\t\t\"PWRCAP_POWER\" : 0,\n"
+			+ "\t\t\"PWRCAP_TIME\"  : 0,\n"
+#endif
 #ifdef HAVE_PAPI_H
 			+ "\t\t\"COUNTERS\" : \"papi\",\n"
 #elif defined HAVE_PERFEVENT_H
 			+ "\t\t\"COUNTERS\" : \"perfevent\",\n"
+#elif defined HAVE_MSR_CORE_H
+			+ "\t\t\"COUNTERS\" : \"msr\",\n"
 #endif
-			+ "\t\t\"AGGREGATE\" : 1,\n"
-			+ "\t\t\"CONTINUAL\" : 1,\n"
-			+ "\t\t\"DETAILED\" : 1,\n"
-			+ "\t\t\"SAMPLES\" : 0,\n"
-			+ "\t\t\"BARRIERS\" : \"all\",\n"
+			+ "\t\t\"AGGREGATE\"  : 1,\n"
+			+ "\t\t\"CONTINUAL\"  : 1,\n"
+			+ "\t\t\"DETAILED\"   : 1,\n"
+			+ "\t\t\"SAMPLES\"    : 0,\n"
+			+ "\t\t\"BARRIERS\"   : \"all\",\n"
 			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
 			+ "\t}\n";
 
