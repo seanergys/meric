@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 
-#if __cplusplus == 201703L
+#if __cplusplus >= 201703L
 	#include <filesystem>
 #endif
 
@@ -412,7 +412,8 @@ void printHelp()
 	          << "----------------------------------------"
 	          << "----------------------------------------" << std::endl
 	          << "\t-d = generate a default config file 'defaultWrapperConfig.json'" << std::endl
-	          << "\t-c = configuration file" << std::endl
+	          << "\t-a pathToDir = generate optimal configuration file from a data measured by MERIC" << std::endl
+	          << "\t-c configFile = run application analysis according the configuration file" << std::endl
 	          << "\t-- = command to run the application to analyze" << std::endl;
 	exit(1);
 }
@@ -437,6 +438,11 @@ int readParameters(int argc, char **argv)
 		{
 			generateDefaultWrapperConfigFile();
 			return 1;
+		}
+		else if (arg == "-a")
+		{
+			MERIC_OUTPUT_DIR = std::string(argv[++i]);
+			return 2;
 		}
 		else if (arg == "-c")
 		{
@@ -480,7 +486,7 @@ int readParameters(int argc, char **argv)
 		if (root ==  NULL)
 		{
 			std::cerr << "ERROR: invalid " << settingsFile << std::endl;
-			return 1;
+			return 10;
 		}
 		else
 		{
@@ -534,7 +540,7 @@ int readParameters(int argc, char **argv)
 								else
 								{
 									std::cerr << "ERROR: invalid config file - FREQUENCY parameter - " << freq->name->string << std::endl;
-									return 2;
+									return 10;
 								}
 								freq = freq->next;
 							}while(freq != NULL);
@@ -583,7 +589,7 @@ int readParameters(int argc, char **argv)
 								else
 								{
 									std::cerr << "ERROR: invalid config file - UNCORE_FREQUENCY parameter - " << freq->name->string << std::endl;
-									return 2;
+									return 10;
 								}
 								freq = freq->next;
 							}while(freq != NULL);
@@ -632,7 +638,7 @@ int readParameters(int argc, char **argv)
 								else
 								{
 									std::cerr << "ERROR: invalid config file - THREADS parameter - "<< thrds->name->string << std::endl;
-									return 2;
+									return 10;
 								}
 								thrds = thrds->next;
 							}while(thrds != NULL);
@@ -649,7 +655,7 @@ int readParameters(int argc, char **argv)
 						else
 						{
 							std::cerr << "ERROR: invalid config file - PARAMETERS parameter - " << prms->name->string << std::endl;
-							return 2;
+							return 10;
 						}
 						prms = prms->next;
 					}while (prms != NULL);
@@ -672,13 +678,13 @@ int readParameters(int argc, char **argv)
 								else
 								{
 									std::cerr << "ERROR: invalid config file - ALGORITHM - " << algName << std::endl;
-									return 2;
+									return 10;
 								}
 							}
 							else
 							{
 								std::cerr << "ERROR config file: more than one search algorithm specified" << std::endl;
-								return 2;
+								return 10;
 							}
 						}
 						else if (std::string(alg->name->string) == "PARAMETERS")
@@ -694,7 +700,7 @@ int readParameters(int argc, char **argv)
 									else
 									{
 										std::cerr << "ERROR: invalid config file - ALGORITMH PARAMETERS - "<< algPar->name->string << std::endl;
-										return 2;
+										return 10;
 									}
 									algPar = algPar->next;
 								}while(algPar != NULL);
@@ -717,7 +723,7 @@ int readParameters(int argc, char **argv)
 									else
 									{
 										std::cerr << "ERROR: invalid config file - ALGORITMH PARAMETERS - "<< algPar->name->string << std::endl;
-										return 2;
+										return 10;
 									}
 									algPar = algPar->next;
 								}while(algPar != NULL);
@@ -726,7 +732,7 @@ int readParameters(int argc, char **argv)
 						else
 						{
 							std::cerr << "ERROR: invalid config file - ALGORITMH parameter - "<< alg->name->string << std::endl;
-							return 2;
+							return 10;
 						}
 						alg = alg->next;
 					}while (alg != NULL);
@@ -789,7 +795,7 @@ int readParameters(int argc, char **argv)
 						else
 						{
 							std::cerr << "ERROR: invalid config file - MERIC parameter - "<< meric->name->string << std::endl;
-							return 2;
+							return 10;
 						}
 						meric = meric->next;
 					}while (meric != NULL);
@@ -797,7 +803,7 @@ int readParameters(int argc, char **argv)
 				else
 				{
 					std::cerr << "ERROR: invalid config file - "<< data->name->string << std::endl;
-					return 2;
+					return 10;
 				}
 				data = data->next;
 			}
@@ -806,10 +812,10 @@ int readParameters(int argc, char **argv)
 	else
 	{
 		std::cerr << "ERROR: Configuration file "<< settingsFile <<" cannot be open\n";
-		return 1;
+		return 10;
 	}
 	setenv("MERIC_OUTPUT_DIR", MERIC_OUTPUT_DIR.c_str(), 1);
-#if __cplusplus == 201703L
+#if __cplusplus >= 201703L
 	std::filesystem::remove_all(MERIC_OUTPUT_DIR);
 #else
 	if (system(("rm -rf "+MERIC_OUTPUT_DIR).c_str()) != 0)
@@ -846,7 +852,7 @@ void constructCallPath()
 			{
 				if (ent->d_name[0] != '.')
 				{
-//					std::cout << ent->d_name << std::endl;
+					//std::cout << " * " << ent->d_name << std::endl;
 					appRegions.push_back(std::string(ent->d_name));
 				}
 			}
@@ -894,6 +900,182 @@ void constructStateSpace()
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+configuration getConfigFromFilename(std::string fileName)
+{
+	configuration cConf;
+	std::string token;
+	if (params.MPI)
+		fileName.erase(0, fileName.find('_') + 1);
+
+	if (selectedParams.coreFreq)
+	{
+		int pos = fileName.find('_');
+		cConf.coreFreq = std::stol(fileName.substr(0, pos));
+		fileName.erase(0, pos + 1);
+	}
+	if (selectedParams.uncoreFreq)
+	{
+		int pos = fileName.find('_');
+		cConf.uncoreFreq = std::stol(fileName.substr(0, pos));
+		fileName.erase(0, pos + 1);
+	}
+	if (selectedParams.threads)
+	{
+		int pos = fileName.find('_');
+		cConf.threads = std::stoi(fileName.substr(0, pos));
+		fileName.erase(0, pos + 1);
+	}
+	if (selectedParams.powerCapPKG)
+	{
+		int pos = fileName.find('_');
+		cConf.powerCapPKG = std::stol(fileName.substr(0, pos));
+		fileName.erase(0, pos + 1);
+	}
+	if (selectedParams.powerCapPKGtime)
+	{
+		int pos = fileName.find('_');
+		cConf.powerCapPKGtime = std::stol(fileName.substr(0, pos));
+		fileName.erase(0, pos + 1);
+	}
+	return cConf;
+}
+
+/**
+ * load dataset that was measured earlier and should be analyzed
+ **/
+void loadData()
+{
+	if (appRegions.size() == 0) //empty dataset
+		return;
+
+	//read measurementInfo.json
+	/*
+		{
+		"Timestamp" : "13.6. 2017 14:59",
+		"System"	: "...",
+		"DataFormat": "node_CF_UnCF_thrds_config",
+		"Note"  	: ""
+		}
+			node
+				CF
+				UnCF
+				thrds
+			config
+			PWR
+			Twindow
+			CFG
+			APPx
+	*/
+	struct stat info;
+	struct json_value_s* root = NULL;
+	const std::string measurementInfoFile = MERIC_OUTPUT_DIR+"/measurementInfo.json";
+	if(stat(measurementInfoFile.c_str(), &info) == 0)
+	{
+		std::ifstream jsonFile (measurementInfoFile);
+		std::string line, jsonString = "";
+		if (jsonFile.is_open())
+		{
+			while (getline(jsonFile,line))
+			{
+				jsonString += " " + line;
+			}
+			jsonFile.close();
+		}
+		struct json_value_s* root = json_parse(jsonString.c_str(), jsonString.size());
+		if (root ==  NULL)
+		{
+			std::cerr << "ERROR: invalid " << measurementInfoFile << std::endl;
+			return;
+		}
+		else
+		{
+			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+			while(data != NULL)
+			{
+				if (std::string(data->name->string) == "DataFormat")
+				{
+					std::string val = std::string(((struct json_string_s*)data->value->payload)->string);
+					size_t pos = 0;
+					std::string token;
+					std::vector<std::string> dataFormat;
+					while ((pos = val.find('_')) != std::string::npos)
+					{
+						dataFormat.push_back(val.substr(0, pos));
+						val.erase(0, pos + 1);
+					}
+					dataFormat.push_back(val);
+					
+					for (size_t p=0; p<dataFormat.size(); p++)
+					{
+						if (dataFormat[p] == "node")
+							params.MPI = true;
+						else if (dataFormat[p] == "CF")
+							selectedParams.coreFreq = true;
+						else if (dataFormat[p] == "UnCF")
+							selectedParams.uncoreFreq = true;
+						else if (dataFormat[p] == "thrds")
+							selectedParams.threads = true;
+						else if (dataFormat[p] == "PWR")
+							selectedParams.powerCapPKG = true;
+						else if (dataFormat[p] == "Twindow")
+							selectedParams.powerCapPKGtime = true;
+						/* TODO - APPx parameters */
+						else if (dataFormat[p].substr(0,3) == "APP")
+						{
+							std::cerr << "ERROR: application parameters currently not supported\n";
+						}
+					}
+				}
+				data = data->next;
+			}
+		}
+	}
+	
+	//construct list of app's configurations
+	struct dirent *ent;
+	DIR *dir;
+	if ((dir = opendir((MERIC_OUTPUT_DIR+"/"+appRegions[0]).c_str())) == NULL)
+		return;
+	while ((ent = readdir(dir)) != NULL)
+	{
+		if (ent->d_type != DT_DIR)
+		{
+			newconfigurations++;
+			struct regionConfiguration rConf = {appRegions[0], getConfigFromFilename(ent->d_name), std::numeric_limits<double>::max(), 0.0 };
+			appConfiguration aConf = {rConf};
+			testConfigurationsDone.push_back(aConf);
+		}
+	}
+	closedir(dir);
+
+	for (int regId=1; regId < appRegions.size(); regId++)
+	{
+		dir = opendir((MERIC_OUTPUT_DIR+"/"+appRegions[regId]).c_str());
+		if (dir == NULL)
+			continue;
+		long long configCnt = 0;
+		while ((ent = readdir(dir)) != NULL)
+		{
+			if (ent->d_type != DT_DIR && configCnt < newconfigurations)
+			{
+				struct regionConfiguration rConf = {appRegions[regId], getConfigFromFilename(ent->d_name), std::numeric_limits<double>::max(), 0.0 };
+				testConfigurationsDone[configCnt].push_back(rConf);
+				configCnt++;
+			}
+		}
+		closedir(dir);
+		if (configCnt != newconfigurations)
+		{
+			std::cerr << "ERROR: Invalid input dataset - various number of configurations for each region: " 
+			          << appRegions[0] << " and " << appRegions[regId] << std::endl;
+			newconfigurations = 0;
+			testConfigurationsDone.clear();
+			return;
+		}
+	}
+}
+
+//----------------------------------------------------------------------------//
 configuration EXHAUSTIVE_decodeConfigVector (std::vector<long> values)
 {
 	configuration v;
@@ -1209,15 +1391,13 @@ bool PSO_addVelocity(configuration conf, configuration velo, configuration &c)
 size_t getRegionIndex(std::string region)	//ALL
 {
 	size_t regIndex = -1;
-	for (int r=0; r < optimalConfiguration.size(); r++)
-	{
-		if (optimalConfiguration[r].regName == region)
-		{
-			regIndex = r;
-			break;
-		}
-	}
-	if (regIndex == -1)
+	int r=0;
+	while (r < optimalConfiguration.size() && optimalConfiguration[r].regName != region)
+		r++;
+
+	if (r < optimalConfiguration.size())
+		regIndex = r;
+	else
 	{
 		optimalConfiguration.push_back({ region, {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 });
 		regIndex = optimalConfiguration.size()-1;
@@ -1355,10 +1535,8 @@ std::cerr << regName << " - improved solution\n";
 			return energyConsumption;
 		};
 
-std::cerr << "evaluation of the finished runs\n";
-	
+		//evaluation of the finished runs
 		size_t i = testConfigurationsDone.size() - newconfigurations;
-
 		for (size_t newbies = newconfigurations; newbies > 0; newbies--)
 		{
 			for (size_t zz = 0; zz < testConfigurationsDone[i].size(); zz++)
@@ -1651,12 +1829,21 @@ int main(int argc, char **argv)
 {
 	constructStateSpace();
 	int ret = readParameters(argc, argv);
-	if (ret != 0)
+	if (ret == 0)
+	{
+		appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
+		runApplication(defaultRun);
+		constructCallPath();
+	}
+	else if (ret == 1) //default cfg file
+		return 0;
+	else if (ret > 2) //error
 		return ret;
-
-	appConfiguration defaultRun = {{ "", {0, 0, 0, 0, 0}, std::numeric_limits<double>::max(), 0.0 }};
-	runApplication(defaultRun);
-	constructCallPath();
+	else if (ret == 2) //data analysis
+	{
+		constructCallPath();
+		loadData();
+	}
 
 	std::cerr << "RUN ANALYSIS\n";
 	while (generateConfigurationsToTest())
