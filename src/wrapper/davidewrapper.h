@@ -56,9 +56,9 @@ public:
 	#else
 	static void close() {}
 
-	static int getSamples() {};
+	static int getSamples() { return 0; };
 	static void init() {};
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]) {};
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]) { return ""; };
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples) {};
 	#endif
 
