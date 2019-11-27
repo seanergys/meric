@@ -371,7 +371,7 @@ void sysInfoSize()
 	topoFile >> topoStr;
 	topoFile.close();
 	
-	do
+	while(topoStr.size())
 	{
 		std::string num = topoStr;
 		size_t pos = std::string::npos;
@@ -391,9 +391,9 @@ void sysInfoSize()
 		}
 		else
 			threads++;
-	}while(topoStr.size());
+	}
 
-	if (threads != 1)
+	if (threads > 1)
 	{
 		Hthreads = 1;
 		cores = cores/threads;
