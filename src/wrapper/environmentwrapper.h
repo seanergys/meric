@@ -16,16 +16,6 @@
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
-
-	#ifndef IA32_ENERGY_PERF_BIAS
-		#define IA32_ENERGY_PERF_BIAS	0x1B0
-	#endif
-	#ifndef MSR_UNCORE_RATIO_LIMIT
-		#define MSR_UNCORE_RATIO_LIMIT   0x620
-	#endif
-	#ifndef MSR_UNCORE_CURRENT_RATIO
-		#define MSR_UNCORE_CURRENT_RATIO   0x621
-	#endif
 #endif
 
 #ifdef HAVE_NUMA_H
@@ -43,47 +33,6 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
-
-//POWER-CAP
-const uint64_t MSR_DRAM_POWER_LIMIT_mask = 0x7FFF;
-const uint64_t MSR_DRAM_POWER_LIMIT_enable_mask  = 0x8000;
-const uint64_t MSR_DRAM_POWER_LIMIT_enable_shift = 15;
-const uint64_t MSR_DRAM_POWER_LIMIT_clamping_mask = 0x10000;
-const uint64_t MSR_DRAM_POWER_LIMIT_clamping_shift = 16;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_f_mask  = 0xC00000;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_y_mask  = 0x3E0000;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_f_shift = 22;
-const uint64_t MSR_DRAM_POWER_LIMIT_time_y_shift = 17;
-
-const uint64_t MSR_PKG_POWER_LIMIT_mask = 0x7FFF;
-const uint64_t MSR_PKG_POWER_LIMIT_shift = 0;
-const uint64_t MSR_PKG_POWER_LIMIT_enable_mask = 0x8000;
-const uint64_t MSR_PKG_POWER_LIMIT_enable_shift = 15;
-const uint64_t MSR_PKG_POWER_LIMIT_clamping_mask = 0x10000;
-const uint64_t MSR_PKG_POWER_LIMIT_clamping_shift = 16;
-const uint64_t MSR_PKG_POWER_LIMIT_time_y_mask = 0x3E0000;
-const uint64_t MSR_PKG_POWER_LIMIT_time_y_shift = 17;
-const uint64_t MSR_PKG_POWER_LIMIT_time_z_mask = 0xC00000;
-const uint64_t MSR_PKG_POWER_LIMIT_time_z_shift = 22;
-
-const uint64_t MSR_PKG_POWER_LIMIT_power1_shift = 0;
-const uint64_t MSR_PKG_POWER_LIMIT_power2_shift = 32; //use "half register-length" shift instead of specifying all the mask and shifts for the second half of the register
-
-const uint64_t MSR_PKG_POWER_LIMIT_lock_mask  = 0x8000000000000000;
-const uint64_t MSR_DRAM_POWER_LIMIT_lock_mask = 0x80000000;
-
-const uint64_t MSR_PKG_DRAM_POWER_INFO_min_power_mask = 0x7FFF0000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_min_power_shift = 16;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_power_mask = 0x7FF700000000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_power_shift = 32;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_mask = 0x3F000000000000;
-const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
-//CORE
-const uint64_t IA32_PERF_CTL_shift = 8;
-//UNCORE
-const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
-const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
-const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 
 namespace meric {
 

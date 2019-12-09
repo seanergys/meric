@@ -8,19 +8,9 @@
 #include <omp.h>
 
 #ifdef HAVE_MSR_CORE_H
-	#include <msr_core.h>
+	#include "msrs.h"
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
-
-	#ifndef MSR_U_PMON_UCLK_FIXED_CTR
-		#define MSR_U_PMON_UCLK_FIXED_CTR 0x704
-	#endif
-	#ifndef PLATFORM_INFO_ADDR
-		#define PLATFORM_INFO_ADDR	0xCE
-	#endif
-
-	const uint64_t PLATFORM_INFO_ADDR_mask  = 0xFF00;
-	const uint64_t PLATFORM_INFO_ADDR_shift = 8;
 #endif
 
 #include "counters.h"

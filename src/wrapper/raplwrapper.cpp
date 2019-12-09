@@ -1,78 +1,5 @@
 #include "raplwrapper.h"
 
-
-/**
- * Intel RAPL energy consumption mearurement registers description
- * From Intel 64 and IA-32 Architectures Software Developer's Manual
- *
- * Intel_RAPL_Pckg_Energy - all energy consumptions
- * Intel_RAPL_PP0_Energy  - CPU
- * Intel_RAPL_PP1_Energy  - may reflect to uncore devices
- * Intel_RAPL_RAM_Energy  - RAM
- *
- * Intel_RAPL_Pckg_Energy ~ Intel_RAPL_PP0_Energy + Intel_RAPL_PP1_Energy
- * Intel_RAPL_Pckg_Energy ~ Intel_RAPL_PP0_Energy + Intel_RAPL_RAM_Energy
- * 
- *
- * MSR_RAPL_POWER_UNIT Register ***********************************************
- * 0x00000606 0x0000000000000000
- * Power Units (bits 3:0):
- 	Power related information (in Watts) is based on the multiplier, 1/2^PU; 
- 	where PU is an unsigned integer represented by bits 3:0. 
- 	Default value is 0011b, indicating power unit is in 1/8 Watts 
-increment.
- * Energy Status Units (bits 12:8): 
- 	Energy related information (in Joules) is based on the multiplier, 1/2^ESU; 
- 	where ESU is an unsigned integer represented by bits 12:8. 
- 	Default value is 10000b, indicating energy status unit is 15.3uJ increment.
- * Time Units (bits 19:16): 
-	Time related information (in Seconds) is based on the multiplier, 1/2^TU; 
-	where TU is an unsigned integer represented by bits 19:16. 
-	Default value is 1010b, indicating time unit is in 976us increment.
-
-TIME    ENERGY     POWER
-1010|000|01110|0000|0011
-9876 543 21098 7654 3210
-
- * MSR_PKG_ENERGY_STATUS register *********************************************
- * 0x00000611 0x0000000000000000
- * Total energy consumed (bits 31:0):
-	The unsigned integer value represents the total amount of energy consumed 
-	since that last time this register is cleared. The unit of this field 
-	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
- * Reserved (bits 63:32)
- 
- * MSR_PP0_ENERGY_STATUS/MSR_PP1_ENERGY_STATUS register ***********************
- * 0x000000639 0x0000000000000000 / 0x000000641 0x0000000000000000
- * Total Energy Consumed (bits 31:0): 
-	The unsigned integer value represents the total amount of energy consumed 
-	since the last time this register was cleared. The unit of this field 
-	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
- * Reserved (bits 63:32)
-
- * MSR_DRAM_ENERGY_STATUS register ********************************************
- * 0x00000619 0x0000000000000000
- * Total Energy Consumed (bits 31:0):
-	The unsigned integer value represents the total amount of energy consumed 
-	since that last time this register is cleared. The unit of this field 
-	is specified by the "Energy Status Units" field of MSR_RAPL_POWER_UNIT.
- * Reserved (bits 63:32)
- *
- **/
-const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
-const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
-const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
-const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
-const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
-//TODO to simplyfy the code, only PKG mask is used in the following code since 
-//it is the same as DRAM/PP0/PP1 mask
-const uint64_t MSR_PKG_ENERGY_STATUS_mask       = 0xFFFFFFFF;
-//const uint64_t MSR_DRAM_ENERGY_STATUS_mask    = 0xFFFFFFFF;
-//const uint64_t MSR_PP0_ENERGY_STATUS_mask     = 0xFFFFFFFF;
-//const uint64_t MSR_PP1_ENERGY_STATUS_mask     = 0xFFFFFFFF;
-
-
-
 using namespace meric;
 
 std::string RAPL::suffix = "_";
@@ -202,7 +129,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
+				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -222,7 +149,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
+				record [iterator->first] += (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -253,7 +180,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), die * SOCKET_SIZE_CPU));
 				#endif
-				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
+				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 		}
 	}else
@@ -269,7 +196,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), die * SOCKET_SIZE_CPU));
 				#endif
-				record [iterator->first] += (dieEnergy & MSR_PKG_ENERGY_STATUS_mask);
+				record [iterator->first] += (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 		}	
 	}

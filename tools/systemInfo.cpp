@@ -12,7 +12,7 @@
 #include "../src/wrapper/environmentwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
-	#include <msr_core.h>
+	#include "../src/wrapper/msrs.h"
 	#include <msr_rapl.h>
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
@@ -34,175 +34,6 @@
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
-
-/**
- * List of related MSRs with description:
- *
- * MSR_RAPL_POWER_UNIT Register ***********************************************
- * Unit Multipliers used in RAPL Interfaces (R/O)
- * Power Units (bits 3:0):
- 	Power related information (in Watts) is based on the multiplier, 1/2^PU; 
- 	where PU is an unsigned integer represented by bits 3:0. 
- 	Default value is 0011b, indicating power unit is in 1/8 Watts 
-increment.
- * Energy Status Units (bits 12:8): 
- 	Energy related information (in Joules) is based on the multiplier, 1/2^ESU; 
- 	where ESU is an unsigned integer represented by bits 12:8. 
- 	Default value is 10000b, indicating energy status unit is 15.3uJ increment.
- * Time Units (bits 19:16): 
-	Time related information (in Seconds) is based on the multiplier, 1/2^TU; 
-	where TU is an unsigned integer represented by bits 19:16. 
-	Default value is 1010b, indicating time unit is in 976us increment.
- *
- * MSR_PKG_POWER_LIMIT register ***********************************************
- * Package Power Limit #1 (bits 14:0): 
-	Sets the average power usage limit of the package domain corresponding 
-	to time window # 1. The unit of this field is specified by the "Power Units"
-	field of MSR_RAPL_POWER_UNIT
- * Enable Power Limit #1 (bit 15): 
-	0 = disabled; 1 = enabled.
- * Package Clamping Limitation #1 (bit 16):
- 	0 = disabled; 1 = enabled.
-	Allow going below OS-requested P/T state setting during time window 
-	specified by bits 23:17.
- * Time Window for Power Limit #1 (bits 23:17): 
-	Indicates the time window for power limit #1 
-	Time limit = 2^Y * (1.0 + Z/4.0) * Time_Unit 
-	Here "Y" is the unsigned integer value represented. by bits 21:17, 
-	"Z" is an unsigned integer represented by bits 23:22. 
-	"Time_Unit" is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT.
- * Reserved (bits 31:24)
- * Package Power Limit #2 (bits 46:32): 
-	Sets the average power usage limit of the package domain corre-sponding 
-	to time window # 2. The unit of this field is specified by the "Power Units" 
-	field of MSR_RAPL_POWER_UNIT.
- * Enable Power Limit #2 (bit 47): 
-	0 = disabled; 1 = enabled.
- * Package Clamping Limitation #2 (bit 48):
-	0 = disabled; 1 = enabled.
-	Allow going below OS-requested P/T state setting during time window 
-	specified by bits 23:17.
- * Time Window for Power Limit #2 (bits 55:49): 
-	Indicates the time window for power limit #2 
-	Time limit = 2^Y * (1.0 + Z/4.0) * Time_Unit 
-	Here "Y" is the unsigned integer value represented. by bits 53:49, 
-	"Z" is an unsigned integer represented by bits 55:54. 
-	"Time_Unit" is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT. 
-	This field may have a hard-coded value in hardware and ignores values 
-	written by software.
- * Reserved (bits 62:56)
- * Lock (bit 63):
-	If set, all write attempts to this MSR are ignored until next 
-	RESET.MSR_PKG_ENERGY_STATUS is a read-only MSR. It reports the actual energy 
-	use for the package domain. This MSR is updated every ~1msec. It has 
-	a wraparound time of around 60 secs when power consumption is high, and may 
-	be longer otherwise.
- *
- * MSR_DRAM_POWER_LIMIT register **********************************************
- * allows a software agent to define power limitation for the DRAM domain. Power 
- * limitation is defined in terms of average power usage (Watts) over a time 
- * window specified in MSR_DRAM_POWER_LIMIT. A power limit can be specified 
- * along with a time window. A lock mechanism allow the software agent to 
- * enforce power limit settings. Once the lock bit is set, the power limit 
- * settings are static and unmodifiable until next RESET
- * DRAM Power Limit #1(bits 14:0):
-	Sets the average power usage limit of the DRAM domain corresponding to time 
-	window # 1. The unit of this field is specified by the "Power Units" field 
-	of MSR_RAPL_POWER_UNIT.
- * Enable Power Limit #1(bit 15):
-	0 = disabled; 1 = enabled.
- * Clamping limit (bit 16):
-	0 = disabled; 1 = enabled.
-	Allow going below OS-requested P/T state setting during time window 
-	specified by bits 23:17.
- * Time Window for Power Limit (bits 23:17):
-	Indicates the length of time window over which the power limit will be used 
-	by the processor. The numeric value encoded by bits 23:17 is represented by 
-	the product of 2^Y *F; where F is a single-digit decimal floating-point 
-	value between 1.0 and 1.3 with the fraction digit represented by bits 23:22, 
-	Y is an unsigned integer represented by bits 21:17. The unit of this field 
-	is specified by the "Time Units" field of MSR_RAPL_POWER_UNIT.
- * Registred (bits 30:24)
- * Lock (bit 31): 
-	If set, all write attempts to this MSR are ignored until next RESET.
- * Registred (bits 63:32)
- *
- * MSR_PKG_POWER_INFO/MSR_DRAM_POWER_INFO register ****************************
- * Read-only MSR. It reports the package/DRAM power range information for RAPL 
- * usage. This MSR provides maximum/minimum values (derived from electrical 
- * specification), thermal specification power of the package/DRAM domain. It 
- * also provides the largest possible time window for software to program the 
- * RAPL interface.
- * Thermal Spec Power (bits 14:0):
-	The unsigned integer value is the equivalent of thermal specification power
-	of the package/DRAM domain. The unit of this field is specified by the 
-	"Power Units" field of MSR_RAPL_POWER_UNIT.
- * Registred (bit 15)
- * Minimum Power (bits 30:16):
-	The unsigned integer value is the equivalent of minimum power derived from
-	electrical spec of the package/DRAM domain. The unit of this field is 
-	specified by the "Power Units" field of MSR_RAPL_POWER_UNIT.
- * Registred (bit 31)
- * Maximum Power (bits 46:32):
-	The unsigned integer value is the equivalent of maximum power derived from
-	the electrical spec of the package/DRAM domain. The unit of this field is 
-	specified by the "Power Units" field of MSR_RAPL_POWER_UNIT.
- * Registred (bit 47)
- * Maximum Time Window (bits 53:48):
-	The unsigned integer value is the equivalent of largest acceptable value to 
-	program the time window of MSR_PKG_POWER_LIMIT/MSR_DRAM_POWER_LIMIT. The 
-	unit of this field is specified by the "Time Units" field of 
-	MSR_RAPL_POWER_UNIT.
- * Registred (bits 63:54)
- *
- * MSR_PKG_PERF_STATUS/MSR_DRAM_PERF_STATUS register **************************
- * Read-only MSR. It reports the total time for which the package was throttled 
- * due to the RAPL power limits. Throttling in this context is defined as going 
- * below the OS-requested P-state or T-state. It has a wrap-around time of many 
- * hours. The availability of this MSR is platform specific (see Chapter 2, 
- * "Model-Specific Registers (MSRs)" in the Intel® 64 and IA-32 Architectures 
- * Software Developer's Manual, Volume 4).
- * Accumulated Package Throttled Time (bits 31:0):
-	The unsigned integer value represents the cumulative time (since the last 
-	time this register is cleared) that the package/DRAM domain has throttled. 
-	The unit of this field is specified by the "Time Units" field of 
-	MSR_RAPL_POWER_UNIT.
- * Registred (bits 63:32)
- *
- * MSR_UNCORE_RATIO_LIMIT register ********************************************
- * Uncore Ratio Limit (R/W)
- * Out of reset, the min_ratio and max_ratio fields represent the widest 
- * possible range of uncore frequencies. Writing to these fields allows software 
- * to control the minimum and the maximum frequency that hardware will select.
- * MAX_RATIO (bits 6:0):
-	This field is used to limit the max ratio of the LLC/Ring.
- * Reserved (bit 7)
- * MIN_RATIO (bits 14:8):
-	Writing to this field controls the minimum possible ratio of the LLC/Ring.
- * Reserved (bits 63:15)
- **/
-
-#ifndef IA32_ENERGY_PERF_BIAS
-	#define IA32_ENERGY_PERF_BIAS	0x1B0
-#endif
-#ifndef MSR_UNCORE_RATIO_LIMIT
-	#define MSR_UNCORE_RATIO_LIMIT   0x620
-#endif
-#ifndef MSR_UNCORE_CURRENT_RATIO
-	#define MSR_UNCORE_CURRENT_RATIO   0x621
-#endif
-#ifndef PLATFORM_INFO_ADDR
-	#define PLATFORM_INFO_ADDR	0xCE
-#endif
-
-const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
-const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
-const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
-const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
-const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
-const uint64_t PLATFORM_INFO_ADDR_mask          = 0xFF00;
-const uint64_t PLATFORM_INFO_ADDR_shift         = 8;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 struct systemLimits{
@@ -242,9 +73,9 @@ enum MODE	//this application keeps this order
 
 unsigned long discover_nominal_frequency()
 {
-	uint64_t PLATFORM_INFO_ADDR_bits;
-	read_msr_by_idx(0, PLATFORM_INFO_ADDR, &PLATFORM_INFO_ADDR_bits);
-	return ((PLATFORM_INFO_ADDR_bits & PLATFORM_INFO_ADDR_mask) >> PLATFORM_INFO_ADDR_shift) * 100000000;
+	uint64_t MSR_PLATFORM_INFO_bits;
+	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
+	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
 };
 
 #elif defined __x86_64

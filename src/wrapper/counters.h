@@ -67,9 +67,9 @@ const std::string UCF_FREQ = "UCF_FREQ_CNT";
 
 #if defined HAVE_MSR_CORE_H && defined SRC_WRAPPER_MSRCOUNTERSWRAPPER_H_
 static std::map<const std::string, uint64_t> counterLabel = {
-	{ APERF,    IA32_APERF                },
-	{ MPERF,    IA32_MPERF                },
-	{ UCF_FREQ, MSR_U_PMON_UCLK_FIXED_CTR }
+	{ APERF,    IA32_APERF           },
+	{ MPERF,    IA32_MPERF           },
+	{ UCF_FREQ, U_MSR_PMON_FIXED_CTR }
 };
 #endif
 }
@@ -139,8 +139,7 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 
-#ifdef HAVE_MSR_CORE_H
-#include <master.h>
+#ifdef SRC_WRAPPER_MSRS_H_
 static std::map<const std::string, uint64_t> counterDefines = {
 	{ RAPL_PCKG_ENERGY,      MSR_PKG_ENERGY_STATUS  },
 	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },

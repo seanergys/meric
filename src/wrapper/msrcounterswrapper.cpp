@@ -15,9 +15,9 @@ void MSR::init()
 	initMap(counters);
 	//TODO prepare a msr batch
 
-	uint64_t PLATFORM_INFO_ADDR_bits;
-	read_msr_by_idx(0, PLATFORM_INFO_ADDR, &PLATFORM_INFO_ADDR_bits);
-	nominal_freq = ((PLATFORM_INFO_ADDR_bits & PLATFORM_INFO_ADDR_mask) >> PLATFORM_INFO_ADDR_shift) * 100000000;
+	uint64_t MSR_PLATFORM_INFO_bits;
+	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
+	nominal_freq = ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
 }
 
 void MSR::close()
