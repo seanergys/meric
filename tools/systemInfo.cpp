@@ -1,11 +1,11 @@
 /**
  * Tool to provide information about the system parameters that can be tuned.
  **/
-#include <unistd.h>
-#include <iostream>
+//#include <unistd.h>
+//#include <iostream>
 #include <math.h>
 #include <map>
-#include <fstream>
+//#include <fstream>
 #include <string.h>
 #include <sys/stat.h>
 #include <thread>
@@ -14,13 +14,13 @@
 #ifdef HAVE_MSR_CORE_H
 	#include "../src/wrapper/msrs.h"
 	#include <msr_rapl.h>
-	#include <msr_clocks.h>
-	#include <libmsr_error.h>
+//	#include <msr_clocks.h>
+//	#include <libmsr_error.h>
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
-	#include <stdint.h>
-	#include <memory>
+//	#include <stdint.h>
+//	#include <memory>
 	#include <x86_adapt.h>
 #endif
 
@@ -31,10 +31,11 @@
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
+/*
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 struct systemLimits{
 	long maxCoreFreq;            //Hz
@@ -566,6 +567,40 @@ void sysEnergyMeasurement()
 		std::cout << "\tNONE\n";
 }
 
+void checkMsrWhitelist()
+{
+	std::map <uint64_t,uint64_t> currentWhitelist;
+	currentWhitelist.insert(msr_whitelist.begin(), msr_whitelist.end());
+	std::ifstream msrfile("/dev/cpu/msr_whitelist");
+	if (!msrfile)
+	{
+		std::cerr << "ERROR\n";
+		exit(5);
+	}
+
+	//skip the first line with comment
+	std::string comments;
+	std::getline (msrfile,comments);
+
+	//read the list of registers
+	std::map<uint64_t,uint64_t>::iterator it;
+	uint64_t reg, mask;
+	while (msrfile >> std::hex >> reg >> mask)
+	{
+		it = currentWhitelist.find(reg);
+		if (it != currentWhitelist.end())
+			currentWhitelist.erase(it);
+	}
+	msrfile.close();
+	
+	if (!currentWhitelist.empty())
+	{
+		std::cerr << "# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
+		for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
+			std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
+	}
+}
+
 void readRestoreFile(systemLimits& limits)
 {
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
@@ -687,10 +722,9 @@ int main(int argc, char **argv)
 	if (init_msr())
 	{
 		std::cerr << "LIBMSR ERROR: Unable to initialize\n";
-	}
-	else
-	#endif
+	#else
 	{
+	#endif
 		#ifdef HAVE_X86_ADAPT_H
 		status = USING_ADAPT;
 		if (x86_adapt_init())
@@ -707,6 +741,7 @@ int main(int argc, char **argv)
 			#endif
 		}
 	}
+
 	bool systemInTheDefaultSettings = true;
 	systemLimits limits;
 	readRestoreFile(limits);
@@ -715,6 +750,10 @@ int main(int argc, char **argv)
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
+	#ifdef HAVE_MSR_CORE_H
+	if (status == USING_MSR)
+		checkMsrWhitelist();
+	#endif
 	
 	if (!systemInTheDefaultSettings && limits.restoreFile)
 	{
