@@ -5,16 +5,31 @@ using namespace meric;
 
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
 uint64_t MSR::nominal_freq = 0;
+uint64_t MSR::SOCKET_SIZE_CPU = 1;
+uint64_t MSR::NODE_SIZE_SOCKET = 1;
 
 #ifdef HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
 
 void MSR::init()
 {
+	
+	#ifdef HAVE_MSR_CORE_H
+	core_config(&SOCKET_SIZE_CPU, NULL, &NODE_SIZE_SOCKET, NULL);
+	#endif
+	
 	//msr library has been already initialized in Environment::init(...)
 	initMap(counters);
-	//TODO prepare a msr batch
 
+	//enable uncore-frequency monitoring
+	#ifdef HAVE_MSR_CORE_H
+	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
+	for (int i=0; i < NODE_SIZE_SOCKET; i++)
+		write_msr_by_idx(i, U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
+	#endif
+
+	//TODO prepare a msr batch
+	
 	uint64_t MSR_PLATFORM_INFO_bits;
 	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
 	nominal_freq = ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
@@ -99,12 +114,6 @@ uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double run
 
 void MSR::initMap(std::map<std::string, uint64_t> & dict)
 {
-	uint64_t SOCKET_SIZE_CPU = 0;
-	uint64_t NODE_SIZE_SOCKET = 0;
-	#ifdef HAVE_MSR_CORE_H
-		core_config(&SOCKET_SIZE_CPU, NULL, &NODE_SIZE_SOCKET, NULL);
-	#endif
-	
 	for (int i=0; i < NODE_SIZE_SOCKET * SOCKET_SIZE_CPU; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);

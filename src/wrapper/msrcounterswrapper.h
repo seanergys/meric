@@ -40,6 +40,8 @@ private:
 	static std::map<std::string, uint64_t> counters;
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
+	static uint64_t SOCKET_SIZE_CPU;
+	static uint64_t NODE_SIZE_SOCKET;
 };
 
 #else
@@ -60,6 +62,8 @@ private:
 	static void initMap(std::map<std::string, uint64_t> & dict);
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
+	static uint64_t SOCKET_SIZE_CPU;
+	static uint64_t NODE_SIZE_SOCKET;
 };
 
 
