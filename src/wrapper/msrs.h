@@ -92,14 +92,13 @@ const uint64_t IA32_PERF_CTL_shift = 8;
 	#define IA32_APERF				0xE8
 #endif
 
-
 // UNCORE FREQUENCY ////////////////////////////////////////////////////////////
 /**
  * Intel CPU uncore frequency
  * From Intel 64 and IA-32 Architectures Software Developer's Manual 
  * Volume 4: Model-Specific Registers
  *
- * MSR_UNCORE_RATIO_LIMIT Register ********************************************
+ * MSR_UNCORE_RATIO_LIMIT register ********************************************
  * Uncore Ratio Limit (R/W)
  * Out of reset, the min_ratio and max_ratio fields represent the widest 
  * possible range of uncore frequencies. Writing to these fields allows software 
@@ -111,11 +110,119 @@ const uint64_t IA32_PERF_CTL_shift = 8;
  * MIN_RATIO (bits 14:8):
  	Writing to this field controls the minimum possible ratio of the LLC/Ring.
  * Reserved (bits 63:15)
+ *
+ **/
+/**
+ * Following from Intel Xeon Processor E5 v2 and E7 v2 Product Families Uncore 
+ * Performance Monitoring Reference Manual (Reference Number: 329468-002)
+ * The following registers represent state governing all PMUs in the uncore, 
+ * both to exert global control and collect box-level information.
+ *
+ * U_MSR_PMON_GLOBAL_CTL register *********************************************
+ * UBox PMON Global Control (32 bit register) Contains a bit that can freeze 
+ * (.frz_all) all the uncore counters. If an overflow is detected in any of the 
+ * uncore's PMON registers, it will be summarized in U_MSR_PMON_GLOBAL_STATUS.
+ * 0x700 0xE0007FFF since HSW
+ * 0xC00 0xE0007FFF IVB EP and SDB EP chips 
+ * PMI Core Select (bits 14:0):
+ 	Ex:
+ 	If counter overflow is sent to UBox...
+ 	000000000000000 - No PMI sent
+ 	000000000000001 - Send PMI to core 0
+ 	000000001000000 - Send PMI to core 6
+ 	000000001100010 - Send PMI to core 2, 5 & 6
+ 	etc.
+ 	NOTE: If wk_on_pmi is set to 1, a wake will be sent to any sleeping core in 
+ 	the mask prior to sending the PMI.
+ * Reserved (bits 26:15)
+ * Reserved (bits 28:27)
+ * unfrz_all (bit 29):
+ 	Unfreeze all uncore performance monitors.
+ * wk_on_pmi (bit 30):
+ 	If PMI event requested to send to core...
+ 	0 - Send event to cores already woken
+ 	1 - Wake any sleeping core and send PMI to all cores.
+ * frz_all (bit 31):
+ 	Freeze all uncore performance monitors.
+ *
+ * U_MSR_PMON_GLOBAL_STATUS register ******************************************
+ * This register accumulates overflows sent to it from the other uncore boxes. 
+ * To reset these overflow bits, a user must set the corresponding bits in 
+ * U_MSR_PMON_GLOBAL_STATUS to 1, which will act to clear them. 
+ * (32 bit register)
+ * 0x701 0x07FFFFFF since HSW
+ * 0xC01 0x07FFFFFF IVB EP and SDB EP chips
+ * ov_u_fixed (bit 0):
+ 	Set if overflow is detected from UBox fixed PMON register. 
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_u (bit 1):
+ 	Set if overflow is detected from a UBox PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_p (bit 2):
+ 	Set if overflow is detected from a PCU PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_c[14-0] (bits 17:3):
+ 	Set if overflow is detected from a CBo PMON register, 1 bit for each CBo 
+ 	where bit 5 corresponds CBo 0, etc.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_h0 (bit 18):
+ 	Set if overflow is detected from an HA0 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_h1 (bit 19):
+ 	Set if overflow is detected from an HA1 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_m0 (bit 20):
+ 	Set if overflow is detected from an iMC0 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_m1 (bit 21):
+ 	Set if overflow is detected from an iMC1 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_q0 (bit 22):
+ 	Set if overflow is detected from a QPI0 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_q1 (bit 23):
+ 	Set if overflow is detected from a QPI1 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_rq0 (bit 24):
+ 	Set if overflow is detected from an R3QPI0 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_rq1 (bit 25):
+ 	Set if overflow is detected from an R3QPI1 PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * ov_rp (bit 26):
+ 	Set if overflow is detected from an R2PCIe PMON register.
+ 	NOTE: Write of '1' will clear the bit.
+ * Reserved (31:27)
+ *
+ * U_MSR_PMON_FIXED_CTL register **********************************************
+ * U-Box PMON UCLK Fixed Counter Control (32 bit register)
+ * 0x703 0x00500000 since HSW
+ * 0xC08 0x00500000 IVB EP and SDB EP chips
+ * Reserved (bits 19:0)
+ * ov_en (bit 20):
+ 	When this bit is set to 1 and the corresponding counter overflows, a UBox 
+ 	overflow message is sent to the UBox's global logic. Once received, the 
+ 	global status register will record the overflow in 
+ 	U_MSR_PMON_GLOBAL_STATUS.ov_u_fixed.
+ * Reserved (bit 21)
+ * Enable (bit 22):
+ 	Enable counter when global enable is set.
+ * Reserved (bits 31:23)
+ *
+ * U_MSR_PMON_FIXED_CTR register **********************************************
+ * U-Box PMON UCLK Fixed Counter
+ * 0x704 0x0000FFFFFFFFFFFF since HSW
+ * 0xC09 0x0000FFFFFFFFFFFF IVB EP and SDB EP chips
+ * Event count (bits 47:0):
+ 	48-bit performance event counter
+ * Reserved (63:48)
  ******************************************************************************
  **/
 const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
 const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
 const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
+
+const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
 #ifndef MSR_UNCORE_RATIO_LIMIT
 	#define MSR_UNCORE_RATIO_LIMIT  0x620
@@ -126,13 +233,13 @@ const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 #endif
 
 #ifndef U_MSR_PMON_FIXED_CTR
-	#define U_MSR_PMON_FIXED_CTR	0x703	//since HSW
-//	#define U_MSR_PMON_FIXED_CTR	0xC09	//IVB EP and SDB EP chip
+	#define U_MSR_PMON_FIXED_CTR	0x704	//since HSW
+//	#define U_MSR_PMON_FIXED_CTR	0xC09	//IVB EP and SDB EP chips
 #endif
 
 #ifndef U_MSR_PMON_FIXED_CTL
-	#define U_MSR_PMON_FIXED_CTL	0x704	//since HSW
-//	#define U_MSR_PMON_FIXED_CTL	0xC08	//IVB EP and SDB EP chip
+	#define U_MSR_PMON_FIXED_CTL	0x703	//since HSW
+//	#define U_MSR_PMON_FIXED_CTL	0xC08	//IVB EP and SDB EP chips
 #endif
 
 // POWER-CAP ///////////////////////////////////////////////////////////////////
