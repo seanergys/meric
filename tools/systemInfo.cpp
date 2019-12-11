@@ -574,7 +574,7 @@ void checkMsrWhitelist()
 	std::ifstream msrfile("/dev/cpu/msr_whitelist");
 	if (!msrfile)
 	{
-		std::cerr << "ERROR\n";
+		std::cerr << "ERROR: cannot access /dev/cpu/msr_whitelist\n";
 		exit(5);
 	}
 
@@ -595,7 +595,7 @@ void checkMsrWhitelist()
 	
 	if (!currentWhitelist.empty())
 	{
-		std::cerr << "# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
+		std::cerr << "\n# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
 		for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
 			std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
 	}
