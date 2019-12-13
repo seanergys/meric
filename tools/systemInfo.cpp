@@ -10,9 +10,9 @@
 #include <sys/stat.h>
 #include <thread>
 #include "../src/wrapper/environmentwrapper.h"
+#include "../src/wrapper/msrs.h"
 
 #ifdef HAVE_MSR_CORE_H
-	#include "../src/wrapper/msrs.h"
 	#include <msr_rapl.h>
 //	#include <msr_clocks.h>
 //	#include <libmsr_error.h>
