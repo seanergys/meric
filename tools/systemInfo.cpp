@@ -331,7 +331,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 #endif
 
 #ifdef HAVE_MSR_CORE_H
-	uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
+	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
@@ -344,7 +344,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 #elif defined HAVE_X86_ADAPT_H
 	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
-	uint64_t setting;
+	uint64_t setting = 0;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	freq = setting * 100000000;
 	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
