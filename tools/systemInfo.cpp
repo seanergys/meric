@@ -1,11 +1,8 @@
 /**
  * Tool to provide information about the system parameters that can be tuned.
  **/
-//#include <unistd.h>
-//#include <iostream>
 #include <math.h>
 #include <map>
-//#include <fstream>
 #include <string.h>
 #include <sys/stat.h>
 #include <thread>
@@ -14,8 +11,6 @@
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_rapl.h>
-//	#include <msr_clocks.h>
-//	#include <libmsr_error.h>
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
@@ -31,11 +26,6 @@
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
-/*
-#ifdef HAVE_NUMA_H
-	#include <numa.h>
-#endif
-*/
 ////////////////////////////////////////////////////////////////////////////////
 struct systemLimits{
 	long maxCoreFreq;            //Hz
@@ -574,30 +564,35 @@ void checkMsrWhitelist()
 	std::ifstream msrfile("/dev/cpu/msr_whitelist");
 	if (!msrfile)
 	{
-		std::cerr << "ERROR: cannot access /dev/cpu/msr_whitelist\n";
+		std::cerr << "LIBMSR ERROR: missing read access to /dev/cpu/msr_whitelist\n";
 		exit(5);
 	}
 
 	//skip the first line with comment
 	std::string comments;
-	std::getline (msrfile,comments);
-
-	//read the list of registers
-	std::map<uint64_t,uint64_t>::iterator it;
-	uint64_t reg, mask;
-	while (msrfile >> std::hex >> reg >> mask)
+	if(!std::getline (msrfile,comments))
 	{
-		it = currentWhitelist.find(reg);
-		if (it != currentWhitelist.end())
-			currentWhitelist.erase(it);
+		std::cerr << "\nLIBMSR ERROR: Empty /dev/cpu/msr_whitelist - see msr-safe repository\n";
 	}
-	msrfile.close();
-	
-	if (!currentWhitelist.empty())
+	else
 	{
-		std::cerr << "\n# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
-		for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
-			std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
+		//read the list of registers
+		std::map<uint64_t,uint64_t>::iterator it;
+		uint64_t reg, mask;
+		while (msrfile >> std::hex >> reg >> mask)
+		{
+			it = currentWhitelist.find(reg);
+			if (it != currentWhitelist.end())
+				currentWhitelist.erase(it);
+		}
+		msrfile.close();
+		
+		if (!currentWhitelist.empty())
+		{
+			std::cerr << "\n# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
+			for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
+				std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
+		}
 	}
 }
 
@@ -722,6 +717,9 @@ int main(int argc, char **argv)
 	if (init_msr())
 	{
 		std::cerr << "LIBMSR ERROR: Unable to initialize\n";
+		if (access("/dev/cpu/0/msr_safe", W_OK) != 0 || access("/dev/cpu/0/msr_safe", R_OK) != 0)
+			std::cerr << "LIBMSR ERROR: Missing read or write access to /dev/cpu/*/msr_safe\n";
+
 	#else
 	{
 	#endif
@@ -750,10 +748,9 @@ int main(int argc, char **argv)
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
-	#ifdef HAVE_MSR_CORE_H
+
 	if (status == USING_MSR)
 		checkMsrWhitelist();
-	#endif
 	
 	if (!systemInTheDefaultSettings && limits.restoreFile)
 	{
