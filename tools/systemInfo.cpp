@@ -14,8 +14,6 @@
 #endif
 
 #ifdef HAVE_X86_ADAPT_H
-//	#include <stdint.h>
-//	#include <memory>
 	#include <x86_adapt.h>
 #endif
 
