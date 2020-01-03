@@ -1,8 +1,9 @@
 ### XX.XX.XXXX #################################################################
+  - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
   - new MERIC_COUNTERS=msr - CPU core and uncore freq monitoring using msr-safe
   - fixed restore of the system hardware settings in the energyMeasureStop
-  - systemInfo tool provides posibility to restore the system settings
+  - improved systemInfo tool provides posibility to restore the system settings
   - HW tuning and RAPL energy measurement using GEOPM
   - continual mode is now default
   - it is not necessary any more to set MERIC_CONTINUAL for energy measurement systems that does not support non-continual measurement
