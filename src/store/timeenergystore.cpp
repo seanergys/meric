@@ -52,12 +52,12 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
     }
 
     if(lastVR > 0 && lastVR > firstVR) {
-        for (size_t it = 1; it < HDEEM::PROBE_NUMBER; it++) {
+        for (size_t it = 1; it < HDEEM::vrSensorLabel.size(); it++) {
             stats.energy[it] = stats.mericDuration * energy[it] / (lastVR - firstVR);
         }
     }
  
-    for(size_t it = 0; it < HDEEM::PROBE_NUMBER; it++) {
+    for(size_t it = 0; it < HDEEM::vrSensorLabel.size(); it++) {
         stats.energyStatsStructure[it] = _records[iEnd].energy[it] - _records[iStarts].energy[it];
     }
 }
@@ -140,7 +140,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     ///////////////////////
 	if(lastVR > 0 && lastVR > firstVR)
 	{
-		for (unsigned int sensorID = 1; sensorID < HDEEM::PROBE_NUMBER; sensorID++)
+		for (unsigned int sensorID = 1; sensorID < HDEEM::vrSensorLabel.size(); sensorID++)
 		{
 			if(printSamples)
 			{

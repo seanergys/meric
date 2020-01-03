@@ -82,7 +82,7 @@ template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegion
 	//VR
 	if(lastVR > 0 && lastVR > firstVR)
 	{
-		for (size_t it = 1; it < TSystem::PROBE_NUMBER; it++)
+		for (size_t it = 1; it < TSystem::vrSensorLabel.size(); it++)
 		{
 			stats.energy[it] = stats.duration * energy[it] / (lastVR - firstVR);
 		}
