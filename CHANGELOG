@@ -52,7 +52,7 @@
   - MERIC MPI now works in MERIC_AGGREGATE mode as default
   - removed duty for c++14 standart
   - reduced MERIC overhead
-  - new MERIC function MERIC_MeasureStopStart to avoid extra environment swithing
+  - new MERIC function MERIC_MeasureStopStart to avoid extra environment switching
   - analysis data directory should contain file measurementInfo.json that describes the test
   - new possibility to turn off MPI or OpenMP barriers for production runs
   - updated labels in output files

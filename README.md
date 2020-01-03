@@ -2,7 +2,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for x86 systems (tested on HSW, BDW and KNL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for x86 systems (tested on HSW, BDW, KNL, and CSL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -297,10 +297,10 @@ Specify following parameters to zero if you do not want to tune the selected sys
 
 ## SET MERIC WORKING MODE ##
 * `export MERIC_MODE=0`
-	- 0 = hdeem - uses hdeem to measure energy consumption
-	- 1 = rapl - uses rapl counters to measure energy consumption
-	- 2 = hdeem & rapl - uses hdeem and rapl at the same time
-	- 3 = none - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions
+	- 0 = hdeem - uses HDEEM to measure energy consumption
+	- 1 = rapl - uses RAPL counters to measure energy consumption
+	- 2 = hdeem & rapl - uses HDEEM and RAPL at the same time
+	- 3 = run - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions (default)
 	- 4 = jetson - energy measurement on BSC Jetson TX1 system
 	- 5 = thunder - energy measurement on BSC ThunderX system
 	- 6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
@@ -324,7 +324,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Currently both modes are available for the HDEEM only.
 
 * `export MERIC_DETAILED=1`
-	- If energy measurement system provides not only data from blade, but also data from Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
+	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
 
 * `export MERIC_DEBUG=1`
 	- Data are taken both from samples and Stats structure, so we can compare them.
