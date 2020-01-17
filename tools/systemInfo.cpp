@@ -62,7 +62,7 @@ enum MODE	//this application keeps this order
 
 unsigned long discover_nominal_frequency()
 {
-	uint64_t MSR_PLATFORM_INFO_bits;
+	uint64_t MSR_PLATFORM_INFO_bits = 0x0;
 	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
 	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
 };
@@ -323,7 +323,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 #ifdef HAVE_MSR_CORE_H
 	if (ok)
 	{
-		uint64_t IA32_ENERGY_PERF_BIAS_bits;
+		uint64_t IA32_ENERGY_PERF_BIAS_bits = 0x0;
 		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
 		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
 			ok = false;
@@ -331,7 +331,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 #endif
 
 #ifdef HAVE_MSR_CORE_H
-	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
+	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
@@ -389,7 +389,7 @@ bool sysInfoPowercap(systemLimits& limits)
 // power capping limits ////////////////////////////////////////////////////////
 	std::cout << "\n# RAPL POWER LIMITS\n";	
 // PKG
-	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
+	uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 
 	std::cout 
@@ -421,11 +421,10 @@ bool sysInfoPowercap(systemLimits& limits)
 
 // default power capping ///////////////////////////////////////////////////////
 	std::cout << "\n# DEFAULT RAPL POWER LIMITS\n";
+	uint64_t X, Y, Z, F;
 
 // PKG
-	uint64_t Y, Z, F;
-	uint64_t MSR_PKG_POWER_LIMIT_bits;
-
+	uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
 #elif defined HAVE_X86_ADAPT_H
@@ -437,44 +436,47 @@ bool sysInfoPowercap(systemLimits& limits)
 #elif defined HAVE_GEOPM_H
 	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
 #endif
-	std::cout << "\tPKG power limit #1: " 
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-		<< " + clamping "
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-		<< std::endl
-		<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+	if (MSR_PKG_POWER_LIMIT_bits != 0x0)
+	{
+		std::cout << "\tPKG power limit #1: " 
+			<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+			<< " + clamping "
+			<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+			<< std::endl
+			<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
 
-	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
-	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-	unit["MSR_PKG_POWER_LIMIT_timewindow_1"] = pow(2,Y) * (1.0 + Z/4.0);
-	std::cout << "\tPKG time window #1: "
-		      << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
-		      << " s\n";
+		Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
+		Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
+		unit["MSR_PKG_POWER_LIMIT_timewindow_1"] = pow(2,Y) * (1.0 + Z/4.0);
+		std::cout << "\tPKG time window #1: "
+				  << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
+				  << " s\n";
 
 #ifdef HAVE_MSR_CORE_H
-	MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
+		MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
 #elif defined HAVE_X86_ADAPT_H
-	adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
-	x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
 #elif defined HAVE_GEOPM_H
-		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
+			MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
 #endif
-	std::cout << "\tPKG power limit #2: " 
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-		<< " + clamping "
-		<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
-		<< std::endl
-		<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+		std::cout << "\tPKG power limit #2: " 
+			<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+			<< " + clamping "
+			<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+			<< std::endl
+			<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
 
-	Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
-	Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-	unit["MSR_PKG_POWER_LIMIT_timewindow_2"] = pow(2,Y) * (1.0 + Z/4.0);
-	std::cout << "\tPKG time window #2: "
-		      << unit["MSR_PKG_POWER_LIMIT_timewindow_2"]*unit["MSR_RAPL_POWER_UNIT_time"] 
-		      << " s\n";
+		Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
+		Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
+		unit["MSR_PKG_POWER_LIMIT_timewindow_2"] = pow(2,Y) * (1.0 + Z/4.0);
+		std::cout << "\tPKG time window #2: "
+				  << unit["MSR_PKG_POWER_LIMIT_timewindow_2"]*unit["MSR_RAPL_POWER_UNIT_time"] 
+				  << " s\n";
+	}
 
 // DRAM
-	uint64_t MSR_DRAM_POWER_LIMIT_bits;
+	uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
 #elif defined HAVE_X86_ADAPT_H
@@ -486,19 +488,57 @@ bool sysInfoPowercap(systemLimits& limits)
 #elif defined HAVE_GEOPM_H
 	MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::DRAM_POWER_LIMIT#", pio.signal_domain_type("MSR::DRAM_POWER_LIMIT#"), 0));
 #endif
-	std::cout << "\tDRAM power limit:   " 
-		<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-		<< " + clamping "
-		<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-		<< std::endl
-		<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n";
+	if (MSR_DRAM_POWER_LIMIT_bits != 0x0)
+	{
+		std::cout << "\tDRAM power limit:   " 
+			<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+			<< " + clamping "
+			<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+			<< std::endl
+			<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n";
 
-	F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
-	Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
-	unit["MSR_DRAM_POWER_LIMIT_timewindow"] = pow(2,Y) * F;
-	std::cout << "\tDRAM time window:   "
-		      << unit["MSR_DRAM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
-		      << " s\n";
+		F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
+		Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
+		unit["MSR_DRAM_POWER_LIMIT_timewindow"] = pow(2,Y) * F;
+		std::cout << "\tDRAM time window:   "
+				  << unit["MSR_DRAM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
+				  << " s\n";
+	}
+
+// PLATFORM
+/*
+	uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
+#ifdef HAVE_MSR_CORE_H
+	read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
+#endif
+	if (MSR_PLATFORM_POWER_LIMIT_bits != 0x0)
+	{
+		std::cout << "\tPLATFORM power limit #1: " 
+			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+			<< " + clamping "
+			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+			<< std::endl
+			<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * unit["MSR_PLATFORM_POWER_LIMIT"] << " W\n";
+
+		Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
+		X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
+		unit["MSR_PLATFORM_POWER_LIMIT_timewindow"] = pow(2,Y) * (1.0 + X/4.0);
+		std::cout << "\tPLATFORM time window: "
+				  << unit["MSR_PLATFORM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
+				  << " s\n";
+		const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
+
+		MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
+		std::cout << "\tPLATFORM power limit #2: " 
+			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+			<< " + clamping "
+			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+			<< std::endl
+			<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * unit["MSR_PLATFORM_POWER_LIMIT"] << " W\n"
+			<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
+			<< std::endl;
+	}
+*/
 	return ok;
 }
 
