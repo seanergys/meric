@@ -91,7 +91,7 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-	          << "Run energyMeasureStart to start the energy measurement (RAPL) nad change system parameters\n"
+	          << "Run energyMeasureStart to start the energy measurement (RAPL) and change system parameters\n"
 	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
 	          << "\nenergyMeasureStart parameters:\n"
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
