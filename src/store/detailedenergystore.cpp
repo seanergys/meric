@@ -62,18 +62,15 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
     ///////////////////////
     // VR sensors values //
     ///////////////////////
-
-    std::vector<std::string> vrSensor = {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
-    unsigned int vrSensorNum = vrSensor.size();
     
-    for (unsigned int sensorID = 0; sensorID < vrSensorNum; sensorID++)
+    for (unsigned int sensorID = 0; sensorID < HDEEM::vrSensorLabel.size(); sensorID++)
     {
-		ss << "# Voltage regulator (" << vrSensor[sensorID] << ") summary" << std::endl
+		ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") summary" << std::endl
 		   << "Energy consumption [J]" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl;
 		
 		if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
 		{
-			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << vrSensor[sensorID]<<"\n";
+			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << HDEEM::vrSensorLabel[sensorID]<<"\n";
 		}
     }
 

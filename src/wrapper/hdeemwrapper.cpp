@@ -4,6 +4,9 @@
 
 using namespace meric;
 
+std::string HDEEM::storeLabel = "hdeem";
+std::vector<std::string> HDEEM::vrSensorLabel;
+
 #ifdef HAVE_HDEEM_H
 
 hdeem_bmc_data_t HDEEM::bmc;
@@ -72,7 +75,7 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 	//VR
 	if(*lastVR > 0 && *lastVR > *firstVR)
 	{
-		for (unsigned int sensorID = 1; sensorID < PROBE_NUMBER; sensorID++)
+		for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
 			getEnergySamples(*firstVR, *lastVR, sensorID);
 	}else
 	{
@@ -134,11 +137,6 @@ double HDEEM::getResultValue(double startValue, double stopValue, double runtime
 size_t HDEEM::energy = 0;
 
 #endif
-
-	//TODO spojit tyto 3 polozky v jednu
-std::string HDEEM::storeLabel = "hdeem";
-std::vector<std::string> HDEEM::vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
-//const int HDEEM::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 
 
 

@@ -19,10 +19,7 @@
 #include <cmath>
 #include <climits>
 
-//#define PROBE_NUMBER 7
-
 namespace meric {
-
 
 class HDEEM {
 
@@ -30,7 +27,7 @@ public:
 	static const int FREQUENCY = 1000;
 	static const int FREQUENCY_VR = 100;
 	static const int VRDELAY = 2; //from list of VR samples we noticed, that VR samples are shifted by two samples
-	static const int PROBE_NUMBER = 7;	//BLADE + {"CPU0", "CPU1", "DDR AB", "DDR CD", "DDR EF", "DDR GH"};
+	static const int PROBE_NUMBER = 9;	//BLADE + {"CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };
 	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 	static std::string getCounterLabel(std::string counter) { return counter; };
@@ -40,6 +37,10 @@ public:
 	{
 		checkHDEEM(hdeem_init(&bmc), "init");
 		checkHDEEM(hdeem_clear(&bmc), "clear");	//extra clear should not make a problem
+
+		vrSensorLabel.push_back(bmc.name_blade_sensors[0]);
+		for (int vr = 0; vr < bmc.nb_vr_sensors; vr++)
+			vrSensorLabel.push_back(bmc.name_vr_sensors[vr]);
 	}
 	
 	static void close() { hdeem_close(&bmc); }
@@ -89,7 +90,7 @@ public:
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy[0] = stats.energy_blade_values.value[0];
-		memcpy(energy.data() + 1, stats.energy_vr_values.value, (PROBE_NUMBER - 1) * sizeof(double));
+		memcpy(energy.data() + 1, stats.energy_vr_values.value, (vrSensorLabel.size() - 1) * sizeof(double));
 		hdeem_stats_free(&stats);
 	}
 
@@ -147,7 +148,10 @@ private:
 
 #else
 
-	static void init() {};
+	static void init()
+	{
+		vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };
+	};
 	static void close() {};
 	static void start(timespec & time)
 	{
@@ -168,7 +172,7 @@ private:
 	}
 	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)
 	{
-		for (size_t i = 0; i < PROBE_NUMBER; i++) {
+		for (size_t i = 0; i < vrSensorLabel.size(); i++) {
 			energy[i] = HDEEM::energy;
 		}
 		HDEEM::energy++;
@@ -182,9 +186,9 @@ private:
 		status.pending_blade_values = 0;
 		status.pending_vr_values = 0;
 		clock_gettime(CLOCK_REALTIME, &status.start_time_blade);
-		clock_gettime(CLOCK_REALTIME, &status.start_time_vr);
-		clock_gettime(CLOCK_REALTIME, &status.stop_time_blade);
-		clock_gettime(CLOCK_REALTIME, &status.stop_time_vr);
+		status.start_time_vr = status.start_time_blade;
+		status.stop_time_blade = status.start_time_blade;
+		status.stop_time_vr = status.start_time_blade;
 	}
 	static int getSamples() {return 0; };
 	static void deleteSamples() {};

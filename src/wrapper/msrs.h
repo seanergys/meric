@@ -60,7 +60,7 @@ const uint64_t MSR_PLATFORM_INFO_shift = 8;
  * Reserved (bits 31:16)
  * IDA Engage (R/W) (bit 32):
  	When set to 1: disengages IDA.
- * Reserved (63:33)
+ * Reserved (bits 63:33)
  *
  * IA32_MPERF register ********************************************************
  * TSC Frequency Clock Counter (R/Write to clear)
@@ -192,7 +192,7 @@ const uint64_t IA32_PERF_CTL_shift = 8;
  * ov_rp (bit 26):
  	Set if overflow is detected from an R2PCIe PMON register.
  	NOTE: Write of '1' will clear the bit.
- * Reserved (31:27)
+ * Reserved (bits 31:27)
  *
  * U_MSR_PMON_FIXED_CTL register **********************************************
  * U-Box PMON UCLK Fixed Counter Control (32 bit register)
@@ -215,7 +215,7 @@ const uint64_t IA32_PERF_CTL_shift = 8;
  * 0xC09 0x0000FFFFFFFFFFFF IVB EP and SDB EP chips
  * Event count (bits 47:0):
  	48-bit performance event counter
- * Reserved (63:48)
+ * Reserved (bits 63:48)
  ******************************************************************************
  **/
 const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
@@ -376,6 +376,66 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 	The unit of this field is specified by the "Time Units" field of 
 	MSR_RAPL_POWER_UNIT.
  * Reserved (bits 63:32)
+ *
+ * MSR_PLATFORM_POWER_LIMIT register ******************************************
+ * Additional MSRs Supported by 6th Generation Intel Core Processors and the 
+ * Intel Xeon Processor Scalable Family Based on Skylake Microarchitecture, 7th 
+ * Generation Intel Core Processors Based on Kaby Lake Microarchitecture, 8th 
+ * Generation and 9th Generation Intel Core Processors and Intel Xeon E 
+ * Processors Based on Coffee Lake Microarchitecture, and 8th Generation Intel 
+ * Core i3 Processors Based on Cannon Lake Microarchitecture
+ *
+ * The notation of "Platform" in the Scope column (with respect to 
+ * MSR_PLATFORM_ENERGY_COUNTER and MSR_PLATFORM_POWER_LIMIT) is limited to the 
+ * power-delivery domain and the specifics of the power delivery integration may 
+ * vary by platform vendor's implementation.
+ *
+ * Platform Power Limit Control (R/W-L) - platform scope
+ * Allows platform BIOS to limit power consumption of the platform devices to 
+ * the specified values. The Long Duration power consumption is specified via 
+ * Platform_Power_Limit_1 and Platform_Power_Limit_1_Time. The Short Duration 
+ * power consumption limit is specified via the Platform_Power_Limit_2 with 
+ * duration chosen by the processor. The processor implements an 
+ * exponential-weighted algorithm in the placement of the time windows.
+ * 0x65C 0x8001FFFF00FFFFFF
+ * Platform Power Limit #1 (bits 14:0):
+ 	Average Power limit value which the platform must not exceed over a time 
+ 	window as specified by Power_Limit_1_TIME field. The default value is the 
+ 	Thermal Design Power (TDP) and varies with product skus. The unit is 
+ 	specified in MSR_RAPL_POWER_UNIT.
+ * Enable Platform Power Limit #1 (bit 15):
+ 	When set, enables the processor to apply control policy such that the 
+ 	platform power does not exceed Platform Power limit #1 over the time window 
+ 	specified by Power Limit #1 Time Window.
+ * Platform Clamping Limitation #1 (bit 16):
+ 	When set, allows the processor to go below the OS requested P states in 
+ 	order to maintain the power below specified Platform Power Limit #1 value. 
+ 	This bit is writeable only when CPUID (EAX=6):EAX[4] is set.
+ * Time Window for Platform Power Limit #1 (bits 23:17):
+ 	Specifies the duration of the time window over which Platform Power Limit #1 
+ 	value should be maintained for sustained long duration. This field is made 
+ 	up of two numbers from the following equation:
+		Time Window = (float) ((1+(X/4))*(2^Y)), where:
+		X = POWER_LIMIT_1_TIME[23:22]
+		Y = POWER_LIMIT_1_TIME[21:17]
+	The maximum allowed value in this field is defined in 
+	MSR_PKG_POWER_INFO[PKG_MAX_WIN]. The default value is 0xD, The unit is 
+	specified in MSR_RAPL_POWER_UNIT[Time Unit].
+ * Reserved (bits 31:24)
+ * Platform Power Limit #2 (bits 46:32):
+ 	Average Power limit value which the platform must not exceed over the Short 
+ 	Duration time window chosen by the processor. The recommended default value 
+ 	is 1.25 times the Long Duration Power Limit (i.e., Platform Power Limit #1).
+ * Enable Platform Power Limit #2 (bit 47):
+ 	When set, enables the processor to apply control policy such that the 
+ 	platform power does not exceed Platform Power limit #2 over the Short 
+ 	Duration time window.
+ * Platform Clamping Limitation #2 (bit 48):
+ 	When set, allows the processor to go below the OS requested P states in 
+ 	order to maintain the power below specified Platform Power Limit #2 value.
+ * Reserved (bits 62:49)
+ * Lock (bit 63):
+ 	Setting this bit will lock all other bits of this MSR until system RESET.
  ******************************************************************************
  **/
 const uint64_t MSR_DRAM_POWER_LIMIT_mask = 0x7FFF;
@@ -412,6 +472,25 @@ const uint64_t MSR_PKG_DRAM_POWER_INFO_max_power_shift = 32;
 const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_mask = 0x3F000000000000;
 const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
 
+const uint64_t MSR_PLATFORM_POWER_LIMIT_mask = 0x8001FFFF00FFFFFF;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_shift = 0;
+
+const uint64_t MSR_PLATFORM_POWER_LIMIT_power1_shift = 0;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_power2_shift = 32; //use "half register-length" shift instead of specifying all the mask and shifts for the second half of the register
+
+const uint64_t MSR_PLATFORM_POWER_LIMIT_power_mask = 0x7FFF;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_enable_mask = 0x8000;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_enable_shift = 15;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_clamping_mask = 0x10000;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_clamping_shift = 16;
+
+const uint64_t MSR_PLATFORM_POWER_LIMIT_time_x_mask = 0xC00000;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_time_x_shift = 22;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_time_y_mask = 0x3E0000;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_time_y_shift = 17;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_mask = 0x8000000000000000;
+const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
+
 #ifndef MSR_PKG_POWER_LIMIT
 	#define MSR_PKG_POWER_LIMIT 	0x610
 #endif
@@ -436,6 +515,9 @@ const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
 	#define MSR_DRAM_PERF_STATUS 	0x61B
 #endif
 
+#ifndef MSR_PLATFORM_POWER_LIMIT
+	#define MSR_PLATFORM_POWER_LIMIT 	0x65C
+#endif
 
 // RAPL energy measurement /////////////////////////////////////////////////////
 /**
@@ -502,6 +584,12 @@ const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
  * Generation and 9th Generation Intel Core Processors and Intel Xeon E 
  * Processors Based on Coffee Lake Microarchitecture, and 8th Generation Intel 
  * Core i3 Processors Based on Cannon Lake Microarchitecture
+ *
+ * The notation of "Platform" in the Scope column (with respect to 
+ * MSR_PLATFORM_ENERGY_COUNTER and MSR_PLATFORM_POWER_LIMIT) is limited to the 
+ * power-delivery domain and the specifics of the power delivery integration may 
+ * vary by platform vendor's implementation. 
+ *
  * Platform Energy Counter (R/O) - platform scope
  * This MSR is valid only if both platform vendor hardware implementation and 
  * BIOS enablement support it. This MSR will read 0 if not valid.
@@ -513,6 +601,7 @@ const uint64_t MSR_PKG_DRAM_POWER_INFO_max_time_shift = 48;
  	from the platform power delivery means. The energy units are specified in 
  	the MSR_RAPL_POWER_UNIT.Enery_Status_Unit.
  * Reserved (bits 63:32)
+ ******************************************************************************
  **/
 const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
@@ -523,6 +612,7 @@ const uint64_t MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask = 0xFFFFFFFF;
 //const uint64_t MSR_DRAM_ENERGY_STATUS_mask    = 0xFFFFFFFF;
 //const uint64_t MSR_PP0_ENERGY_STATUS_mask     = 0xFFFFFFFF;
 //const uint64_t MSR_PP1_ENERGY_STATUS_mask     = 0xFFFFFFFF;
+const uint64_t MSR_PLATFORM_ENERGY_COUNTER_mask = 0xFFFFFFFF;
 
 #ifndef MSR_RAPL_POWER_UNIT
 	#define MSR_RAPL_POWER_UNIT 	0x606
@@ -553,26 +643,28 @@ const uint64_t MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask = 0xFFFFFFFF;
 ////////////////////////////////////////////////////////////////////////////////
 
 const std::map<uint64_t, uint64_t> msr_whitelist = {
-	{ MSR_PLATFORM_INFO,      0x0000FF007080FF00 },	//MSR_PLATFORM_INFO/PLATFORM_INFO_ADDR
-	{ U_MSR_PMON_FIXED_CTR,   0x0000FFFFFFFFFFFF }, //U_MSR_PMON_FIXED_CTR/MSR_U_PMON_UCLK_FIXED_CTR
-	{ U_MSR_PMON_FIXED_CTL,   0x00500000         }, //U_MSR_PMON_FIXED_CTL/MSR_U_PMON_UCLK_FIXED_CTL
-	{ MSR_UNCORE_RATIO_LIMIT, 0x0000000000007F7F },
-	{ MSR_PKG_POWER_LIMIT,    0x00FFFFFF00FFFFFF },
-	{ MSR_PKG_POWER_INFO,     0x003F7FFF7FFF7FFF },
-	{ MSR_PKG_PERF_STATUS,    0x00000000FFFFFFFF },
-	{ MSR_DRAM_POWER_LIMIT,   0x0000000000FFFFFF },
-	{ MSR_DRAM_POWER_INFO,    0x003F7FFF7FFF7FFF },
-	{ MSR_DRAM_PERF_STATUS,   0x00000000FFFFFFFF },
-	{ IA32_ENERGY_PERF_BIAS,  0x000000000000000F },
-	{ IA32_PERF_CTL,          0x000000010000FFFF },
-	{ IA32_MPERF,             0xFFFFFFFFFFFFFFFF },
-	{ IA32_APERF,             0xFFFFFFFFFFFFFFFF },
-	{ MSR_RAPL_POWER_UNIT,    0x00000000000F1F0F },
-	{ MSR_PKG_ENERGY_STATUS,  0x00000000FFFFFFFF },
-	{ MSR_DRAM_ENERGY_STATUS, 0x00000000FFFFFFFF }
-//	{ MSR_PP0_ENERGY_STATUS,  0x00000000FFFFFFFF }
-//	{ MSR_PP1_ENERGY_STATUS,  0x00000000FFFFFFFF }
-//	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF } // not yet supportd by MERIC
+	{ MSR_PLATFORM_INFO,           0x0000FF007080FF00 }, //MSR_PLATFORM_INFO/PLATFORM_INFO_ADDR
+	{ U_MSR_PMON_FIXED_CTR,        0x0000FFFFFFFFFFFF }, //U_MSR_PMON_FIXED_CTR/MSR_U_PMON_UCLK_FIXED_CTR
+	{ U_MSR_PMON_FIXED_CTL,        0x00500000         }, //U_MSR_PMON_FIXED_CTL/MSR_U_PMON_UCLK_FIXED_CTL
+	{ MSR_UNCORE_RATIO_LIMIT,      0x0000000000007F7F },
+	{ MSR_PKG_POWER_LIMIT,         0x00FFFFFF00FFFFFF },
+	{ MSR_PKG_POWER_INFO,          0x003F7FFF7FFF7FFF },
+	{ MSR_PKG_PERF_STATUS,         0x00000000FFFFFFFF },
+	{ MSR_DRAM_POWER_LIMIT,        0x0000000000FFFFFF },
+	{ MSR_DRAM_POWER_INFO,         0x003F7FFF7FFF7FFF },
+	{ MSR_DRAM_PERF_STATUS,        0x00000000FFFFFFFF },
+	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
+	{ IA32_PERF_CTL,               0x000000010000FFFF },
+	{ IA32_MPERF,                  0xFFFFFFFFFFFFFFFF },
+	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
+	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
+	{ MSR_PKG_ENERGY_STATUS,       0x00000000FFFFFFFF },
+	{ MSR_DRAM_ENERGY_STATUS,      0x00000000FFFFFFFF }
+//	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF }
+//	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF }
+	// not yet supportd by MERIC
+//	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF }
+//	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF }
 };
 
 #endif /* SRC_WRAPPER_MSRS_H_ */

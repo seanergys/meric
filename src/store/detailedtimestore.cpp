@@ -77,7 +77,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	///////////////////////
 	if(lastVR > 0 && lastVR > firstVR)
 	{
-		for (unsigned int sensorID = 1; sensorID < HDEEM::PROBE_NUMBER; sensorID++)
+		for (unsigned int sensorID = 1; sensorID < HDEEM::vrSensorLabel.size(); sensorID++)
 		{
 			if(printSamples)
 			{
