@@ -53,7 +53,7 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	MERIC_INFO << " ***************************************************************************\n";
 	std::string errMessage = "";
 
-	double GPU_offset = 120.0;
+	const double GPU_offset = 120.0;
 
 	long long t0 = time_samples[0];
 	long long ts = (long long)(FREQUENCY*startTime);
@@ -81,8 +81,8 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 
 	// sub-sampling measurement setup
 	std::vector <double> tmp_t, tmp_w;
-	int  n_subsamples = dur_t*20;
-	int  hallo_size = 10;
+	int n_subsamples = dur_t*20;
+	int hallo_size = 10;
 	int buf_size = 2*hallo_size+dur_t+2;
 	bool use_linear_interpolation = false; // if false spline interpolation is used 
 
@@ -182,7 +182,7 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 
 		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
 			       << "maxWatts : " << maxWatts[0] << " W\n"
-			       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted 120W for GPU idle (4x30W) \n";
+			       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted "<<GPU_offset<<"W for GPU idle (4x30W) \n";
 		energy[0] -= n_samples * GPU_offset;
 	}
 
