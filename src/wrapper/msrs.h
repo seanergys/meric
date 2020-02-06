@@ -84,13 +84,6 @@ const uint64_t MSR_PLATFORM_INFO_nominal_freq_shift = 8;
 const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_mask  = 0x10000000;
 const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
 
-/*
- * Programmable Ratio Limit for Turbo Mode (R/O) (bit 28):
- 	When set to 1, indicates that Programmable Ratio Limit for Turbo mode is 
- 	enabled. When set to 0, indicates Programmable Ratio Limit for Turbo mode is
- 	disabled.
-*/
-
 // CORE FREQUENCY //////////////////////////////////////////////////////////////
 /**
  * IA32_PERF_CTL register *****************************************************
