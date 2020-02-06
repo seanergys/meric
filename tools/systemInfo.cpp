@@ -498,13 +498,22 @@ bool sysInfoPowercap(systemLimits& limits)
 //		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n"
 		;
 #else
+	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
+	if (pwrCapFile.is_open())
+	{
+		pwrCapInfo = "";
+		pwrCapFile >> pwrCapInfo;
+		pwrCapFile.close();
+		std::cout << "\tPKG max power limit #0: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+	}
+
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_max_power_uw");
 	if (pwrCapFile.is_open())
 	{
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG max power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
 	}
 
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_max_power_uw");
@@ -513,7 +522,7 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tDRAM max power limit:  " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		std::cout << "\tDRAM max power limit:   " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
 	}
 #endif
 
@@ -624,7 +633,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG power limit #1: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tPKG power limit #1: " << std::stol(pwrCapInfo)/1000000 << " W\n";
 	}
 	
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_time_window_us");
@@ -633,7 +643,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG time window #1: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tPKG time window #1: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
 	}
 	
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw");
@@ -642,7 +653,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG power limit #2: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tPKG power limit #2: " << std::stol(pwrCapInfo)/1000000 << " W\n";
 	}
 
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_time_window_us");
@@ -651,7 +663,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG time window #2: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tPKG time window #2: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
 	}
 
 	// DRAM
@@ -670,7 +683,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tDRAM power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tDRAM power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
 	}
 
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_time_window_us");
@@ -679,7 +693,8 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		if (pwrCapInfo != "")
+			std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
 	}
 #endif
 
