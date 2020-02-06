@@ -23,12 +23,53 @@
  * MSR_PLATFORM_INFO register *************************************************
  * Platform Information: Contains power management and other model specific 
  * features enumeration. See http://biosbits.org.
- * 0xCE 0x000000000000FF00
+ * 0xCE 0x0000FF003000FF00 - NHM, SDB, KNL, KNM
+ * 0xCE 0x00FFFF073000FF00 - IVB, HSW, HSW-E
+ * 0xCE 0x0000FF007080FF00 - IVB-E, SKL, CSL
+ * 0xCE 0x00FFFF007080FF00 - BDW
  * Reserved (bits 7:0)
  * Maximum Non-Turbo Ratio (R/O) (bits 15:8):
  	This is the ratio of the maximum frequency that does not require turbo. 
  	Frequency = ratio * Scalable Bus Frequency.
- * Reserved (bits 63:16)
+ 	SB Frequency at NHM 133.33 MHz, otherwise 100 MHz
+ * Reserved (bits 22:16)
+ * PPIN_CAP (R/O) (bit 23):
+ 	Not available at NHM, SDB, IVB, HSW, HSW-E
+ 	When set to 1, indicates that Protected Processor Inventory Number (PPIN) 
+ 	capability can be enabled for a privileged system inventory agent to read 
+ 	PPIN from MSR_PPIN. When set to 0, PPIN capability is not supported. An 
+ 	attempt to access MSR_PPIN_CTL or MSR_PPIN will cause #GP.
+ * Reserved (bits 27:24)
+ * Programmable Ratio Limit for Turbo Mode (R/O) (bit 28):
+ 	When set to 1, indicates that Programmable Ratio Limit for Turbo mode is 
+ 	enabled. When set to 0, indicates Programmable Ratio Limit for Turbo mode is
+ 	disabled.
+ * Programmable TDP Limit for Turbo Mode (R/O) (bit 29):
+ 	When set to 1, indicates that TDP Limit for Turbo mode is programmable. When 
+ 	set to 0, indicates TDP Limit for Turbo mode is not programmable.
+ * Programmable TJ OFFSET (R/O) (bit 30):
+ 	Not available at  NHM, SDB, IVB, HSW, HSW-E
+ 	When set to 1, indicates that MSR_TEMPERATURE_TARGET.[27:24] is valid and 
+ 	writable to specify a temperature offset.
+ * Reserved (bit 31)
+ * Low Power Mode Support (LPM) (R/O) (bit 32):
+ 	Not available at NHM, SDB, IVB, IVB-E, BDW, BDW-E, SKL, CSL
+ 	When set to 1, indicates that LPM is supported. When set to 0, indicates LPM 
+ 	is not supported.
+ * Number of ConfigTDP Levels (R/O) (bits 34:33):
+ 	Not available at NHM, SDB, IVB-E, BDW, BDW-E, SKL, CSL
+ 	00: Only Base TDP level available.
+ 	01: One additional TDP level available.
+ 	02: Two additional TDP level available.
+ 	03: Reserved
+ * Reserved (bits 39:35)
+ * Maximum Efficiency Ratio (R/O) (bits 47:40):
+ 	This is the minimum ratio (maximum efficiency) that the processor can 
+ 	operate, in units of 100MHz.
+ * Minimum Operating Ratio (R/O) (bits 55:48):
+ 	Not available at NHM, SDB, IVB-E, BDW, BDW-E, SKL, CSL
+ 	Contains the minimum supported operating ratio in units of 100 MHz.
+ * Reserved (bits 63:56)
  ******************************************************************************
  **/
 #ifndef IA32_ENERGY_PERF_BIAS
@@ -38,8 +79,17 @@
 #ifndef MSR_PLATFORM_INFO
 	#define MSR_PLATFORM_INFO   	0xCE
 #endif
-const uint64_t MSR_PLATFORM_INFO_mask  = 0xFF00;
-const uint64_t MSR_PLATFORM_INFO_shift = 8;
+const uint64_t MSR_PLATFORM_INFO_nominal_freq_mask  = 0xFF00;
+const uint64_t MSR_PLATFORM_INFO_nominal_freq_shift = 8;
+const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_mask  = 0x10000000;
+const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
+
+/*
+ * Programmable Ratio Limit for Turbo Mode (R/O) (bit 28):
+ 	When set to 1, indicates that Programmable Ratio Limit for Turbo mode is 
+ 	enabled. When set to 0, indicates Programmable Ratio Limit for Turbo mode is
+ 	disabled.
+*/
 
 // CORE FREQUENCY //////////////////////////////////////////////////////////////
 /**

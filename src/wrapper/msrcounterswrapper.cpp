@@ -32,7 +32,7 @@ void MSR::init()
 	
 	uint64_t MSR_PLATFORM_INFO_bits;
 	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	nominal_freq = ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
+	nominal_freq = ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
 }
 
 void MSR::close()

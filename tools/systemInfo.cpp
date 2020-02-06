@@ -117,7 +117,7 @@ unsigned long discover_nominal_frequency()
 {
 	uint64_t MSR_PLATFORM_INFO_bits;
 	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
+	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
 };
 
 #elif defined __x86_64
