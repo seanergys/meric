@@ -81,7 +81,7 @@ inline void CPUID(unsigned int *regs)
 		  "d" (regs[3]));  // in EDX
 }
 
-void testHWP(bool &DVFS)
+bool testHWP()
 {
 	bool HWP = false;
 	unsigned int regs[4];
@@ -107,8 +107,7 @@ void testHWP(bool &DVFS)
 	else
 		std::cout << "\tHardware controlled P-State: not available\n";
 
-	if (HWP)
-		DVFS = false;
+	return HWP;
 }
 
 #endif
@@ -261,11 +260,21 @@ void sysInfoSize()
 
 bool sysInfoFrequencies(systemLimits& limits)
 {
+	bool DVFS = false;
 	bool ok = true;
 	std::cout << "\n# CPU FREQUENCIES\n";
 	std::ifstream frequencyBounderyFile;
-	std::string freqBound;
+	std::string freqBound = "";
+	std::string scalingDriver = "";
 
+	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver");
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> scalingDriver;
+		frequencyBounderyFile.close();
+		std::cout << "\tCurrent scaling driver:     " << scalingDriver << std::endl;
+	}
+	
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -275,6 +284,13 @@ bool sysInfoFrequencies(systemLimits& limits)
 		std::cout << "\tCurrent scaling governor:   " << freqBound << std::endl;
 		if (freqBound != limits.governor)
 			ok = false;
+		if (freqBound == "userspace")
+		{
+#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+			if (access("/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed", W_OK) == 0)
+#endif
+				DVFS = true;
+		}
 	}
 	
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
@@ -285,40 +301,59 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile.close();
 		std::cout << "\tAvailable governors:        " << freqBound << std::endl;
 	}
-	
-	#ifdef HAVE_X86_ADAPT_H
-	bool DVFS = true;
-	#else
-	bool DVFS = false;
-	#endif
-	size_t pos;
-	std::string token;
 
-	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
-	{
-		while (DVFS == false && (pos = freqBound.find(' ')) != std::string::npos)
-		{
-			token = freqBound.substr(0, pos);
-			if (token == "userspace")
-				DVFS = true;
-			freqBound.erase(0, pos+1);
-		}
-	}
-
-	#ifdef __x86_64
-		testHWP(DVFS);
-	#endif
-	
 	if (!DVFS)
 	{
-		if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) != 0 ||
-		   (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) != 0))
-			std::cout << "\tCPU Core Frequency scaling (DVFS) not available\n"
-			          << "\t\tadd userspace scaling governor and grant write access to:\n"
-			          << "\t\t - /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\n"
-			          << "\t\tor use Intel PState and grant write access to:\n"
-			          << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
-			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n";
+		if (scalingDriver == "acpi-cpufreq")
+		{
+			if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
+			{
+#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+				if (access("/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed", W_OK) == 0)
+#endif
+					DVFS = true;
+			}
+		}
+#if defined HAVE_MSR_CORE_H && defined HAVE_X86_ADAPT_H && defined HAVE_CPUFREQ_H
+		else if (scalingDriver == "intel_pstate")
+		{
+			if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
+			   (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0))
+			   DVFS = true;
+		}
+#endif
+	}
+
+	bool HWP = false;
+	#ifdef __x86_64
+		HWP = testHWP();
+	#endif
+	
+	if (!DVFS || HWP)
+	{
+		std::cout << "\n\tCPU core frequency scaling (DVFS) NOT available\n";
+		if (HWP)
+			std::cout << "\t\tBecause Hardware Controlled P-Stated is activated in the BIOS\n";
+		else
+		{
+#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+			std::cout << "\t\t install one the following libraries:\n"
+			          << "\t\t - libmsr / x86_adapt / cpufreq\n";
+#endif
+			if (scalingDriver == "intel_pstate")
+			{
+				std::cout << "\t\t grant write access to:\n"
+					      << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
+					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+					      << "\t\t or switch the scaling driver to 'acpi-cpufreq' and\n";
+			}
+			std::cout << "\t\t grant write access to:\n"
+				      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
+#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+			std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
+#endif
+		}
+		std::cout << std::endl;
 	}
 	
 	long freq = 0;
@@ -329,7 +364,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMax CPU Core Frequency:     " << freq << " Hz\n";
+		std::cout << "\tMax CPU core frequency:     " << freq << " Hz\n";
 		if (freq != limits.maxCoreFreq)
 			ok = false;
 	}
@@ -340,7 +375,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMin CPU Core Frequency:     " << freq << " Hz\n";
+		std::cout << "\tMin CPU core frequency:     " << freq << " Hz\n";
 		if (freq != limits.minCoreFreq)
 			ok = false;
 	}
@@ -350,12 +385,12 @@ bool sysInfoFrequencies(systemLimits& limits)
 	{
 		getline(frequencyBounderyFile, freqBound);
 		frequencyBounderyFile.close();
-		std::cout << "\tAvailable CPU Core Frequencies: " << freqBound << " kHz\n";
+		std::cout << "\tAvailable CPU core frequencies: " << freqBound << " kHz\n";
 	}
 	
 	unsigned long nominalFreq = discover_nominal_frequency();
 	if (nominalFreq != 0)
-		std::cout << "\tNominal CPU Core Frequency: " << nominalFreq << " Hz\n";
+		std::cout << "\tNominal CPU core frequency: " << nominalFreq << " Hz\n";
 
 #ifdef HAVE_MSR_CORE_H
 	if (ok)
@@ -371,11 +406,11 @@ bool sysInfoFrequencies(systemLimits& limits)
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_X86_ADAPT_H
@@ -384,7 +419,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	uint64_t setting = 0;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	freq = setting * 100000000;
-	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 		
@@ -393,21 +428,21 @@ bool sysInfoFrequencies(systemLimits& limits)
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 	freq = setting * 100000000;
-	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_GEOPM_H
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-	std::cout << "\tMax CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
-	std::cout << "\tMin CPU Uncore Frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;	
 #elif defined __x86_64 //intel CPUs only
-	std::cout << "\n# CPU Uncore frequency NOT available - install msr-safe or x86_adapt\n\n";
+	std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n\n";
 #endif
 	return ok;
 }
@@ -418,7 +453,12 @@ bool sysInfoPowercap(systemLimits& limits)
 	bool ok = true;
 	if (unit.size() == 0)
 	{
-		std::cout << "\n# RAPL power capping NOT available\n\n";
+		std::cout << "\n# RAPL power capping NOT available";
+#ifdef __x86_64 //currently supported only intel
+		std::cout << " - install libmsr or x86_adapt\n\n";
+#else
+		std::cout << "\n\n";
+#endif
 		return ok;
 	}
 
