@@ -119,6 +119,17 @@ const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
  	Accumulates core clock counts at the coordinated clock frequency, when the 
  	logical processor is in C0. Cleared upon overflow / wrap-around of 
  	IA32_MPERF.
+ *
+ * IA32_PM_ENABLE register ****************************************************
+ * Enable/Disable HWP, If CPUID.06H:EAX.[7] = 1, package level MSR
+ * 0x770 0x000000000000001
+ * HWP_ENABLE (R/W1-Once) (bit 0):
+ 	Software sets this bit to enable HWP with autonomous selection of processor 
+ 	P-States. When set, the processor will disregard input from the legacy 
+ 	performance control interface (IA32_PERF_CTL). Note this bit can only be 
+ 	enabled once from the default value. Once set, writes to the HWP_ENABLE bit 
+ 	are ignored. Only RESET will clear this bit. Default = zero (0).
+ * Reserved (bits 63:1)
  ******************************************************************************
  **/
 
@@ -134,6 +145,11 @@ const uint64_t IA32_PERF_CTL_shift = 8;
 #ifndef IA32_APERF
 	#define IA32_APERF				0xE8
 #endif
+
+#ifndef IA32_PM_ENABLE
+	#define IA32_PM_ENABLE			0x770
+#endif
+const uint64_t IA32_PM_ENABLE_mask = 1;
 
 // UNCORE FREQUENCY ////////////////////////////////////////////////////////////
 /**
@@ -702,12 +718,13 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
 	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
 	{ MSR_PKG_ENERGY_STATUS,       0x00000000FFFFFFFF },
-	{ MSR_DRAM_ENERGY_STATUS,      0x00000000FFFFFFFF }
+	{ MSR_DRAM_ENERGY_STATUS,      0x00000000FFFFFFFF },
 //	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF }
 //	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF }
 	// not yet supportd by MERIC
 //	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF }
 //	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF }
+	{ IA32_PM_ENABLE,              0x0000000000000001 }
 };
 
 #endif /* SRC_WRAPPER_MSRS_H_ */
