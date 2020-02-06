@@ -58,17 +58,8 @@ enum MODE	//this application keeps this order
 	USING_NONE
 };
 
-#ifdef HAVE_MSR_CORE_H
-
-unsigned long discover_nominal_frequency()
-{
-	uint64_t MSR_PLATFORM_INFO_bits;
-	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
-};
-
-#elif defined __x86_64
-//#define _GNU_SOURCE
+#ifdef __x86_64	// CPUID instruction reading
+#define STRING_SIZE 256
 enum reg_cpuid
 {
 	eax,
@@ -76,8 +67,6 @@ enum reg_cpuid
 	ecx,
 	edx
 };
- 
-#define STRING_SIZE 256
 
 inline void CPUID(unsigned int *regs)
 {
@@ -91,6 +80,49 @@ inline void CPUID(unsigned int *regs)
 		  "c" (regs[2]),   // in ECX
 		  "d" (regs[3]));  // in EDX
 }
+
+void testHWP(bool &DVFS)
+{
+	bool HWP = false;
+	unsigned int regs[4];
+	unsigned int size_reg = sizeof(unsigned int);
+
+	regs[eax] = 0x6;
+	regs[ebx] = 0x0;
+	regs[ecx] = 0x0;
+	regs[edx] = 0x0;
+	CPUID(regs);
+	
+	if ((regs[eax] & 0x80) >> 7 )
+	{
+		#ifdef HAVE_MSR_CORE_H
+			uint64_t IA32_PM_ENABLE_bits;
+			read_msr_by_idx(0, IA32_PM_ENABLE, &IA32_PM_ENABLE_bits);
+			HWP = IA32_PM_ENABLE_bits & IA32_PM_ENABLE_mask;
+			std::cout << "\tHardware controlled P-State: " << (HWP ? "enabled" : "disabled") << std::endl;
+		//#else
+		//	std::cout << "\tHardware controlled P-State: might be available\n";
+		#endif
+	}
+	else
+		std::cout << "\tHardware controlled P-State: not available\n";
+
+	if (HWP)
+		DVFS = false;
+}
+
+#endif
+
+#ifdef HAVE_MSR_CORE_H
+unsigned long discover_nominal_frequency()
+{
+	uint64_t MSR_PLATFORM_INFO_bits;
+	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
+	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_mask) >> MSR_PLATFORM_INFO_shift) * 100000000;
+};
+
+#elif defined __x86_64
+//#define _GNU_SOURCE
 
 void get_brand_string(char *buff, int buff_size)
 {
@@ -237,17 +269,18 @@ bool sysInfoFrequencies(systemLimits& limits)
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	if (frequencyBounderyFile.is_open())
 	{
+		freqBound = "";
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
-		std::cout << "\tCurrent governor:           " << freqBound << std::endl;
+		std::cout << "\tCurrent scaling governor:   " << freqBound << std::endl;
 		if (freqBound != limits.governor)
 			ok = false;
 	}
 	
-	freqBound = "";
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
 	if (frequencyBounderyFile.is_open())
 	{
+		freqBound = "";
 		getline(frequencyBounderyFile, freqBound);
 		frequencyBounderyFile.close();
 		std::cout << "\tAvailable governors:        " << freqBound << std::endl;
@@ -260,7 +293,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	#endif
 	size_t pos;
 	std::string token;
-	
+
 	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 	{
 		while (DVFS == false && (pos = freqBound.find(' ')) != std::string::npos)
@@ -271,6 +304,10 @@ bool sysInfoFrequencies(systemLimits& limits)
 			freqBound.erase(0, pos+1);
 		}
 	}
+
+	#ifdef __x86_64
+		testHWP(DVFS);
+	#endif
 	
 	if (!DVFS)
 	{
