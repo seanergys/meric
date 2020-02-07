@@ -504,7 +504,7 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG max power limit #0: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+		std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
 	}
 
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_max_power_uw");
@@ -513,7 +513,7 @@ bool sysInfoPowercap(systemLimits& limits)
 		pwrCapInfo = "";
 		pwrCapFile >> pwrCapInfo;
 		pwrCapFile.close();
-		std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+		std::cout << "\tPKG max power limit #2: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
 	}
 
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_max_power_uw");
