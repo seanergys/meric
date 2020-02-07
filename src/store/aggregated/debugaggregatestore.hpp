@@ -23,12 +23,12 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
 
         double avgEnergy = 0,
                maxEnergy = 0,
-               minEnergy = _buffer[0].energy[0],
-               sumEnergy = 0;
+               minEnergy = _buffer[0].energy[0];
+//               sumEnergy = 0;
         double avgEnergyStatsStruct = 0,
                maxEnergyStatsStruct = 0,
-               minEnergyStatsStruct = _buffer[0].energyStatsStructure[0],
-               sumEnergyStatsStruct = 0;
+               minEnergyStatsStruct = _buffer[0].energyStatsStructure[0];
+//               sumEnergyStatsStruct = 0;
         double avgDuration = 0,
                maxDuration = 0,
                minDuration = _buffer[0].mericDuration,
@@ -72,8 +72,8 @@ void DebugAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<si
             avgHdeemDuration += _buffer[i].hdeemDuration;
 
         }
-        sumEnergy = avgEnergy;
-        sumEnergyStatsStruct = avgEnergyStatsStruct;
+//        sumEnergy = avgEnergy;
+//        sumEnergyStatsStruct = avgEnergyStatsStruct;
         sumDuration = avgDuration;
         sumHdeemDuration = avgHdeemDuration;
 

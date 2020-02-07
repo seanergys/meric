@@ -34,7 +34,7 @@ public:
 
 	virtual void start(const std::string &region)
 	{
-		for (int i=0; i<_storeList.size(); i++)
+		for (unsigned int i=0; i<_storeList.size(); i++)
 		{
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addStart(getRegionID(region), currentState.socket[0]); //data storing into file with name according socket#0
@@ -46,7 +46,7 @@ public:
 	{
 		//stop should be in opposite order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
-		for(int i=_storeList.size()-1;i>=0; i--)
+		for(unsigned int i=_storeList.size()-1;i>=0; i--)
 		{
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addEnd(_stack.back());
@@ -113,7 +113,7 @@ public:
 	virtual void save()
 	{
 		MERIC_INFO << "save stored data\n";
-		for(int i=0; i<_storeList.size(); i++)
+		for(unsigned int i=0; i<_storeList.size(); i++)
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		MERIC_INFO << "store data saved\n";
 	}
@@ -207,7 +207,7 @@ protected:
 			//threads
 			if(next.nthreads)
 			{
-				paramChange = paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads-next.nthreads : next.nthreads-prev.socket[socket].nthreads;
+				paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads-next.nthreads : next.nthreads-prev.socket[socket].nthreads;
 				if (paramChange > ignoreSettings.nthreads)
 				{
 					change.socket[socket].nthreads = paramChange;
@@ -216,7 +216,7 @@ protected:
 			}
 			else
 			{
-				paramChange = paramChange = prev.socket[socket].nthreads > defaultParameter.nthreads ? prev.socket[socket].nthreads-defaultParameter.nthreads : defaultParameter.nthreads-prev.socket[socket].nthreads;
+				paramChange = prev.socket[socket].nthreads > defaultParameter.nthreads ? prev.socket[socket].nthreads-defaultParameter.nthreads : defaultParameter.nthreads-prev.socket[socket].nthreads;
 				if (paramChange > ignoreSettings.nthreads)
 				{
 					change.socket[socket].nthreads = paramChange;

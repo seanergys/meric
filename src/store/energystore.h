@@ -8,7 +8,7 @@ namespace meric {
 
 struct EnergyRecord {
 	EnergyRecord(int region, timespec &time, double energy, RegionParameters configuration)
-	: time(time), energy(energy), region(region), configuration(configuration) {};
+	: region(region), time(time), energy(energy), configuration(configuration) {};
 
 	int region;
 	timespec time;

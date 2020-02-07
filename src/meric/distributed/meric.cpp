@@ -23,7 +23,7 @@ DistributedMeric::DistributedMeric()
 	std::vector<char> names;
 	MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-	for (size_t i = 1; i < rCounts.size(); i++)
+	for (unsigned int i = 1; i < rCounts.size(); i++)
 	{
 		rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
 	}
@@ -38,8 +38,7 @@ DistributedMeric::DistributedMeric()
 		auto it = nodes.find(str);
 		if (it == nodes.end())
 		{
-			size_t s = nodes.size();
-			nodes[str] = s;
+			nodes[str] = nodes.size();
 		}
 		colors[i] = nodes[str];
 	}
@@ -283,7 +282,7 @@ DistributedMeric::~DistributedMeric()
 	MPI_Comm_free(&_storingProcs);
 	MPI_Comm_free(&_worldCopy);
 
-	for(int i=0;i<_storeList.size(); i++)
+	for(unsigned int i=0;i<_storeList.size(); i++)
 		delete _storeList[i];
 	_storeList.clear();
 }

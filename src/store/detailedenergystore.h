@@ -8,7 +8,7 @@ namespace meric {
 
 struct DetailedEnergyRecord {
 	DetailedEnergyRecord(int region, std::array<double, HDEEM::PROBE_NUMBER> &energy, timespec &time, RegionParameters configuration)
-	: time(time), energy(energy), region(region), configuration(configuration) {};
+	: region(region), energy(energy), time(time), configuration(configuration) {};
 
 	int region;
 	std::array<double, HDEEM::PROBE_NUMBER> energy;
