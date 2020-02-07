@@ -163,7 +163,7 @@ protected:
 		
 		auto cmpSettings = [&] (SocketsRegionParameters & prev, RegionParameters & next, int socket)
 		{
-			long paramChange;
+			long paramChange = 0;
 			//core frequency
 			if (next.frequency)
 			{

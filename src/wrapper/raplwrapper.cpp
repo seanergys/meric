@@ -101,7 +101,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 	
 	if (detailedMode)
 	{
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<(int)NODE_SIZE_SOCKET; die++)
 		{
 			uint64_t dieEnergy = 0;
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -136,7 +136,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		}
 	}else
 	{
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<(int)NODE_SIZE_SOCKET; die++)
 		{
 			uint64_t dieEnergy = 0;
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -167,7 +167,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 
 	if (detailedMode)
 	{
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<(int)NODE_SIZE_SOCKET; die++)
 		{
 			uint64_t dieEnergy = 0;
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -185,7 +185,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		}
 	}else
 	{
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<(int)NODE_SIZE_SOCKET; die++)
 		{
 			uint64_t dieEnergy = 0;
 
@@ -251,7 +251,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 
 	if (detailedMode)
 	{
-		for(int die = 0; die != NODE_SIZE_SOCKET; die++)
+		for(int die = 0; die != (int)NODE_SIZE_SOCKET; die++)
 		{
 			for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
 			{

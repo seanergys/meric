@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <limits.h>
+#include <iostream>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -69,7 +70,8 @@ struct mutils {
 		{
 			std::stringstream ss;
 			ss << "mkdir -p " + dir;
-			int status = std::system(ss.str().c_str());
+			if (std::system(ss.str().c_str()))
+				std::cerr << "MERIC ERROR: directory '"<<dir<<"' cannot be created\n";
 		}
 	}
 };

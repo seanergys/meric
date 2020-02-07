@@ -11,9 +11,9 @@ struct TimeEnergyRecord {
 	TimeEnergyRecord(int region, timespec &clockTime, std::array<double, HDEEM::PROBE_NUMBER> &energy, RegionParameters configuration)
 	: region(region), clockTime(clockTime), energy(energy), configuration(configuration) {};
 
+	int region;
 	timespec clockTime;
     std::array<double, HDEEM::PROBE_NUMBER> energy;
-	int region;
 	RegionParameters configuration;
 };
 

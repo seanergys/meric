@@ -145,7 +145,6 @@ void Environment::getSystemDefaultSettings()
 	bool readFromSystem = false;
 	//read a file that holds the system's default settings
 	//we have created this file during a previous MERIC run
-	struct json_value_s* root = NULL;
 	if(stat(defaultSettingFile.c_str(), &info) == 0)
 	{
 		std::ifstream jsonFile (defaultSettingFile);
@@ -538,7 +537,9 @@ void Environment::frequency(uint64_t freq, int socket)
 
 	MERIC_INFO << "MERIC set frequency to: " << freq;
 	if (socket != -1)
+	{
 		MERIC_INFO << "; socket: " << socket;
+	}
 	MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1;
 	
 #ifdef HAVE_MSR_CORE_H
@@ -622,7 +623,9 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq;
 	if (maxFreq != minFreq)
+	{
 		MERIC_INFO << " - " << minFreq;
+	}
 	int max = NODE_SIZE_SOCKET;
 	int die=0;
 	if (socket != -1 && socket < max)
@@ -716,7 +719,9 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	return;
 #endif
 	if (timeWindow != 0)
+	{
 		MERIC_INFO << " for " << timeWindow << " ms";
+	}
 	usedPWRCAP = true;
 	int max = NODE_SIZE_SOCKET;
 	int die=0;

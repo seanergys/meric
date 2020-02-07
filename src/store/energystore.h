@@ -10,9 +10,9 @@ struct EnergyRecord {
 	EnergyRecord(int region, timespec &time, double energy, RegionParameters configuration)
 	: time(time), energy(energy), region(region), configuration(configuration) {};
 
-	double energy;
-	timespec time;
 	int region;
+	timespec time;
+	double energy;
 	RegionParameters configuration;
 };
 

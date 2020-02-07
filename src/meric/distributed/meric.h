@@ -29,7 +29,9 @@ public:
 		#pragma omp single nowait
 		{
 			if (_storeList[0]->getMPIWrite())
+			{
 				MERIC_INFO << "region '" << region << "' starting\n";
+			}
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -59,7 +61,9 @@ public:
 		#pragma omp single nowait
 		{
 			if (_storeList[0]->getMPIWrite())
+			{
 				MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
+			}
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
@@ -178,7 +182,7 @@ public:
 			}
 		}
 
-		for(int i=0; i<_storeList.size(); i++)
+		for(unsigned int i=0; i<_storeList.size(); i++)
 		{
 			if (!_MPInodeRank)
 			{

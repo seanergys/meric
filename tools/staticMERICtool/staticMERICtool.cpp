@@ -108,7 +108,9 @@ void printHelp()
 
 int main(int argc, char **argv)
 {
+#ifdef STOP
 	bool verbose = true;
+#endif
 	char hostname[HOST_NAME_MAX];
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{

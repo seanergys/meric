@@ -184,8 +184,8 @@ protected:
 	int _jobID;
 	int _stepID;
 	std::string _nodelist;
-	bool MPIProcessWrite;
 	bool printSamples;
+	bool MPIProcessWrite;
 };
 
 class Store: public StoreBase {
