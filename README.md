@@ -340,7 +340,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
 
 * `export MERIC_COUNTERS=papi` or `perfevent` or `msr`
-	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr-safe.
+	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr (for MPI currently available in non-aggregated version only).
 	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
 	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
 	
