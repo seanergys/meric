@@ -32,7 +32,7 @@ DistributedMeric::DistributedMeric()
 	MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
 
 	std::map<std::string, size_t> nodes;
-	for (size_t i = 0; i < _MPIglobalSize; i++)
+	for (unsigned int i = 0; i < _MPIglobalSize; i++)
 	{
 		std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
 		auto it = nodes.find(str);

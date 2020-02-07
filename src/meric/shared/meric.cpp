@@ -64,7 +64,7 @@ SharedMeric::SharedMeric()
 	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
 		_storeList.insert(_storeList.begin(), new InfoStore());
 	
-	for (int i=0; i<_storeList.size(); i++)
+	for (unsigned int i=0; i<_storeList.size(); i++)
 		_storeList[i]->setMPIWrite(true);
 
 	if (Meric::MODE == MODE_JETSON)
@@ -78,7 +78,7 @@ SharedMeric::SharedMeric()
 //		Environment::init(SYS_HASWELL, defaultParameter, 0); //this default settings must persist due to many nodes with min uncore frequency limit set to maximum - now it is fixed
 
 	
-	for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+	for (unsigned int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
 		currentState.socket[socket] = defaultParameter;
 
 
@@ -125,7 +125,7 @@ SharedMeric::~SharedMeric()
 		DAVIDE::close();
 	}
 	
-	for(int i=0;i<_storeList.size(); i++)
+	for(unsigned int i=0;i<_storeList.size(); i++)
 		delete _storeList[i];
 }
 

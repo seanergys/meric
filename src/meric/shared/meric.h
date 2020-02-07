@@ -157,7 +157,7 @@ public:
 			exit(-1);
 		}
 		
-		for(int i=0; i<_storeList.size(); i++)
+		for(unsigned int i=0; i<_storeList.size(); i++)
 		{
 			_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFilenameInfo);
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
