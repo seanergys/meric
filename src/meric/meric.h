@@ -46,7 +46,7 @@ public:
 	{
 		//stop should be in opposite order as start
 		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
-		for(unsigned int i=_storeList.size()-1;i>=0; i--)
+		for(int i=-1+_storeList.size();i>=0; i--)
 		{
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addEnd(_stack.back());

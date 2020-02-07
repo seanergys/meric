@@ -282,7 +282,7 @@ DistributedMeric::~DistributedMeric()
 	MPI_Comm_free(&_storingProcs);
 	MPI_Comm_free(&_worldCopy);
 
-	for(unsigned int i=0;i<_storeList.size(); i++)
+	for(unsigned int i=0; i<_storeList.size(); i++)
 		delete _storeList[i];
 	_storeList.clear();
 }

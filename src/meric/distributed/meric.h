@@ -28,7 +28,7 @@ public:
 		}
 		#pragma omp single nowait
 		{
-			if (_storeList[0]->getMPIWrite())
+			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
 				MERIC_INFO << "region '" << region << "' starting\n";
 			}
@@ -60,7 +60,7 @@ public:
 		}
 		#pragma omp single nowait
 		{
-			if (_storeList[0]->getMPIWrite())
+			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
 				MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopping\n";
 			}
