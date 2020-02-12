@@ -99,11 +99,85 @@ const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
  * either IA32_PERF_CTL or IA32_PERF_STATUS and should treat both as reserved. 
  * Performance monitoring tools can access model-specific events and report the 
  * occurrences of state transitions.
+ * 0x199 0x000000010000FFFF
  * Target performance State Value (bits 15:0)
  * Reserved (bits 31:16)
  * IDA Engage (R/W) (bit 32):
  	When set to 1: disengages IDA.
  * Reserved (bits 63:33)
+ *
+ * MSR_TURBO_RATIO_LIMIT register *********************************************
+ * Before the SKL architecture:
+ * Maximum Ratio Limit of Turbo Mode
+ *  - RO if MSR_PLATFORM_INFO.[28] = 0,
+ *  - RW if MSR_PLATFORM_INFO.[28] = 1
+ * 0xAD 0xFFFFFFFFFFFFFFFF
+ * Maximum Ratio Limit for 1C (bits 7:0):
+ 	Maximum turbo ratio limit of 1 core active.
+ * Every following 8 bits correspondes to another acrtive core. If the number of 
+ * cores is higher than 8, the specification continues to following registers:
+ * - MSR_TURBO_RATIO_LIMIT1 (0x1AE)
+ * - MSR_TURBO_RATIO_LIMIT2 (0x1AF)
+ * - MSR_TURBO_RATIO_LIMIT3 (0x1AC)
+ * Some architectures has also:
+ * Semaphore for Turbo Ratio Limit Configuration (bit 63):
+ 	If 1, the processor uses override configuration (An override configuration 
+ 	lower than the factory-set configuration is always supported. An override 
+ 	configuration higher than the factory-set configuration is dependent on 
+ 	features specific to the processor and the platform.) specified in 
+ 	MSR_TURBO_RATIO_LIMIT*. 
+ 	If 0, the processor uses factory-set configuration (Default).
+ * 
+ * From the SKL architecture:
+ * This register defines the ratio limits. RATIO[0:7] must be populated in 
+ * ascending order. RATIO[i+1] must be less than or equal to RATIO[i]. Entries 
+ * with RATIO[i] will be ignored. If any of the rules above are broken, the 
+ * configuration is silently rejected. If the programmed ratio is:
+ *	- Above the fused ratio for that core count, it will be clipped to the fuse 
+ * limits (assuming !OC).
+ *  - Below the min supported ratio, it will be clipped.
+ * 0xAD 0xFFFFFFFFFFFFFFFF
+ * RATIO_0 (bits 7:0):
+ 	Defines ratio limits.
+ * RATIO_1 (bits 15:8):
+ 	Defines ratio limits.
+ * RATIO_2 (bits 23:16):
+ 	Defines ratio limits.
+ * RATIO_3 (bits 31:24):
+ 	Defines ratio limits.
+ * RATIO_4 (bits 39:32):
+ 	Defines ratio limits.
+ * RATIO_5 (bits 47:40):
+ 	Defines ratio limits.
+ * RATIO_6 (bits 55:41):
+ 	Defines ratio limits.
+ * RATIO_7 (bits 63:56):
+ 	Defines ratio limits.
+ * 
+ * MSR_TURBO_RATIO_LIMIT_CORES register ***************************************
+ * From the SKL architecture - replaces MSR_TURBO_RATIO_LIMIT1+ registers
+ * This register defines the active core ranges for each frequency point. 
+ * NUMCORE[0:7] must be populated in ascending order. NUMCORE[i+1] must be 
+ * greater than NUMCORE[i]. Entries with NUMCORE[i] == 0 will be ignored. The 
+ * last valid entry must have NUMCORE >=the number of cores in the SKU. If any 
+ * of the rules above are broken, the configuration is silently rejected.
+ * 0x1AE 0xFFFFFFFFFFFFFFFF
+ * NUMCORE_0 (bits 7:0):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_1 (bits 15:8):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_2 (bits 23:16):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_3 (bits 31:24):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_4 (bits 39:32):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_5 (bits 47:40):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_6 (bits 55:41):
+ 	Defines the active core ranges for each frequency point.
+ * NUMCORE_7 (bits 63:56):
+ 	Defines the active core ranges for each frequency point.
  *
  * IA32_MPERF register ********************************************************
  * TSC Frequency Clock Counter (R/Write to clear)
@@ -137,6 +211,16 @@ const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
 	#define IA32_PERF_CTL       	0x199
 #endif
 const uint64_t IA32_PERF_CTL_shift = 8;
+
+#ifndef MSR_TURBO_RATIO_LIMIT
+	#define MSR_TURBO_RATIO_LIMIT	0x1AD
+#endif
+const uint64_t MSR_TURBO_RATIO_LIMIT_shift = 8;
+const uint64_t MSR_TURBO_RATIO_LIMIT_mask = 0xFF;
+
+#ifndef MSR_TURBO_RATIO_LIMIT_CORES
+	#define MSR_TURBO_RATIO_LIMIT_CORES 0x1AE
+#endif
 
 #ifndef IA32_MPERF
 	#define IA32_MPERF				0xE7
@@ -724,6 +808,8 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 	// not yet supportd by MERIC
 //	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF }
 //	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF }
+	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
+	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
 	{ IA32_PM_ENABLE,              0x0000000000000001 }
 };
 

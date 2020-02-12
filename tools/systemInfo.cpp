@@ -262,6 +262,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 {
 	bool DVFS = false;
 	bool ok = true;
+// CORE FREQUENCY
 	std::cout << "\n# CPU FREQUENCIES\n";
 	std::ifstream frequencyBounderyFile;
 	std::string freqBound = "";
@@ -392,6 +393,77 @@ bool sysInfoFrequencies(systemLimits& limits)
 	if (nominalFreq != 0)
 		std::cout << "\tNominal CPU core frequency: " << nominalFreq << " Hz\n";
 
+	freq = -1;
+	if (scalingDriver == "acpi-cpufreq")
+	{
+		frequencyBounderyFile.open("/sys/devices/system/cpu/cpufreq/boost");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			freq = std::stoi(freqBound);
+		}
+	}
+	else if (scalingDriver == "intel_pstate")
+	{
+		frequencyBounderyFile.open("/sys/devices/system/cpu/intel_pstate/no_turbo");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			freq = std::stoi(freqBound) == 0 ? 1 : 0;
+		}
+	}
+	if (freq == 0)
+	{
+		std::cout << "\tTurbo CPU core frequencies: disabled\n";
+	}
+	else if (freq == 1)
+	{
+		std::cout << "\tTurbo CPU core frequencies: ";
+#ifdef HAVE_MSR_CORE_H
+		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
+		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
+
+		uint64_t MSR_TURBO_RATIO_LIMIT_CORES_bits = 0x0;
+		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT_CORES, &MSR_TURBO_RATIO_LIMIT_CORES_bits);
+		
+		std::vector <int> turboRatio;
+		std::vector <int> turboCoresRange;
+		for (int i=0; i<64; i+=MSR_TURBO_RATIO_LIMIT_shift)
+		{
+			turboRatio.push_back(MSR_TURBO_RATIO_LIMIT_CORES_bits && MSR_TURBO_RATIO_LIMIT_mask);
+			MSR_TURBO_RATIO_LIMIT_CORES_bits = MSR_TURBO_RATIO_LIMIT_CORES_bits << MSR_TURBO_RATIO_LIMIT_shift;
+		}
+
+		if (turboRatio[0] < turboRatio[1]) //the register is MSR_TURBO_RATIO_LIMIT_CORES
+		{
+			turboCoresRange = turboRatio;
+			turboRatio.clear();
+		}
+		else //the register is MSR_TURBO_RATIO_LIMIT1
+		{
+			turboCoresRange = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+		}
+		
+		std::vector<int>::iterator it = turboRatio.begin();
+		for (int i=0; i<64; i+=MSR_TURBO_RATIO_LIMIT_shift)
+		{
+			turboRatio.insert(it++;MSR_TURBO_RATIO_LIMIT_bits && MSR_TURBO_RATIO_LIMIT_mask)
+			MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits << MSR_TURBO_RATIO_LIMIT_shift;
+		}
+		int i = 0;
+		while (i < turboRatio.size() && turboRatio[i] != 0)
+		{
+			std::cout << turboRatio[i] << "(" << turboCoresRange[i]<<") ";
+		}
+		std::cout << std::endl;
+#else
+		std::cout << "enabled\n";
+#endif		
+	}
+
+// IA32_ENERGY_PERF_BIAS
 #ifdef HAVE_MSR_CORE_H
 	if (ok)
 	{
@@ -402,6 +474,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	}
 #endif
 
+// UNCORE FREQUENCY
 #ifdef HAVE_MSR_CORE_H
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
