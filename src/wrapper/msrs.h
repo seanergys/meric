@@ -111,7 +111,7 @@ const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
  * Maximum Ratio Limit of Turbo Mode
  *  - RO if MSR_PLATFORM_INFO.[28] = 0,
  *  - RW if MSR_PLATFORM_INFO.[28] = 1
- * 0xAD 0xFFFFFFFFFFFFFFFF
+ * 0x1AD 0xFFFFFFFFFFFFFFFF
  * Maximum Ratio Limit for 1C (bits 7:0):
  	Maximum turbo ratio limit of 1 core active.
  * Every following 8 bits correspondes to another acrtive core. If the number of 
