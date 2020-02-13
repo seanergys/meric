@@ -421,8 +421,10 @@ bool sysInfoFrequencies(systemLimits& limits)
 			turboRatio.insert(it++, MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask);
 			MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits >> MSR_TURBO_RATIO_LIMIT_shift;
 		}
+	    uint64_t cores = 0;
+		core_config(&cores, NULL, NULL, NULL);
 		int i = 0;
-		while (i < turboRatio.size() && turboRatio[i] != 0)
+		while (i < turboRatio.size() && turboRatio[i] != 0 && turboCoresRange[i] <= cores)
 		{
 			std::cout << turboRatio[i]*100000 << "(" << turboCoresRange[i]<<") ";
 			i++;
