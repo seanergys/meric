@@ -86,7 +86,7 @@ namespace X86ADAPT_RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "Intel_RAPL_Pckg_Energy";
 const std::string RAPL_RAM_ENERGY  = "Intel_RAPL_RAM_Energy";
-const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
+const std::string RAPL_SUM_ENERGY  = "Energy consumption [mJ]";	//PCKG+RAM = not a counter to measure
 /*
 const std::string RAPL_PP0_ENERGY  = "Intel_RAPL_PP0_Energy";	//Haswell-EP doesn't support
 const std::string RAPL_DRAM_CH0    = "Intel_DRAM_ENERGY_STATUS_CH0";
@@ -102,13 +102,13 @@ const std::string RAPL_RAM_POWER_LIMIT  = "Intel_RAPL_RAM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "Intel_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
-	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [mJ]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [mJ]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [mJ]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [mJ]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [mJ]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [mJ]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [mJ]" }
 };
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ namespace MSR_RAPL_COUNTERS {
 const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
 const std::string RAPL_RAM_ENERGY  = "MSR_DRAM_ENERGY_STATUS";
 // const std::string RAPL_PLATFORM_ENERGY = "MSR_PLATFORM_ENERGY_COUNTER";
-const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
+const std::string RAPL_SUM_ENERGY  = "Energy consumption [mJ]";	//PCKG+RAM = not a counter to measure
 /*
 const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //not available
 const std::string RAPL_PP1_ENERGY  = "MSR_PP1_ENERGY_STATUS";
@@ -130,13 +130,13 @@ const std::string RAPL_RAM_POWER_LIMIT  = "MSR_DRAM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
-	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [mJ]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [mJ]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [mJ]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [mJ]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [mJ]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [mJ]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [mJ]" }
 };
 
 #ifdef SRC_WRAPPER_MSRS_H_
@@ -158,7 +158,7 @@ namespace GEOPM_RAPL_COUNTERS {
 const std::string RAPL_PCKG_ENERGY = "MSR::PKG_ENERGY_STATUS#";
 const std::string RAPL_RAM_ENERGY  = "MSR::DRAM_ENERGY_STATUS#";
 // const std::string RAPL_PLATFORM_ENERGY = "MSR::PLATFORM_ENERGY_COUNTER#";
-const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
+const std::string RAPL_SUM_ENERGY  = "Energy consumption [mJ]";	//PCKG+RAM = not a counter to measure
 
 
 const std::string RAPL_PCKG_POWER_LIMIT = "MSR::PKG_POWER_LIMIT#";
@@ -168,13 +168,13 @@ const std::string RAPL_RAM_POWER_LIMIT  = "MSR::DRAM_POWER_LIMIT:POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
-	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [mJ]"          },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [mJ]"           },
+	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [mJ]"        },
+	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [mJ]"        },
+	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [mJ]"         },
+	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [mJ]"         },
+	{ RAPL_SUM_ENERGY,       "Energy consumption [mJ]" }
 };
 }
 
