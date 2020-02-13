@@ -3,6 +3,7 @@
  **/
 #include <math.h>
 #include <map>
+#include <vector>
 #include <string.h>
 #include <sys/stat.h>
 #include <thread>
@@ -365,7 +366,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMax CPU core frequency:     " << freq << " Hz\n";
+		std::cout << "\tMax CPU core frequency:     " << freq/1000 << " kHz\n";
 		if (freq != limits.maxCoreFreq)
 			ok = false;
 	}
@@ -376,7 +377,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMin CPU core frequency:     " << freq << " Hz\n";
+		std::cout << "\tMin CPU core frequency:     " << freq/1000 << " kHz\n";
 		if (freq != limits.minCoreFreq)
 			ok = false;
 	}
@@ -391,7 +392,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	
 	unsigned long nominalFreq = discover_nominal_frequency();
 	if (nominalFreq != 0)
-		std::cout << "\tNominal CPU core frequency: " << nominalFreq << " Hz\n";
+		std::cout << "\tNominal CPU core frequency: " << nominalFreq/1000 << " kHz\n";
 
 	freq = -1;
 	if (scalingDriver == "acpi-cpufreq")
@@ -424,16 +425,19 @@ bool sysInfoFrequencies(systemLimits& limits)
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
-
 		uint64_t MSR_TURBO_RATIO_LIMIT_CORES_bits = 0x0;
 		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT_CORES, &MSR_TURBO_RATIO_LIMIT_CORES_bits);
 		
 		std::vector <int> turboRatio;
+		turboRatio.reserve(16);
 		std::vector <int> turboCoresRange;
-		for (int i=0; i<64; i+=MSR_TURBO_RATIO_LIMIT_shift)
+		turboCoresRange.reserve(16);
+		std::vector<int>::iterator it = turboRatio.begin();
+
+		for (int i=0; i<64/MSR_TURBO_RATIO_LIMIT_shift; i++)
 		{
-			turboRatio.push_back(MSR_TURBO_RATIO_LIMIT_CORES_bits && MSR_TURBO_RATIO_LIMIT_mask);
-			MSR_TURBO_RATIO_LIMIT_CORES_bits = MSR_TURBO_RATIO_LIMIT_CORES_bits << MSR_TURBO_RATIO_LIMIT_shift;
+			turboRatio.push_back(MSR_TURBO_RATIO_LIMIT_CORES_bits & MSR_TURBO_RATIO_LIMIT_mask);
+			MSR_TURBO_RATIO_LIMIT_CORES_bits = MSR_TURBO_RATIO_LIMIT_CORES_bits >> MSR_TURBO_RATIO_LIMIT_shift;
 		}
 
 		if (turboRatio[0] < turboRatio[1]) //the register is MSR_TURBO_RATIO_LIMIT_CORES
@@ -445,19 +449,20 @@ bool sysInfoFrequencies(systemLimits& limits)
 		{
 			turboCoresRange = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 		}
-		
-		std::vector<int>::iterator it = turboRatio.begin();
-		for (int i=0; i<64; i+=MSR_TURBO_RATIO_LIMIT_shift)
+
+		it = turboRatio.begin();
+		for (int i=0; i<64/MSR_TURBO_RATIO_LIMIT_shift; i++)
 		{
-			turboRatio.insert(it++;MSR_TURBO_RATIO_LIMIT_bits && MSR_TURBO_RATIO_LIMIT_mask)
-			MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits << MSR_TURBO_RATIO_LIMIT_shift;
+			turboRatio.insert(it++, MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask);
+			MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits >> MSR_TURBO_RATIO_LIMIT_shift;
 		}
 		int i = 0;
 		while (i < turboRatio.size() && turboRatio[i] != 0)
 		{
-			std::cout << turboRatio[i] << "(" << turboCoresRange[i]<<") ";
+			std::cout << turboRatio[i]*100000 << "(" << turboCoresRange[i]<<") ";
+			i++;
 		}
-		std::cout << std::endl;
+		std::cout << "kHz(#cores)\n";
 #else
 		std::cout << "enabled\n";
 #endif		
@@ -479,11 +484,11 @@ bool sysInfoFrequencies(systemLimits& limits)
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_X86_ADAPT_H
@@ -492,7 +497,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	uint64_t setting = 0;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	freq = setting * 100000000;
-	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 		
@@ -501,17 +506,17 @@ bool sysInfoFrequencies(systemLimits& limits)
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 	freq = setting * 100000000;
-	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_GEOPM_H
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-	std::cout << "\tMax CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
-	std::cout << "\tMin CPU uncore frequency:   " << freq << " Hz\n";
+	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;	
 #elif defined __x86_64 //intel CPUs only
