@@ -358,43 +358,8 @@ bool sysInfoFrequencies(systemLimits& limits)
 		std::cout << std::endl;
 	}
 	
-	long freq = 0;
+	long freq = -1;
 	//files have the CPU core frequency in KHz
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-	if (frequencyBounderyFile.is_open())
-	{
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMax CPU core frequency:     " << freq/1000 << " kHz\n";
-		if (freq != limits.maxCoreFreq)
-			ok = false;
-	}
-	
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-	if (frequencyBounderyFile.is_open())
-	{
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMin CPU core frequency:     " << freq/1000 << " kHz\n";
-		if (freq != limits.minCoreFreq)
-			ok = false;
-	}
-	
-	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
-	if (frequencyBounderyFile.is_open())
-	{
-		getline(frequencyBounderyFile, freqBound);
-		frequencyBounderyFile.close();
-		std::cout << "\tAvailable CPU core frequencies: " << freqBound << " kHz\n";
-	}
-	
-	unsigned long nominalFreq = discover_nominal_frequency();
-	if (nominalFreq != 0)
-		std::cout << "\tNominal CPU core frequency: " << nominalFreq/1000 << " kHz\n";
-
-	freq = -1;
 	if (scalingDriver == "acpi-cpufreq")
 	{
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpufreq/boost");
@@ -466,6 +431,42 @@ bool sysInfoFrequencies(systemLimits& limits)
 #else
 		std::cout << "enabled\n";
 #endif		
+	}
+
+#ifndef HAVE_MSR_CORE_H
+	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound) * 1000;
+		std::cout << "\tMax CPU core frequency:     " << freq/1000 << " kHz\n";
+		if (freq != limits.maxCoreFreq)
+			ok = false;
+	}
+#endif
+	
+	unsigned long nominalFreq = discover_nominal_frequency();
+	if (nominalFreq != 0)
+		std::cout << "\tNominal CPU core frequency: " << nominalFreq/1000 << " kHz\n";
+
+	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound) * 1000;
+		std::cout << "\tMin CPU core frequency:     " << freq/1000 << " kHz\n";
+		if (freq != limits.minCoreFreq)
+			ok = false;
+	}
+	
+	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
+	if (frequencyBounderyFile.is_open())
+	{
+		getline(frequencyBounderyFile, freqBound);
+		frequencyBounderyFile.close();
+		std::cout << "\tAvailable CPU core frequencies: " << freqBound << " kHz\n";
 	}
 
 // IA32_ENERGY_PERF_BIAS
