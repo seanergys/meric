@@ -66,10 +66,6 @@ gcc:
 fortran:
 	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
-arm:
-	./waf configure --withgcc --cpp=g++ --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --dummy
-	make install
-
 love:
 	./waf distclean
 
