@@ -38,7 +38,19 @@
 namespace meric {
 
 enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_TIME, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
-enum system {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
+enum SYSTEM_TYPE {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
+
+enum DVFS_WAY {NO_DVFS = 0, USRSPACE_FILE, USRSPACE_LIB, INT_PSTATE};
+
+#ifdef __x86_64	// CPUID instruction reading
+enum reg_cpuid
+{
+	eax,
+	ebx,
+	ecx,
+	edx
+};
+#endif
 
 struct RegionParameters { //must be able to carry -1
 	long frequency;       //Hz
@@ -53,6 +65,7 @@ struct RegionParameters { //must be able to carry -1
 
 
 struct systemLimits{
+	long maxTurboFreq;           //Hz
 	long maxCoreFreq;            //Hz
 	long defaultCoreFreq;        //Hz
 	long minCoreFreq;            //Hz
@@ -82,31 +95,57 @@ public:
 	static int NODE_SIZE_SOCKET;
 	static int SOCKET_SIZE_CPU;
 
-	static int systemType;
+	static SYSTEM_TYPE systemType;
 
 	static void frequency(uint64_t freq, int socket = -1);
 	static void uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket = -1);	
 	static void threadNumber(int nthreads);
 	static void powercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
-	static void init(int system, RegionParameters defaultParameter, int rank);
+	static void init(SYSTEM_TYPE system, RegionParameters defaultParameter, int rank);
 	static void restoreSystemSettings(bool hardReset = false);
 	static void close();
 	static systemLimits getSystemSettings() { return defaultSettings[systemType]; };
+	static bool readRestoreFile();
+	static long getNominalFrequency();
+	static long getMaximumTurboFrequency();
+	static std::string getScalingDriver();
+	static DVFS_WAY isDVFSpossible();
+	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
+	
+#ifdef __x86_64
+	static bool isHWPactive(std::string &status);
+#endif
 
 private:
 	static void initHWSizes();
-	static void getSystemDefaultSettings();
+	static void readSystemDefaultSettings();
 	static void storeSystemDefaultSettings();
+#ifdef __x86_64
+	static void getBrandString(char *buff, int buff_size);
+	static inline void CPUID(unsigned int *regs)
+	{
+		asm volatile("cpuid"
+			: "=a" (regs[0]), // out EAX
+			  "=b" (regs[1]), // out EBX
+			  "=c" (regs[2]), // out ECX
+			  "=d" (regs[3])  // out EDX
+			: "a" (regs[0]),   // in EAX
+			  "b" (regs[1]),   // in EBX
+			  "c" (regs[2]),   // in ECX
+			  "d" (regs[3]));  // in EDX
+	};
+#endif
 
 	static systemLimits defaultSettings [5];
 	static bool usedDVFS;
 	static bool usedUFS;
 	static bool usedPWRCAP;
-	static bool activatedDVFS;
+	static DVFS_WAY activatedDVFS;
 	static bool activatedUFS;
 	static bool activatedPWRCAP;
 	
-	static std::string defaultGovernor;
+	static std::string scalingDriver;
+	static std::string scalingGovernor;
 };
 
 

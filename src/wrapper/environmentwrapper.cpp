@@ -12,66 +12,346 @@ using namespace meric;
 //	4023000 3757000 3491000 3225000 2959000 2693000 2427000 2161000 2061000
 
 systemLimits Environment::defaultSettings [] = {
-	[SYS_HASWELL] = { 3300000000, 2500000000, 1200000000, //DVFS
+	[SYS_HASWELL] = { 3300000000, 3300000000, 2500000000, 1200000000, //DVFS
 	                  3000000000, 3000000000, 1200000000, //UFS 
 	                         290,         66,      45898, 13239288264131720, //PKG powercap
 	                          44,          4,      45898, 13230870095724886,//RAM powercap
 	                         0x0},
-	[SYS_JETSON]  = { 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0},
-	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //system tuning not supported
-	[SYS_DAVIDE]  = { 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //UFS+powercap not supported
-	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
+	[SYS_JETSON]  = { -1, 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0},
+	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //system tuning not supported
+	[SYS_DAVIDE]  = { -1, 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //UFS+powercap not supported
+	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
 };
 
 int Environment::NODE_SIZE_THREAD = 1;
 int Environment::NODE_SIZE_CPU = 0;
 int Environment::NODE_SIZE_SOCKET = 0;
 int Environment::SOCKET_SIZE_CPU = 0;
-int Environment::systemType = SYS_OTHER;
+SYSTEM_TYPE Environment::systemType = SYS_OTHER;
 
-std::string Environment::defaultGovernor = "";
+std::string Environment::scalingGovernor = "";
+std::string Environment::scalingDriver = "";
 
 bool Environment::usedDVFS = false;
 bool Environment::usedUFS = false;
 bool Environment::usedPWRCAP = false;
-bool Environment::activatedDVFS = false;
+DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
 
 
 /**
- * change number of active threads
+ * returns nominal CPU core frequency in Hz
+ * if libmsr available uses MSR_PLATFORM_INFO register
+ * else if it is x86 architecture uses CPUID instruction
+ * else if acpi-cpufreq scaling driver is used returns value from the system file
+ * else returns 0
  **/
-void Environment::threadNumber(int nthreads)
+#ifdef HAVE_MSR_CORE_H
+long Environment::getNominalFrequency()
 {
-	timespec start_time, stop_time;
-	clock_gettime(CLOCK_REALTIME, &start_time);
+	uint64_t MSR_PLATFORM_INFO_bits;
+	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
+	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
+};
 
-	if (nthreads <= 0)
-		return;
-#ifdef HAVE_OMP_H
-	if (nthreads != omp_get_num_threads())
+#elif defined __x86_64
+void Environment::getBrandString(char *buff, int buff_size)
+{
+	unsigned int regs[4];
+	unsigned int size_reg = sizeof(unsigned int);
+	memset(buff, 0x0, sizeof(char) * buff_size);
+
+	regs[eax] = 0x80000000;
+	regs[ebx] = 0x0;
+	regs[ecx] = 0x0;
+	regs[edx] = 0x0;
+	CPUID(regs);
+
+	if(regs[eax] > 0x80000000)
 	{
-		if (!omp_in_parallel())
+		regs[eax] = 0x80000002;
+		regs[ebx] = 0x0;
+		regs[ecx] = 0x0;
+		regs[edx] = 0x0;
+		CPUID(regs);
+		memcpy(buff, &regs[eax], size_reg);
+		memcpy(buff+(size_reg*1), &regs[ebx], size_reg);
+		memcpy(buff+(size_reg*2), &regs[ecx], size_reg);
+		memcpy(buff+(size_reg*3), &regs[edx], size_reg);
+
+		regs[eax] = 0x80000003;
+		regs[ebx] = 0x0;
+		regs[ecx] = 0x0;
+		regs[edx] = 0x0;
+		CPUID(regs);
+		memcpy(buff+(size_reg*4), &regs[eax], size_reg);
+		memcpy(buff+(size_reg*5), &regs[ebx], size_reg);
+		memcpy(buff+(size_reg*6), &regs[ecx], size_reg);
+		memcpy(buff+(size_reg*7), &regs[edx], size_reg);
+
+		regs[eax] = 0x80000004;
+		regs[ebx] = 0x0;
+		regs[ecx] = 0x0;
+		regs[edx] = 0x0;
+		CPUID(regs);
+		memcpy(buff+(size_reg*8), &regs[eax], size_reg);
+		memcpy(buff+(size_reg*9), &regs[ebx], size_reg);
+		memcpy(buff+(size_reg*10), &regs[ecx], size_reg);
+		memcpy(buff+(size_reg*11), &regs[edx], size_reg);
+	}
+}
+
+long Environment::getNominalFrequency()
+{
+	const int STRING_SIZE=256;
+	unsigned long f;
+	char cpu_model[STRING_SIZE];
+	const char s1[2] = "@";
+	const char s2[4] = "GHz";
+	char *token1;
+	char *token2;
+
+	getBrandString(cpu_model, STRING_SIZE);
+
+	token1 = strtok(cpu_model, s1);
+	token1 = strtok(NULL, s1);
+	token2 = strtok(token1, s2);
+
+	return f = (long) (atof(token2) * 1E9);
+}
+#else
+long Environment::getNominalFrequency()
+{
+	long frequency = 0;
+	std::ifstream frequencyBounderyFile;
+	std::string freqBound = "";
+
+	if (getScalingDriver() == "acpi-cpufreq")
+	{
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		if (frequencyBounderyFile.is_open())
 		{
-			MERIC_INFO << "OPENMP set num threads to: " << nthreads << std::endl;
-			omp_set_num_threads(nthreads);
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			frequency = (std::stol(freqBound)-1000) * 1000;
 		}
-		else
+	}
+	return frequency;
+}
+#endif
+
+/**
+ * returns maximum available non-AVX turbo CPU core frequency in Hz
+ * when the information is not available, returns 0
+ * note: AVX, AVX2 and AVX512 frequency limits register not available/documented
+ **/
+long Environment::getMaximumTurboFrequency()
+{
+	long frequency = -1;
+#ifdef HAVE_MSR_CORE_H
+	uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
+	read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
+	MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask;
+	frequency = (MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask) * 100000000;
+#else
+	if (getScalingDriver() == "intel-pstate")
+	{
+		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		if (frequencyBounderyFile.is_open())
 		{
-			MERIC_INFO << "MERIC WARNING: parallel region, num threads did not change to: " << nthreads << std::endl;
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			frequency = std::stol(freqBound) * 1000;
 		}
 	}
 #endif
-/*
-#ifdef HAVE_CILK_CILK_API_H
-	//using cilk
-	__cilkrts_end_cilk();  
-	__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
+	return frequency;
+}
+
+/**
+ * returns current scaling driver
+ **/
+std::string Environment::getScalingDriver()
+{
+	if (scalingDriver == "")
+	{
+		std::ifstream frequencyBounderyFile;
+		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> scalingDriver;
+			frequencyBounderyFile.close();
+		}
+	}
+	return scalingDriver;
+}
+
+/**
+ * Discovers if the Hardware controlled P-State is active
+ * returns true if HWP is active
+ * the status std::string is set according the status of the HWP
+ * enabled / disabled / not available / ""
+ **/
+#ifdef __x86_64
+bool Environment::isHWPactive(std::string &status)
+{
+	status = "";
+	bool HWP = false;
+	unsigned int regs[4];
+	unsigned int size_reg = sizeof(unsigned int);
+
+	regs[eax] = 0x6;
+	regs[ebx] = 0x0;
+	regs[ecx] = 0x0;
+	regs[edx] = 0x0;
+	CPUID(regs);
+	
+	if ((regs[eax] & 0x80) >> 7 )
+	{
+		#ifdef HAVE_MSR_CORE_H
+			uint64_t IA32_PM_ENABLE_bits;
+			read_msr_by_idx(0, IA32_PM_ENABLE, &IA32_PM_ENABLE_bits);
+			HWP = IA32_PM_ENABLE_bits & IA32_PM_ENABLE_mask;
+			status = HWP ? "enabled" : "disabled";
+		#endif
+	}
+	else
+		status = "not available";
+
+	return HWP;
+}
 #endif
-*/
-	clock_gettime(CLOCK_REALTIME, &stop_time);
-	MERIC_INFO << "MERIC number of OpenMP threads changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+
+/**
+ * tests if the CPU core frequency scaling is possible
+ * returns possitive number if yes, otherwise zero
+ **/
+DVFS_WAY Environment::isDVFSpossible()
+{
+	#ifdef __x86_64
+	std::string status;
+	if (isHWPactive(status))
+		return NO_DVFS;
+	#endif
+
+	// scalingGovernor is not set if neither readSystemDefaultSettings() nor readRestoreFile() have been called
+	// may happen if used from "outside" or if the restoreFile is empty
+	if (scalingGovernor == "")
+	{
+		std::ifstream frequencyBounderyFile;
+		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> scalingGovernor;
+			frequencyBounderyFile.close();
+		}
+	}
+	if (scalingGovernor == "userspace")
+	{
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || HAVE_GEOPM_H
+		return USRSPACE_LIB;
+#else
+		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
+			return USRSPACE_FILE;
+		else
+			return NO_DVFS;
+#endif
+	}
+	
+	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
+	{
+		std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
+		std::string availGovernor;
+		while (frequencyBounderyFile >> availGovernor)
+		{
+			if (availGovernor == "userspace")
+			{
+				frequencyBounderyFile.close();
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || HAVE_GEOPM_H
+				return USRSPACE_LIB;
+#else
+				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
+					return USRSPACE_FILE;
+				else
+					return NO_DVFS;
+#endif
+			}
+		}
+		frequencyBounderyFile.close();
+	}
+
+#if defined HAVE_MSR_CORE_H
+	if (getScalingDriver() == "intel_pstate" && 
+	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
+	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
+		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the whitelist
+#endif
+	return NO_DVFS;
+}
+
+/**
+ * activates DVFS on the system
+ * if the way of DVFS using (DVFS_WAY enum) is know, can be passed as argument
+ * returns true in success, otherwise false
+ **/
+DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
+{
+	if (way == NO_DVFS)
+		way = isDVFSpossible();
+	
+	if (way == USRSPACE_FILE || USRSPACE_LIB)
+	{
+		if (scalingGovernor != "userspace")
+		{
+			std::ofstream governorFileO;
+			for (int i=0; i<NODE_SIZE_CPU; i++)
+			{
+				governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
+				governorFileO << "userspace";
+				governorFileO.close();
+				if (!governorFileO)
+				{
+					std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<i<<"/cpufreq/scaling_governor\n";
+					return NO_DVFS;
+				}
+			}
+		}
+	}
+	else if (way == INT_PSTATE)
+	{
+		//Disable turbo logic of Intel P-state driver
+		std::ofstream defSet;
+		defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+		defSet << "1";
+		defSet.close();
+		if (!defSet)
+		{
+			std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/intel_pstate/no_turbo\n";
+			return NO_DVFS;
+		}
+	
+		//Disable scaling frequency of Intel P-state driver 
+		//and set maximum P-state to all cores 
+		//and set energy performance bias to maximum performance
+		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+		{
+			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+			defSet << defaultSettings[systemType].minCoreFreq / 1000; //kHz
+			defSet.close();
+			if (!defSet)
+			{
+				std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
+				return NO_DVFS;
+			}			
+		}
+		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
+		usleep(800000); //700 ms is not enough
+	}
+	
+	return way;
 }
 
 /**
@@ -117,35 +397,14 @@ void Environment::initHWSizes()
 }
 
 /**
- * reads system default CPU core and uncore frequencies and power capping limits
+ * reads a file with the default setting of the system that MERIC stored during 
+ * a previous run
+ * returns true if the restore file exists and was read, otherwise false
  **/
-void Environment::getSystemDefaultSettings()
+bool Environment::readRestoreFile()
 {
-
-//TODO POWERcap limits - MSR-SAFE only /////////////////////////////////////////
-//TODO store the values to the json ////////////////////////////////////////////
-#ifdef HAVE_MSR_CORE_H
-	// PKG
-	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
-	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[systemType].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
-
-	// DRAM
-	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[systemType].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
-#endif
-////////////////////////////////////////////////////////////////////////////////
-
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-	struct stat info;
-	bool readFromSystem = false;
-	//read a file that holds the system's default settings
-	//we have created this file during a previous MERIC run
-	if(stat(defaultSettingFile.c_str(), &info) == 0)
+	if (access(defaultSettingFile.c_str(), R_OK) == 0)
 	{
 		std::ifstream jsonFile (defaultSettingFile);
 		std::string line, jsonString = "";
@@ -163,7 +422,7 @@ void Environment::getSystemDefaultSettings()
 		{
 			std::cerr << "MERIC ERROR: invalid " << defaultSettingFile << std::endl;
 			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
-			readFromSystem = true;
+			return false;
 		}
 		else
 		{
@@ -178,7 +437,11 @@ void Environment::getSystemDefaultSettings()
 					{
 						if (std::string(dvfs->name->string) == "GOVERNOR")
 						{
-							defaultGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
+							scalingGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
+						}
+						else if (std::string(dvfs->name->string) == "TURBO")
+						{
+							defaultSettings[systemType].maxTurboFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 						}
 						else if (std::string(dvfs->name->string) == "MAX")
 						{
@@ -238,31 +501,66 @@ void Environment::getSystemDefaultSettings()
 		}
 	}
 	else
-		readFromSystem = true;
+		return false;
 	
-	if (readFromSystem) //the json file does not exists or is corrupted - we have to read the default settings from the system
+	return true;
+}
+
+/**
+ * reads system default CPU core and uncore frequencies and power capping limits
+ **/
+void Environment::readSystemDefaultSettings()
+{
+
+//TODO POWERcap limits - MSR-SAFE only /////////////////////////////////////////
+//TODO store the values to the json ////////////////////////////////////////////
+#ifdef HAVE_MSR_CORE_H                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+	// PKG
+	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
+	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+	defaultSettings[systemType].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
+
+	// DRAM
+	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+	defaultSettings[systemType].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+	defaultSettings[systemType].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
+#endif
+////////////////////////////////////////////////////////////////////////////////
+
+	//the json file does not exists or is corrupted - we have to read the default settings from the system
+	if (!readRestoreFile())
 	{
 // CORE freq -----------------------------------------------------------------//
-		std::ifstream governorFile;
-		governorFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
-		governorFile >> defaultGovernor;
-		governorFile.close();
-
+		std::ifstream frequencyBounderyFile;
+		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> scalingGovernor;
+			frequencyBounderyFile.close();
+		}
+		defaultSettings[systemType].maxTurboFreq = getMaximumTurboFrequency();
+		std::string freqBound; //files have the value in KHz
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+		}
+		defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
+		defaultSettings[systemType].defaultCoreFreq = getNominalFrequency();
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+		}
+		defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
 #ifdef HAVE_MSR_CORE_H
 		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 #endif
-
-		std::ifstream frequencyBounderyFile;
-		std::string freqBound; //files have the value in KHz
-		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
-		defaultSettings[systemType].defaultCoreFreq = defaultSettings[systemType].maxCoreFreq;
-		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
 
 // UnCORE freq ---------------------------------------------------------------//
 #ifdef HAVE_MSR_CORE_H
@@ -328,7 +626,9 @@ void Environment::getSystemDefaultSettings()
 
 	MERIC_INFO
 		<< "CF"  << std::endl
-		<< "\tGOV " << defaultGovernor << std::endl
+		<< "\tDRV " << scalingDriver << std::endl
+		<< "\tGOV " << scalingGovernor << std::endl
+		<< "\tTRB " << defaultSettings[systemType].maxTurboFreq << std::endl
 		<< "\tMAX " << defaultSettings[systemType].maxCoreFreq << std::endl
 		<< "\tMIN " << defaultSettings[systemType].minCoreFreq << std::endl
 		<< "\tDEF " << defaultSettings[systemType].defaultCoreFreq << std::endl
@@ -340,9 +640,12 @@ void Environment::getSystemDefaultSettings()
 		<< "PWRcap" << std::endl
 		<< "\tPKG " << defaultSettings[systemType].defaultPowerCapPKG << std::endl
 		<< "\tRAM " << defaultSettings[systemType].defaultPowerCapRAM << std::endl;
-
 }
 
+/**
+ * the restoreFile does not exist, so we have read the settings from the system 
+ * and store it into a file, that will be used for restore the system in the future
+ **/
 void Environment::storeSystemDefaultSettings()
 {
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
@@ -353,24 +656,33 @@ void Environment::storeSystemDefaultSettings()
 		defaultRestoreFile.open (defaultSettingFile);
 	
 		std::string content  = "{\n";
-		content += "\t\"DVFS\" : {\n\t\t\"GOVERNOR\" : \"" + defaultGovernor + "\",\n"
-			     + "\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxCoreFreq) + ",\n"
-			     + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minCoreFreq) + ",\n"
-			     + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultCoreFreq) + ",\n"
-			     + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
+		content += "\t\"DVFS\" : {\n\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
+		         + "\t\t\"TURBO\" : " + std::to_string(defaultSettings[systemType].maxTurboFreq) + ",\n"
+		         + "\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxCoreFreq) + ",\n"
+		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minCoreFreq) + ",\n"
+		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultCoreFreq) + ",\n"
+		         + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
 
 		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxUncoreFreq) + ",\n"
-			     + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + "\n\t},\n";
+		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + "\n\t},\n";
 
 		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings[systemType].defaultPowerCapPKG) + ",\n"
-			    + "\t\t\"DRAM\" : " +std::to_string(defaultSettings[systemType].defaultPowerCapRAM) +"\n\t}";
+		        + "\t\t\"DRAM\" : " +std::to_string(defaultSettings[systemType].defaultPowerCapRAM) +"\n\t}";
 		content += "\n}\n";
 		defaultRestoreFile << content;
 		defaultRestoreFile.close();
 	}
 }
 
-void Environment::init(int system, RegionParameters defaultParameter, int rank)
+/**
+ * inits the libraries used for tuning the environment settings and activates 
+ * CPU core frequency tuning (and "uncore" for Jetson system) if possible
+ * and sets the required system parameters
+ * system - the target system (required for ARM Jetson)
+ * defaultParameter - environment settings that should be set directly after system init
+ * rank - MPI rank
+ **/
+void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, int rank)
 {
 #ifdef HAVE_X86_ADAPT_H
 	if (x86_adapt_init())
@@ -395,76 +707,11 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 
 	if(!rank)
 	{
-		getSystemDefaultSettings();
+		readSystemDefaultSettings();
 //ACTIVATE DVFS
-		std::ifstream governorFileI;
 		if (defaultParameter.frequency != 0)
 		{
-			//using userspace governor
-			if (defaultGovernor == "userspace")
-			{
-				activatedDVFS=true;
-			}
-			else
-			{
-				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
-				{
-					governorFileI.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
-					std::string availGovernor;
-					while (governorFileI >> availGovernor)
-					{
-						if (availGovernor == "userspace")
-						{
-							activatedDVFS = true;
-							break;
-						}
-					}
-					governorFileI.close();
-				}
-				if (activatedDVFS == true)
-				{
-					std::ofstream governorFileO;
-					for (int i=0; i<NODE_SIZE_CPU; i++)
-					{
-						governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-						governorFileO << "userspace";
-						governorFileO.close();
-					}
-#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
-					if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) != 0)
-						activatedDVFS = false;
-#endif
-				}
-			// Intel P-State
-#ifdef HAVE_MSR_CORE_H
-				else
-				{
-					if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
-					{
-						activatedDVFS = true;
-						std::ofstream defSet;
-						MERIC_INFO << "Disable turbo logic of Intel P-state driver\n";
-						defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-						defSet << "1";
-						defSet.close();
-						
-						MERIC_INFO << "Disable scaling frequency of Intel P-state driver and set maximum P-state to all cores and set energy performance bias to maximum performance\n";
-						for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
-						{
-							defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-							defSet << defaultSettings[systemType].minCoreFreq / 1000; //kHz
-							defSet.close();
-							write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
-						}
-						//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
-						usleep(800000); //700 ms is not enough
-					}
-				}
-#endif
-#ifdef HAVE_X86_ADAPT_H
-				activatedDVFS = true;
-#endif
-			}
+			activatedDVFS = activateDVFS();
 		}
 //ACTIVATE UFS
 		if (systemType == SYS_JETSON)
@@ -475,14 +722,17 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 				governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
 				governorFile << "1";
 				governorFile.close();
-				activatedUFS = true;
-				MERIC_INFO << "MERIC: unCORE FREQUENCY scaling activated\n";
+				if (governorFile)
+				{
+					activatedUFS = true;
+					MERIC_INFO << "MERIC: unCORE FREQUENCY scaling activated\n";
+				}
 			}
 		}
 		
 		storeSystemDefaultSettings();
 
-		//set the settings that user want to apply for the application
+		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency, defaultParameter.uncoreFrequency);
 		powercap(defaultParameter.powerCapPKG, defaultParameter.powerCapPKGtime);
@@ -503,7 +753,47 @@ void Environment::init(int system, RegionParameters defaultParameter, int rank)
 */
 }
 
+/**
+ * change number of active threads
+ * if the input number of active threads is zero, return immediately
+ **/
+void Environment::threadNumber(int nthreads)
+{
+	timespec start_time, stop_time;
+	clock_gettime(CLOCK_REALTIME, &start_time);
 
+	if (nthreads <= 0)
+		return;
+#ifdef HAVE_OMP_H
+	if (nthreads != omp_get_num_threads())
+	{
+		if (!omp_in_parallel())
+		{
+			MERIC_INFO << "OPENMP set num threads to: " << nthreads << std::endl;
+			omp_set_num_threads(nthreads);
+		}
+		else
+		{
+			MERIC_INFO << "MERIC WARNING: parallel region, num threads did not change to: " << nthreads << std::endl;
+		}
+	}
+#endif
+/*
+#ifdef HAVE_CILK_CILK_API_H
+	//using cilk
+	__cilkrts_end_cilk();  
+	__cilkrts_set_param("nworkers", std::to_string(nthreads).c_str());
+#endif
+*/
+	clock_gettime(CLOCK_REALTIME, &stop_time);
+	MERIC_INFO << "MERIC number of OpenMP threads changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+}
+
+/**
+ * set CPU core frequency [Hz] to specific socket
+ * if the input frequency is zero, return immediately
+ * if no socket specified (implicit -1) set the same frequency to all sockets
+ **/
 void Environment::frequency(uint64_t freq, int socket)
 {
 	timespec start_time, stop_time;
@@ -515,17 +805,13 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (!activatedDVFS)
 		return;
 
-	if (freq < defaultSettings[systemType].minCoreFreq || freq > defaultSettings[systemType].maxCoreFreq)
+	// upper limit is checked only if the information about the turbo frequency is available
+	if (freq < defaultSettings[systemType].minCoreFreq || (defaultSettings[systemType].maxTurboFreq != -1 && freq > defaultSettings[systemType].maxTurboFreq))
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
 		return;
 	}
-/*	//would work if defaultCoreFreq is set at the nominal frequency, which is currently not
-	else if (freq > defaultSettings[systemType].defaultCoreFreq)
-	{
-		MERIC_INFO << "Trying to apply turbo CPU frequency\n";
-	}
-*/
+
 	usedDVFS = true;
 	int nodeSize = NODE_SIZE_CPU;
 	int cpu=0;
@@ -596,12 +882,19 @@ void Environment::frequency(uint64_t freq, int socket)
 		coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
 		coreFile << freq / 1000;
 		coreFile.close();
+		if(!coreFile)
+			std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
 	}
 #endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
 	MERIC_INFO << "MERIC CPU core frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 }
 
+/**
+ * set CPU uncore frequency limits [Hz] to specific socket 
+ * if the input frequency is zero, return immediately
+ * if no socket specified (implicit -1) set the same frequency to all sockets
+ **/
 void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket)
 {
 	timespec start_time, stop_time;
@@ -691,18 +984,20 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
 	uncoreFile << maxFreq;
 	uncoreFile.close();
-	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq << std::endl;
+	if (uncoreFile)
+		MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq << std::endl;
+	else
+		std::cerr << "MERIC ERROR: failed to write to /sys/kernel/debug/clock/override.emc/rate\n";
 #endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
 	MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 }
 
 /**
- * RAPL power capping - PKG only
- * power [mW]
- * timeWindow [ms]
- *
- * NOTE: if power limit is not specified timeWindow is ignored
+ * change RAPL power capping limit (PKG only) of a specific socket
+ * power [mW], if zero return immediately
+ * timeWindow [ms], if zero the time window will not change
+ * if no socket specified (implicit -1) set the same limit to all sockets
  **/
 void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 {
@@ -818,7 +1113,9 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 }
 
 /**
- * sets default governor, CPU core frequency, CPU uncore frequency limits and powercap limits
+ * sets the default scaling governor, CPU core frequency, CPU uncore frequency limits and powercap limits
+ * the restore happens only if the settings have changed during the MERIC run
+ * to force the restore in all cases set input hardReset to true (implicit false)
  **/
 void Environment::restoreSystemSettings(bool hardReset)
 {
@@ -831,32 +1128,33 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 		if (usedDVFS || hardReset)
 			frequency(defaultSettings[systemType].defaultCoreFreq);
-		if (defaultGovernor != "userspace" && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
+		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
 			std::ofstream governorFile;
 			for (int i=0; i<NODE_SIZE_CPU; i++)
 			{
 				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-				governorFile << defaultGovernor;
+				governorFile << scalingGovernor;
 				governorFile.close();
 			}
 		}
-#ifdef HAVE_MSR_CORE_H
-		std::ofstream defSet;
-		MERIC_INFO << "Enable turbo logic of Intel P-state driver\n";
-		defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-		defSet << "0";
-		defSet.close();
-		
-		MERIC_INFO << "Enable scaling frequency of Intel P-state driver and set default energy performance bias\n";
-		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+		if (activatedDVFS == INT_PSTATE || hardReset)
 		{
-			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-			defSet << defaultSettings[systemType].maxCoreFreq / 1000;
+			std::ofstream defSet;
+			defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+			defSet << "0";
 			defSet.close();
-			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
-		}
+			
+			for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+			{
+				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+				defSet << defaultSettings[systemType].maxCoreFreq / 1000;
+				defSet.close();
+#ifdef HAVE_MSR_CORE_H
+				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
 #endif
+			}
+		}
 	}
 
 	if (activatedUFS)
@@ -932,6 +1230,9 @@ void Environment::restoreSystemSettings(bool hardReset)
 	}
 }
 
+/**
+ * call close functions of the libraries that were used for environment tuning
+ **/
 void Environment::close()
 {
 #ifdef HAVE_X86_ADAPT_H

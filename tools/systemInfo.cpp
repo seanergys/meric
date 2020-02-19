@@ -26,28 +26,6 @@
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-struct systemLimits{
-	long maxCoreFreq;            //Hz
-	long defaultCoreFreq;        //Hz
-	long minCoreFreq;            //Hz
-	long maxUncoreFreq;          //Hz
-	long defaultUncoreFreq;      //Hz
-	long minUncoreFreq;          //Hz
-
-	long maxPowerCapPKG;         //W
-	long minPowerCapPKG;         //W
-	long maxPowerCapPKGtime;     //us
-	uint64_t defaultPowerCapPKG; //raw register value
-
-	long maxPowerCapRAM;         //W
-	long minPowerCapRAM;         //W
-	long maxPowerCapRAMtime;     //us
-	uint64_t defaultPowerCapRAM; //raw register value
-
-	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
-	std::string governor;
-	bool restoreFile;
-};
 std::map<std::string, double> unit;
 
 enum MODE	//this application keeps this order
@@ -59,139 +37,7 @@ enum MODE	//this application keeps this order
 	USING_NONE
 };
 
-#ifdef __x86_64	// CPUID instruction reading
-#define STRING_SIZE 256
-enum reg_cpuid
-{
-	eax,
-	ebx,
-	ecx,
-	edx
-};
-
-inline void CPUID(unsigned int *regs)
-{
-	asm volatile("cpuid"
-		: "=a" (regs[0]), // out EAX
-		  "=b" (regs[1]), // out EBX
-		  "=c" (regs[2]), // out ECX
-		  "=d" (regs[3])  // out EDX
-		: "a" (regs[0]),   // in EAX
-		  "b" (regs[1]),   // in EBX
-		  "c" (regs[2]),   // in ECX
-		  "d" (regs[3]));  // in EDX
-}
-
-bool testHWP()
-{
-	bool HWP = false;
-	unsigned int regs[4];
-	unsigned int size_reg = sizeof(unsigned int);
-
-	regs[eax] = 0x6;
-	regs[ebx] = 0x0;
-	regs[ecx] = 0x0;
-	regs[edx] = 0x0;
-	CPUID(regs);
-	
-	if ((regs[eax] & 0x80) >> 7 )
-	{
-		#ifdef HAVE_MSR_CORE_H
-			uint64_t IA32_PM_ENABLE_bits;
-			read_msr_by_idx(0, IA32_PM_ENABLE, &IA32_PM_ENABLE_bits);
-			HWP = IA32_PM_ENABLE_bits & IA32_PM_ENABLE_mask;
-			std::cout << "\tHardware controlled P-State: " << (HWP ? "enabled" : "disabled") << std::endl;
-		//#else
-		//	std::cout << "\tHardware controlled P-State: might be available\n";
-		#endif
-	}
-	else
-		std::cout << "\tHardware controlled P-State: not available\n";
-
-	return HWP;
-}
-
-#endif
-
-#ifdef HAVE_MSR_CORE_H
-unsigned long discover_nominal_frequency()
-{
-	uint64_t MSR_PLATFORM_INFO_bits;
-	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
-};
-
-#elif defined __x86_64
-//#define _GNU_SOURCE
-
-void get_brand_string(char *buff, int buff_size)
-{
-	unsigned int regs[4];
-	unsigned int size_reg = sizeof(unsigned int);
-	memset(buff, 0x0, sizeof(char) * buff_size);
-
-	regs[eax] = 0x80000000;
-	regs[ebx] = 0x0;
-	regs[ecx] = 0x0;
-	regs[edx] = 0x0;
-	CPUID(regs);
-
-	if(regs[eax] > 0x80000000)
-	{
-		regs[eax] = 0x80000002;
-		regs[ebx] = 0x0;
-		regs[ecx] = 0x0;
-		regs[edx] = 0x0;
-		CPUID(regs);
-		memcpy(buff, &regs[eax], size_reg);
-		memcpy(buff+(size_reg*1), &regs[ebx], size_reg);
-		memcpy(buff+(size_reg*2), &regs[ecx], size_reg);
-		memcpy(buff+(size_reg*3), &regs[edx], size_reg);
-
-		regs[eax] = 0x80000003;
-		regs[ebx] = 0x0;
-		regs[ecx] = 0x0;
-		regs[edx] = 0x0;
-		CPUID(regs);
-		memcpy(buff+(size_reg*4), &regs[eax], size_reg);
-		memcpy(buff+(size_reg*5), &regs[ebx], size_reg);
-		memcpy(buff+(size_reg*6), &regs[ecx], size_reg);
-		memcpy(buff+(size_reg*7), &regs[edx], size_reg);
-
-		regs[eax] = 0x80000004;
-		regs[ebx] = 0x0;
-		regs[ecx] = 0x0;
-		regs[edx] = 0x0;
-		CPUID(regs);
-		memcpy(buff+(size_reg*8), &regs[eax], size_reg);
-		memcpy(buff+(size_reg*9), &regs[ebx], size_reg);
-		memcpy(buff+(size_reg*10), &regs[ecx], size_reg);
-		memcpy(buff+(size_reg*11), &regs[edx], size_reg);
-	}
-}
-
-unsigned long discover_nominal_frequency()
-{
-	unsigned long f;
-	char cpu_model[STRING_SIZE];
-	const char s1[2] = "@";
-	const char s2[4] = "GHz";
-	char *token1;
-	char *token2;
-
-	get_brand_string(cpu_model, STRING_SIZE);
-
-	token1 = strtok(cpu_model, s1);
-	token1 = strtok(NULL, s1);
-	token2 = strtok(token1, s2);
-
-	return f = (unsigned long) (atof(token2) * 1E9);
-}
-#else
-unsigned long discover_nominal_frequency() {return 0;};
-#endif
-
-void sysInfoSize()
+void sysInfoSize()	//TODO use implementation from meric::Environment
 {
     uint64_t cores = 0;
     uint64_t threads = 0;
@@ -259,79 +105,44 @@ void sysInfoSize()
 	          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
 }
 
-bool sysInfoFrequencies(systemLimits& limits)
+bool sysInfoFrequencies(meric::systemLimits& limits)
 {
 	bool DVFS = false;
 	bool ok = true;
 // CORE FREQUENCY
 	std::cout << "\n# CPU FREQUENCIES\n";
 	std::ifstream frequencyBounderyFile;
-	std::string freqBound = "";
-	std::string scalingDriver = "";
-
-	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver");
-	if (frequencyBounderyFile.is_open())
-	{
-		frequencyBounderyFile >> scalingDriver;
-		frequencyBounderyFile.close();
+	std::string scalingDriver = meric::Environment::getScalingDriver();
+	if (scalingDriver != "")
 		std::cout << "\tCurrent scaling driver:      " << scalingDriver << std::endl;
-	}
-	
+
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	if (frequencyBounderyFile.is_open())
 	{
-		freqBound = "";
-		frequencyBounderyFile >> freqBound;
+		std::string scalingGovernor = "";
+		frequencyBounderyFile >> scalingGovernor;
 		frequencyBounderyFile.close();
-		std::cout << "\tCurrent scaling governor:    " << freqBound << std::endl;
-		if (freqBound != limits.governor)
-			ok = false;
-		if (freqBound == "userspace")
-		{
-#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
-			if (access("/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed", W_OK) == 0)
-#endif
-				DVFS = true;
-		}
+		std::cout << "\tCurrent scaling governor:    " << scalingGovernor << std::endl;
 	}
-	
+
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors");
 	if (frequencyBounderyFile.is_open())
 	{
-		freqBound = "";
-		getline(frequencyBounderyFile, freqBound);
+		std::string availScalingGovernor = "";
+		getline(frequencyBounderyFile, availScalingGovernor);
 		frequencyBounderyFile.close();
-		std::cout << "\tAvailable governors:         " << freqBound << std::endl;
-	}
-
-	if (!DVFS)
-	{
-		if (scalingDriver == "acpi-cpufreq")
-		{
-			if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
-			{
-#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
-				if (access("/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed", W_OK) == 0)
-#endif
-					DVFS = true;
-			}
-		}
-#if defined HAVE_MSR_CORE_H && defined HAVE_X86_ADAPT_H && defined HAVE_CPUFREQ_H
-		else if (scalingDriver == "intel_pstate")
-		{
-			if (access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
-			   (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0))
-			   DVFS = true;
-		}
-#endif
+		std::cout << "\tAvailable governors:         " << availScalingGovernor << std::endl;
 	}
 
 	bool HWP = false;
-	#ifdef __x86_64
-		HWP = testHWP();
-	#endif
+#ifdef __x86_64
+	std::string status;
+	HWP = meric::Environment::isHWPactive(status);
+	if (status != "")
+		std::cout << "\tHardware controlled P-State: " << status << std::endl;
+#endif
 	
-	if (!DVFS || HWP)
+	if (meric::Environment::isDVFSpossible())
 	{
 		std::cout << "\n\tCPU core frequency scaling (DVFS) NOT available\n";
 		if (HWP)
@@ -347,7 +158,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 				std::cout << "\t\t grant write access to:\n"
 					      << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
 					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
-					      << "\t\t or switch the scaling driver to 'acpi-cpufreq' and\n";
+					      << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
 			}
 			std::cout << "\t\t grant write access to:\n"
 				      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
@@ -365,9 +176,10 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpufreq/boost");
 		if (frequencyBounderyFile.is_open())
 		{
-			frequencyBounderyFile >> freqBound;
+			std::string turboInfo = "";
+			frequencyBounderyFile >> turboInfo;
 			frequencyBounderyFile.close();
-			freq = std::stoi(freqBound);
+			freq = std::stoi(turboInfo);
 		}
 	}
 	else if (scalingDriver == "intel_pstate")
@@ -375,9 +187,10 @@ bool sysInfoFrequencies(systemLimits& limits)
 		frequencyBounderyFile.open("/sys/devices/system/cpu/intel_pstate/no_turbo");
 		if (frequencyBounderyFile.is_open())
 		{
-			frequencyBounderyFile >> freqBound;
+			std::string turboInfo = "";
+			frequencyBounderyFile >> turboInfo;
 			frequencyBounderyFile.close();
-			freq = std::stoi(freqBound) == 0 ? 1 : 0;
+			freq = std::stoi(turboInfo) == 0 ? 1 : 0;
 		}
 	}
 	if (freq == 0)
@@ -439,6 +252,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	if (frequencyBounderyFile.is_open())
 	{
+		std::string freqBound = "";
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
@@ -448,13 +262,14 @@ bool sysInfoFrequencies(systemLimits& limits)
 	}
 #endif
 	
-	unsigned long nominalFreq = discover_nominal_frequency();
-	if (nominalFreq != 0)
+	unsigned long nominalFreq = meric::Environment::getNominalFrequency();
+	if (nominalFreq > 0)
 		std::cout << "\tNominal CPU core frequency: " << nominalFreq/1000 << " kHz\n";
 
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	if (frequencyBounderyFile.is_open())
 	{
+		std::string freqBound = "";
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
@@ -466,6 +281,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
+		std::string freqBound = "";
 		getline(frequencyBounderyFile, freqBound);
 		frequencyBounderyFile.close();
 		std::cout << "\tAvailable CPU core frequencies: " << freqBound << " kHz\n";
@@ -528,7 +344,7 @@ bool sysInfoFrequencies(systemLimits& limits)
 	return ok;
 }
 
-bool sysInfoPowercap(systemLimits& limits)
+bool sysInfoPowercap(meric::systemLimits& limits)
 {
 	bool ok = true;
 	std::ifstream pwrCapFile;
@@ -816,7 +632,7 @@ bool sysInfoPowercap(systemLimits& limits)
 	return ok;
 }
 
-void getRAPLunits()
+void getRAPLunits()	//TODO use meric::RAPL::initCountersUnits()
 {
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
@@ -908,110 +724,6 @@ void checkMsrWhitelist()
 	}
 }
 
-void readRestoreFile(systemLimits& limits)
-{
-	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-	struct stat info;
-	//read a file that holds the system's default settings
-	//we have created this file during a previous MERIC run
-	struct json_value_s* root = NULL;
-	if(stat(defaultSettingFile.c_str(), &info) == 0)
-	{
-		limits.restoreFile = true;
-		std::ifstream jsonFile (defaultSettingFile);
-		std::string line, jsonString = "";
-		if (jsonFile.is_open())
-		{
-			while (getline(jsonFile,line))
-			{
-				jsonString += " " + line;
-			}
-			jsonFile.close();
-		}
-		const char * json = jsonString.c_str();
-		struct json_value_s* root = json_parse(json, strlen(json));
-		if (root ==  NULL)
-		{
-			std::cerr << "ERROR: invalid " << defaultSettingFile << std::endl;
-			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
-			return;
-		}
-		else
-		{
-			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
-
-			while(data != NULL)
-			{
-				if (std::string(data->name->string) == "DVFS")
-				{
-					struct json_object_element_s* dvfs = ((struct json_object_s*)data->value->payload)->start;
-					do
-					{
-						if (std::string(dvfs->name->string) == "GOVERNOR")
-						{
-							limits.governor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
-						}
-						else if (std::string(dvfs->name->string) == "MAX")
-						{
-							limits.maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "MIN")
-						{
-							limits.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "DEFAULT")
-						{
-							limits.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
-						{
-							limits.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
-						}
-						dvfs = dvfs->next;
-					}while(dvfs != NULL);
-				}
-				else if (std::string(data->name->string) == "UFS")
-				{
-					struct json_object_element_s* ufs = ((struct json_object_s*)data->value->payload)->start;
-					do
-					{
-						if (std::string(ufs->name->string) == "MAX")
-						{
-							limits.maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
-						}
-						else if (std::string(ufs->name->string) == "MIN")
-						{
-							limits.minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
-						}
-						ufs = ufs->next;
-					}while(ufs != NULL);
-				}
-				else if (std::string(data->name->string) == "PWRCAP")
-				{
-					struct json_object_element_s* pwr = ((struct json_object_s*)data->value->payload)->start;
-					do
-					{
-						if (std::string(pwr->name->string) == "PKG")
-						{
-							limits.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
-						}
-						else if (std::string(pwr->name->string) == "DRAM")
-						{
-							limits.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
-						}
-						pwr = pwr->next;
-					}while(pwr != NULL);
-				}
-				data = data->next;
-			}
-			free(root);
-		}
-	}
-	else
-		limits.restoreFile = false;
-}
-
-
 //****************************************************************************//
 int main(int argc, char **argv)
 {
@@ -1053,8 +765,8 @@ int main(int argc, char **argv)
 	}
 
 	bool systemInTheDefaultSettings = true;
-	systemLimits limits;
-	readRestoreFile(limits);
+	bool restoreFile = meric::Environment::readRestoreFile();
+	meric::systemLimits limits = meric::Environment::getSystemSettings();
 	getRAPLunits();
 	sysInfoSize();
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
@@ -1064,7 +776,7 @@ int main(int argc, char **argv)
 	if (status == USING_MSR)
 		checkMsrWhitelist();
 	
-	if (!systemInTheDefaultSettings && limits.restoreFile)
+	if (!systemInTheDefaultSettings && restoreFile)
 	{
 		if (restore)
 		{
