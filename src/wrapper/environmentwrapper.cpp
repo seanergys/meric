@@ -511,28 +511,11 @@ bool Environment::readRestoreFile()
  **/
 void Environment::readSystemDefaultSettings()
 {
-
-//TODO POWERcap limits - MSR-SAFE only /////////////////////////////////////////
-//TODO store the values to the json ////////////////////////////////////////////
-#ifdef HAVE_MSR_CORE_H                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
-	// PKG
-	uint64_t MSR_PKG_DRAM_POWER_INFO_bits;
-	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[systemType].maxPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].minPowerCapPKG = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].maxPowerCapPKGtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
-
-	// DRAM
-	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	defaultSettings[systemType].maxPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].minPowerCapRAM = ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
-	defaultSettings[systemType].maxPowerCapRAMtime = (((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)) * 1000000;
-#endif
-////////////////////////////////////////////////////////////////////////////////
-
-	//the json file does not exists or is corrupted - we have to read the default settings from the system
 	if (!readRestoreFile())
 	{
+	//if the json file does not exists or is corrupted
+	//we have to read the default settings from the system
+
 // CORE freq -----------------------------------------------------------------//
 		std::ifstream frequencyBounderyFile;
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
