@@ -12,7 +12,7 @@ std::map<std::string, double> RAPL::units;
 std::map<std::string, unsigned long long int> RAPL::counters;
 uint64_t RAPL::CORES_PER_SOCKET = 1;
 
-// solve counter overflow and add baseline energy consumption
+// solve counter overflow
 unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
 	if (counter == RAPL_SUM_ENERGY)
@@ -223,7 +223,7 @@ std::string RAPL::getSummaryCounterName()
 }
 void RAPL::getSummaryValue(double time, unsigned long long int * counterSummary)
 {
-	*counterSummary += time * RAPL_BASELINE;
+	*counterSummary += time;
 }
 
 double RAPL::getUnit(std::string counterName)
