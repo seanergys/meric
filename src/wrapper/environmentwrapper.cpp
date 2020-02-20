@@ -563,7 +563,20 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile.close();
 		}
 		defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
-		defaultSettings[systemType].defaultCoreFreq = getNominalFrequency();
+		
+		if (scalingGovernor == "userspace")
+		{
+			frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed");
+			if (frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+			}
+			defaultSettings[systemType].defaultCoreFreq = std::stol(freqBound) * 1000;
+		}
+		else
+			defaultSettings[systemType].defaultCoreFreq = getNominalFrequency();
+		
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 		if (frequencyBounderyFile.is_open())
 		{
@@ -1139,7 +1152,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedDVFS || hardReset)
 	{
-		if (usedDVFS || hardReset)
+		if ((usedDVFS || hardReset) && scalingGovernor == "userspace")
 			frequency(defaultSettings[systemType].defaultCoreFreq);
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{

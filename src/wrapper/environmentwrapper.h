@@ -67,7 +67,7 @@ struct RegionParameters { //must be able to carry -1
 struct systemLimits{
 	long maxTurboFreq;           //Hz
 	long maxCoreFreq;            //Hz
-	long defaultCoreFreq;        //Hz
+	long defaultCoreFreq;        //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise we set nominal frequency
 	long minCoreFreq;            //Hz
 	long maxUncoreFreq;          //Hz
 	long defaultUncoreFreq;      //Hz
