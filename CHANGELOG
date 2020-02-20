@@ -2,7 +2,7 @@
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
   - RAPL energy consumption measurements show millijoules inseat of joules
-  - new MERIC_COUNTERS=msr - CPU core and uncore freq monitoring using msr-safe
+  - new MERIC_COUNTERS=msr - CPU core and uncore freq monitoring using libmsr
   - fixed restore of the system hardware settings in the energyMeasureStop
   - improved systemInfo tool 
 		+ extended amount of the reported information
@@ -11,6 +11,7 @@
   - continual mode is now default
   - it is not necessary any more to set MERIC_CONTINUAL for energy measurement systems that does not support non-continual measurement
   - unified output label for all the energy measurement systems
+  - removed the duty to compile MERIC with numactl when libmsr or x86_adapt or GEOPM not available
 
 ### 30.04.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation
@@ -29,7 +30,7 @@
   - default MERIC mode is RUN (3) instead of HDEEM (0)
   - CPU core and uncore frequency may be specified without unit in Hz or with unit
   - removed mericMeasurementCounters - when runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported
-  - support for msr-safe RAPL reading, DVFS, UFS and power cap
+  - support for libmsr RAPL reading, DVFS, UFS and power cap
   - systemInfo - new tool to show system parameters limits
   - energyMeasureStart/Stop tuning the same system parameteres as MERIC
   - energyMeasureStart/Stop now compile together with MERIC
