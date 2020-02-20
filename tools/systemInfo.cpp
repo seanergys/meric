@@ -536,35 +536,48 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 // PLATFORM
 /*
-	uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
+	uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
-	read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
-#endif
-	if (MSR_PLATFORM_POWER_LIMIT_bits != 0x0)
+	read_msr_by_idx(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+	if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
 	{
-		std::cout << "\tPLATFORM power limit #1: " 
-			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-			<< " + clamping "
-			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-			<< std::endl
-			<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n";
+		usleep(2);
+		read_msr_by_idx(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+	}
+#endif
 
-		Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
-		X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
-		std::cout << "\tPLATFORM time window: "
-				  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
-				  << " s\n";
-		const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
+	if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
+	{
+		uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
+#ifdef HAVE_MSR_CORE_H
+		read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
+#endif
+		if (MSR_PLATFORM_POWER_LIMIT_bits != 0x0)
+		{
+			std::cout << "\tPLATFORM power limit #1: " 
+				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+				<< " + clamping "
+				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+				<< std::endl
+				<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n";
 
-		MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
-		std::cout << "\tPLATFORM power limit #2: " 
-			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-			<< " + clamping "
-			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
-			<< std::endl
-			<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n"
-			<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
-			<< std::endl;
+			Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
+			X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
+			std::cout << "\tPLATFORM time window: "
+					  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+					  << " s\n";
+			const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
+
+			MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
+			std::cout << "\tPLATFORM power limit #2: " 
+				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+				<< " + clamping "
+				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+				<< std::endl
+				<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n"
+				<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
+				<< std::endl;
+		}
 	}
 */
 	return ok;
