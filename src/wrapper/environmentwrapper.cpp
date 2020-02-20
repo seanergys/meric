@@ -156,9 +156,10 @@ long Environment::getMaximumTurboFrequency()
 #else
 	if (getScalingDriver() == "intel-pstate")
 	{
-		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 		if (frequencyBounderyFile.is_open())
 		{
+			std::string freqBound;
 			frequencyBounderyFile >> freqBound;
 			frequencyBounderyFile.close();
 			frequency = std::stol(freqBound) * 1000;
@@ -175,8 +176,7 @@ std::string Environment::getScalingDriver()
 {
 	if (scalingDriver == "")
 	{
-		std::ifstream frequencyBounderyFile;
-		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver");
+		std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver");
 		if (frequencyBounderyFile.is_open())
 		{
 			frequencyBounderyFile >> scalingDriver;
@@ -344,8 +344,10 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 				return NO_DVFS;
 			}			
 		}
+#ifdef HAVE_MSR_CORE_H
 		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+#endif
 		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
 		usleep(800000); //700 ms is not enough
 	}
@@ -376,19 +378,19 @@ void Environment::initHWSizes()
 	CORES_PER_SOCKET = topo.num_domain(GEOPM_DOMAIN_CORE) / SOCKETS_PER_NODE;
 	THREADS_PER_CORE = topo.num_domain(GEOPM_DOMAIN_CPU);
 #else
+	std::string topoStr;
+	std::ifstream topoFile;
 	#if defined HAVE_X86_ADAPT_H
 		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
 	#else //ifdef HAVE_NUMA_H
-		SOCKETS_PER_NODE = numa_node_of_cpu(CPUS_PER_NODE-1)+1;
-		if (SOCKETS_PER_NODE <= 0)
-			SOCKETS_PER_NODE=1;
-		CORES_PER_SOCKET = sysconf(_SC_NPROCESSORS_ONLN) / SOCKETS_PER_NODE;
+		uint64_t CORES_PER_NODE = sysconf(_SC_NPROCESSORS_ONLN);
+		SOCKETS_PER_NODE = numa_node_of_cpu(CORES_PER_NODE-1)+1;
+		CORES_PER_SOCKET = CORES_PER_NODE / SOCKETS_PER_NODE;
 	#endif
 
 	//THREADS_PER_CORE
-	std::string topoStr;
-	std::ifstream topoFile("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
+	topoFile.open("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
 	topoFile >> topoStr;
 	topoFile.close();
 	while(topoStr.size())

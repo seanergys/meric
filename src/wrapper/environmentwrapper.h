@@ -90,8 +90,6 @@ struct systemLimits{
 class Environment {
 
 public:
-//	static int NODE_SIZE_THREAD;
-//	static int NODE_SIZE_CPU;
 	static int SOCKETS_PER_NODE;
 	static int CORES_PER_SOCKET;
 	static int THREADS_PER_CORE;
