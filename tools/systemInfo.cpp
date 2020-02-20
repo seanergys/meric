@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <thread>
 #include "../src/wrapper/environmentwrapper.h"
-#include "../src/wrapper/msrs.h"
+#include "../src/wrapper/raplwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_rapl.h>
@@ -33,7 +33,7 @@ enum MODE	//this application keeps this order
 	USING_MSR,
 	USING_ADAPT,
 	USING_GEOPM,
-	USING_NUMA,
+	USING_NUMA,	//currently numactl not in use
 	USING_NONE
 };
 
@@ -313,28 +313,28 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 
 	std::cout 
-		<< "\tRAPL time window unit: " << unit["MSR_RAPL_POWER_UNIT_time"]*1000000 << " us\n"
+		<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
 		<< "\tPKG max power limit:   " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * unit["MSR_PKG_POWER_LIMIT"] << " W\n"
+		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
 		
 		<< "\tPKG min power limit:   " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * unit["MSR_PKG_POWER_LIMIT"] << " W\n"
+		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
 
 //		<< "\tPKG max time window:   " 
-//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n"
+//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
 		;
 
 // DRAM
 	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 	std::cout 
 		<< "\tDRAM max power limit:  "
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n"
+		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
 
 		<< "\tDRAM min power limit:  " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n"
+		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
 
 //		<< "\tDRAM max time window:  " 
-//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * unit["MSR_RAPL_POWER_UNIT_time"] << " s\n"
+//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
 		;
 #else
 	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
@@ -394,13 +394,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 				<< " + clamping "
 				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 				<< std::endl
-				<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+				<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
 
 			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			unit["MSR_PKG_POWER_LIMIT_timewindow_1"] = pow(2,Y) * (1.0 + Z/4.0);
 			std::cout << "\tPKG time window #1: "
-					  << unit["MSR_PKG_POWER_LIMIT_timewindow_1"]*unit["MSR_RAPL_POWER_UNIT_time"]
+					  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 					  << " s\n";
 
 	#ifdef HAVE_MSR_CORE_H
@@ -416,13 +415,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 				<< " + clamping "
 				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 				<< std::endl
-				<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * unit["MSR_PKG_POWER_LIMIT"] << " W\n";
+				<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
 
 			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			unit["MSR_PKG_POWER_LIMIT_timewindow_2"] = pow(2,Y) * (1.0 + Z/4.0);
 			std::cout << "\tPKG time window #2: "
-					  << unit["MSR_PKG_POWER_LIMIT_timewindow_2"]*unit["MSR_RAPL_POWER_UNIT_time"] 
+					  << pow(2,Y) * (1.0 + Z/4.0) *meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 					  << " s\n";
 		}
 
@@ -446,13 +444,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 				<< " + clamping "
 				<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 				<< std::endl
-				<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * unit["MSR_DRAM_POWER_LIMIT"] << " W\n";
+				<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n";
 
 			F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
 			Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
-			unit["MSR_DRAM_POWER_LIMIT_timewindow"] = pow(2,Y) * F;
 			std::cout << "\tDRAM time window:   "
-					  << unit["MSR_DRAM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
+					  << pow(2,Y) * F * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 					  << " s\n";
 		}
 #else
@@ -550,13 +547,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			<< " + clamping "
 			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 			<< std::endl
-			<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * unit["MSR_PLATFORM_POWER_LIMIT"] << " W\n";
+			<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n";
 
 		Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
 		X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
-		unit["MSR_PLATFORM_POWER_LIMIT_timewindow"] = pow(2,Y) * (1.0 + X/4.0);
 		std::cout << "\tPLATFORM time window: "
-				  << unit["MSR_PLATFORM_POWER_LIMIT_timewindow"]*unit["MSR_RAPL_POWER_UNIT_time"]
+				  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 				  << " s\n";
 		const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
 
@@ -566,41 +562,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			<< " + clamping "
 			<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 			<< std::endl
-			<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * unit["MSR_PLATFORM_POWER_LIMIT"] << " W\n"
+			<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(MSR_PLATFORM_POWER_LIMIT) << " W\n"
 			<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
 			<< std::endl;
 	}
 */
 	return ok;
-}
-
-void getRAPLunits()	//TODO use meric::RAPL::initCountersUnits()
-{
-	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
-#ifdef HAVE_MSR_CORE_H
-	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
-#elif defined HAVE_X86_ADAPT_H
-	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-	if (fd < 0)
-	{
-		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
-		return;
-	}
-	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
-	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
-	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-#elif defined HAVE_GEOPM_H
-	MSR_RAPL_POWER_UNIT_bits = geopm_signal_to_field(pio.read_signal("MSR::RAPL_POWER_UNIT#", pio.signal_domain_type("MSR::RAPL_POWER_UNIT#"), 0));
-#endif
-	if (MSR_RAPL_POWER_UNIT_bits != 0)
-	{
-		unit["MSR_PKG_POWER_LIMIT"] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
-		unit["MSR_DRAM_POWER_LIMIT"] = unit["MSR_PKG_POWER_LIMIT"];
-		unit["MSR_PKG_ENERGY_STATUS"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
-		unit["MSR_DRAM_ENERGY_STATUS"] = 1.0/pow(2,16);
-		unit["MSR_RAPL_POWER_UNIT_time"] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
-	}
 }
 
 void sysEnergyMeasurement()
@@ -709,7 +676,7 @@ int main(int argc, char **argv)
 	bool systemInTheDefaultSettings = true;
 	bool restoreFile = meric::Environment::readRestoreFile();
 	meric::systemLimits limits = meric::Environment::getSystemSettings();
-	getRAPLunits();
+	meric::RAPL::initCountersUnits(); //not necessary if meric::Environment::init() would have been called before
 	sysInfoSize();
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
