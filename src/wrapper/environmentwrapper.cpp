@@ -23,10 +23,9 @@ systemLimits Environment::defaultSettings [] = {
 	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
 };
 
-int Environment::NODE_SIZE_THREAD = 1;
-int Environment::NODE_SIZE_CPU = 0;
-int Environment::NODE_SIZE_SOCKET = 0;
-int Environment::SOCKET_SIZE_CPU = 0;
+int Environment::SOCKETS_PER_NODE = 1;
+int Environment::CORES_PER_SOCKET = 1;
+int Environment::THREADS_PER_CORE = 1;
 SYSTEM_TYPE Environment::systemType = SYS_OTHER;
 
 std::string Environment::scalingGovernor = "";
@@ -305,7 +304,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		if (scalingGovernor != "userspace")
 		{
 			std::ofstream governorFileO;
-			for (int i=0; i<NODE_SIZE_CPU; i++)
+			for (int i=0; i<SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
 			{
 				governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
 				governorFileO << "userspace";
@@ -334,7 +333,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		//Disable scaling frequency of Intel P-state driver 
 		//and set maximum P-state to all cores 
 		//and set energy performance bias to maximum performance
-		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 		{
 			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
 			defSet << defaultSettings[systemType].minCoreFreq / 1000; //kHz
@@ -345,7 +344,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 				return NO_DVFS;
 			}			
 		}
-		for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
 		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
 		usleep(800000); //700 ms is not enough
@@ -355,45 +354,70 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 }
 
 /**
- * reads HW system sizes:
- *  NODE_SIZE_SOCKET - sockets per node
- *  NODE_SIZE_CPU    - CPUs per node
- *  SOCKET_SIZE_CPU  - CPUs per socket
- *  NODE_SIZE_THREAD - threads per node
+ * sets following variables - system sizes:
+ *  - SOCKETS_PER_NODE
+ *  - CORES_PER_SOCKET
+ *  - THREADS_PER_CORE
  **/
 void Environment::initHWSizes()
 {
 #ifdef HAVE_MSR_CORE_H
 	int Hthreads;
-	uint64_t cs = 0;
-	uint64_t ts = 0;
-	uint64_t ss = 0;
+	uint64_t cs = 1;
+	uint64_t ts = 1;
+	uint64_t ss = 1;
 	core_config(&cs, &ts, &ss, &Hthreads);
-	NODE_SIZE_SOCKET = ss;
-	SOCKET_SIZE_CPU  = cs;
-	NODE_SIZE_CPU    = SOCKET_SIZE_CPU * NODE_SIZE_SOCKET;
-	NODE_SIZE_THREAD = ts * NODE_SIZE_CPU;
-	MERIC_INFO << "HThreads: " << ((Hthreads == 0) ? "inactive" : "active") << std::endl;
-#elif defined HAVE_X86_ADAPT_H
-	NODE_SIZE_CPU    = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
-	NODE_SIZE_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-	//NODE_SIZE_THREAD = 1;	TODO get real number of avail threads per core - not used now
-	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
+	SOCKETS_PER_NODE = ss;
+	CORES_PER_SOCKET = cs;
+	THREADS_PER_CORE = ts;
 #elif defined HAVE_GEOPM_H
 	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
-	NODE_SIZE_CPU = topo.num_domain(GEOPM_DOMAIN_CORE);
-	NODE_SIZE_SOCKET = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
-	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
-	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
-#else //ifdef HAVE_NUMA_H
-	NODE_SIZE_CPU    = sysconf(_SC_NPROCESSORS_ONLN);
-	NODE_SIZE_SOCKET = numa_node_of_cpu(NODE_SIZE_CPU-1)+1;
-	//NODE_SIZE_THREAD = 1;	TODO
-	if (NODE_SIZE_SOCKET <= 0)
-		NODE_SIZE_SOCKET=1;
-	SOCKET_SIZE_CPU = NODE_SIZE_CPU / NODE_SIZE_SOCKET;
+	SOCKETS_PER_NODE = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
+	CORES_PER_SOCKET = topo.num_domain(GEOPM_DOMAIN_CORE) / SOCKETS_PER_NODE;
+	THREADS_PER_CORE = topo.num_domain(GEOPM_DOMAIN_CPU);
+#else
+	#if defined HAVE_X86_ADAPT_H
+		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
+	#else //ifdef HAVE_NUMA_H
+		SOCKETS_PER_NODE = numa_node_of_cpu(CPUS_PER_NODE-1)+1;
+		if (SOCKETS_PER_NODE <= 0)
+			SOCKETS_PER_NODE=1;
+		CORES_PER_SOCKET = sysconf(_SC_NPROCESSORS_ONLN) / SOCKETS_PER_NODE;
+	#endif
+
+	//THREADS_PER_CORE
+	std::string topoStr;
+	std::ifstream topoFile("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
+	topoFile >> topoStr;
+	topoFile.close();
+	while(topoStr.size())
+	{
+		std::string num = topoStr;
+		size_t pos = std::string::npos;
+		if ((pos = topoStr.find(',')) != std::string::npos)
+		{
+			num = topoStr.substr(0,pos);
+			topoStr = topoStr.substr(pos+1);
+		}
+		else
+			topoStr = "";
+		
+		if ((pos = num.find('-')) != std::string::npos)
+		{
+			long start = std::stol(num.substr(0,pos));
+			long stop  = std::stol(num.substr(pos+1));
+			THREADS_PER_CORE += stop - start +1;
+		}
+		else
+			THREADS_PER_CORE++;
+	}
 #endif
-	MERIC_INFO << "CPUs " << NODE_SIZE_CPU << " SOCKETS " << NODE_SIZE_SOCKET << std::endl;
+
+	MERIC_INFO << "# SYSTEM INFORMATION\n"
+	           << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
+	           << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
+	           << "\tThreads per Core: " << THREADS_PER_CORE << std::endl;
 }
 
 /**
@@ -796,12 +820,12 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 
 	usedDVFS = true;
-	int nodeSize = NODE_SIZE_CPU;
+	int nodeSize = SOCKETS_PER_NODE * CORES_PER_SOCKET;
 	int cpu=0;
 	if(socket != -1)
 	{
-		nodeSize = SOCKET_SIZE_CPU*(socket+1);
-		cpu = SOCKET_SIZE_CPU*socket;
+		nodeSize = CORES_PER_SOCKET*(socket+1);
+		cpu = CORES_PER_SOCKET*socket;
 	}
 
 	MERIC_INFO << "MERIC set frequency to: " << freq;
@@ -902,7 +926,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	{
 		MERIC_INFO << " - " << minFreq;
 	}
-	int max = NODE_SIZE_SOCKET;
+	int max = SOCKETS_PER_NODE;
 	int die=0;
 	if (socket != -1 && socket < max)
 	{
@@ -918,7 +942,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
 	for (; die<max; die++)
 	{
-		write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+		write_msr_by_idx(die * CORES_PER_SOCKET, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
 	}
 #elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "; using X86ADAPT\n";
@@ -1001,7 +1025,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 		MERIC_INFO << " for " << timeWindow << " ms";
 	}
 	usedPWRCAP = true;
-	int max = NODE_SIZE_SOCKET;
+	int max = SOCKETS_PER_NODE;
 	int die=0;
 	if (socket != -1 && socket < max)
 	{
@@ -1063,7 +1087,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	for (; die<max; die++)
 	{
 	#ifdef HAVE_MSR_CORE_H
-		write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
+		write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
 	#elif defined HAVE_X86_ADAPT_H
 		fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 		if (fd < 0)
@@ -1114,7 +1138,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
 			std::ofstream governorFile;
-			for (int i=0; i<NODE_SIZE_CPU; i++)
+			for (int i=0; i<SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
 			{
 				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
 				governorFile << scalingGovernor;
@@ -1128,7 +1152,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 			defSet << "0";
 			defSet.close();
 			
-			for (int cpu=0; cpu<NODE_SIZE_CPU; cpu++)
+			for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 			{
 				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
 				defSet << defaultSettings[systemType].maxCoreFreq / 1000;
@@ -1161,14 +1185,14 @@ void Environment::restoreSystemSettings(bool hardReset)
 	if (usedPWRCAP || hardReset)
 	{
 #ifdef HAVE_MSR_CORE_H
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<SOCKETS_PER_NODE; die++)
 		{
-			write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_PKG_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapPKG);
-//			write_msr_by_idx(die * SOCKET_SIZE_CPU, MSR_DRAM_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapRAM);
+			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapPKG);
+//			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_DRAM_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapRAM);
 		}
 #elif defined HAVE_X86_ADAPT_H
 
-		for (int die=0; die<NODE_SIZE_SOCKET; die++)
+		for (int die=0; die<SOCKETS_PER_NODE; die++)
 		{
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 			if (fd < 0)
@@ -1194,7 +1218,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 #elif defined HAVE_GEOPM_H
 		if (hardReset)
 		{
-			for (int die=0; die<NODE_SIZE_SOCKET; die++)
+			for (int die=0; die<SOCKETS_PER_NODE; die++)
 			{
 				double val = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift;
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE"), die, val);

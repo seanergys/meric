@@ -5,8 +5,8 @@ using namespace meric;
 
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
 uint64_t MSR::nominal_freq = 0;
-uint64_t MSR::SOCKET_SIZE_CPU = 1;
-uint64_t MSR::NODE_SIZE_SOCKET = 1;
+uint64_t MSR::CORES_PER_SOCKET = 1;
+uint64_t MSR::SOCKETS_PER_NODE = 1;
 
 #ifdef HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
@@ -15,7 +15,7 @@ void MSR::init()
 {
 	
 	#ifdef HAVE_MSR_CORE_H
-	core_config(&SOCKET_SIZE_CPU, NULL, &NODE_SIZE_SOCKET, NULL);
+	core_config(&CORES_PER_SOCKET, NULL, &SOCKETS_PER_NODE, NULL);
 	#endif
 	
 	//msr library has been already initialized in Environment::init(...)
@@ -24,7 +24,7 @@ void MSR::init()
 	//enable uncore-frequency monitoring
 	#ifdef HAVE_MSR_CORE_H
 	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
-	for (int i=0; i < NODE_SIZE_SOCKET; i++)
+	for (int i=0; i < SOCKETS_PER_NODE; i++)
 		write_msr_by_idx(i, U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
 	#endif
 
@@ -114,14 +114,14 @@ uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double run
 
 void MSR::initMap(std::map<std::string, uint64_t> & dict)
 {
-	for (int i=0; i < NODE_SIZE_SOCKET * SOCKET_SIZE_CPU; i++)
+	for (int i=0; i < SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);
 		dict[MSR_COUNTERS::APERF + suffix] = 0;
 		dict[MSR_COUNTERS::MPERF + suffix] = 0;
 	}
 	
-	for (int i=0; i < NODE_SIZE_SOCKET; i++)
+	for (int i=0; i < SOCKETS_PER_NODE; i++)
 		dict[MSR_COUNTERS::UCF_FREQ+ "_" + std::to_string(i)] = 0;
 }
 

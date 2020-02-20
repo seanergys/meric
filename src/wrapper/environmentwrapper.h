@@ -90,10 +90,11 @@ struct systemLimits{
 class Environment {
 
 public:
-	static int NODE_SIZE_THREAD;
-	static int NODE_SIZE_CPU;
-	static int NODE_SIZE_SOCKET;
-	static int SOCKET_SIZE_CPU;
+//	static int NODE_SIZE_THREAD;
+//	static int NODE_SIZE_CPU;
+	static int SOCKETS_PER_NODE;
+	static int CORES_PER_SOCKET;
+	static int THREADS_PER_CORE;
 
 	static SYSTEM_TYPE systemType;
 
@@ -156,11 +157,11 @@ struct SocketsRegionParameters {
 
 	SocketsRegionParameters()
 	{
-		if (Environment::SOCKET_SIZE_CPU == 0)
+		if (Environment::CORES_PER_SOCKET == 0)
 		{
 			Environment::initHWSizes();
 		}
-		socket = (RegionParameters*) malloc (sizeof(RegionParameters) * Environment::SOCKET_SIZE_CPU);
+		socket = (RegionParameters*) malloc (sizeof(RegionParameters) * Environment::CORES_PER_SOCKET);
 	}
 	
 	~SocketsRegionParameters()

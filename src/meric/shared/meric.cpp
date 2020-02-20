@@ -78,7 +78,7 @@ SharedMeric::SharedMeric()
 //		Environment::init(SYS_HASWELL, defaultParameter, 0); //this default settings must persist due to many nodes with min uncore frequency limit set to maximum - now it is fixed
 
 	
-	for (unsigned int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+	for (unsigned int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		currentState.socket[socket] = defaultParameter;
 
 

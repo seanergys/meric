@@ -266,12 +266,12 @@ protected:
 		};
 	
 		if (parameter.find(region) == parameter.end())	//region name not in list
-			for (int socket=0; socket<Environment::NODE_SIZE_SOCKET; socket++)
+			for (int socket=0; socket<Environment::SOCKETS_PER_NODE; socket++)
 				cmpSettings(settings, defaultParameter, socket);
 		else
 		{
 			std::map<std::pair<int, int>, struct RegionParameters>::iterator it;
-			for (int socket=0; socket<Environment::NODE_SIZE_SOCKET; socket++)
+			for (int socket=0; socket<Environment::SOCKETS_PER_NODE; socket++)
 			{	
 				if (node != -1 && (it = parameter[region].find(std::make_pair(node, socket))) != parameter[region].end())
 					cmpSettings(settings, it->second, socket);
@@ -309,7 +309,7 @@ protected:
 			//set core frequency
 			bool differentSettingsForSockets = false;
 			long diffCore = change.socket[0].frequency;
-			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
+			for (int socket=1; socket < Environment::SOCKETS_PER_NODE; socket++)
 			{
 				if (diffCore != change.socket[socket].frequency)
 					differentSettingsForSockets = true;
@@ -317,7 +317,7 @@ protected:
 			
 			if (differentSettingsForSockets)
 			{
-				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+				for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if(change.socket[socket].frequency)
 						Environment::frequency(currentState.socket[socket].frequency, socket);
@@ -329,7 +329,7 @@ protected:
 			//set uncore frequncy
 			differentSettingsForSockets = false;
 			long diffUncore = change.socket[0].uncoreFrequency;
-			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
+			for (int socket=1; socket < Environment::SOCKETS_PER_NODE; socket++)
 			{
 				if (diffUncore != change.socket[socket].uncoreFrequency)
 					differentSettingsForSockets = true;
@@ -337,7 +337,7 @@ protected:
 			
 			if (differentSettingsForSockets)
 			{
-				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+				for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if(change.socket[socket].uncoreFrequency)
 						Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, currentState.socket[socket].uncoreFrequency, socket);
@@ -350,7 +350,7 @@ protected:
 			differentSettingsForSockets = false;
 			long diffCapPower = change.socket[0].powerCapPKG;
 			long diffCapTime  = change.socket[0].powerCapPKGtime;
-			for (int socket=1; socket < Environment::NODE_SIZE_SOCKET; socket++)
+			for (int socket=1; socket < Environment::SOCKETS_PER_NODE; socket++)
 			{
 				if (diffCapPower != change.socket[socket].powerCapPKG || diffCapTime != change.socket[0].powerCapPKGtime)
 				{
@@ -361,7 +361,7 @@ protected:
 			
 			if (differentSettingsForSockets)
 			{
-				for (int socket=0; socket < Environment::NODE_SIZE_SOCKET; socket++)
+				for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if(change.socket[socket].powerCapPKG)
 						Environment::powercap(currentState.socket[socket].powerCapPKG, currentState.socket[socket].powerCapPKGtime, socket);
