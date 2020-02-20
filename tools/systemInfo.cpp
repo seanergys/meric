@@ -37,72 +37,14 @@ enum MODE	//this application keeps this order
 	USING_NONE
 };
 
-void sysInfoSize()	//TODO use implementation from meric::Environment
+void sysInfoSize()
 {
-    uint64_t cores = 0;
-    uint64_t threads = 0;
-	uint64_t sockets = 0;
-	int Hthreads = 0;
-#ifdef HAVE_MSR_CORE_H
-	core_config(&cores, &threads, &sockets, &Hthreads);
-#else
-
-	#if defined HAVE_X86_ADAPT_H
-		sockets = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-		cores = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU)/sockets;
-	#elif defined HAVE_GEOPM_H
-		const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
-		cores = topo.num_domain(GEOPM_DOMAIN_CORE);
-		sockets = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
-	//	NODE_SIZE_THREAD = topo.num_domain(GEOPM_DOMAIN_CPU) * NODE_SIZE_CPU;
-		cores = cores / sockets;
-	#elif defined HAVE_NUMA_H
-		cores = sysconf(_SC_NPROCESSORS_ONLN); //cores per node
-		sockets = numa_node_of_cpu(cores-1)+1;
-		if (sockets <= 0)
-			sockets = 1;
-		cores = cores / sockets;
-	#endif
-
-	std::string topoStr;
-	std::ifstream topoFile("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
-	topoFile >> topoStr;
-	topoFile.close();
-	
-	while(topoStr.size())
-	{
-		std::string num = topoStr;
-		size_t pos = std::string::npos;
-		if ((pos = topoStr.find(',')) != std::string::npos)
-		{
-			num = topoStr.substr(0,pos);
-			topoStr = topoStr.substr(pos+1);
-		}
-		else
-			topoStr = "";
-		
-		if ((pos = num.find('-')) != std::string::npos)
-		{
-			long start = std::stol(num.substr(0,pos));
-			long stop  = std::stol(num.substr(pos+1));
-			threads += stop - start +1;
-		}
-		else
-			threads++;
-	}
-
-	if (threads > 1)
-	{
-		Hthreads = 1;
-		cores = cores/threads;
-	}
-#endif
-    
+	meric::Environment::initHWSizes();
 	std::cout << "# SYSTEM INFORMATION\n"
-	          << "\tSockets per Node: " << sockets << std::endl
-	          << "\tCores per Socket: " << cores << std::endl
-	          << "\tThreads per Core: " << threads << std::endl
-	          << "\tHyper-threads:    " << ((Hthreads == 0) ? "false" : "true") << std::endl;
+	          << "\tSockets per Node: " << meric::Environment::SOCKETS_PER_NODE << std::endl
+	          << "\tCores per Socket: " << meric::Environment::CORES_PER_SOCKET << std::endl
+	          << "\tThreads per Core: " << meric::Environment::THREADS_PER_CORE << std::endl
+	          << "\tHyper-threads:    " << ((meric::Environment::THREADS_PER_CORE > 1) ? "true" : "false") << std::endl;
 }
 
 bool sysInfoFrequencies(meric::systemLimits& limits)

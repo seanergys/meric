@@ -100,9 +100,12 @@ public:
 	static void uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket = -1);	
 	static void threadNumber(int nthreads);
 	static void powercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
+
 	static void init(SYSTEM_TYPE system, RegionParameters defaultParameter, int rank);
-	static void restoreSystemSettings(bool hardReset = false);
 	static void close();
+
+	static void initHWSizes();
+	static void restoreSystemSettings(bool hardReset = false);
 	static systemLimits getSystemSettings() { return defaultSettings[systemType]; };
 	static bool readRestoreFile();
 	static long getNominalFrequency();
@@ -116,7 +119,6 @@ public:
 #endif
 
 private:
-	static void initHWSizes();
 	static void readSystemDefaultSettings();
 	static void storeSystemDefaultSettings();
 #ifdef __x86_64
