@@ -36,26 +36,13 @@ def configure(ctx):
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
    
-   # check for HW-tuning software
-    NUMA_MANDATORY=True
-    NUMA_errmsg="not found"
-    if (ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)):
-    # When variorum will prvide the information about the topology, I may check just for the msr-safe !!!
-        if (ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False) or ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False) or ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)):
-            NUMA_MANDATORY=False
-    elif (ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)):
-        NUMA_MANDATORY=False
-    elif (ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)):
-        NUMA_MANDATORY=False
-    elif (ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)):
-        NUMA_MANDATORY=False
-    else:
+    # check for HW-tuning software
+    if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) & (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) & (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) & (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
         if ctx.check_cxx(lib="cpufreq", mandatory=False):
             ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
             ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
-    if (NUMA_MANDATORY):
-        NUMA_errmsg += " - When x86_adapt, msr-safe, geopm are missing, numactl is mandatory!"
-    ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=NUMA_MANDATORY, errmsg=NUMA_errmsg)
+    ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
+#    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
     
     # check for energy measurment systems
     if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
@@ -68,8 +55,6 @@ def configure(ctx):
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
 
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
-
-#    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
     for dep in ctx.env.DEFINES:

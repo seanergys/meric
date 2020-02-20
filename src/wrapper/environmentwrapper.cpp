@@ -383,9 +383,13 @@ void Environment::initHWSizes()
 	#if defined HAVE_X86_ADAPT_H
 		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
 		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
-	#else //ifdef HAVE_NUMA_H
+	#else
 		uint64_t CORES_PER_NODE = sysconf(_SC_NPROCESSORS_ONLN);
-		SOCKETS_PER_NODE = numa_node_of_cpu(CORES_PER_NODE-1)+1;
+		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(CORES_PER_NODE-1)+"/topology/physical_package_id");
+		topoFile >> topoStr;
+		topoFile.close();
+		
+		SOCKETS_PER_NODE = std::stoi(topoStr)+1;
 		CORES_PER_SOCKET = CORES_PER_NODE / SOCKETS_PER_NODE;
 	#endif
 
