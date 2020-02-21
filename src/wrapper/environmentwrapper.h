@@ -64,7 +64,7 @@ struct RegionParameters { //must be able to carry -1
 
 
 
-struct systemLimits{
+struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supported should be zero
 	long maxTurboFreq;           //Hz
 	long maxCoreFreq;            //Hz
 	long defaultCoreFreq;        //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise zero
@@ -107,7 +107,7 @@ public:
 
 	static void initHWSizes();
 	static void restoreSystemSettings(bool hardReset = false);
-	static systemLimits getSystemSettings() { return defaultSettings[systemType]; };
+	static systemLimits getSystemSettings() { return defaultSettings; };	//TODO
 	static bool readRestoreFile();
 	static long getNominalFrequency();
 	static long getMaximumTurboFrequency();
@@ -138,7 +138,7 @@ private:
 	};
 #endif
 
-	static systemLimits defaultSettings [5];
+	static systemLimits defaultSettings;
 	static bool usedDVFS;
 	static bool usedUFS;
 	static bool usedPWRCAP;

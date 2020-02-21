@@ -1,27 +1,9 @@
-
 #include "environmentwrapper.h"
 #include "raplwrapper.h"
 
 using namespace meric;
 
-// LIST OF POSSIBLE frequencies for JETSON CPUs [kHz]
-//	102000 204000 307200 403200 518400 614400 710400 825600 921600 1036800 1132800 1224000 1326000 1428000 1555500 1632000 1734000
-// LIST OF POSSIBLE frequencies for JETSON memory [kHz]
-//	40800 68000 102000 204000 408000 665600 800000 1065600 1331200 1600000
-// LIST OF POSSIBLE frequencies for DAVIDE [kHz]
-//	4023000 3757000 3491000 3225000 2959000 2693000 2427000 2161000 2061000
-
-systemLimits Environment::defaultSettings [] = {
-	[SYS_HASWELL] = { 3300000000, 3300000000, 2500000000, 1200000000, //DVFS
-	                  3000000000, 3000000000, 1200000000, //UFS 
-	                         290,         66,      45898, 13239288264131720, //PKG powercap
-	                          44,          4,      45898, 13230870095724886,//RAM powercap
-	                         0x0},
-	[SYS_JETSON]  = { -1, 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //TODO if the default set, do not restore the min and max, but restore the exact value
-	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //system tuning not supported
-	[SYS_DAVIDE]  = { -1, 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //UFS+powercap not supported
-	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
-};
+systemLimits Environment::defaultSettings = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0};
 
 int Environment::SOCKETS_PER_NODE = 1;
 int Environment::CORES_PER_SOCKET = 1;
@@ -336,7 +318,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 		{
 			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-			defSet << defaultSettings[systemType].minCoreFreq / 1000; //kHz
+			defSet << defaultSettings.minCoreFreq / 1000; //kHz
 			defSet.close();
 			if (!defSet)
 			{
@@ -471,23 +453,23 @@ bool Environment::readRestoreFile()
 						}
 						else if (std::string(dvfs->name->string) == "TURBO")
 						{
-							defaultSettings[systemType].maxTurboFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							defaultSettings.maxTurboFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 						}
 						else if (std::string(dvfs->name->string) == "MAX")
 						{
-							defaultSettings[systemType].maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							defaultSettings.maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 						}
 						else if (std::string(dvfs->name->string) == "MIN")
 						{
-							defaultSettings[systemType].minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							defaultSettings.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 						}
 						else if (std::string(dvfs->name->string) == "DEFAULT")
 						{
-							defaultSettings[systemType].defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							defaultSettings.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 						}
 						else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
 						{
-							defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							defaultSettings.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
 						}
 						dvfs = dvfs->next;
 					}while(dvfs != NULL);
@@ -499,19 +481,18 @@ bool Environment::readRestoreFile()
 					{
 						if (std::string(ufs->name->string) == "MAX")
 						{
-							defaultSettings[systemType].maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							defaultSettings.maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
 						}
 						else if (std::string(ufs->name->string) == "MIN")
 						{
-							defaultSettings[systemType].minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							defaultSettings.minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
 						}
 						else if (std::string(ufs->name->string) == "DEFAULT")
 						{
-							defaultSettings[systemType].defaultUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							defaultSettings.defaultUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
 						}
 						ufs = ufs->next;
 					}while(ufs != NULL);
-					defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 				}
 				else if (std::string(data->name->string) == "PWRCAP")
 				{
@@ -520,11 +501,11 @@ bool Environment::readRestoreFile()
 					{
 						if (std::string(pwr->name->string) == "PKG")
 						{
-							defaultSettings[systemType].defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+							defaultSettings.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
 						}
 						else if (std::string(pwr->name->string) == "DRAM")
 						{
-							defaultSettings[systemType].defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+							defaultSettings.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
 						}
 						pwr = pwr->next;
 					}while(pwr != NULL);
@@ -551,7 +532,7 @@ void Environment::readSystemDefaultSettings()
 	//we have to read the default settings from the system
 
 // CORE freq -----------------------------------------------------------------//
-		defaultSettings[systemType].defaultCoreFreq = 0;
+		defaultSettings.defaultCoreFreq = 0;
 		std::ifstream frequencyBounderyFile;
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 		if (frequencyBounderyFile.is_open())
@@ -559,7 +540,7 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile >> scalingGovernor;
 			frequencyBounderyFile.close();
 		}
-		defaultSettings[systemType].maxTurboFreq = getMaximumTurboFrequency();
+		defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 		std::string freqBound; //files have the value in KHz
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 		if (frequencyBounderyFile.is_open())
@@ -567,7 +548,7 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile >> freqBound;
 			frequencyBounderyFile.close();
 		}
-		defaultSettings[systemType].maxCoreFreq = std::stol(freqBound) * 1000;
+		defaultSettings.maxCoreFreq = std::stol(freqBound) * 1000;
 		
 		if (scalingGovernor == "userspace")
 		{
@@ -577,7 +558,7 @@ void Environment::readSystemDefaultSettings()
 				frequencyBounderyFile >> freqBound;
 				frequencyBounderyFile.close();
 			}
-			defaultSettings[systemType].defaultCoreFreq = std::stol(freqBound) * 1000;
+			defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
 		}
 		
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
@@ -586,39 +567,39 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile >> freqBound;
 			frequencyBounderyFile.close();
 		}
-		defaultSettings[systemType].minCoreFreq = std::stol(freqBound) * 1000;
+		defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
 #ifdef HAVE_MSR_CORE_H
-		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
+		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
 
 // UnCORE freq ---------------------------------------------------------------//
-		defaultSettings[systemType].defaultUncoreFreq = 0;
+		defaultSettings.defaultUncoreFreq = 0;
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 		read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
-		defaultSettings[systemType].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-		defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+		defaultSettings.maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+		defaultSettings.minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
 #elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 		int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 		uint64_t setting;
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-		defaultSettings[systemType].maxUncoreFreq = setting * 100000000;
+		defaultSettings.maxUncoreFreq = setting * 100000000;
 		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-		defaultSettings[systemType].minUncoreFreq = setting * 100000000;
+		defaultSettings.minUncoreFreq = setting * 100000000;
 #elif defined HAVE_GEOPM_H
-		defaultSettings[systemType].minUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
+		defaultSettings.minUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
 		
-		defaultSettings[systemType].maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
+		defaultSettings.maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
 #else	//Jetson memory frequencies
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
 		if (frequencyBounderyFile.is_open())
 		{
 			uncoreFile >> freqBound;
 			uncoreFile.close();
-			defaultSettings[systemType].maxUncoreFreq = std::stol(freqBound);
+			defaultSettings.maxUncoreFreq = std::stol(freqBound);
 		}
 
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/min");
@@ -626,7 +607,7 @@ void Environment::readSystemDefaultSettings()
 		{
 			uncoreFile >> freqBound;
 			uncoreFile.close();
-			defaultSettings[systemType].minUncoreFreq = std::stol(freqBound);
+			defaultSettings.minUncoreFreq = std::stol(freqBound);
 		}
 		
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/rate");
@@ -634,7 +615,7 @@ void Environment::readSystemDefaultSettings()
 		{
 			uncoreFile >> freqBound;
 			uncoreFile.close();
-			defaultSettings[systemType].defaultUncoreFreq = std::stol(freqBound);
+			defaultSettings.defaultUncoreFreq = std::stol(freqBound);
 		}
 #endif
 
@@ -664,33 +645,33 @@ void Environment::readSystemDefaultSettings()
 		
 		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_RAM_POWER_LIMIT, pio.signal_domain_type(RAPL_RAM_POWER_LIMIT), 0));
 #endif
-		defaultSettings[systemType].defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
-		defaultSettings[systemType].defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
+		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
 	}
 
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
-	if (defaultSettings[systemType].defaultUncoreFreq != -1)
+	if (defaultSettings.defaultUncoreFreq != -1)
 		activatedUFS = true;
 #endif
-	if (defaultSettings[systemType].defaultPowerCapPKG != 0x0)
+	if (defaultSettings.defaultPowerCapPKG != 0x0)
 		activatedPWRCAP = true;
 
 	MERIC_INFO
 		<< "CF"  << std::endl
 		<< "\tDRV " << scalingDriver << std::endl
 		<< "\tGOV " << scalingGovernor << std::endl
-		<< "\tTRB " << defaultSettings[systemType].maxTurboFreq << std::endl
-		<< "\tMAX " << defaultSettings[systemType].maxCoreFreq << std::endl
-		<< "\tMIN " << defaultSettings[systemType].minCoreFreq << std::endl
-		<< "\tDEF " << defaultSettings[systemType].defaultCoreFreq << std::endl
-		<< "\tBIA " << defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default << std::endl
+		<< "\tTRB " << defaultSettings.maxTurboFreq << std::endl
+		<< "\tMAX " << defaultSettings.maxCoreFreq << std::endl
+		<< "\tMIN " << defaultSettings.minCoreFreq << std::endl
+		<< "\tDEF " << defaultSettings.defaultCoreFreq << std::endl
+		<< "\tBIA " << defaultSettings.IA32_ENERGY_PERF_BIAS_default << std::endl
 		<< "UnCF" << std::endl
-		<< "\tMAX " << defaultSettings[systemType].maxUncoreFreq << std::endl
-		<< "\tMIN " << defaultSettings[systemType].minUncoreFreq << std::endl
-		<< "\tDEF " << defaultSettings[systemType].defaultUncoreFreq << std::endl
+		<< "\tMAX " << defaultSettings.maxUncoreFreq << std::endl
+		<< "\tMIN " << defaultSettings.minUncoreFreq << std::endl
+		<< "\tDEF " << defaultSettings.defaultUncoreFreq << std::endl
 		<< "PWRcap" << std::endl
-		<< "\tPKG " << defaultSettings[systemType].defaultPowerCapPKG << std::endl
-		<< "\tRAM " << defaultSettings[systemType].defaultPowerCapRAM << std::endl;
+		<< "\tPKG " << defaultSettings.defaultPowerCapPKG << std::endl
+		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl;
 }
 
 /**
@@ -708,18 +689,18 @@ void Environment::storeSystemDefaultSettings()
 	
 		std::string content  = "{\n";
 		content += "\t\"DVFS\" : {\n\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
-		         + "\t\t\"TURBO\" : " + std::to_string(defaultSettings[systemType].maxTurboFreq) + ",\n"
-		         + "\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxCoreFreq) + ",\n"
-		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minCoreFreq) + ",\n"
-		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultCoreFreq) + ",\n"
-		         + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
+		         + "\t\t\"TURBO\" : " + std::to_string(defaultSettings.maxTurboFreq) + ",\n"
+		         + "\t\t\"MAX\" : " + std::to_string(defaultSettings.maxCoreFreq) + ",\n"
+		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings.minCoreFreq) + ",\n"
+		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq) + ",\n"
+		         + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings.IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
 
-		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxUncoreFreq) + ",\n"
-		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + ",\n"
-		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultUncoreFreq) + "\n\t},\n";
+		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings.maxUncoreFreq) + ",\n"
+		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings.minUncoreFreq) + ",\n"
+		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t},\n";
 
-		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings[systemType].defaultPowerCapPKG) + ",\n"
-		        + "\t\t\"DRAM\" : " +std::to_string(defaultSettings[systemType].defaultPowerCapRAM) +"\n\t}";
+		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
+		        + "\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t}";
 		content += "\n}\n";
 		defaultRestoreFile << content;
 		defaultRestoreFile.close();
@@ -858,7 +839,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		return;
 
 	// upper limit is checked only if the information about the turbo frequency is available
-	if (freq < defaultSettings[systemType].minCoreFreq || (defaultSettings[systemType].maxTurboFreq != -1 && freq > defaultSettings[systemType].maxTurboFreq))
+	if (freq < defaultSettings.minCoreFreq || (defaultSettings.maxTurboFreq != -1 && freq > defaultSettings.maxTurboFreq))
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
 		return;
@@ -958,10 +939,10 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	if (!activatedUFS)
 		return; //UFS not supported
 		
-	if (maxFreq > defaultSettings[systemType].maxUncoreFreq || minFreq < defaultSettings[systemType].minUncoreFreq || maxFreq < minFreq)
+	if (maxFreq > defaultSettings.maxUncoreFreq || minFreq < defaultSettings.minUncoreFreq || maxFreq < minFreq)
 	{
 		std::cerr << "Uncore frequency has not changed to invalid value: " << maxFreq << std::endl;
-		MERIC_INFO << defaultSettings[systemType].maxUncoreFreq << " - " << defaultSettings[systemType].minUncoreFreq << std::endl;
+		MERIC_INFO << defaultSettings.maxUncoreFreq << " - " << defaultSettings.minUncoreFreq << std::endl;
 		return;
 	}
 	usedUFS = true;
@@ -1178,8 +1159,8 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedDVFS || hardReset)
 	{
-		if (defaultSettings[systemType].defaultCoreFreq > 0 && (usedDVFS || hardReset))
-			frequency(defaultSettings[systemType].defaultCoreFreq);
+		if (defaultSettings.defaultCoreFreq > 0 && (usedDVFS || hardReset))
+			frequency(defaultSettings.defaultCoreFreq);
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
 			std::ofstream governorFile;
@@ -1200,10 +1181,10 @@ void Environment::restoreSystemSettings(bool hardReset)
 			for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
 			{
 				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				defSet << defaultSettings[systemType].maxCoreFreq / 1000;
+				defSet << defaultSettings.maxCoreFreq / 1000;
 				defSet.close();
 #ifdef HAVE_MSR_CORE_H
-				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default);
+				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
 			}
 		}
@@ -1213,10 +1194,10 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 		if(usedUFS || hardReset)
 		{
-			if (defaultSettings[SYS_JETSON].defaultUncoreFreq > 0)
-				uncoreFrequency(defaultSettings[systemType].defaultUncoreFreq, defaultSettings[systemType].defaultUncoreFreq);
+			if (defaultSettings.defaultUncoreFreq > 0)
+				uncoreFrequency(defaultSettings.defaultUncoreFreq, defaultSettings.defaultUncoreFreq);
 			else
-				uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
+				uncoreFrequency(defaultSettings.maxUncoreFreq, defaultSettings.minUncoreFreq);
 		}
 
 		if (systemType == SYS_JETSON)
@@ -1234,8 +1215,8 @@ void Environment::restoreSystemSettings(bool hardReset)
 #ifdef HAVE_MSR_CORE_H
 		for (int die=0; die<SOCKETS_PER_NODE; die++)
 		{
-			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapPKG);
-//			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_DRAM_POWER_LIMIT, defaultSettings[SYS_OTHER].defaultPowerCapRAM);
+			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
+//			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_DRAM_POWER_LIMIT, defaultSettings.defaultPowerCapRAM);
 		}
 #elif defined HAVE_X86_ADAPT_H
 
@@ -1248,16 +1229,16 @@ void Environment::restoreSystemSettings(bool hardReset)
 				return;
 			}
 			int adaptRegisterHandler;
-			uint64_t POWER_LIMIT_bits = defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask;
+			uint64_t POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask;
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
 			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
 			
-			POWER_LIMIT_bits = defaultSettings[SYS_OTHER].defaultPowerCapPKG >> MSR_PKG_POWER_LIMIT_power2_shift;
+			POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG >> MSR_PKG_POWER_LIMIT_power2_shift;
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
 			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
 			
 //			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
-//			x86_adapt_set_setting(fd, adaptRegisterHandler, &defaultSettings[SYS_OTHER].defaultPowerCapRAM);
+//			x86_adapt_set_setting(fd, adaptRegisterHandler, &defaultSettings.defaultPowerCapRAM);
 
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
@@ -1267,15 +1248,15 @@ void Environment::restoreSystemSettings(bool hardReset)
 		{
 			for (int die=0; die<SOCKETS_PER_NODE; die++)
 			{
-				double val = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift;
+				double val = (defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift;
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_CLAMP_ENABLE"), die, val);
-				val = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift;
+				val = (defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift;
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_LIMIT_ENABLE", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_LIMIT_ENABLE"), die, val);
-				val = ((defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask) >> MSR_PKG_POWER_LIMIT_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
+				val = ((defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask) >> MSR_PKG_POWER_LIMIT_shift) * RAPL::getUnit(RAPL_PCKG_POWER_LIMIT);
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT"), die, val);
 
-				uint64_t time_y = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift;
-				uint64_t time_z = (defaultSettings[SYS_OTHER].defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift;
+				uint64_t time_y = (defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift;
+				uint64_t time_z = (defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift;
 				val = pow(2.0, time_y) * (1.0 + time_z/4.0) * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW);
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW"), die, val);
 			}
