@@ -282,6 +282,39 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		ok = false;	
 #elif defined __x86_64 //intel CPUs only
 	std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n";
+#else //Jetson memory frequencies
+	frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
+	if (frequencyBounderyFile.is_open())
+	{
+		std::string freqBound = "";
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound);
+		std::cout << "\tMax memory frequency:       " << freq << " Hz\n";
+		if (freq != limits.maxUncoreFreq)
+			ok = false;
+	}
+
+	frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/min");
+	if (frequencyBounderyFile.is_open())
+	{
+		std::string freqBound = "";
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		freq = std::stol(freqBound);
+		std::cout << "\tMin memory frequency:       " << freq << " Hz\n";
+		if (freq != limits.maxUncoreFreq)
+			ok = false;
+	}
+	
+	frequencyBounderyFile.open("/sys/kernel/debug/clock/emc/possible_rates");
+	if (frequencyBounderyFile.is_open())
+	{
+		std::string freqBound = "";
+		getline(frequencyBounderyFile, freqBound);
+		frequencyBounderyFile.close();
+		std::cout << "\tAvailable memory frequencies:   " << freqBound << " Hz\n";
+	}
 #endif
 	return ok;
 }
