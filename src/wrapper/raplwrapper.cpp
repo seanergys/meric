@@ -223,11 +223,10 @@ std::string RAPL::getSummaryCounterName()
 {
 	return RAPL_SUM_ENERGY;
 }
-void RAPL::getSummaryValue(double time, unsigned long long int * counterSummary)
-{
-	*counterSummary += time;
-}
 
+/**
+ * returns unit (double) of the requested RAPL counter
+ **/
 double RAPL::getUnit(std::string counterName)
 {
 	if (units.count(counterName))
