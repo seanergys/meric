@@ -93,12 +93,6 @@ std::string MSR::getSummaryCounterName()
 	return "";
 }
 
-
-void MSR::getSummaryValue(double time, unsigned long long int * counterSummary)
-{
-	*counterSummary = ULLONG_MAX;
-}
-
 // solve counter overflow
 uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter)
 {

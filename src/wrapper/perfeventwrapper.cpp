@@ -168,10 +168,6 @@ std::string PERFEVENT::getSummaryCounterName()
 {
 	return "";
 }
-void PERFEVENT::getSummaryValue(double time, unsigned long long int * counterSummary)
-{
-	*counterSummary = ULLONG_MAX;
-}
 
 // solve counter overflow
 unsigned long long PERFEVENT::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)

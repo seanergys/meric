@@ -50,7 +50,6 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::f
 
 	if (TCounter::getSummaryCounterName() != "")
 	{
-		TCounter::getSummaryValue(*time, &summary);
 		stats[distance(_records[iEnd].record.begin(),_records[iEnd].record.find(TCounter::getSummaryCounterName()))] = summary;
 	}
 }
@@ -83,10 +82,10 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 		ss << TCounter::getCounterLabel(counterIt.first) << "," << value << std::endl;
 	}
 
-	TCounter::getSummaryValue(runtime, &summary);
-	if (summary != ULLONG_MAX)
+	if (TCounter::getSummaryCounterName() != "")
+	{
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
-
+	}
 
 // Counters ratios
 	std::map <std::string, double> ratios;

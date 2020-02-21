@@ -138,6 +138,15 @@ size_t HDEEM::energy = 0;
 
 #endif
 
+std::string HDEEM::getSummaryCounterName()
+{
+	return "";
+}
+
+std::string HDEEM::getCountersLabel()
+{
+	return "HDEEM";
+}
 
 
 

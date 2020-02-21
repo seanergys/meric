@@ -179,10 +179,6 @@ std::string PAPI::getSummaryCounterName()
 {
 	return "";
 }
-void PAPI::getSummaryValue(double time, unsigned long long int * counterSummary)
-{
-	*counterSummary = ULLONG_MAX;
-}
 
 // solve counter overflow
 unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
