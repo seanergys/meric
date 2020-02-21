@@ -17,7 +17,7 @@ systemLimits Environment::defaultSettings [] = {
 	                         290,         66,      45898, 13239288264131720, //PKG powercap
 	                          44,          4,      45898, 13230870095724886,//RAM powercap
 	                         0x0},
-	[SYS_JETSON]  = { -1, 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0},
+	[SYS_JETSON]  = { -1, 1734000000, 518400000, 102000000, 1600000000, 408000000, 40800000, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //TODO if the default set, do not restore the min and max, but restore the exact value
 	[SYS_THUNDER] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //system tuning not supported
 	[SYS_DAVIDE]  = { -1, 4023000000, 4023000000, 2061000000, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}, //UFS+powercap not supported
 	[SYS_OTHER]   = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0}
@@ -505,6 +505,10 @@ bool Environment::readRestoreFile()
 						{
 							defaultSettings[systemType].minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
 						}
+						else if (std::string(ufs->name->string) == "DEFAULT")
+						{
+							defaultSettings[systemType].defaultUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+						}
 						ufs = ufs->next;
 					}while(ufs != NULL);
 					defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
@@ -547,6 +551,7 @@ void Environment::readSystemDefaultSettings()
 	//we have to read the default settings from the system
 
 // CORE freq -----------------------------------------------------------------//
+		defaultSettings[systemType].defaultCoreFreq = 0;
 		std::ifstream frequencyBounderyFile;
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 		if (frequencyBounderyFile.is_open())
@@ -574,8 +579,6 @@ void Environment::readSystemDefaultSettings()
 			}
 			defaultSettings[systemType].defaultCoreFreq = std::stol(freqBound) * 1000;
 		}
-		else
-			defaultSettings[systemType].defaultCoreFreq = getNominalFrequency();
 		
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 		if (frequencyBounderyFile.is_open())
@@ -589,12 +592,12 @@ void Environment::readSystemDefaultSettings()
 #endif
 
 // UnCORE freq ---------------------------------------------------------------//
+		defaultSettings[systemType].defaultUncoreFreq = 0;
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 		read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
 		defaultSettings[systemType].maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 		defaultSettings[systemType].minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
 #elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
@@ -602,7 +605,6 @@ void Environment::readSystemDefaultSettings()
 		uint64_t setting;
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 		defaultSettings[systemType].maxUncoreFreq = setting * 100000000;
-		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
 		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 		defaultSettings[systemType].minUncoreFreq = setting * 100000000;
@@ -610,7 +612,30 @@ void Environment::readSystemDefaultSettings()
 		defaultSettings[systemType].minUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
 		
 		defaultSettings[systemType].maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-		defaultSettings[systemType].defaultUncoreFreq = defaultSettings[systemType].maxUncoreFreq;
+#else	//Jetson memory frequencies
+		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
+		if (frequencyBounderyFile.is_open())
+		{
+			uncoreFile >> freqBound;
+			uncoreFile.close();
+			defaultSettings[systemType].maxUncoreFreq = std::stol(freqBound);
+		}
+
+		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/min");
+		if (frequencyBounderyFile.is_open())
+		{
+			uncoreFile >> freqBound;
+			uncoreFile.close();
+			defaultSettings[systemType].minUncoreFreq = std::stol(freqBound);
+		}
+		
+		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/rate");
+		if (frequencyBounderyFile.is_open())
+		{
+			uncoreFile >> freqBound;
+			uncoreFile.close();
+			defaultSettings[systemType].defaultUncoreFreq = std::stol(freqBound);
+		}
 #endif
 
 // POWERcap ------------------------------------------------------------------//
@@ -690,7 +715,8 @@ void Environment::storeSystemDefaultSettings()
 		         + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings[systemType].IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
 
 		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings[systemType].maxUncoreFreq) + ",\n"
-		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + "\n\t},\n";
+		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings[systemType].minUncoreFreq) + ",\n"
+		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings[systemType].defaultUncoreFreq) + "\n\t},\n";
 
 		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings[systemType].defaultPowerCapPKG) + ",\n"
 		        + "\t\t\"DRAM\" : " +std::to_string(defaultSettings[systemType].defaultPowerCapRAM) +"\n\t}";
@@ -1152,7 +1178,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedDVFS || hardReset)
 	{
-		if ((usedDVFS || hardReset) && scalingGovernor == "userspace")
+		if (defaultSettings[systemType].defaultCoreFreq > 0 && (usedDVFS || hardReset))
 			frequency(defaultSettings[systemType].defaultCoreFreq);
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
@@ -1185,19 +1211,21 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedUFS)
 	{
+		if(usedUFS || hardReset)
+		{
+			if (defaultSettings[SYS_JETSON].defaultUncoreFreq > 0)
+				uncoreFrequency(defaultSettings[systemType].defaultUncoreFreq, defaultSettings[systemType].defaultUncoreFreq);
+			else
+				uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
+		}
+
 		if (systemType == SYS_JETSON)
 		{
-			if(usedUFS)
-				uncoreFrequency(defaultSettings[SYS_JETSON].defaultUncoreFreq, defaultSettings[SYS_JETSON].defaultUncoreFreq);	//TODO remove the last reason to use defaultSettings[SYS_JETSON]
 			//uncore
 			std::ofstream memTuningFile;
 			memTuningFile.open ("/sys/kernel/debug/clock/override.emc/state");
 			memTuningFile << "0";
 			memTuningFile.close();
-		}
-		else if(usedUFS || hardReset)
-		{
-			uncoreFrequency(defaultSettings[systemType].maxUncoreFreq, defaultSettings[systemType].minUncoreFreq);
 		}
 	}
 
