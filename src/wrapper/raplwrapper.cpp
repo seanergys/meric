@@ -12,7 +12,11 @@ std::map<std::string, double> RAPL::units;
 std::map<std::string, unsigned long long int> RAPL::counters;
 uint64_t RAPL::CORES_PER_SOCKET = 1;
 
-// solve counter overflow
+/**
+ * returns result value of the counter (std::string) based on its startValue and
+ * stopValue and time between these two measurements
+ * solve counter overflow
+ **/
 unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
 	if (counter == RAPL_SUM_ENERGY)
@@ -38,7 +42,10 @@ unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsig
 		return (stopValue - startValue) * units[counterName];
 }
 
-// set counters units
+/**
+ * initialization of the RAPL class
+ * initCountersUnits() is already called from environmentwrapper
+ **/
 void RAPL::init(bool detailed)
 {
 	detailedMode = detailed;
@@ -55,6 +62,9 @@ void RAPL::init(bool detailed)
 	//initCountersUnits() is already called from environmentwrapper
 }
 
+/**
+ * stores the RAPL energy / power limit / time window units to private dictionary
+ **/
 void RAPL::initCountersUnits()
 {
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
@@ -93,7 +103,10 @@ void RAPL::initCountersUnits()
 
 
 #ifdef HAVE_X86_ADAPT_H
-//	read counters values
+/**
+ * read values of the counters (std::string) from the input dictionary and store
+ * the values into the dictionary (unsigned long long int)
+ **/
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 
@@ -115,7 +128,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
-//TODO this version doesn't expect more than 10 sockets per node (should be enough for this century)
+//TODO this version doesn't expect more than 10 sockets per node
 				if ((iterator->first.back()-'0') != die)
 					continue;
 				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);
@@ -205,11 +218,18 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 }
 #endif
 
+/**
+ * returns label of this class (required for the output)
+ **/
 std::string RAPL::getCountersLabel()
 {
 	return "RAPL";
 }
 
+/**
+ * each counter has a label, that will represent this counter in the output file
+ * returns a label of the input counter
+ **/
 std::string RAPL::getCounterLabel(std::string counter)
 {
 	std::map<std::string, std::string>::iterator it = counterLabel.find(counter);
@@ -219,6 +239,12 @@ std::string RAPL::getCounterLabel(std::string counter)
 		return counter;
 }
 
+/**
+ * Since RAPL only provides measurement for specific domains, and we are 
+ * interested in the overall energy consumption of the node (domains under one 
+ * node) we had to create a "fake" counter
+ * this method returns name of this counter
+ **/
 std::string RAPL::getSummaryCounterName()
 {
 	return RAPL_SUM_ENERGY;
@@ -235,7 +261,9 @@ double RAPL::getUnit(std::string counterName)
 		return -1.0;
 }
 
-//	set list of counters to measure
+/**
+ * fill-in the RAPL counters into the dictionary, that will keep values of the required counters
+ **/
 void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 // fill this vector
