@@ -84,7 +84,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		std::cout << "\tHardware controlled P-State: " << status << std::endl;
 #endif
 	
-	if (meric::Environment::isDVFSpossible())
+	if (!meric::Environment::isDVFSpossible())
 	{
 		std::cout << "\n\tCPU core frequency scaling (DVFS) NOT available\n";
 		if (HWP)
