@@ -89,7 +89,7 @@ In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/
 
 
 ### HDEEM ###
-High Definition Energy Efficiency Monitoring (HDEEM) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run.
+[High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run.
 
 
 ### DiG ###
