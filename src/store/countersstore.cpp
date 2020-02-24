@@ -71,7 +71,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 
 	unsigned long long int summary = 0;
 	TType value;
-	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<": \n"
+	ss << "# COUNTERS - "<< TCounter::getCountersLabel() <<":\n"
 	   << "Runtime of function [s]," << runtime << std::endl;
 	for(auto const &counterIt : _records[iEnd].record)
 	{
@@ -92,7 +92,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 	TCounter::getRatios(_records[iStarts.back()].record, _records[iEnd].record, runtime, ratios);
 	if (ratios.size())
 	{
-		ss << "# RATIOS: \n";
+		ss << "# RATIOS:\n";
 		for(auto const &element : ratios)
 			ss << element.first<<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
 	}

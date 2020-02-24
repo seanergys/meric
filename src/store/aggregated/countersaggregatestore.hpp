@@ -115,7 +115,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	ss << "\n# COUNTERS - "<<StoreCounterType::getCountersLabel() << ": \n";
+	ss << "\n# COUNTERS - "<<StoreCounterType::getCountersLabel() << ":\n";
 	int j = 0;
 	CountersRecord<StoreDataType> averageRecord;
 	//for(std::map<std::string, StoreDataType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)
@@ -139,7 +139,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	StoreCounterType::getRatios(startRecord.record, averageRecord.record, time, ratios);
 	if (ratios.size())
 	{
-		ss << "# RATIOS: \n";
+		ss << "# RATIOS:\n";
 		for(auto const &element : ratios)
 			ss << StoreCounterType::getCounterLabel(element.first) <<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
 	}

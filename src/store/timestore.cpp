@@ -104,7 +104,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	}
 	ss << std::endl;
 
-//	ss << "# Job info - " << TSystem::storeLabel << std::endl;
+//	ss << "# Job info - " << TSystem::getCountersLabel() << std::endl;
 //	ss << "JOB ID," << _jobID << "." << _stepID  << std::endl
 //	   << "Nodelist," << _nodelist << std::endl
 //	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
@@ -134,13 +134,13 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
     // Blade values //
     //////////////////
 
-	ss << "# Store CONTINUAL 1 - " << TSystem::storeLabel << std::endl;
+	ss << "# SAMPLES - " << TSystem::getCountersLabel() << ":\n";
 	
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples)
 		{
-			ss << "# Blade (" << TSystem::storeLabel <<") samples [W]"<< std::endl;
+			ss << "# Blade (" << TSystem::getCountersLabel() <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;

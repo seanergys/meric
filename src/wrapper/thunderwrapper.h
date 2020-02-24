@@ -29,8 +29,6 @@ struct thunderSample {
 class THUNDER {
 
 public:
-
-	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel; //"DC"
 	static int FREQUENCY;
 	static const int PROBE_NUMBER = 1;	//DC
@@ -42,6 +40,7 @@ public:
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
+	static std::string getCountersLabel() {	return "ThunderX";};
 
 private:
 	static std::string filename;

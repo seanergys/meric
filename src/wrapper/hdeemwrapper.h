@@ -28,7 +28,6 @@ public:
 	static const int FREQUENCY_VR = 100;
 	static const int VRDELAY = 2; //from list of VR samples we noticed, that VR samples are shifted by two samples
 	static const int PROBE_NUMBER = 9;	//BLADE + {"CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };
-	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 	static std::string getCounterLabel(std::string counter) { return counter; };
 

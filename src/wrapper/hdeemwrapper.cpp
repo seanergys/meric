@@ -4,7 +4,6 @@
 
 using namespace meric;
 
-std::string HDEEM::storeLabel = "hdeem";
 std::vector<std::string> HDEEM::vrSensorLabel;
 
 #ifdef HAVE_HDEEM_H

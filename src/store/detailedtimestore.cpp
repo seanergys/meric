@@ -40,13 +40,13 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 	// Blade values //
 	//////////////////
     
-	ss << "# Store CONTINUAL 1 - "<< HDEEM::storeLabel << std::endl;
+	ss << "# SAMPLES - " << HDEEM::getCountersLabel() << ":\n";
 
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples)
 		{
-			ss << "# Blade (" << HDEEM::storeLabel <<") samples [W]"<< std::endl;
+			ss << "# Blade (" << HDEEM::getCountersLabel() <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
@@ -62,7 +62,7 @@ void DetailedTimeStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iSt
 		std::cerr << "MERIC ERROR: No samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
-	ss << "# Blade summary - " << HDEEM::storeLabel << std::endl
+	ss << "# Blade summary - " << HDEEM::getCountersLabel() << std::endl
 	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
        << "Maximal power [W]" << "," << maxWatts[0] << std::endl

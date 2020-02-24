@@ -5,7 +5,6 @@
 using namespace meric;
 
 std::string JETSON::filename="";
-std::string JETSON::storeLabel="jetson";
 std::vector<std::string> JETSON::vrSensorLabel = {"GPU", "CPU"}; //"DC",
 std::vector<jetsonSample> JETSON::_samples;
 int JETSON::FREQUENCY = 10;

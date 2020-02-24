@@ -30,7 +30,6 @@ class JETSON {
 
 public:
 
-	static std::string storeLabel;
 	static std::vector<std::string> vrSensorLabel;// = {"GPU", "CPU"}; //"DC",
 	static int FREQUENCY;
 	static const int PROBE_NUMBER = 3;	//DC + GPU + CPU	//	static const int PROBE_NUMBER = 7; //TODO
@@ -42,6 +41,7 @@ public:
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
+	static std::string getCountersLabel() {	return "Jetson";};
 
 private:
 	static std::string filename;

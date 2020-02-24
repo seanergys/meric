@@ -8,7 +8,6 @@ unsigned long long DAVIDE::_startTime;
 unsigned long long DAVIDE::_stopTime;
 std::vector<long long> DAVIDE::time_samples; // vector will contain all time stamps from the specified interval 
 std::vector<double>    DAVIDE::power_samples; // vector will contain power samples corelated to timestamps 
-std::string DAVIDE::storeLabel = "DAVIDE";
 std::vector<std::string> DAVIDE::vrSensorLabel = {"blade"};
 //const int DAVIDE::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 std::string DAVIDE::url_samples;

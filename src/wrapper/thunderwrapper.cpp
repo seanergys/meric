@@ -5,7 +5,6 @@
 using namespace meric;
 
 std::string THUNDER::filename="";
-std::string THUNDER::storeLabel="thunder";
 std::vector<std::string> THUNDER::vrSensorLabel = {}; //"DC",
 std::vector<thunderSample> THUNDER::_samples;
 int THUNDER::FREQUENCY = 1;

@@ -74,9 +74,9 @@ void DetailedAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		}
 
 		ss << "Average energy consumption [J]," << sumEnergy/this->_size << '\n'
-		<< "Maximal energy consumption [J]," << maxEnergy << '\n'
-		<< "Minimal energy consumption [J]," << minEnergy << '\n'
-		<< "Summary energy consumption [J]," << sumEnergy << '\n';
+		   << "Maximal energy consumption [J]," << maxEnergy << '\n'
+		   << "Minimal energy consumption [J]," << minEnergy << '\n'
+		   << "Summary energy consumption [J]," << sumEnergy << '\n';
 	}
 }
 
