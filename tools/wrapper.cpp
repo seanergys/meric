@@ -182,6 +182,7 @@ std::string APPLICATION = "";
 std::string MERIC_OUTPUT_DIR = "";
 std::string ConfigFileNamePrefix = "";
 std::string ConfigFileNameSuffix = "";
+long baseline = 0;
 //EXHAUSTIVE
 //EVO + PSO
 	int improvedSolutionCounter = 0;
@@ -286,7 +287,8 @@ void generateDefaultWrapperConfigFile()
 	}
 
 	std::string content = "{\n";
-	content +="\t\"MPI\" : \"true\",\n";
+	content +=std::string("\t\"MPI\" : \"true\",\n")
+	        + "\t\"BASELINE\" : \"0\",\n";
 
 	content+=std::string("\t\"PARAMETERS\" : {\n")
 	       + "\t\t\"FREQUENCY\" : {\n"
@@ -500,6 +502,10 @@ int readParameters(int argc, char **argv)
 					if (val == "TRUE")
 						params.MPI = true;
 				}
+				if (std::string(data->name->string) == "BASELINE")
+				{
+					baseline = std::stol(std::string(((struct json_string_s*)data->value->payload)->string));
+				}				
 				else if (std::string(data->name->string) == "PARAMETERS")
 				{
 					struct json_object_element_s* prms = ((struct json_object_s*)data->value->payload)->start;
@@ -1506,14 +1512,25 @@ size_t generateConfigurationsToTest()
 			{
 				std::string element;
 				//TODO runtime
-				const std::string label = "Energy consumption [J]";
+				const std::string label_energy = "Energy consumption [J]";
+				const std::string label_time =   "Runtime of function [s]";
+				double baseEnergyConsumption = .0;
 				while (!inputfile.eof())
 				{
+					size_t position;
 					getline(inputfile,element);
-					size_t position = element.find(label);
+					if (baseline != 0 && baseEnergyConsumption == .0)
+					{
+						position = element.find(label_time);
+						if (position != std::string::npos)
+						{
+							baseEnergyConsumption = std::stod(element.substr(label_energy.size()+1+position)) * baseline;
+						}
+					}
+					position = element.find(label_energy);
 					if (position != std::string::npos)
 					{
-						energyConsumption = std::stod(element.substr(label.size()+1+position));
+						energyConsumption = std::stod(element.substr(label_energy.size()+1+position)) + baseEnergyConsumption;
 						//we have found a better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{
