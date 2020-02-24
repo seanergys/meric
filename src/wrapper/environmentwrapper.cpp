@@ -597,24 +597,24 @@ void Environment::readSystemDefaultSettings()
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
 		if (frequencyBounderyFile.is_open())
 		{
-			uncoreFile >> freqBound;
-			uncoreFile.close();
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
 			defaultSettings.maxUncoreFreq = std::stol(freqBound);
 		}
 
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/min");
 		if (frequencyBounderyFile.is_open())
 		{
-			uncoreFile >> freqBound;
-			uncoreFile.close();
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
 			defaultSettings.minUncoreFreq = std::stol(freqBound);
 		}
 		
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/rate");
 		if (frequencyBounderyFile.is_open())
 		{
-			uncoreFile >> freqBound;
-			uncoreFile.close();
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
 			defaultSettings.defaultUncoreFreq = std::stol(freqBound);
 		}
 #endif
