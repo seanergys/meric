@@ -34,6 +34,12 @@
 	#include <x86_adapt.h>
 #endif
 
+#include "../src/wrapper/hdeemwrapper.h"
+#include "../src/wrapper/raplwrapper.h"
+#include "../src/wrapper/counters.h"
+#include "../src/wrapper/davidewrapper.h"
+#include "../src/wrapper/thunderwrapper.h"
+#include "../src/wrapper/jetsonwrapper.h"
 
 
 
@@ -182,6 +188,11 @@ std::string APPLICATION = "";
 std::string MERIC_OUTPUT_DIR = "";
 std::string ConfigFileNamePrefix = "";
 std::string ConfigFileNameSuffix = "";
+
+
+const std::string label_time = "Runtime of function [s]";
+std::string label_energy = "Energy consumption [J]";
+std::string dataSourceLabel = "";
 long baseline = 0;
 //EXHAUSTIVE
 //EVO + PSO
@@ -288,7 +299,7 @@ void generateDefaultWrapperConfigFile()
 
 	std::string content = "{\n";
 	content +=std::string("\t\"MPI\" : \"true\",\n")
-	        + "\t\"BASELINE\" : \"0\",\n";
+	        + "\t\"BASELINE\" : 0,\n";
 
 	content+=std::string("\t\"PARAMETERS\" : {\n")
 	       + "\t\t\"FREQUENCY\" : {\n"
@@ -394,8 +405,11 @@ void generateMERICConfigFile(appConfiguration config, const std::string fileName
 			content = content.substr(0,content.size()-2);
 		content += "},\n";
 	}
-	if (content.size() > 2 && content[content.size()-2] == ',')
-		content = content.substr(0,content.size()-2);
+	content += std::string("\"@RADAR\" : {")
+	        +  "@METRIC : { \"" + dataSourceLabel + "\" : \"" +label_energy+ "\"},"
+	        +  "@BASELINE : " + std::to_string(baseline) + "\n}";
+//	if (content.size() > 2 && content[content.size()-2] == ',')
+//		content = content.substr(0,content.size()-2);
 	content += "\n}\n";
 
 	//store to a file
@@ -468,6 +482,7 @@ int readParameters(int argc, char **argv)
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
 	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec); //default name
+	bool continualMode = true;
 
 	struct stat info;
 	struct json_value_s* root = NULL;
@@ -783,7 +798,10 @@ int readParameters(int argc, char **argv)
 						else if (std::string(meric->name->string) == "AGGREGATE")
 							setenv("MERIC_AGGREGATE", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "CONTINUAL")
+						{
+							continualMode = std::stoi(std::string(((struct json_string_s*)meric->value->payload)->string));
 							setenv("MERIC_CONTINUAL", ((struct json_string_s*)meric->value->payload)->string, 1);
+						}
 						else if (std::string(meric->name->string) == "DETAILED")
 							setenv("MERIC_DETAILED", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "SAMPLES")
@@ -820,6 +838,27 @@ int readParameters(int argc, char **argv)
 		std::cerr << "ERROR: Configuration file "<< settingsFile <<" cannot be open\n";
 		return 10;
 	}
+
+	if (params.MERIC_MODE == meric::MODE_HDEEM || params.MERIC_MODE == meric::MODE_BOTH)
+	{
+		if (continualMode)
+			dataSourceLabel = std::string("# SAMPLES - ")+meric::HDEEM::getSourceLabel()+":";
+		else
+			dataSourceLabel = std::string("# COUNTERS - ")+meric::HDEEM::getSourceLabel()+":";
+	}
+	else 
+	if (params.MERIC_MODE == meric::MODE_RAPL)
+	{
+		dataSourceLabel = std::string("# COUNTERS - ")+meric::RAPL::getSourceLabel()+":";
+		label_energy = MSR_RAPL_COUNTERS::RAPL_SUM_ENERGY;
+	}
+	else if (params.MERIC_MODE == meric::MODE_JETSON)
+		dataSourceLabel = std::string("# SAMPLES - ")+meric::JETSON::getSourceLabel()+":";
+	else if (params.MERIC_MODE == meric::MODE_THUNDER)
+		dataSourceLabel = std::string("# SAMPLES - ")+meric::THUNDER::getSourceLabel()+":";
+	else if (params.MERIC_MODE == meric::MODE_DAVIDE)
+		dataSourceLabel = std::string("# SAMPLES - ")+meric::DAVIDE::getSourceLabel()+":";
+	
 	setenv("MERIC_OUTPUT_DIR", MERIC_OUTPUT_DIR.c_str(), 1);
 #if __cplusplus >= 201703L
 	std::filesystem::remove_all(MERIC_OUTPUT_DIR);
@@ -1512,9 +1551,8 @@ size_t generateConfigurationsToTest()
 			{
 				std::string element;
 				//TODO runtime
-				const std::string label_energy = "Energy consumption [J]";
-				const std::string label_time =   "Runtime of function [s]";
 				double baseEnergyConsumption = .0;
+				bool waitForDataSource = false;
 				while (!inputfile.eof())
 				{
 					size_t position;
@@ -1524,13 +1562,20 @@ size_t generateConfigurationsToTest()
 						position = element.find(label_time);
 						if (position != std::string::npos)
 						{
-							baseEnergyConsumption = std::stod(element.substr(label_energy.size()+1+position)) * baseline;
+							baseEnergyConsumption = std::stod(element.substr(label_time.size()+1+position)) * baseline;
 						}
 					}
+
+					position = element.find(dataSourceLabel);
+					if (position != std::string::npos)
+						waitForDataSource = true;
+					if (!waitForDataSource)
+						continue;
+					
 					position = element.find(label_energy);
 					if (position != std::string::npos)
 					{
-						energyConsumption = std::stod(element.substr(label_energy.size()+1+position)) + baseEnergyConsumption;
+						energyConsumption = std::stod(element.substr(label_time.size()+1+position)) + baseEnergyConsumption;
 						//we have found a better solution
 						if (energyConsumption < optimalConfiguration[regIndex].energy)
 						{

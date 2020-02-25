@@ -30,6 +30,7 @@ public:
 	static const int PROBE_NUMBER = 9;	//BLADE + {"CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 	static std::string getCounterLabel(std::string counter) { return counter; };
+	static std::string getSourceLabel() {return "HDEEM";};
 
 #ifdef HAVE_HDEEM_H
 	static void init()
@@ -128,7 +129,6 @@ public:
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter);
 	static std::string getSummaryCounterName();
-	static std::string getSourceLabel();
 
 private:
 	static hdeem_bmc_data_t bmc;
@@ -197,7 +197,6 @@ private:
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter) {return stopValue - startValue;};
 	static std::string getSummaryCounterName();
-	static std::string getSourceLabel();
 
 private:
 	static size_t energy;
