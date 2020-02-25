@@ -40,7 +40,7 @@ public:
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
-	static std::string getCountersLabel() {	return "ThunderX";};
+	static std::string getSourceLabel() {	return "ThunderX";};
 
 private:
 	static std::string filename;

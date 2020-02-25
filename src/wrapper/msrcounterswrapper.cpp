@@ -78,7 +78,7 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 	}
 }
 
-std::string MSR::getCountersLabel()
+std::string MSR::getSourceLabel()
 {
 	return "MSR";
 }

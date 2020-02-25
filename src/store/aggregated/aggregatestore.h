@@ -11,6 +11,9 @@ template <class TStore>
 class AggregateStore: public AggregateStoreBase<TStore> {
 
 public:
+	typedef typename TStore::samplesType StoreSamplesType;
+//	typedef TSystem samplesType;
+
 	//AggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	AggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
 	{

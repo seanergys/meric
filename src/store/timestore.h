@@ -29,6 +29,9 @@ template <class TSystem> class TimeStore: public Store {
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
 public:
+//	typedef typename TSystem::samplesType StoreSamplesType;
+	typedef TSystem samplesType;
+	
 	virtual void addStart(int region, RegionParameters configuration);
 	virtual void addEnd(int region);
 	double getRegionDuration() {return 0.0;};

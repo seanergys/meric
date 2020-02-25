@@ -142,7 +142,7 @@ std::string HDEEM::getSummaryCounterName()
 	return "";
 }
 
-std::string HDEEM::getCountersLabel()
+std::string HDEEM::getSourceLabel()
 {
 	return "HDEEM";
 }

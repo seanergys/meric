@@ -42,7 +42,7 @@ void DetailedEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &i
     //////////////////
     // Blade values //
     //////////////////
-    ss << "# COUNTERS - "<< HDEEM::getCountersLabel() <<":\n"
+    ss << "# COUNTERS - "<< HDEEM::getSourceLabel() <<":\n"
 	   << "# Blade summary" << std::endl
 	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl;

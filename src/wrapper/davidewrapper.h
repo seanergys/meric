@@ -31,7 +31,7 @@ public:
 	static std::vector<std::string> vrSensorLabel;	//voltage regulator vector
 	static std::string storeLabel;
 
-	static std::string getCountersLabel() {	return "DAVIDE";};
+	static std::string getSourceLabel() {	return "DAVIDE";};
 	static void deleteSamples() {};	
 	static void start(timespec & time)
 	{

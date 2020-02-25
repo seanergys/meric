@@ -54,11 +54,11 @@ public:
 //	CountersStore(bool write = true) : Store(write)
 	CountersStore(bool samples) : Store(samples)
 	{
-		MERIC_INFO << "Create CountersStore - " << TCounter::getCountersLabel() << std::endl;
+		MERIC_INFO << "Create CountersStore - " << TCounter::getSourceLabel() << std::endl;
 	}
 	CountersStore(bool samples, bool write) : Store(samples, write)
 	{
-		MERIC_INFO << "Create CountersStore - " << TCounter::getCountersLabel() << std::endl;
+		MERIC_INFO << "Create CountersStore - " << TCounter::getSourceLabel() << std::endl;
 	}
 	
 //	~CountersStore() {};

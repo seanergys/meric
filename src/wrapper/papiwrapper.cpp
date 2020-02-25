@@ -161,7 +161,7 @@ void PAPI::getRatios(std::map<std::string, unsigned long long int>& start, std::
 	}
 }
 
-std::string PAPI::getCountersLabel()
+std::string PAPI::getSourceLabel()
 {
 	return "PAPI";
 }

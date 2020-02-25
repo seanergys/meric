@@ -30,7 +30,7 @@ public:
 	static void getCounterValues(std::map<std::string, uint64_t> & record);
 	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter);
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios);
 private:
@@ -53,7 +53,7 @@ public:
 	static void getCounterValues(std::map<std::string, uint64_t> & record) {};
 	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter);
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios);
 private:

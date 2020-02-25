@@ -98,13 +98,13 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
     //////////////////
 
 //	if(printSamples)
-//		ss << "# Blade (" << HDEEM::getCountersLabel() <<") samples [W]"<< std::endl;
+//		ss << "# Blade (" << HDEEM::getSourceLabel() <<") samples [W]"<< std::endl;
 
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples)
 		{
-			ss << "# Blade (" << HDEEM::getCountersLabel() <<") samples [W]"<< std::endl;
+			ss << "# Blade (" << HDEEM::getSourceLabel() <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			for (size_t it = firstBlade; it < lastBlade; it++)
@@ -124,7 +124,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
-	ss << "# Blade summary - " << HDEEM::getCountersLabel() << std::endl
+	ss << "# Blade summary - " << HDEEM::getSourceLabel() << std::endl
 	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
 	   << "Energy consumption [J]" << "," << energyConsumption << std::endl

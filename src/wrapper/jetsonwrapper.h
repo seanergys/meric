@@ -41,7 +41,7 @@ public:
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
-	static std::string getCountersLabel() {	return "Jetson";};
+	static std::string getSourceLabel() {	return "Jetson";};
 
 private:
 	static std::string filename;

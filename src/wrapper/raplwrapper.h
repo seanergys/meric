@@ -46,7 +46,7 @@ public:
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter);
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
@@ -69,7 +69,7 @@ public:
 	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter) {return 0;};
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static void initCountersUnits() {};

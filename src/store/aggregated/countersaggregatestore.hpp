@@ -115,7 +115,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	ss << "\n# COUNTERS - "<<StoreCounterType::getCountersLabel() << ":\n";
+	ss << "\n# COUNTERS - "<<StoreCounterType::getSourceLabel() << ":\n";
 	int j = 0;
 	CountersRecord<StoreDataType> averageRecord;
 	//for(std::map<std::string, StoreDataType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)

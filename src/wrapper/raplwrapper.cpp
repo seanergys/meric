@@ -221,7 +221,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 /**
  * returns label of this class (required for the output)
  **/
-std::string RAPL::getCountersLabel()
+std::string RAPL::getSourceLabel()
 {
 	return "RAPL";
 }

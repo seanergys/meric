@@ -150,7 +150,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	}
 }
 
-std::string PERFEVENT::getCountersLabel()
+std::string PERFEVENT::getSourceLabel()
 {
 	return "PERFEVENT";
 }

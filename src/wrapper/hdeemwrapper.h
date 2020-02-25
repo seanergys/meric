@@ -128,7 +128,7 @@ public:
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter);
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 
 private:
 	static hdeem_bmc_data_t bmc;
@@ -197,7 +197,7 @@ private:
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter) {return stopValue - startValue;};
 	static std::string getSummaryCounterName();
-	static std::string getCountersLabel();
+	static std::string getSourceLabel();
 
 private:
 	static size_t energy;
