@@ -405,9 +405,10 @@ void generateMERICConfigFile(appConfiguration config, const std::string fileName
 			content = content.substr(0,content.size()-2);
 		content += "},\n";
 	}
-	content += std::string("\"@RADAR\" : {")
-	        +  "@METRIC : { \"" + dataSourceLabel + "\" : \"" +label_energy+ "\"},"
-	        +  "@BASELINE : " + std::to_string(baseline) + "\n}";
+	content += "\"@RADAR\" : {";
+	if (dataSourceLabel != "" && label_energy != "")
+		content += std::string("@METRIC : { \"") + dataSourceLabel + "\" : \"" +label_energy+ "\"},";
+	content += std::string("@BASELINE : ") + std::to_string(baseline) + "\n}";
 //	if (content.size() > 2 && content[content.size()-2] == ',')
 //		content = content.substr(0,content.size()-2);
 	content += "\n}\n";
