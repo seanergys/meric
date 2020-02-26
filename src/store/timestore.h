@@ -53,22 +53,22 @@ public:
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 
-		if(TSystem::getSamples())
-			throw 1;
-		iterate(_records, prefix, outputDir, outputFilename, processInterval);
-
-		TSystem::deleteSamples();
-
+		if(TSystem::getSamples() == 0)
+		{
+			iterate(_records, prefix, outputDir, outputFilename, processInterval);
+			TSystem::deleteSamples();
+		}
 	}
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
 
-		if(TSystem::getSamples())
-			throw 1;
-		iterate(_records, processInterval);
-		TSystem::deleteSamples();
+		if(TSystem::getSamples() == 0)
+		{
+			iterate(_records, processInterval);
+			TSystem::deleteSamples();
+		}
 	}
 
 /*	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)

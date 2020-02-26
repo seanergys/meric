@@ -23,7 +23,7 @@ void JETSON::init() //int rank = 0)
 }
 
 
-int JETSON::getSamples()					//prejmenovat loadSamples()
+int JETSON::getSamples()					//TODO rename to loadSamples()
 {
 	//wait to load all samples
 	timespec time;
@@ -77,7 +77,7 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 		else
 		{
 			std::cerr << "MERIC ERROR: output file with samples cannot be open - " << filename << std::endl;
-				return 1;
+			return 1;
 		}
 	}while(timestamp <= currentTime);
 	
@@ -89,7 +89,6 @@ int JETSON::getSamples()					//prejmenovat loadSamples()
 	std::ifstream iFile(filename);
 	if(iFile.is_open())
 	{
-		int cnt = 0;
 		std::string data;
 		std::getline(iFile, data);	//header
 	

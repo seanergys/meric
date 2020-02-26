@@ -44,19 +44,21 @@ public:
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		if(HDEEM::getSamples())
-			throw 1;
-		iterate(_records, prefix, outputDir, outputFilename, processInterval);
-		HDEEM::deleteSamples();
+		if(HDEEM::getSamples() == 0)
+		{
+			iterate(_records, prefix, outputDir, outputFilename, processInterval);
+			HDEEM::deleteSamples();
+		}
 	}
 	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
-		if(HDEEM::getSamples())
-			throw 1;
-		iterate(_records, processInterval);
-		HDEEM::deleteSamples();
+		if(HDEEM::getSamples() == 0)
+		{
+			iterate(_records, processInterval);
+			HDEEM::deleteSamples();
+		}
 	}
 
 	TimeEnergyStore(bool samples, bool write) : TimeStore(samples, write)
