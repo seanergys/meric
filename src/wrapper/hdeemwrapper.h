@@ -84,14 +84,7 @@ public:
 		hdeem_stats_free(&stats);
 	}
 	
-	static void getCounterValues(double &energy)	//HDEEM in counter regime - EnergyStore - TODO remove
-	{
-		hdeem_stats_reading_t stats;
-		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
-		energy = stats.energy_blade_values.value[0];
-		hdeem_stats_free(&stats);
-	}
-	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime - DetailedEnergyStore, TimeEnergyStore - TODO remove
+	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime - TimeEnergyStore - TODO remove
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
@@ -172,10 +165,7 @@ private:
 	{
 		record["Energy consumption [J]"] = HDEEM::energy++;
 	}
-	static void getCounterValues(double &energy)
-	{
-		energy = HDEEM::energy++;
-	}
+
 	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)
 	{
 		for (size_t i = 0; i < vrSensorLabel.size(); i++) {
