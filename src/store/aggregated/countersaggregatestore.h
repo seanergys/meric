@@ -24,11 +24,7 @@ public:
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void saveInterval(std::vector<size_t> &iStarts, size_t iEnd);
-
-	double printStats (const std::string description, std::vector<double>& data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
-	unsigned long long int printStats (const std::string description, const unsigned long long int * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
-	double printStats (const std::string description, const double * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss);
-
+	void printStats (const std::string description, const StoreDataType * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss, StoreDataType &avg);
 	
 	std::vector <StoreDataType>   _bufferCounters;
 	std::vector <double> _bufferTime;

@@ -194,9 +194,15 @@ DistributedMeric::DistributedMeric()
 			}
 			_storeList.back()->setMPIWrite(true);
 		}
-		else if (Meric::COUNTERS == "msr" && !Meric::AGGREGATE) //TODO aggregate version
+		else if (Meric::COUNTERS == "msr")
 		{
-			_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES, !_MPInodeRank));
+			if (Meric::AGGREGATE)
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_worldCopy));
+				_storeList.back()->setMPIWrite(true);
+			}
+			else
+				_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 	
