@@ -5,6 +5,7 @@
 using namespace meric;
 
 std::vector<std::string> HDEEM::vrSensorLabel;
+bool HDEEM::detailedMode = false;
 
 #ifdef HAVE_HDEEM_H
 
