@@ -69,7 +69,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 //	   << "Runtime of function [s]," << runtime << std::endl;
 
 
-	unsigned long long int summary = 0;
+	TType summary = 0;
 	TType value;
 	ss << "# COUNTERS - "<< TCounter::getSourceLabel() <<":\n"
 	   << "Runtime of function [s]," << runtime << std::endl;
@@ -82,7 +82,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 		ss << TCounter::getCounterLabel(counterIt.first) << "," << value << std::endl;
 	}
 
-	if (TCounter::getSummaryCounterName() != "")
+	if (TCounter::getSummaryCounterName() != "") //RAPL only
 	{
 		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
 	}

@@ -7,7 +7,7 @@ SharedMeric::SharedMeric()
 {
 	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
 	{
-		HDEEM::init();
+		HDEEM::init(Meric::DETAILED);
 		HDEEM::start(_startTime);
 
 		if (Meric::DEBUG)
@@ -22,13 +22,7 @@ SharedMeric::SharedMeric()
 					_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES));
 				}
 			} else {
-				if (Meric::DETAILED)
-				{
-					_storeList.push_back(new DetailedEnergyStore(Meric::SAMPLES));
-				} else {
-					//_storeList.push_back(new EnergyStore(Meric::SAMPLES));
-					_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES));
-				}
+				_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES));
 			}
 		}
 	}

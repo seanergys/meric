@@ -33,8 +33,9 @@ public:
 	static std::string getSourceLabel() {return "HDEEM";};
 
 #ifdef HAVE_HDEEM_H
-	static void init()
+	static void init(bool detailed = false)
 	{
+		detailedMode = detailed;
 		checkHDEEM(hdeem_init(&bmc), "init");
 		checkHDEEM(hdeem_clear(&bmc), "clear");	//extra clear should not make a problem
 
@@ -70,22 +71,27 @@ public:
 		checkHDEEM(hdeem_stop(&bmc), "stop");
 	}
 
-	static void getCounterValues(std::map<std::string, double> & record)	//HDEEM in counter regime
+	static void getCounterValues(std::map<std::string, double> & record)	//HDEEM in counter regime - counterstore
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
-		record["Energy consumption [J] (Stats structure)"] = stats.energy_blade_values.value[0];
+		record["Energy consumption [J]"] = stats.energy_blade_values.value[0];
+		if(detailedMode)
+		{
+			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
+				record[vrSensorLabel[sensorID]+" [J]"] = stats.energy_vr_values.value[sensorID-1];
+		}
 		hdeem_stats_free(&stats);
 	}
-
-	static void getCounterValues(double &energy)	//HDEEM in counter regime
+	
+	static void getCounterValues(double &energy)	//HDEEM in counter regime - EnergyStore - TODO remove
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
 		energy = stats.energy_blade_values.value[0];
 		hdeem_stats_free(&stats);
 	}
-	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime
+	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime - DetailedEnergyStore, TimeEnergyStore - TODO remove
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
@@ -135,6 +141,7 @@ private:
 	static hdeem_global_reading_t _samples;
 	static size_t _timeAdjustment;
 	static double _startTime;
+	static bool detailedMode;
 
 	static void checkHDEEM(int status, const std::string &function)
 	{
@@ -146,8 +153,9 @@ private:
 
 #else
 
-	static void init()
+	static void init(bool detailed = false)
 	{
+		detailedMode = detailed;
 		vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };
 	};
 	static void close() {};
@@ -162,7 +170,7 @@ private:
 
 	static void getCounterValues(std::map<std::string, double>& record)
 	{
-		record["Energy consumption [J] (Stats structure)"] = HDEEM::energy++;
+		record["Energy consumption [J]"] = HDEEM::energy++;
 	}
 	static void getCounterValues(double &energy)
 	{

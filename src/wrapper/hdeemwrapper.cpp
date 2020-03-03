@@ -118,13 +118,12 @@ double HDEEM::getResultValue(double startValue, double stopValue, double runtime
 	if (energy <= 0)
 	{
 		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<runtime<<"s) region "<< counter<<"\n";
+		energy = .0;
 	}
 	else if (runtime < 0.01)
 	{
-		std::string info;
-		if (runtime > 0.001)	// too short region in all cases
-			info = "";
-		else
+		std::string info = "";
+		if (detailedMode && runtime < 0.001)
 			info = " detailed";
 		std::cerr << "MERIC WARNING: very short ("<<runtime<< "s)"<< info <<" region " << counter << " results might be skewed\n";
 	}

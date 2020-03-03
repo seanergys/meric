@@ -60,7 +60,7 @@ DistributedMeric::DistributedMeric()
 	{
 		if (!_MPInodeRank)
 		{
-			HDEEM::init();
+			HDEEM::init(Meric::DETAILED);
 			HDEEM::start(_startTime);
 		}
 	
@@ -105,26 +105,21 @@ DistributedMeric::DistributedMeric()
 					}
 				}
 			} else {
-				if (Meric::DETAILED)
+				if (Meric::AGGREGATE)
 				{
-					if (Meric::AGGREGATE)
+					if (Meric::DETAILED) //DetailedEnergyStore now used only in aggregate version - TODO remove
 					{
-//						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs, !_MPInodeRank));
 						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
-						_storeList.back()->setMPIWrite(!_MPInodeRank);
-					} else {
-						_storeList.push_back(new DetailedEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 					}
-				} else {
-					if (Meric::AGGREGATE)
+					else
 					{
-						//_storeList.push_back(new AggregateStore<EnergyStore>(_storingProcs));
 						_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs));
-						_storeList.back()->setMPIWrite(!_MPInodeRank);
-					} else {
-						//_storeList.push_back(new EnergyStore(Meric::SAMPLES, !_MPInodeRank));
-						_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES, !_MPInodeRank));
 					}
+					_storeList.back()->setMPIWrite(!_MPInodeRank);
+				}
+				else
+				{
+					_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES, !_MPInodeRank));
 				}
 			}
 		}
