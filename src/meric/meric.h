@@ -12,8 +12,6 @@
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
-#include "../store/detailedenergystore.h"
-#include "../store/energystore.h"
 #include "../store/timestore.h"
 #include "../store/detailedtimestore.h"
 #include "../store/timeenergystore.h"

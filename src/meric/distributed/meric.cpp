@@ -107,14 +107,7 @@ DistributedMeric::DistributedMeric()
 			} else {
 				if (Meric::AGGREGATE)
 				{
-					if (Meric::DETAILED) //DetailedEnergyStore now used only in aggregate version - TODO remove
-					{
-						_storeList.push_back(new DetailedAggregateStore<DetailedEnergyStore>(_storingProcs));
-					}
-					else
-					{
-						_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs));
-					}
+					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs));
 					_storeList.back()->setMPIWrite(!_MPInodeRank);
 				}
 				else
