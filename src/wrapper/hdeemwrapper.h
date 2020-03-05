@@ -198,6 +198,7 @@ private:
 
 private:
 	static size_t energy;
+	static bool detailedMode;
 };
 
 
