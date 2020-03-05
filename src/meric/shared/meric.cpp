@@ -58,16 +58,10 @@ SharedMeric::SharedMeric()
 	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
 		_storeList.insert(_storeList.begin(), new InfoStore());
 
-	if (Meric::MODE == MODE_JETSON)
+	if (Meric::MODE == MODE_JETSON) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
 		Environment::init(SYS_JETSON,  defaultParameter, 0);
-	else if (Meric::MODE == MODE_THUNDER)
-		Environment::init(SYS_THUNDER, defaultParameter, 0);
-//	else if (Meric::MODE == MODE_DAVIDE)
-//		Environment::init(SYS_DAVIDE, defaultParameter, 0);
 	else 
 		Environment::init(SYS_OTHER, defaultParameter, 0);
-//		Environment::init(SYS_HASWELL, defaultParameter, 0); //this default settings must persist due to many nodes with min uncore frequency limit set to maximum - now it is fixed
-
 	
 	for (unsigned int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		currentState.socket[socket] = defaultParameter;

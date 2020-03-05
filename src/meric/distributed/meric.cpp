@@ -185,14 +185,9 @@ DistributedMeric::DistributedMeric()
 	}
 	
 //INIT
-	if (Meric::MODE == MODE_JETSON)
-		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank);
-	else if (Meric::MODE == MODE_THUNDER)
-		Environment::init(SYS_THUNDER, defaultParameter, _MPInodeRank);
-//	else if (Meric::MODE == MODE_DAVIDE)
-//		Environment::init(SYS_DAVIDE,  defaultParameter, _MPInodeRank);
+	if (Meric::MODE == MODE_JETSON) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
+		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank); 
 	else
-//		Environment::init(SYS_HASWELL, defaultParameter, _MPInodeRank);
 		Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
 
 	for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
@@ -215,7 +210,7 @@ DistributedMeric::DistributedMeric()
 	{
 		if (!_MPInodeRank)
 			DAVIDE::init();
-		DAVIDE::start(_startTime);	//TODO << test if it is neccessary to have a start here, also for all procs?
+		DAVIDE::start(_startTime);
 	}
 	
 	//wrappers must be initialized after meric instantiation
