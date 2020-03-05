@@ -24,8 +24,6 @@ class DetailedAggregateStore;
 
 template <class TSystem> class TimeStore: public Store {
 
-//	enum WRAPPERS {HDEEM, JETSON};
-
 	friend class AggregateStore<TimeStore>;
 	friend class DetailedAggregateStore<TimeStore>;
 public:
@@ -70,51 +68,12 @@ public:
 			TSystem::deleteSamples();
 		}
 	}
-
-/*	TimeStore(const std::string wrapper, bool samples, bool write): Store(samples, write)
+	
+	TimeStore(bool samples, bool write = true): Store(samples, write)
 	{
 		MERIC_INFO << "Create TimeStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
 	}
-
-	TimeStore(const std::string wrapper, bool samples): Store(samples)
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-
-	TimeStore(const std::string wrapper)
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-*/
-
-	TimeStore(bool samples, bool write): Store(samples, write)
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-		
-	TimeStore(bool samples): Store(samples)
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-
-	TimeStore()
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-
-
-/*	TimeStore(bool write = true): Store(write)
-	{
-		MERIC_INFO << "Create TimeStore\n";
-		clock_gettime(CLOCK_REALTIME, &_start);
-	}
-*/
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

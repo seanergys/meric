@@ -2,7 +2,7 @@
 #ifndef SRC_STORE_AGGREGATED_DETAILEDAGGREGATESTORE_H_
 #define SRC_STORE_AGGREGATED_DETAILEDAGGREGATESTORE_H_
 
-#include "mpi.h"
+#include <mpi.h>
 #include "aggregatestorebase.h"
 
 namespace meric {
@@ -11,8 +11,7 @@ template <class TStore>
 class DetailedAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
-//	DetailedAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
-	DetailedAggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
+	DetailedAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	{
 		_buffer.resize(this->_size);
 	};

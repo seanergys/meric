@@ -2,7 +2,7 @@
 #ifndef SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
 #define SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
 
-#include "mpi.h"
+#include <mpi.h>
 #include "aggregatestorebase.h"
 
 namespace meric {
@@ -14,8 +14,7 @@ public:
 	typedef typename TStore::samplesType StoreSamplesType;
 //	typedef TSystem samplesType;
 
-	//AggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
-	AggregateStore(MPI_Comm &comm): AggregateStoreBase<TStore>(comm)
+	AggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	{
 		_buffer.resize(this->_size);
 	}

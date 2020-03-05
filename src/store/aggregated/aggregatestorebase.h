@@ -2,7 +2,7 @@
 #ifndef SRC_STORE_AGGREGATED_AGGREGATESTOREBASE_H_
 #define SRC_STORE_AGGREGATED_AGGREGATESTOREBASE_H_
 
-#include "mpi.h"
+#include <mpi.h>
 #include "../store.h"
 
 namespace meric {
@@ -11,24 +11,10 @@ template <class TStore>
 class AggregateStoreBase: public StoreBase {
 
 public:
-/*	AggregateStoreBase(MPI_Comm &comm, bool write): _comm(comm)
-	{
-		_store = new TStore(write);
-		MPI_Comm_rank(_comm, &_rank);
-		MPI_Comm_size(_comm, &_size);
-	}
 
-	AggregateStoreBase(const std::string counterType, MPI_Comm &comm, bool write): _comm(comm)
+	AggregateStoreBase(MPI_Comm &comm, bool write): StoreBase(false, write), _comm(comm)
 	{
-		_store = new TStore(counterType, write);
-		MPI_Comm_rank(_comm, &_rank);
-		MPI_Comm_size(_comm, &_size);
-	}
-*/
-
-	AggregateStoreBase(MPI_Comm &comm): _comm(comm)
-	{
-		_store = new TStore(false);
+		_store = new TStore(false, write);
 		MPI_Comm_rank(_comm, &_rank);
 		MPI_Comm_size(_comm, &_size);
 	}

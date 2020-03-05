@@ -3,7 +3,6 @@
 #define SRC_STORE_COUNTERSSTORE_H_
 
 #include <iomanip>
-
 #include "store.h"
 
 namespace meric {
@@ -50,18 +49,16 @@ public:
 	{
 		iterate(_records, processInterval);
 	}
-
-//	CountersStore(bool write = true) : Store(write)
-	CountersStore(bool samples) : Store(samples)
-	{
-		MERIC_INFO << "Create CountersStore - " << TCounter::getSourceLabel() << std::endl;
-	}
-	CountersStore(bool samples, bool write) : Store(samples, write)
+	
+	CountersStore(bool write = true) : Store(false, write)
 	{
 		MERIC_INFO << "Create CountersStore - " << TCounter::getSourceLabel() << std::endl;
 	}
 	
-//	~CountersStore() {};
+	CountersStore(bool samples, bool write) : Store(false, write) // required for AggregateStoreBase constructor
+	{
+		MERIC_INFO << "Create CountersStore - " << TCounter::getSourceLabel() << std::endl;
+	}
 
 protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);

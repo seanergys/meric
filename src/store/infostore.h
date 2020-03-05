@@ -51,23 +51,12 @@ public:
 	{
 		iterate(_records, processInterval);
 	}
-/*
-	InfoStore(bool samples, bool write) : Store(samples, write)
-	{
-		MERIC_INFO << "Create InfoStore\n";
-	}
 
-	InfoStore(bool samples)
+	InfoStore(bool samples, bool write) : Store(false, write) // required for AggregateStoreBase constructor
 	{
 		MERIC_INFO << "Create InfoStore\n";
 	}
-*/
-/*
-	InfoStore()
-	{
-		MERIC_INFO << "Create InfoStore\n";
-	}
-*/
+	
 	InfoStore(bool write = true) : Store(false, write)
 	{
 		MERIC_INFO << "Create InfoStore\n";

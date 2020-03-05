@@ -66,18 +66,9 @@ DistributedMeric::DistributedMeric()
 	
 		if (Meric::DEBUG)
 		{
-		    /*
-		    if(Meric::AGGREGATE) {
-		        _store = new AggregateStore<TimeEnergyStore>(_storingProcs);
-		    } else {
-		        _store = new TimeEnergyStore();
-		    }
-		    */
 		    if(Meric::AGGREGATE)
 		    {
-//				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
-				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs));
-				_storeList.back()->setMPIWrite(!_MPInodeRank);
+				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
 			} else {
 				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
@@ -88,18 +79,14 @@ DistributedMeric::DistributedMeric()
 				{
 					if (Meric::AGGREGATE)
 					{
-//						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs, !_MPInodeRank));
-						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs));
-						_storeList.back()->setMPIWrite(!_MPInodeRank);
+						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs, !_MPInodeRank));
 					} else {
 						_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES, !_MPInodeRank));
 					}
 				} else {
 					if (Meric::AGGREGATE)
 					{
-//						_storeList.push_back(new AggregateStore<TimeStore>(_storingProcs, !_MPInodeRank));
-						_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs));
-						_storeList.back()->setMPIWrite(!_MPInodeRank);
+						_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 					} else {
 						_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
 					}
@@ -107,12 +94,11 @@ DistributedMeric::DistributedMeric()
 			} else {
 				if (Meric::AGGREGATE)
 				{
-					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs));
-					_storeList.back()->setMPIWrite(!_MPInodeRank);
+					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs, !_MPInodeRank));
 				}
 				else
 				{
-					_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES, !_MPInodeRank));
+					_storeList.push_back(new CountersStore<HDEEM, double>(!_MPInodeRank));
 				}
 			}
 		}
@@ -122,35 +108,32 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int>>(_storingProcs));
-			_storeList.back()->setMPIWrite(!_MPInodeRank);
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int>>(_storingProcs, !_MPInodeRank));
 		}
 		else
-			_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(!_MPInodeRank));
 	}
 	
 	if (Meric::MODE == MODE_JETSON)
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new AggregateStore<TimeStore<JETSON>>(_storingProcs));
-			_storeList.back()->setMPIWrite(!_MPInodeRank);
+			_storeList.push_back(new AggregateStore<TimeStore<JETSON>>(_storingProcs, !_MPInodeRank));
 		}
 		else
 			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	else if (Meric::MODE == MODE_THUNDER)
 	{
-		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);	//_supportComm currently used by THUNDER only, so the split is here to make it obvious
-		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm));
-		_storeList.back()->setMPIWrite(!_MPIglobalRank);
+		//_supportComm currently used by THUNDER only, so the split is here to make it obvious
+		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);
+		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm, !_MPIglobalRank));
 	}
 	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new AggregateStore<TimeStore<DAVIDE>>(_storingProcs));
-			_storeList.back()->setMPIWrite(!_MPInodeRank);
+			_storeList.push_back(new AggregateStore<TimeStore<DAVIDE>>(_storingProcs, !_MPInodeRank));
 		}
 		else
 			_storeList.push_back(new TimeStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
@@ -162,35 +145,32 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_worldCopy, true));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_currentNode, true));
 			}
-			_storeList.back()->setMPIWrite(true);
 		}
 		else if (Meric::COUNTERS == "papi")
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_worldCopy));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_worldCopy, true));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_currentNode));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_currentNode, true));
 			}
-			_storeList.back()->setMPIWrite(true);
 		}
 		else if (Meric::COUNTERS == "msr")
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_worldCopy));
-				_storeList.back()->setMPIWrite(true);
+				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_worldCopy, true));
 			}
 			else
-				_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES, !_MPInodeRank));
+				_storeList.push_back(new CountersStore<MSR, uint64_t>(!_MPInodeRank));
 		}
 	}
 	
@@ -198,8 +178,7 @@ DistributedMeric::DistributedMeric()
 	{
 		if(Meric::AGGREGATE)
 		{
-			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs));
-			_storeList.front()->setMPIWrite(!_MPInodeRank);
+			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs, !_MPInodeRank));
 		}
 		else
 			_storeList.insert(_storeList.begin(), new InfoStore(!_MPInodeRank));

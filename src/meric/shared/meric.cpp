@@ -22,14 +22,14 @@ SharedMeric::SharedMeric()
 					_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES));
 				}
 			} else {
-				_storeList.push_back(new CountersStore<HDEEM, double>(Meric::SAMPLES));
+				_storeList.push_back(new CountersStore<HDEEM, double>());
 			}
 		}
 	}
 
 	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
 	{
-		_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(Meric::SAMPLES));
+		_storeList.push_back(new CountersStore<RAPL, unsigned long long int>());
 	}
 	
 	if (Meric::MODE == MODE_JETSON)
@@ -48,18 +48,15 @@ SharedMeric::SharedMeric()
 	if (Meric::COUNTERS != "none")
 	{
 		if (Meric::COUNTERS == "perfevent")
-			_storeList.push_back(new CountersStore<PERFEVENT, unsigned long long int>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PERFEVENT, unsigned long long int>());
 		else if (Meric::COUNTERS == "papi")
-			_storeList.push_back(new CountersStore<PAPI, unsigned long long int>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<PAPI, unsigned long long int>());
 		else if (Meric::COUNTERS == "msr")
-			_storeList.push_back(new CountersStore<MSR, uint64_t>(Meric::SAMPLES));
+			_storeList.push_back(new CountersStore<MSR, uint64_t>());
 	}
 	
 	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
 		_storeList.insert(_storeList.begin(), new InfoStore());
-	
-	for (unsigned int i=0; i<_storeList.size(); i++)
-		_storeList[i]->setMPIWrite(true);
 
 	if (Meric::MODE == MODE_JETSON)
 		Environment::init(SYS_JETSON,  defaultParameter, 0);

@@ -51,9 +51,7 @@ public:
 	virtual void loadSchedulerEnvironment() = 0;	
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") = 0;
 
-	StoreBase(bool samples = false) : printSamples(samples) {};
 	StoreBase(bool samples, bool write) : printSamples(samples), MPIProcessWrite(write) {};
-//	StoreBase(bool write = true) : MPIProcessWrite(write) {};
 	virtual ~StoreBase() {};
 	void setRegionsNames(std::vector<std::string> name) {_name = name;};
 	bool getMPIWrite() {return MPIProcessWrite;};
@@ -237,10 +235,8 @@ public:
 	virtual void save(const std::string prefix, const std::string outputDir, const std::string outputFile,
                       std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
 	virtual void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) = 0;
-	Store() : StoreBase() {};
-	Store(bool samples) : StoreBase(samples) {};
+	Store(bool samples) : StoreBase(samples, true) {};
 	Store(bool samples, bool write) : StoreBase(samples, write) {};
-//	Store(bool samples, bool write = true) : StoreBase(samples, write) {};
 	virtual ~Store() {};
 };
 
