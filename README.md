@@ -333,6 +333,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 
 * `export MERIC_SAMPLES=1`
 	- If the energy measurement system stores power samples, MERIC will add the corresponding samples to the output files.
+	- Available only in non-aggregated (MERIC_AGGREGATE=0) continual mode (MERIC_CONTINUAL=1).
 	- WARNING: Output files may become very big when measured regions run for a long time.
 
 * `export MERIC_AGGREGATE=0`
