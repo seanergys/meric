@@ -31,7 +31,7 @@ public:
 	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
-	void fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd);
+	void fillRegionStats(std::vector<TType> &stats, std::map <std::string, double> &ratios, double *time, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

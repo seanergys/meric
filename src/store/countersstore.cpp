@@ -36,7 +36,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	_records.push_back(CountersRecord<TType>(region, record, time, _records.back().configuration));
 }
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<TType> &stats, double *time, size_t iStarts, size_t iEnd)
+template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<TType> &stats, std::map <std::string, double> &ratios, double *time, size_t iStarts, size_t iEnd)
 {
 	unsigned long long int summary = 0;
 	TType value;
@@ -52,6 +52,8 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::f
 	{
 		stats[distance(_records[iEnd].record.begin(),_records[iEnd].record.find(TCounter::getSummaryCounterName()))] = summary;
 	}
+
+	TCounter::getRatios(_records[iStarts].record, _records[iEnd].record, *time, ratios);
 }
 
 template <class TCounter, typename TType> void CountersStore<TCounter, TType>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)

@@ -5,62 +5,22 @@
 namespace meric {
 
 template <class TStore>
-void CountersAggregateStore<TStore>::printStats (const std::string description, const StoreDataType * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss, StoreDataType &avg)
-{
-	StoreDataType max = data[0];
-	StoreDataType min = data[0];
-	StoreDataType sum = data[0];
-	for(int i=stride; i<dataSize; i+=stride)
-	{
-		if (max < data[i])
-			max = data[i];
-		else if (min > data[i])
-			min = data[i];
-		sum += data[i];
-	}
-	//StoreDataType 
-	avg = sum/(dataSize/stride);
-	ss << "AVG "<< description << "," << avg << std::endl
-	   << "MAX "<< description << "," << max << std::endl
-	   << "MIN "<< description << "," << min << std::endl;
-	if (storeSum)
-		ss << "SUM "<< description << "," << sum << std::endl;
-}
-
-template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	std::vector<StoreDataType> stats;
+	std::map <std::string, double> ratios;
 	double time;
-	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
+	this->_store->fillRegionStats(stats, ratios, &time, iStarts.back(), iEnd);
 	_bufferCounters.resize(this->_size * stats.size());
+	
+	std::vector <double> ratiosList;
+	for (const auto &r : ratios)
+		ratiosList.push_back(r.second);
+	_bufferRatios.resize(this->_size * ratiosList.size());
 
 	MPI_Gather(stats.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, _bufferCounters.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, 0, this->_comm);
-	MPI_Gather(&time, 1, MPI_DOUBLE, &_bufferTime[0], 1, MPI_DOUBLE, 0, this->_comm);
-	
-/*
-	auto printStats = [&ss](const std::string description, const auto& data, const int dataSize, const int stride, bool storeSum)	//lambda C++14 (auto argument)
-	{
-		auto max = data[0];
-		auto min = data[0];
-		auto sum = data[0];
-		for(int i=stride; i<dataSize; i+=stride)
-		{
-			if (max < data[i])
-				max = data[i];
-			else if (min > data[i])
-				min = data[i];
-			sum += data[i];
-		}
-		auto avg = sum/(dataSize/stride);
-		ss << "AVG "<< description << "," << avg << std::endl
-		   << "MAX "<< description << "," << max << std::endl
-		   << "MIN "<< description << "," << min << std::endl;
-		if (storeSum)
-			ss << "SUM "<< description << "," << sum << std::endl;
-		return avg;
-	};
-*/
+	MPI_Gather(ratiosList.data(), ratiosList.size(), MPI_DOUBLE, _bufferRatios.data(), ratiosList.size(), MPI_DOUBLE, 0, this->_comm);
+
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++)
 	{
@@ -73,27 +33,15 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	//for(std::map<std::string, StoreDataType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)
 	for(auto counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
-		//averageRecord.record[counterIt->first] = printStats(counterIt->first, &_bufferCounters[j++],this->_size*stats.size(),stats.size(), true);
-		printStats(counterIt->first, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss, averageRecord.record[counterIt->first]);
+		printStats(counterIt->first, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
 	}
 
-// Counters ratios
-	CountersRecord<StoreDataType> startRecord;
-	std::map <std::string, double> ratios;
-	
-	double sumTime = 0.0;
-	for(double nodeTime : _bufferTime)
-	{
-		sumTime += nodeTime;
-	}
-	time = sumTime/_bufferTime.size();
-	
-	StoreCounterType::getRatios(startRecord.record, averageRecord.record, time, ratios);
-	if (ratios.size())
+	if (ratiosList.size())
 	{
 		ss << "# RATIOS:\n";
-		for(auto const &element : ratios)
-			ss << "AVG " << StoreCounterType::getCounterLabel(element.first) <<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
+		int j=0;
+		for(auto const &r : ratios)
+			printStats(StoreCounterType::getCounterLabel(r.first), & _bufferRatios[j++],this->_size*ratiosList.size(),ratiosList.size(), false, ss);	
 	}
 }
 
@@ -101,11 +49,15 @@ template <class TStore>
 void CountersAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
 	std::vector<StoreDataType> stats;
-	double time;
-	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
+	std::map <std::string, double> ratios;
+	double time; //we do not the runtime any more, since the ratios are evaluated in the fillRegionStats()
+	this->_store->fillRegionStats(stats, ratios, &time, iStarts.back(), iEnd);
+	std::vector <double> ratiosList;
+	for (const auto &r : ratios)
+		ratiosList.push_back(r.second);
 
 	MPI_Gather(stats.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, _bufferCounters.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, 0, this->_comm);
-	MPI_Gather(&time, 1, MPI_DOUBLE, &_bufferTime[0], 1, MPI_DOUBLE, 0, this->_comm);
+	MPI_Gather(ratiosList.data(), ratiosList.size(), MPI_DOUBLE, _bufferRatios.data(), ratiosList.size(), MPI_DOUBLE, 0, this->_comm);
 }
 	
 }
