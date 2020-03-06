@@ -167,7 +167,7 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_worldCopy, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_storingProcs, !_MPInodeRank));
 			}
 			else
 				_storeList.push_back(new CountersStore<MSR, uint64_t>(!_MPInodeRank));

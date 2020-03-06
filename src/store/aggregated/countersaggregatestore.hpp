@@ -35,7 +35,6 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	this->_store->fillRegionStats(stats, &time, iStarts.back(), iEnd);
 	_bufferCounters.resize(this->_size * stats.size());
 
-//INFO - basic mpi vs aggregate mpi counter store se lisi predevsim v tom, ktere procesy sbiraji a nasledne zapisuji vysledky
 	MPI_Gather(stats.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, _bufferCounters.data(), stats.size(), MPI_UNSIGNED_LONG_LONG, 0, this->_comm);
 	MPI_Gather(&time, 1, MPI_DOUBLE, &_bufferTime[0], 1, MPI_DOUBLE, 0, this->_comm);
 	
