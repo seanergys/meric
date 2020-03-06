@@ -1205,8 +1205,11 @@ void Environment::restoreSystemSettings(bool hardReset)
 			//uncore
 			std::ofstream memTuningFile;
 			memTuningFile.open ("/sys/kernel/debug/clock/override.emc/state");
-			memTuningFile << "0";
-			memTuningFile.close();
+			if (memTuningFile.is_open())
+			{
+				memTuningFile << "0";
+				memTuningFile.close();
+			}
 		}
 	}
 
