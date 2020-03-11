@@ -16,11 +16,7 @@ SharedMeric::SharedMeric()
 		} else {
 			if (Meric::CONTINUAL)
 			{
-				if (Meric::DETAILED) {
-					_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES));
-				} else {
-					_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES));
-				}
+				_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES));
 			} else {
 				_storeList.push_back(new CountersStore<HDEEM, double>());
 			}

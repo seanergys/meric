@@ -23,35 +23,6 @@ template <class TSystem> void TimeStore<TSystem>::computePeriods()
 	TSystem::setTimeAdjustment(_start);
 }
 
-/*
-template <class TSystem> void TimeStore<TSystem>::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
-{
-	size_t firstBlade, lastBlade;
-	size_t firstVR, lastVR;
-	double * energy;
-	double * min;
-	double * max;
-	std::string msg = "";
-	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-
-	energy = new double [TSystem::PROBE_NUMBER];
-	min = new double [TSystem::PROBE_NUMBER];
-	max = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), stats.duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
-
-	if (msg != "")
-		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
-
-	if(lastBlade > 0)
-		stats.energy = stats.duration * energy[0] / (lastBlade - firstBlade);
-	else
-		stats.energy = 0;
-
-	delete [] energy;
-	delete [] min;
-	delete [] max;
-}
-*/
 template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	std::string msg = "";
@@ -60,7 +31,6 @@ template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegion
 	double * energy;
 	double * min;
 	double * max;
-//	stats.duration
 	const double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	energy = new double [TSystem::PROBE_NUMBER];
 	min = new double [TSystem::PROBE_NUMBER];
@@ -105,11 +75,6 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
 	ss << std::endl;
-
-//	ss << "# Job info - " << TSystem::getCountersLabel() << std::endl;
-//	ss << "JOB ID," << _jobID << "." << _stepID  << std::endl
-//	   << "Nodelist," << _nodelist << std::endl
-//	   << "Runtime of function [s]," << _records[iEnd].time - _records[iStarts.back()].time << std::endl;
 
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;

@@ -112,11 +112,6 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
-	} else 
-	{
-		firstBlade = 0;
-		lastBlade = 1;
-		std::cerr << "MERIC ERROR: No samples, probably too short ("<<duration<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 	
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
@@ -126,8 +121,8 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	
 	ss << "# Blade summary - " << HDEEM::getSourceLabel() << std::endl
 	   << "Runtime of function [s]," << duration << std::endl
-	   << "Energy consumption [J]" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
-	   << "Energy consumption [J]" << "," << energyConsumption << std::endl
+	   << "Energy consumption [J] - counters" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
+	   << "Energy consumption [J] - samples" << "," << energyConsumption << std::endl
        << "Maximal power [W]" << "," << maxWatts[0] << std::endl
        << "Minimal power [W]" << "," << minWatts[0] << std::endl
        << "Average power [W]" << "," << avgWatts << std::endl
@@ -167,9 +162,6 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		       << "ID of first VR sample" << "," << firstVR << std::endl
 		       << "ID of last VR sample" << "," << lastVR-1 << std::endl;
 		}
-	} else if (firstBlade != 0 || lastBlade != 1) //no previous error about region length
-	{
-		std::cerr << "MERIC ERROR: No samples, probably too short ("<<duration<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
 
 	delete [] energy;

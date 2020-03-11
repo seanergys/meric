@@ -23,7 +23,7 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 	void saveInterval(std::vector<size_t> &iStarts, size_t iEnd);
 
-	std::vector<RegionStats> _buffer;
+	std::vector<DetailedRegionStats> _buffer;
 };
 
 }

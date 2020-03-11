@@ -75,21 +75,11 @@ DistributedMeric::DistributedMeric()
 		} else {
 			if (Meric::CONTINUAL)
 			{
-				if (Meric::DETAILED)
+				if (Meric::AGGREGATE)
 				{
-					if (Meric::AGGREGATE)
-					{
-						_storeList.push_back(new DetailedAggregateStore<DetailedTimeStore>(_storingProcs, !_MPInodeRank));
-					} else {
-						_storeList.push_back(new DetailedTimeStore(Meric::SAMPLES, !_MPInodeRank));
-					}
+					_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 				} else {
-					if (Meric::AGGREGATE)
-					{
-						_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs, !_MPInodeRank));
-					} else {
-						_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
-					}
+					_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
 				}
 			} else {
 				if (Meric::AGGREGATE)

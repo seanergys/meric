@@ -25,14 +25,13 @@
 
 namespace meric {
 
-struct RegionStats {
-	double energy;
+struct InfoStats { //infoAggregateStore
 	double duration;
+	double startTime;
 };
 
-struct DetailedRegionStats {
-	double energy[HDEEM::PROBE_NUMBER];											//TODO odstranit zavislost na HDEEM ?
-	double duration;
+struct DetailedRegionStats { //aggregateStore
+	double energy[HDEEM::PROBE_NUMBER];											//TODO remove dependency on HDEEM !
 };
 
 struct DebugRegionStats {
