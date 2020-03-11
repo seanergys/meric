@@ -34,7 +34,7 @@ public:
 	virtual void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
 
-	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
+	//void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
 	void fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd);
 
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")

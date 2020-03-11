@@ -6,10 +6,9 @@ namespace meric {
 template <class TStore>
 void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
-	RegionStats stats;
+	InfoStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
-
-	MPI_Gather(&stats, sizeof(RegionStats), MPI_BYTE, _buffer.data(), sizeof(RegionStats), MPI_BYTE, 0, this->_comm);
+	MPI_Gather(&stats, sizeof(InfoStats), MPI_BYTE, _buffer.data(), sizeof(InfoStats), MPI_BYTE, 0, this->_comm);
 
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++)
@@ -25,8 +24,8 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 		   maxDuration = 0,
 		   minDuration = _buffer[0].duration;
 
-    for (size_t i = 0; i < this->_size; i++)
-    {
+	for (size_t i = 0; i < this->_size; i++)
+	{
 		if(maxDuration < _buffer[i].duration)
 		{
 			maxDuration = _buffer[i].duration;
@@ -35,21 +34,37 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 			minDuration = _buffer[i].duration;
 		}
 		sumDuration += _buffer[i].duration;
-    }
+	}
+	ss << "AVG runtime of function [s]," << sumDuration/this->_size << std::endl
+	   << "MAX runtime of function [s]," << maxDuration << std::endl
+	   << "MIN runtime of function [s]," << minDuration << std::endl;
 
-	ss << "Average runtime of function [s]," << sumDuration/this->_size << std::endl
-	   << "Maximal runtime of function [s]," << maxDuration << std::endl
-	   << "Minimal runtime of function [s]," << minDuration << std::endl;
-	   
+	double sumStart = 0,
+		   maxStart = 0,
+		   minStart = _buffer[0].startTime;
+
+	for (size_t i = 0; i < this->_size; i++)
+	{
+		if(maxStart < _buffer[i].startTime)
+		{
+			maxStart = _buffer[i].startTime;
+		} else if (minStart > _buffer[i].startTime)
+		{
+			minStart = _buffer[i].startTime;
+		}
+		sumStart += _buffer[i].startTime;
+	}
+	ss << "AVG Function start timestamp," << std::setprecision (15) << sumStart/this->_size << std::endl
+	   << "MAX Function start timestamp," << maxStart << std::endl
+	   << "MIN Function start timestamp," << minStart << std::endl;	
 }
 
 template <class TStore>
 void InfoAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
-	RegionStats stats;
+	InfoStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
-
-	MPI_Gather(&stats, sizeof(RegionStats), MPI_BYTE, _buffer.data(), sizeof(RegionStats), MPI_BYTE, 0, this->_comm);
+	MPI_Gather(&stats, sizeof(InfoStats), MPI_BYTE, _buffer.data(), sizeof(InfoStats), MPI_BYTE, 0, this->_comm);
 }
 
 }
