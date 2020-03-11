@@ -1,6 +1,6 @@
 
-#ifndef SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
-#define SRC_STORE_AGGREGATED_AGGREGATESTORE_H_
+#ifndef SRC_STORE_AGGREGATED_SAMPLESAGGREGATESTORE_H_
+#define SRC_STORE_AGGREGATED_SAMPLESAGGREGATESTORE_H_
 
 #include <mpi.h>
 #include "aggregatestorebase.h"
@@ -8,13 +8,13 @@
 namespace meric {
 
 template <class TStore>
-class AggregateStore: public AggregateStoreBase<TStore> {
+class SamplesAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
 	typedef typename TStore::samplesType StoreSamplesType;
 //	typedef TSystem samplesType;
 
-	AggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
+	SamplesAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	{
 		_buffer.resize(this->_size);
 	}
@@ -28,7 +28,7 @@ protected:
 
 }
 
-#include "aggregatestore.hpp"
+#include "samplesaggregatestore.hpp"
 
 
-#endif /* SRC_STORE_AGGREGATED_AGGREGATESTORE_H_ */
+#endif /* SRC_STORE_AGGREGATED_SAMPLESAGGREGATESTORE_H_ */

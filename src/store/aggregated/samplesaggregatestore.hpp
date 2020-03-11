@@ -1,10 +1,10 @@
 
-#include "aggregatestore.h"
+#include "samplesaggregatestore.h"
 
 namespace meric {
 
 template <class TStore>
-void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	DetailedRegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
@@ -76,7 +76,7 @@ void AggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<size_t>
 }
 
 template <class TStore>
-void AggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
+void SamplesAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, size_t iEnd)
 {
 	DetailedRegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);

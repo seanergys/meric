@@ -17,15 +17,14 @@ struct SamplesRecord {
 };
 
 template <class TStore>
-class AggregateStore;
+class SamplesAggregateStore;
 
-template <class TStore>
-class DetailedAggregateStore;
+//template <class TStore> class DetailedAggregateStore;
 
 template <class TSystem> class SamplesStore: public Store {
 
-	friend class AggregateStore<SamplesStore>;
-	friend class DetailedAggregateStore<SamplesStore>;
+	friend class SamplesAggregateStore<SamplesStore>;
+//	friend class DetailedAggregateStore<SamplesStore>;
 public:
 //	typedef typename TSystem::samplesType StoreSamplesType;
 	typedef TSystem samplesType;

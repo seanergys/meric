@@ -6,7 +6,7 @@
 
 #include "../meric.h"
 
-#include "../../store/aggregated/aggregatestore.h"
+#include "../../store/aggregated/samplesaggregatestore.h"
 #include "../../store/aggregated/debugaggregatestore.h"
 #include "../../store/aggregated/countersaggregatestore.h"
 #include "../../store/aggregated/infoaggregatestore.h"
