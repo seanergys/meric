@@ -47,8 +47,12 @@ void DAVIDE::init()
 	conn_samples->SetTimeout(30);
 }
 
+//TODO - missing error message return
 std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
 {
+	*firstVR = 0;
+	*lastVR = 0;
+	
 	MERIC_INFO << " ***************************************************************************\n";
 	std::string errMessage = "";
 

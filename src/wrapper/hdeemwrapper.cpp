@@ -38,11 +38,6 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 		*lastBlade = -1;
 	}
 
-	*firstVR = *firstBlade/(FREQUENCY/FREQUENCY_VR) + VRDELAY;
-	*lastVR  = *lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
-	if (*lastVR > _samples.nb_vr_values)
-		*lastVR = _samples.nb_vr_values;
-
 	for (unsigned int sensorID = 0; sensorID < PROBE_NUMBER; sensorID++)
 	{
 		energy[sensorID]   = 0.0;
@@ -72,26 +67,40 @@ std::string HDEEM::getData(double startTime, double duration, size_t *firstBlade
 		}
 	};
 
-	//VR
-	if(*lastVR > 0 && *lastVR > *firstVR)
+	//Voltage Regulators
+	if (detailedMode)
 	{
-		for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
-			getEnergySamples(*firstVR, *lastVR, sensorID);
-	}else
+		*firstVR = *firstBlade/(FREQUENCY/FREQUENCY_VR) + VRDELAY;
+		*lastVR  = *lastBlade/(FREQUENCY/FREQUENCY_VR)  + VRDELAY;
+		if (*lastVR > _samples.nb_vr_values)
+			*lastVR = _samples.nb_vr_values;
+		
+		if(*lastVR > 0 && *lastVR > *firstVR)
+		{
+			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
+				getEnergySamples(*firstVR, *lastVR, sensorID);
+		}
+		else
+		{
+			*firstVR = -1;
+			*lastVR = -1;
+			errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) detailed region ";
+		}
+	}
+	else
 	{
-		*firstVR = -1;
-		*lastVR = -1;
-		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) detailed region";
+		*firstVR = 0;
+		*lastVR = 0;
 	}
 
-	//BLADE
+	//BLADE - error message about missing blade samples is more important than missing VR samples
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 		getEnergySamples(*firstBlade, *lastBlade, 0);
 	else
 	{
 		*firstBlade = -1;
 		*lastBlade = -1;
-		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region";
+		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	
 	return errMessage;	

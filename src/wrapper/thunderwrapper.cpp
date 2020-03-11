@@ -83,7 +83,9 @@ int THUNDER::getSamples()					//prejmenovat loadSamples()
 }
 
 std::string THUNDER::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])	//TODO getRegionData
-{
+{	
+	*firstVR    = 0;
+	*lastVR     = 0;
 	*firstBlade = 0;
 	*lastBlade  = 0;
 	*energy     = 0.0;
@@ -123,9 +125,6 @@ std::string THUNDER::getData(double startTime, double duration, size_t *firstBla
 		*lastBlade = -1;
 		return "MERIC ERROR: missing ARM samples for region ";
 	}
-	
-	*firstVR = *firstBlade;
-	*lastVR  = *lastBlade;
 
 	if(*lastBlade > 0 && *lastBlade > *firstBlade)
 	{
@@ -143,8 +142,6 @@ std::string THUNDER::getData(double startTime, double duration, size_t *firstBla
 	{
 		*firstBlade = -1;
 		*lastBlade  = -1;
-		*firstVR    = -1;
-		*lastVR     = -1;
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	

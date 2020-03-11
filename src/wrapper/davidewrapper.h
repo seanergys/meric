@@ -58,7 +58,14 @@ public:
 
 	static int getSamples() { return 0; };
 	static void init() {};
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]) { return ""; };
+	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[])
+	{
+		*firstBlade = 0;
+		*lastBlade  = 0;
+		*firstVR    = 0;
+		*lastVR     = 0;
+		return "";
+	}
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples) {};
 	#endif
 
