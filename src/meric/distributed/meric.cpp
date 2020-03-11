@@ -77,9 +77,9 @@ DistributedMeric::DistributedMeric()
 			{
 				if (Meric::AGGREGATE)
 				{
-					_storeList.push_back(new AggregateStore<TimeStore<HDEEM>>(_storingProcs, !_MPInodeRank));
+					_storeList.push_back(new AggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 				} else {
-					_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
+					_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
 				}
 			} else {
 				if (Meric::AGGREGATE)
@@ -108,25 +108,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new AggregateStore<TimeStore<JETSON>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new AggregateStore<SamplesStore<JETSON>>(_storingProcs, !_MPInodeRank));
 		}
 		else
-			_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
 	else if (Meric::MODE == MODE_THUNDER)
 	{
 		//_supportComm currently used by THUNDER only, so the split is here to make it obvious
 		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);
-		_storeList.push_back(new AggregateStore<TimeStore<THUNDER>>(_supportComm, !_MPIglobalRank));
+		_storeList.push_back(new AggregateStore<SamplesStore<THUNDER>>(_supportComm, !_MPIglobalRank));
 	}
 	else if (Meric::MODE == MODE_DAVIDE)
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new AggregateStore<TimeStore<DAVIDE>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new AggregateStore<SamplesStore<DAVIDE>>(_storingProcs, !_MPInodeRank));
 		}
 		else
-			_storeList.push_back(new TimeStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
 	}
 
 	if (Meric::COUNTERS != "none")

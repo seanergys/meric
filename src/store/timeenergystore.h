@@ -2,7 +2,7 @@
 #ifndef SRC_STORE_TIMEENERGYSTORE_H_
 #define SRC_STORE_TIMEENERGYSTORE_H_
 
-#include "timestore.h"
+#include "samplesstore.h"
 #include <unistd.h>
 
 namespace meric {
@@ -20,7 +20,7 @@ struct TimeEnergyRecord {
 template <class TStore>
 class DebugAggregateStore;
 
-class TimeEnergyStore: public TimeStore <HDEEM> {
+class TimeEnergyStore: public SamplesStore <HDEEM> {
 
 	friend class DebugAggregateStore<TimeEnergyStore>;
 public:
@@ -61,12 +61,12 @@ public:
 		}
 	}
 
-	TimeEnergyStore(bool samples, bool write) : TimeStore(samples, write)
+	TimeEnergyStore(bool samples, bool write) : SamplesStore(samples, write)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}
 
-	TimeEnergyStore(bool samples) : TimeStore(samples)
+	TimeEnergyStore(bool samples) : SamplesStore(samples)
 	{
 		MERIC_INFO << "Create TimeEnergyStore\n";
 	}

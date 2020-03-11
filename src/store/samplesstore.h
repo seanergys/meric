@@ -1,14 +1,14 @@
 
-#ifndef SRC_STORE_TIMESTORE_H_
-#define SRC_STORE_TIMESTORE_H_
+#ifndef SRC_STORE_SAMPLESSTORE_H_
+#define SRC_STORE_SAMPLESSTORE_H_
 
 #include "store.h"
 #include <unistd.h>
 
 namespace meric {
 
-struct TimeRecord {
-	TimeRecord(int region, timespec &time, RegionParameters configuration)
+struct SamplesRecord {
+	SamplesRecord(int region, timespec &time, RegionParameters configuration)
 	: time(time), region(region), configuration(configuration) {};
 
 	timespec time;
@@ -22,10 +22,10 @@ class AggregateStore;
 template <class TStore>
 class DetailedAggregateStore;
 
-template <class TSystem> class TimeStore: public Store {
+template <class TSystem> class SamplesStore: public Store {
 
-	friend class AggregateStore<TimeStore>;
-	friend class DetailedAggregateStore<TimeStore>;
+	friend class AggregateStore<SamplesStore>;
+	friend class DetailedAggregateStore<SamplesStore>;
 public:
 //	typedef typename TSystem::samplesType StoreSamplesType;
 	typedef TSystem samplesType;
@@ -67,9 +67,9 @@ public:
 		}
 	}
 	
-	TimeStore(bool samples, bool write = true): Store(samples, write)
+	SamplesStore(bool samples, bool write = true): Store(samples, write)
 	{
-		MERIC_INFO << "Create TimeStore\n";
+		MERIC_INFO << "Create SamplesStore\n";
 		clock_gettime(CLOCK_REALTIME, &_start);
 	}
 
@@ -78,11 +78,11 @@ protected:
 	void computePeriods();
 
 	timespec _start;
-	std::vector<TimeRecord> _records;
+	std::vector<SamplesRecord> _records;
 };
 
 }
 
 
 
-#endif /* SRC_STORE_TIMESTORE_H_ */
+#endif /* SRC_STORE_SAMPLESSTORE_H_ */

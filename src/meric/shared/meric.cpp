@@ -16,7 +16,7 @@ SharedMeric::SharedMeric()
 		} else {
 			if (Meric::CONTINUAL)
 			{
-				_storeList.push_back(new TimeStore<HDEEM>(Meric::SAMPLES));
+				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
 			} else {
 				_storeList.push_back(new CountersStore<HDEEM, double>());
 			}
@@ -30,15 +30,15 @@ SharedMeric::SharedMeric()
 	
 	if (Meric::MODE == MODE_JETSON)
 	{
-		_storeList.push_back(new TimeStore<JETSON>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
 	}
 	else if (Meric::MODE == MODE_THUNDER)
 	{
-		_storeList.push_back(new TimeStore<THUNDER>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES));
 	}
 	else if (Meric::MODE == MODE_DAVIDE)
 	{
-		_storeList.push_back(new TimeStore<DAVIDE>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES));
 	}
 	
 	if (Meric::COUNTERS != "none")

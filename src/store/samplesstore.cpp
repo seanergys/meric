@@ -1,29 +1,29 @@
 
-#include "timestore.h"
+#include "samplesstore.h"
 #include <cmath>
 
 using namespace meric;
 
-template <class TSystem> void TimeStore<TSystem>::addStart(int region, RegionParameters configuration)
+template <class TSystem> void SamplesStore<TSystem>::addStart(int region, RegionParameters configuration)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
-	_records.push_back(TimeRecord(region, time, configuration));
+	_records.push_back(SamplesRecord(region, time, configuration));
 }
 
-template <class TSystem> void TimeStore<TSystem>::addEnd(int region)
+template <class TSystem> void SamplesStore<TSystem>::addEnd(int region)
 {
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
-	_records.push_back(TimeRecord(region, time, _records.back().configuration));
+	_records.push_back(SamplesRecord(region, time, _records.back().configuration));
 }
 
-template <class TSystem> void TimeStore<TSystem>::computePeriods()
+template <class TSystem> void SamplesStore<TSystem>::computePeriods()
 {
 	TSystem::setTimeAdjustment(_start);
 }
 
-template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
+template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
 	std::string msg = "";
 	size_t firstBlade, lastBlade;
@@ -65,7 +65,7 @@ template <class TSystem> void TimeStore<TSystem>::fillRegionStats(DetailedRegion
 	delete [] max;
 }
 
-template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	timespec time1, time2;
 	clock_gettime(CLOCK_REALTIME, &time1);
@@ -161,7 +161,7 @@ template <class TSystem> void TimeStore<TSystem>::saveInterval(std::ofstream &ss
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 }
 
-template class TimeStore <HDEEM>;
-template class TimeStore <JETSON>;
-template class TimeStore <THUNDER>;
-template class TimeStore <DAVIDE>;
+template class SamplesStore <HDEEM>;
+template class SamplesStore <JETSON>;
+template class SamplesStore <THUNDER>;
+template class SamplesStore <DAVIDE>;
