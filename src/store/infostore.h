@@ -15,25 +15,18 @@ struct InfoRecord {
 	RegionParameters configuration;
 };
 
-
 template <class TStore>
 class InfoAggregateStore;
 
-/*
-template <class TStore>
-class DetailedAggregateStore;
-*/
-
 class InfoStore: public Store {
 
-//	friend class AggregateStore<InfoStore>;
 	friend class InfoAggregateStore<InfoStore>;
 
 public:
 	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration();
-	void fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd);
+	void fillRegionStats(InfoStats &stats, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{

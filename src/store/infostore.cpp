@@ -28,9 +28,10 @@ double InfoStore::getRegionDuration()
 	return regionDuration;
 }
 
-void InfoStore::fillRegionStats(RegionStats &stats, size_t iStarts, size_t iEnd)
+void InfoStore::fillRegionStats(InfoStats &stats, size_t iStarts, size_t iEnd)
 {
 	stats.duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	stats.startTime = mutils::timeToDouble(_records[iStarts].time);
 }
 	
 void InfoStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
