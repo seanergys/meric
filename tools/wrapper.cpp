@@ -405,8 +405,8 @@ void generateMERICConfigFile(appConfiguration config, const std::string fileName
 	}
 	content += "\"@RADAR\" : {";
 	if (dataSourceLabel != "" && label_energy != "")
-		content += std::string("@METRIC : { \"") + dataSourceLabel + "\" : \"" +label_energy+ "\"},";
-	content += std::string("@BASELINE : ") + std::to_string(baseline) + "\n}";
+		content += std::string("\n\t\"@METRIC\" : { \"") + dataSourceLabel + "\" : \"" +label_energy+ "\"},";
+	content += std::string("\n\t\"@BASELINE\" : ") + std::to_string(baseline) + "\n}";
 //	if (content.size() > 2 && content[content.size()-2] == ',')
 //		content = content.substr(0,content.size()-2);
 	content += "\n}\n";
@@ -1607,9 +1607,9 @@ size_t generateConfigurationsToTest()
 					position = element.find(label_energy);
 					if (position != std::string::npos)
 					{
-						energyConsumption = std::stod(element.substr(label_time.size()+1+position)) + baseEnergyConsumption;
+						energyConsumption = std::stod(element.substr(label_energy.size()+1+position)) + baseEnergyConsumption;
 						//we have found a better solution
-						if (energyConsumption < optimalConfiguration[regIndex].energy)
+						if (energyConsumption < optimalConfiguration[regIndex].energy && energyConsumption > 0.0)
 						{
 							optimalConfiguration[regIndex].energy = energyConsumption;
 							optimalConfiguration[regIndex].regConfiguration = config;
@@ -1835,9 +1835,9 @@ std::cerr << regName << " - improved solution\n";
 /// EXHAUSTIVE /////////////////////////////////////////////////////////////////
 	else if (params.alg == EXHAUSTIVE && testConfigurationsDone.size() == 0)
 	{
-		std::vector <std::string> parameterName;
+		//std::vector <std::string> parameterName;
 		std::vector <std::vector<long>> exhConf;
-		std::vector <long> cfg;
+		//std::vector <long> cfg;
 
 		for (int i = 0; i < 5; i++)
 			if (availConfigs[i].size() != 0)
