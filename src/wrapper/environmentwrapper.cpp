@@ -20,6 +20,40 @@ DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
 
+/**
+ * prints processor Family, Model and Stepping
+ **/
+#if defined __x86_64
+void Environment::getCPUversion()
+{
+	unsigned int regs[4];
+	regs[eax] = 0x01;
+	regs[ebx] = 0x0;
+	regs[ecx] = 0x0;
+	regs[edx] = 0x0;
+	CPUID(regs);
+	
+	uint64_t family = ((regs[eax] & CPUID_EAX_01_family_id_mask) >> CPUID_EAX_01_family_id_shift);
+	if (family != 0xF)
+		std::cout << "Family ID " << family << std::endl;
+	else
+		std::cout << "Family ID " << ((regs[eax] & CPUID_EAX_01_extended_family_id_mask) >> CPUID_EAX_01_extended_family_id_shift) + family << std::endl;
+	
+	if (family == 0x6 || family == 0xF)
+		std::cout << "Model ID " << 
+		((((regs[eax] & CPUID_EAX_01_extended_model_id_mask) >> CPUID_EAX_01_extended_model_id_shift) << CPUID_EAX_01_display_model_shift)
+		+ ((regs[eax] & CPUID_EAX_01_model_mask) >> CPUID_EAX_01_model_shift)) << std::endl;
+	else
+		std::cout << "Model ID " << ((regs[eax] & CPUID_EAX_01_model_mask) >> CPUID_EAX_01_model_shift) << std::endl;
+
+	std::cout << "Stepping ID " << (regs[eax] & CPUID_EAX_01_stepping_id_mask) << std::endl;
+
+//	printf 'wl_%.2x%x\n' $(head -10 /proc/cpuinfo | grep "cpu family\s*:" | awk -F: '{print $2}') $(head -10 /proc/cpuinfo | grep "model\s*:" | awk -F: '{print $2}')
+//	std::cout << "wl_" << hex << family_ex << model_ex << std::endl;
+}
+#else
+	//TODO parse /proc/cpuinfo for the processor Family/Model/Stepping
+#endif
 
 /**
  * returns nominal CPU core frequency in Hz
@@ -86,7 +120,6 @@ void Environment::getBrandString(char *buff, int buff_size)
 long Environment::getNominalFrequency()
 {
 	const int STRING_SIZE=256;
-	unsigned long f;
 	char cpu_model[STRING_SIZE];
 	const char s1[2] = "@";
 	const char s2[4] = "GHz";
@@ -94,12 +127,12 @@ long Environment::getNominalFrequency()
 	char *token2;
 
 	getBrandString(cpu_model, STRING_SIZE);
-
+	
 	token1 = strtok(cpu_model, s1);
 	token1 = strtok(NULL, s1);
 	token2 = strtok(token1, s2);
-
-	return f = (long) (atof(token2) * 1E9);
+	
+	return (long) (atof(token2) * 1E9);
 }
 #else
 long Environment::getNominalFrequency()

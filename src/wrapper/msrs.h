@@ -70,8 +70,35 @@
  	Not available at NHM, SDB, IVB-E, BDW, BDW-E, SKL, CSL
  	Contains the minimum supported operating ratio in units of 100 MHz.
  * Reserved (bits 63:56)
+ *
+ * CPUID instruction - input EAX = 0x01 ***************************************
+ * input EAX = 0x01
+ * output EAX:
+ * Steping ID (bits 3:0)
+ * Model (bits 7:4)
+ * Family ID (bits 11:8):
+ 	Family (0FH for the Pentium 4 Processor Family)
+ * Processor Type (bits 13:12):
+ 	00 - Original OEM Processor
+ 	01 - Intel OverDrive Processor
+ 	10 - Dual processor (not applicable to Intel486 processors)
+ 	11 - Intel reserved
+ * Reserved (bits 15:14)
+ * Extended Model ID (bits 19:16)
+ * Extended Family ID (bits 27:20)
+ * Reserved (bits 31:28)
+ IF Family_ID =! 0x0F
+ 	DisplayFamily = Family_ID;
+ ELSE 
+ 	DisplayFamily = Extended_Family_ID + Family_ID;
+ 
+ IF (Family_ID == 0x06 || Family_ID == 0x0F)
+ 	DisplayModel = (Extended_Model_ID << 4) + Model_ID;
+ ELSE 
+ 	DisplayModel = Model_ID;
  ******************************************************************************
  **/
+
 #ifndef IA32_ENERGY_PERF_BIAS
 	#define IA32_ENERGY_PERF_BIAS	0x1B0
 #endif
@@ -83,6 +110,19 @@ const uint64_t MSR_PLATFORM_INFO_nominal_freq_mask  = 0xFF00;
 const uint64_t MSR_PLATFORM_INFO_nominal_freq_shift = 8;
 const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_mask  = 0x10000000;
 const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_shift = 28;
+
+const uint64_t CPUID_EAX_01_stepping_id_mask = 0xF;
+const uint64_t CPUID_EAX_01_model_mask = 0xF0;
+const uint64_t CPUID_EAX_01_model_shift = 4;
+const uint64_t CPUID_EAX_01_family_id_mask = 0xF00;
+const uint64_t CPUID_EAX_01_family_id_shift = 8;
+const uint64_t CPUID_EAX_01_processor_type_mask = 0x3000;
+const uint64_t CPUID_EAX_01_processor_type_shift = 12;
+const uint64_t CPUID_EAX_01_extended_model_id_mask = 0xF0000;
+const uint64_t CPUID_EAX_01_extended_model_id_shift = 16;
+const uint64_t CPUID_EAX_01_extended_family_id_mask = 0xFF00000;
+const uint64_t CPUID_EAX_01_extended_family_id_shift = 20;
+const uint64_t CPUID_EAX_01_display_model_shift = 4;
 
 // CORE FREQUENCY //////////////////////////////////////////////////////////////
 /**

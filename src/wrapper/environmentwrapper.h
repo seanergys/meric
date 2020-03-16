@@ -116,6 +116,7 @@ public:
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	
 #ifdef __x86_64
+	static void getCPUversion();
 	static bool isHWPactive(std::string &status);
 #endif
 
