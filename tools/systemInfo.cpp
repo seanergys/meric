@@ -584,7 +584,6 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
 		read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
-#endif
 		if (MSR_PLATFORM_POWER_LIMIT_bits)
 		{
 			std::cout << "\tPLATFORM power limit #1: " 
@@ -611,6 +610,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 				<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
 				<< std::endl;
 		}
+#endif
 	}
 	
 	return ok;
