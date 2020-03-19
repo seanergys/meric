@@ -43,8 +43,15 @@ void sysInfoSize()
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tSockets per Node: " << meric::Environment::SOCKETS_PER_NODE << std::endl
 	          << "\tCores per Socket: " << meric::Environment::CORES_PER_SOCKET << std::endl
-	          << "\tThreads per Core: " << meric::Environment::THREADS_PER_CORE << std::endl
-	          << "\tHyper-threads:    " << ((meric::Environment::THREADS_PER_CORE > 1) ? "true" : "false") << std::endl;
+	          << "\tThreads per Core: " << meric::Environment::THREADS_PER_CORE << std::endl;
+	          
+	if (meric::Environment::onlineThreads.size() != meric::Environment::SOCKETS_PER_NODE * meric::Environment::CORES_PER_SOCKET * meric::Environment::THREADS_PER_CORE)
+	{
+		std::cout << "\tActive threads: ";
+		for (int i=meric::Environment::onlineThreads.size()-1; i>=0; i--)
+			std::cout << meric::Environment::onlineThreads[i] << " ";
+	}
+	std::cout << std::endl;
 }
 
 bool sysInfoFrequencies(meric::systemLimits& limits)

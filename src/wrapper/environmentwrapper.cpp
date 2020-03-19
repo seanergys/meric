@@ -8,6 +8,7 @@ systemLimits Environment::defaultSettings = {-1, -1, -1, -1, -1, -1, -1, -1, -1,
 int Environment::SOCKETS_PER_NODE = 1;
 int Environment::CORES_PER_SOCKET = 1;
 int Environment::THREADS_PER_CORE = 1;
+std::vector<int> Environment::onlineThreads;
 SYSTEM_TYPE Environment::systemType = SYS_OTHER;
 
 std::string Environment::scalingGovernor = "";
@@ -371,6 +372,44 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 }
 
 /**
+ * parse a list of threads IDs (comma or dash seprarated list) and inserts the ids to the vector vec
+ * if lastOnly is true, only id of the very last element of the list is inserted to the vector vec
+ * due to avalability of the lastOnly parameter the vecor is in opposite order
+ **/
+void Environment::stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly)
+{
+	auto parseRange = [&] (std::string range)
+	{
+		size_t pos = range.find('-');
+		if (pos != std::string::npos)
+		{
+			int start = std::stoi(range.substr(0,pos));
+			int stop  = std::stoi(range.substr(pos+1));
+			do
+			{
+				vec.push_back(stop);
+				stop--;
+			}while(stop >= start && lastOnly != true);
+		}
+		else
+			vec.push_back(std::stoi(range));
+	};
+	
+	std::size_t position;
+	do
+	{
+		position = list.find_last_of(',');
+		if (position != std::string::npos)
+		{
+			parseRange(list.substr(position+1));
+			list = list.substr(0,position);
+		}
+		else
+			parseRange(list);
+	}while(position != std::string::npos && lastOnly != true);
+}
+
+/**
  * sets following variables - system sizes:
  *  - SOCKETS_PER_NODE
  *  - CORES_PER_SOCKET
@@ -378,6 +417,14 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
  **/
 void Environment::initHWSizes()
 {
+	std::string topoStr;
+	std::ifstream topoFile;
+	
+	topoFile.open("/sys/devices/system/cpu/online");
+	topoFile >> topoStr;
+	topoFile.close();
+	stringOfIDsToVector(topoStr, onlineThreads);
+
 #ifdef HAVE_MSR_CORE_H
 	int Hthreads;
 	uint64_t cs = 1;
@@ -393,46 +440,35 @@ void Environment::initHWSizes()
 	CORES_PER_SOCKET = topo.num_domain(GEOPM_DOMAIN_CORE) / SOCKETS_PER_NODE;
 	THREADS_PER_CORE = topo.num_domain(GEOPM_DOMAIN_CPU);
 #else
-	std::string topoStr;
-	std::ifstream topoFile;
-	#if defined HAVE_X86_ADAPT_H
-		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
-	#else
-		uint64_t CORES_PER_NODE = sysconf(_SC_NPROCESSORS_ONLN);
-		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(CORES_PER_NODE-1)+"/topology/physical_package_id");
-		topoFile >> topoStr;
-		topoFile.close();
-		
-		SOCKETS_PER_NODE = std::stoi(topoStr)+1;
-		CORES_PER_SOCKET = CORES_PER_NODE / SOCKETS_PER_NODE;
-	#endif
-
 	//THREADS_PER_CORE
 	topoFile.open("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
 	topoFile >> topoStr;
 	topoFile.close();
-	while(topoStr.size())
-	{
-		std::string num = topoStr;
-		size_t pos = std::string::npos;
-		if ((pos = topoStr.find(',')) != std::string::npos)
-		{
-			num = topoStr.substr(0,pos);
-			topoStr = topoStr.substr(pos+1);
-		}
+	std::vector<int> topoSiblings;
+	stringOfIDsToVector(topoStr, topoSiblings);
+	THREADS_PER_CORE = topoSiblings.size();
+
+	#if defined HAVE_X86_ADAPT_H
+		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
+		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
+	#else
+		topoFile.open("/sys/devices/system/cpu/offline");
+		topoFile >> topoStr;
+		topoFile.close();
+		std::vector<int> offlineThreads;
+		if(topoStr != "")
+			stringOfIDsToVector(topoStr, offlineThreads, true);
+
+		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(onlineThreads[0])+"/topology/physical_package_id");
+		topoFile >> topoStr;
+		topoFile.close();
+		SOCKETS_PER_NODE = std::stoi(topoStr)+1;
+
+		if (offlineThreads.size() && onlineThreads[0] < offlineThreads[0])
+			CORES_PER_SOCKET = (offlineThreads[0]+1) / (SOCKETS_PER_NODE * THREADS_PER_CORE);
 		else
-			topoStr = "";
-		
-		if ((pos = num.find('-')) != std::string::npos)
-		{
-			long start = std::stol(num.substr(0,pos));
-			long stop  = std::stol(num.substr(pos+1));
-			THREADS_PER_CORE += stop - start +1;
-		}
-		else
-			THREADS_PER_CORE++;
-	}
+			CORES_PER_SOCKET = (onlineThreads[0]+1) / (SOCKETS_PER_NODE * THREADS_PER_CORE);
+	#endif
 #endif
 
 	MERIC_INFO << "# SYSTEM INFORMATION\n"

@@ -34,6 +34,7 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <vector>
 
 namespace meric {
 
@@ -94,6 +95,7 @@ public:
 	static int SOCKETS_PER_NODE;
 	static int CORES_PER_SOCKET;
 	static int THREADS_PER_CORE;
+	static std::vector<int> onlineThreads;
 
 	static SYSTEM_TYPE systemType;
 
@@ -123,6 +125,7 @@ public:
 private:
 	static void readSystemDefaultSettings();
 	static void storeSystemDefaultSettings();
+	static void stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly = false);
 #ifdef __x86_64
 	static void getBrandString(char *buff, int buff_size);
 	static inline void CPUID(unsigned int *regs)
