@@ -39,17 +39,20 @@ enum MODE	//this application keeps this order
 
 void sysInfoSize()
 {
-	meric::Environment::initHWSizes();
+	int SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE;
+	std::vector <int> onlineThreads;
+	meric::Environment::initHWSizes(SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE, onlineThreads);
 	std::cout << "# SYSTEM INFORMATION\n"
-	          << "\tSockets per Node: " << meric::Environment::SOCKETS_PER_NODE << std::endl
-	          << "\tCores per Socket: " << meric::Environment::CORES_PER_SOCKET << std::endl
-	          << "\tThreads per Core: " << meric::Environment::THREADS_PER_CORE << std::endl;
+	          << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
+	          << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
+	          << "\tThreads per Core: " << THREADS_PER_CORE << std::endl;
 	          
-	if (meric::Environment::onlineThreads.size() != meric::Environment::SOCKETS_PER_NODE * meric::Environment::CORES_PER_SOCKET * meric::Environment::THREADS_PER_CORE)
+	if (onlineThreads.size() != SOCKETS_PER_NODE * CORES_PER_SOCKET * THREADS_PER_CORE)
 	{
+		std::sort (onlineThreads.begin(), onlineThreads.end());
 		std::cout << "\tActive threads: ";
-		for (int i=meric::Environment::onlineThreads.size()-1; i>=0; i--)
-			std::cout << meric::Environment::onlineThreads[i] << " ";
+		for (int i=onlineThreads.size()-1; i>=0; i--)
+			std::cout << onlineThreads[i] << " ";
 	}
 	std::cout << std::endl;
 }
