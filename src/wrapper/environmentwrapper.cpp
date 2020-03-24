@@ -8,7 +8,8 @@ systemLimits Environment::defaultSettings = {-1, -1, -1, -1, -1, -1, -1, -1, -1,
 int Environment::SOCKETS_PER_NODE = 1;
 int Environment::CORES_PER_SOCKET = 1;
 int Environment::THREADS_PER_CORE = 1;
-std::vector<int> Environment::onlineThreads;
+std::map<int, std::vector<int>> Environment::mapThreadsToCore;
+std::map<int, std::vector<int>> Environment::mapCoresToSocket;
 SYSTEM_TYPE Environment::systemType = SYS_OTHER;
 
 std::string Environment::scalingGovernor = "";
@@ -320,15 +321,18 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		if (scalingGovernor != "userspace")
 		{
 			std::ofstream governorFileO;
-			for (int i=0; i<SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
+			for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 			{
-				governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-				governorFileO << "userspace";
-				governorFileO.close();
-				if (!governorFileO)
+				for (int cpu : mapCoresToSocket[soc])
 				{
-					std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<i<<"/cpufreq/scaling_governor\n";
-					return NO_DVFS;
+					governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_governor");
+					governorFileO << "userspace";
+					governorFileO.close();
+					if (!governorFileO)
+					{
+						std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_governor\n";
+						return NO_DVFS;
+					}
 				}
 			}
 		}
@@ -349,20 +353,26 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		//Disable scaling frequency of Intel P-state driver 
 		//and set maximum P-state to all cores 
 		//and set energy performance bias to maximum performance
-		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
+		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 		{
-			defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-			defSet << defaultSettings.minCoreFreq / 1000; //kHz
-			defSet.close();
-			if (!defSet)
+			for (int cpu : mapCoresToSocket[soc])
 			{
-				std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
-				return NO_DVFS;
-			}			
+				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+				defSet << defaultSettings.minCoreFreq / 1000; //kHz
+				defSet.close();
+				if (!defSet)
+				{
+					std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
+					return NO_DVFS;
+				}			
+			}
 		}
 #ifdef HAVE_MSR_CORE_H
-		for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
-			write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
+		{
+			for (int cpu : mapCoresToSocket[soc])
+				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+		}
 #endif
 		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
 		usleep(800000); //700 ms is not enough
@@ -410,7 +420,7 @@ void Environment::stringOfIDsToVector(std::string list, std::vector<int> &vec, b
 }
 
 /**
- * sets following variables - system sizes:
+ * detects the system topology (which thread belongs to which core; which cores belong to which socket) and sets following variables - system sizes:
  *  - SOCKETS_PER_NODE
  *  - CORES_PER_SOCKET
  *  - THREADS_PER_CORE
@@ -423,58 +433,68 @@ void Environment::initHWSizes()
 	topoFile.open("/sys/devices/system/cpu/online");
 	topoFile >> topoStr;
 	topoFile.close();
+	std::vector<int> onlineThreads;
 	stringOfIDsToVector(topoStr, onlineThreads);
-
-#ifdef HAVE_MSR_CORE_H
-	int Hthreads;
-	uint64_t cs = 1;
-	uint64_t ts = 1;
-	uint64_t ss = 1;
-	core_config(&cs, &ts, &ss, &Hthreads);
-	SOCKETS_PER_NODE = ss;
-	CORES_PER_SOCKET = cs;
-	THREADS_PER_CORE = ts;
-#elif defined HAVE_GEOPM_H
-	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
-	SOCKETS_PER_NODE = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
-	CORES_PER_SOCKET = topo.num_domain(GEOPM_DOMAIN_CORE) / SOCKETS_PER_NODE;
-	THREADS_PER_CORE = topo.num_domain(GEOPM_DOMAIN_CPU);
-#else
-	//THREADS_PER_CORE
-	topoFile.open("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list");
-	topoFile >> topoStr;
-	topoFile.close();
-	std::vector<int> topoSiblings;
-	stringOfIDsToVector(topoStr, topoSiblings);
-	THREADS_PER_CORE = topoSiblings.size();
-
-	#if defined HAVE_X86_ADAPT_H
-		SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-		CORES_PER_SOCKET = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU) / SOCKETS_PER_NODE;
-	#else
-		topoFile.open("/sys/devices/system/cpu/offline");
+	
+	while(onlineThreads.size())
+	{
+		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(onlineThreads[0])+"/topology/thread_siblings_list");
 		topoFile >> topoStr;
 		topoFile.close();
-		std::vector<int> offlineThreads;
-		if(topoStr != "")
-			stringOfIDsToVector(topoStr, offlineThreads, true);
-
-		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(onlineThreads[0])+"/topology/physical_package_id");
+		std::vector<int> threadSiblings;
+		stringOfIDsToVector(topoStr, threadSiblings);
+		mapThreadsToCore[threadSiblings.back()] = threadSiblings;
+		
+		if (threadSiblings.size() > THREADS_PER_CORE)
+			THREADS_PER_CORE = threadSiblings.size();
+		
+		for(int thrd : threadSiblings)
+			onlineThreads.erase(std::remove(onlineThreads.begin(), onlineThreads.end(), thrd), onlineThreads.end());
+	}
+	
+	for (const auto &core : mapThreadsToCore)
+	{
+		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(core.first)+"/topology/physical_package_id");
 		topoFile >> topoStr;
 		topoFile.close();
-		SOCKETS_PER_NODE = std::stoi(topoStr)+1;
-
-		if (offlineThreads.size() && onlineThreads[0] < offlineThreads[0])
-			CORES_PER_SOCKET = (offlineThreads[0]+1) / (SOCKETS_PER_NODE * THREADS_PER_CORE);
+		
+		const int soc = std::stoi(topoStr);
+		
+		if (mapCoresToSocket.count(soc))
+		{
+			mapCoresToSocket[soc].push_back(core.first);
+			if (CORES_PER_SOCKET < mapCoresToSocket[soc].size())
+				CORES_PER_SOCKET++;
+		}
 		else
-			CORES_PER_SOCKET = (onlineThreads[0]+1) / (SOCKETS_PER_NODE * THREADS_PER_CORE);
-	#endif
-#endif
+			mapCoresToSocket[soc] = {core.first};
+	}
+	SOCKETS_PER_NODE = mapCoresToSocket.size();
 
 	MERIC_INFO << "# SYSTEM INFORMATION\n"
 	           << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
 	           << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
 	           << "\tThreads per Core: " << THREADS_PER_CORE << std::endl;
+
+	/*
+	MERIC_INFO << "# TOPOLOGY: \n";
+	for (const auto &socket : mapCoresToSocket)
+	{
+		MERIC_INFO << "\tSOC " << socket.first << ": ";
+		for (int core : socket.second)
+		{
+			MERIC_INFO << core << " ";
+			if (mapThreadsToCore[core].size() > 1)
+			{
+				MERIC_INFO << "( ";
+				for (int thread: mapThreadsToCore[core])
+					MERIC_INFO << thread << " ";
+				MERIC_INFO << ") ";
+			}
+		}
+		MERIC_INFO << std::endl;
+	}
+	*/
 }
 
 /**
@@ -898,6 +918,7 @@ void Environment::threadNumber(int nthreads)
  **/
 void Environment::frequency(uint64_t freq, int socket)
 {
+	int socket_min, socket_max;
 	timespec start_time, stop_time;
 	clock_gettime(CLOCK_REALTIME, &start_time);
 
@@ -915,26 +936,28 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 
 	usedDVFS = true;
-	int nodeSize = SOCKETS_PER_NODE * CORES_PER_SOCKET;
-	int cpu=0;
-	if(socket != -1)
-	{
-		nodeSize = CORES_PER_SOCKET*(socket+1);
-		cpu = CORES_PER_SOCKET*socket;
-	}
 
 	MERIC_INFO << "MERIC set frequency to: " << freq;
-	if (socket != -1)
+	if (socket != -1 && socket < SOCKETS_PER_NODE)
 	{
 		MERIC_INFO << "; socket: " << socket;
+		socket_min = socket;
+		socket_max = socket;
 	}
-	MERIC_INFO << "; cpu " << cpu << " - " << nodeSize-1;
+	else
+	{
+		socket_min = 0;
+		socket_max = SOCKETS_PER_NODE-1;
+	}
 	
 #ifdef HAVE_MSR_CORE_H
-	MERIC_INFO << "; using LIBMSR\n";
-	for (; cpu<nodeSize; cpu++)
+	MERIC_INFO << "; using LIBMSR\n";	
+	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			write_msr_by_idx(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+		}
 	}
 #elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "; using X86ADAPT\n";
@@ -945,47 +968,61 @@ void Environment::frequency(uint64_t freq, int socket)
 		return;
 	}
 
-	for (; cpu<nodeSize; cpu++)
+	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-		if (fd < 0)
+		for (int cpu : mapCoresToSocket[soc])
 		{
-			std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//			exit(2);
-		}
+			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+			if (fd < 0)
+			{
+				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//				exit(2);
+			}
 
-		if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
-		{
-			std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-//			exit(3);
-		}
+			if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
+			{
+				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+//				exit(3);
+			}
 
-		if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+			if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+		}
 	}
 #elif defined HAVE_CPUFREQ_H
 	MERIC_INFO << "; using CPUFREQ\n";
-	for (; cpu < nodeSize; cpu++)
+	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		if(cpufreq_set_frequency(cpu,freq) != 0)
+		for (int cpu : mapCoresToSocket[soc])
 		{
-			std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+			if(cpufreq_set_frequency(cpu,freq) != 0)
+			{
+				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+			}
 		}
 	}
 	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
 #elif defined HAVE_GEOPM_H
 	MERIC_INFO << "; using GEOPM\n";
-	for (; cpu < nodeSize; cpu++)
-		pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
+	for (int soc=socket_min; soc<=socket_max; soc++)
+	{
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
+		}
+	}
 #else
 	std::ofstream coreFile;
-	for (; cpu < nodeSize; cpu++)
+	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
-		coreFile << freq / 1000;
-		coreFile.close();
-		if(!coreFile)
-			std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
+			coreFile << freq / 1000;
+			coreFile.close();
+			if(!coreFile)
+				std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+		}
 	}
 #endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
@@ -999,6 +1036,7 @@ void Environment::frequency(uint64_t freq, int socket)
  **/
 void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket)
 {
+	int socket_min, socket_max;
 	timespec start_time, stop_time;
 	clock_gettime(CLOCK_REALTIME, &start_time);
 
@@ -1021,23 +1059,26 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	{
 		MERIC_INFO << " - " << minFreq;
 	}
-	int max = SOCKETS_PER_NODE;
-	int die=0;
-	if (socket != -1 && socket < max)
+
+	if (socket != -1 && socket < SOCKETS_PER_NODE)
 	{
-		die = socket;
-		max = socket+1;
+		MERIC_INFO << "; socket: " << socket;
+		socket_min = socket;
+		socket_max = socket;
 	}
-	MERIC_INFO << "; soc " << die << " - " << max-1;
+	else
+	{
+		socket_min = 0;
+		socket_max = SOCKETS_PER_NODE-1;
+	}
 #endif
 
 #ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
-
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
-	for (; die<max; die++)
+	for (int die=socket_min; die<=socket_max; die++)
 	{
-		write_msr_by_idx(die * CORES_PER_SOCKET, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+		write_msr_by_idx(mapCoresToSocket[die][0], MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
 	}
 #elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "; using X86ADAPT\n";
@@ -1049,7 +1090,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	
 	int adaptHandlerUncoreMax = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 	int adaptHandlerUncoreMin = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
-	for (; die<max; die++)
+	for (int die=socket_min; die<=socket_max; die++)
 	{
 		int fd = x86_adapt_get_device(X86_ADAPT_DIE, die);
 		if (fd < 0)
@@ -1075,7 +1116,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	}
 #elif defined HAVE_GEOPM_H
 	MERIC_INFO << "; using GEOPM\n";
-	for (; die<max; die++)
+	for (int die=socket_min; die<=socket_max; die++)
 	{
 		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), die, minFreq);
 		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), die, maxFreq);
@@ -1106,6 +1147,7 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	if (power == 0)
 		return;
 
+	int socket_min, socket_max;
 #ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "LIBMSR set powercap to: "<< power << " mW";
 #elif defined HAVE_X86_ADAPT_H
@@ -1120,15 +1162,20 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 		MERIC_INFO << " for " << timeWindow << " ms";
 	}
 	usedPWRCAP = true;
-	int max = SOCKETS_PER_NODE;
-	int die=0;
-	if (socket != -1 && socket < max)
+
+	if (socket != -1 && socket < SOCKETS_PER_NODE)
 	{
-		die = socket;
-		max = socket+1;
+		MERIC_INFO << "; socket: " << socket << std::endl;
+		socket_min = socket;
+		socket_max = socket;
 	}
-	MERIC_INFO << "; soc " << die << " - " << max-1<< std::endl;
-	
+	else
+	{
+		MERIC_INFO << std::endl;
+		socket_min = 0;
+		socket_max = SOCKETS_PER_NODE-1;
+	}	
+
 	uint64_t MSR_PKG_POWER_LIMIT_bits;
 #ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
@@ -1179,10 +1226,10 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 			(Y << MSR_PKG_POWER_LIMIT_time_y_shift) | (Z << MSR_PKG_POWER_LIMIT_time_z_shift);
 	}
 
-	for (; die<max; die++)
+	for (int die=socket_min; die<=socket_max; die++)
 	{
 	#ifdef HAVE_MSR_CORE_H
-		write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
+		write_msr_by_idx(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
 	#elif defined HAVE_X86_ADAPT_H
 		fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 		if (fd < 0)
@@ -1199,13 +1246,13 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 	#endif
 	}
 #elif defined HAVE_GEOPM_H
-	for (; die<max; die++)
+	for (int die=socket_min; die<=socket_max; die++)
 	{
 		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power/1000.0);
 	}
 	if (timeWindow != 0)
 	{
-		for (; die<max; die++)
+		for (int die=socket_min; die<=socket_max; die++)
 		{
 			pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow/1000.0);
 		}
@@ -1233,11 +1280,14 @@ void Environment::restoreSystemSettings(bool hardReset)
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
 			std::ofstream governorFile;
-			for (int i=0; i<SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
+			for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 			{
-				governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(i)+"/cpufreq/scaling_governor");
-				governorFile << scalingGovernor;
-				governorFile.close();
+				for (int cpu : mapCoresToSocket[soc])
+				{
+					governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_governor");
+					governorFile << scalingGovernor;
+					governorFile.close();
+				}
 			}
 		}
 		if (activatedDVFS == INT_PSTATE || hardReset)
@@ -1247,14 +1297,17 @@ void Environment::restoreSystemSettings(bool hardReset)
 			defSet << "0";
 			defSet.close();
 			
-			for (int cpu=0; cpu<SOCKETS_PER_NODE * CORES_PER_SOCKET; cpu++)
+			for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 			{
-				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				defSet << defaultSettings.maxCoreFreq / 1000;
-				defSet.close();
+				for (int cpu : mapCoresToSocket[soc])
+				{
+					defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+					defSet << defaultSettings.maxCoreFreq / 1000;
+					defSet.close();
 #ifdef HAVE_MSR_CORE_H
-				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
+					write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
+				}
 			}
 		}
 	}
@@ -1287,8 +1340,8 @@ void Environment::restoreSystemSettings(bool hardReset)
 #ifdef HAVE_MSR_CORE_H
 		for (int die=0; die<SOCKETS_PER_NODE; die++)
 		{
-			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
-//			write_msr_by_idx(die * CORES_PER_SOCKET, MSR_DRAM_POWER_LIMIT, defaultSettings.defaultPowerCapRAM);
+			write_msr_by_idx(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
+//			write_msr_by_idx(mapCoresToSocket[die][0], MSR_DRAM_POWER_LIMIT, defaultSettings.defaultPowerCapRAM);
 		}
 #elif defined HAVE_X86_ADAPT_H
 
