@@ -948,28 +948,11 @@ void constructStateSpace()
 	meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
 	meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
 	limit = systemLimits(meric::Environment::getSystemSettings());
+	int THREADS_PER_CORE;
+	std::vector <int> onlineThreads;
+	meric::Environment::initHWSizes(limit.socketsPerNode, limit.coresPerSocket, THREADS_PER_CORE, onlineThreads);
 	meric::Environment::close();
-
-#ifdef HAVE_MSR_CORE_H
-	int Hthreads;
-	uint64_t cs = 0;
-	uint64_t ss = 0;
-	core_config(&cs, NULL, &ss, NULL);
-	limit.socketsPerNode = ss;
-	limit.coresPerSocket  = cs;
-#elif defined HAVE_X86_ADAPT_H
-	limit.coresPerSocket = x86_adapt_get_nr_avaible_devices(X86_ADAPT_CPU);
-	limit.socketsPerNode = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-	limit.coresPerSocket /= limit.socketsPerNode;
-#else //ifdef HAVE_NUMA_H
-	limit.coresPerSocket = sysconf(_SC_NPROCESSORS_ONLN);
-	limit.socketsPerNode = numa_node_of_cpu(limit.coresPerSocket-1)+1;
-
-	if (limit.socketsPerNode <= 0)
-		limit.socketsPerNode=1;
-	limit.coresPerSocket /= limit.socketsPerNode;
-#endif
-	limit.maxThrds = limit.coresPerSocket * limit.socketsPerNode;
+	limit.maxThrds = onlineThreads.size();
 	newconfigurations = 0;
 }
 
