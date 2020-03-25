@@ -142,7 +142,7 @@ private:
 	static void storeSystemDefaultSettings();
 	static void stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly = false);
 #ifdef __x86_64
-	static void getBrandString(char *buff, int buff_size);
+	static void getCPUbrandString(char *buff, int buff_size);
 	static inline void CPUID(unsigned int *regs)
 	{
 		asm volatile("cpuid"

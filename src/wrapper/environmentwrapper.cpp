@@ -73,7 +73,7 @@ long Environment::getNominalFrequency()
 };
 
 #elif defined __x86_64
-void Environment::getBrandString(char *buff, int buff_size)
+void Environment::getCPUbrandString(char *buff, int buff_size)
 {
 	unsigned int regs[4];
 	unsigned int size_reg = sizeof(unsigned int);
@@ -128,7 +128,7 @@ long Environment::getNominalFrequency()
 	char *token1;
 	char *token2;
 
-	getBrandString(cpu_model, STRING_SIZE);
+	getCPUbrandString(cpu_model, STRING_SIZE);
 	
 	token1 = strtok(cpu_model, s1);
 	token1 = strtok(NULL, s1);
