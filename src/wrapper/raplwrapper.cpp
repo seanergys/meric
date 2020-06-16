@@ -67,6 +67,8 @@ void RAPL::init(bool detailed)
  **/
 void RAPL::initCountersUnits()
 {
+	if (units.size())
+		return; //already initialized
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
 	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
@@ -97,6 +99,7 @@ void RAPL::initCountersUnits()
 		units[RAPL_PLATFORM_ENERGY] = units[RAPL_PCKG_ENERGY];
 
 		units[RAPL_POWER_LIMIT_TIMEWINDOW] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
+		units[MSR_COUNTERS::RAPL_PKG_ACTIVE] = units[RAPL_POWER_LIMIT_TIMEWINDOW];
 	}
 }
 #endif

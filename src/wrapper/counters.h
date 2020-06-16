@@ -64,12 +64,14 @@ namespace MSR_COUNTERS {
 const std::string APERF = "APERF";
 const std::string MPERF = "MPERF";
 const std::string UCF_FREQ = "UCF_FREQ_CNT";
+const std::string RAPL_PKG_ACTIVE = "RAPL_PKG_ACTIVE_RATIO";
 
 #if defined HAVE_MSR_CORE_H && defined SRC_WRAPPER_MSRCOUNTERSWRAPPER_H_
 static std::map<const std::string, uint64_t> counterLabel = {
-	{ APERF,    IA32_APERF           },
-	{ MPERF,    IA32_MPERF           },
-	{ UCF_FREQ, U_MSR_PMON_FIXED_CTR }
+	{ APERF,           IA32_APERF           },
+	{ MPERF,           IA32_MPERF           },
+	{ UCF_FREQ,        U_MSR_PMON_FIXED_CTR },
+	{ RAPL_PKG_ACTIVE, MSR_PKG_PERF_STATUS  }
 };
 #endif
 }

@@ -1,5 +1,6 @@
 #include "msrcounterswrapper.h"
-#include "../basis/utils.h"
+#include "raplwrapper.h"
+//#include "../basis/utils.h"
 
 using namespace meric;
 
@@ -18,7 +19,7 @@ void MSR::init()
 	core_config(&CORES_PER_SOCKET, NULL, &SOCKETS_PER_NODE, NULL);
 	#endif
 	
-	//msr library has been already initialized in Environment::init(...)
+	//msr library as well as RAPL units has been already initialized in Environment::init(...)
 	initMap(counters);
 
 	//enable uncore-frequency monitoring
@@ -76,6 +77,16 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 			runtime);
 		suffix = "_" + std::to_string(++i);
 	}
+	//RAPL_PKG_ACTIVE
+	i = 0;
+	suffix = "_0";
+	while(stop.count(MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix))
+	{
+		ratios["RAPL_PKG_ACTIVE_RATIO"+suffix] = CountersRates::RAPL_ACTIVE_RATIO(
+			getResultValue(start[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], stop[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], runtime, "")* RAPL::getUnit(MSR_COUNTERS::RAPL_PKG_ACTIVE),
+			runtime);
+		suffix = "_" + std::to_string(++i);
+	}
 }
 
 std::string MSR::getSourceLabel()
@@ -116,7 +127,10 @@ void MSR::initMap(std::map<std::string, uint64_t> & dict)
 	}
 	
 	for (int i=0; i < SOCKETS_PER_NODE; i++)
+	{
 		dict[MSR_COUNTERS::UCF_FREQ+ "_" + std::to_string(i)] = 0;
+		dict[MSR_COUNTERS::RAPL_PKG_ACTIVE+ "_" + std::to_string(i)] = 0;
+	}
 }
 
 

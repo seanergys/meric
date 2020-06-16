@@ -30,6 +30,9 @@ public:
 	
 	//average CPU uncore frequency in a specified time range [Hz]
 	static double CPU_UNCORE_FREQUNECY(uint64_t cycles, double time) { return cycles ? cycles/time : 0; };
+	
+	//ratio of time during which the RAPL system was active
+	static double RAPL_ACTIVE_RATIO(double cappedTime, double overallTime) { return overallTime ? cappedTime/overallTime : 0;};
 
 };
 
