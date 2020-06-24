@@ -304,6 +304,7 @@ DVFS_WAY Environment::isDVFSpossible()
 	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
 		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the whitelist
 #endif
+std::cout << "NO DVFS" << std::endl;
 	return NO_DVFS;
 }
 
@@ -326,13 +327,16 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 			{
 				for (int cpu : mapCoresToSocket[soc])
 				{
-					governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_governor");
-					governorFileO << "userspace";
-					governorFileO.close();
-					if (!governorFileO)
+					for (int thread : mapThreadsToCore[cpu])
 					{
-						std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_governor\n";
-						return NO_DVFS;
+						governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_governor");
+						governorFileO << "userspace";
+						governorFileO.close();
+						if (!governorFileO)
+						{
+							std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<thread<<"/cpufreq/scaling_governor\n";
+							return NO_DVFS;
+						}
 					}
 				}
 			}
@@ -358,13 +362,16 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
-				defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				defSet << defaultSettings.minCoreFreq / 1000; //kHz
-				defSet.close();
-				if (!defSet)
+				for (int thread : mapThreadsToCore[cpu])
 				{
-					std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
-					return NO_DVFS;
+					defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_max_freq");
+					defSet << defaultSettings.minCoreFreq / 1000; //kHz
+					defSet.close();
+					if (!defSet)
+					{
+						std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<thread<<"/cpufreq/scaling_max_freq\n";
+						return NO_DVFS;
+					}
 				}			
 			}
 		}
@@ -372,7 +379,8 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
-				write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, 0);
+				for (int thread : mapThreadsToCore[cpu])
+					write_msr_by_idx(thread, IA32_ENERGY_PERF_BIAS, 0);
 		}
 #endif
 		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
@@ -1285,9 +1293,12 @@ void Environment::restoreSystemSettings(bool hardReset)
 			{
 				for (int cpu : mapCoresToSocket[soc])
 				{
-					governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_governor");
-					governorFile << scalingGovernor;
-					governorFile.close();
+					for (int thread : mapThreadsToCore[cpu])
+					{
+						governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_governor");
+						governorFile << scalingGovernor;
+						governorFile.close();
+					}
 				}
 			}
 		}
@@ -1302,12 +1313,15 @@ void Environment::restoreSystemSettings(bool hardReset)
 			{
 				for (int cpu : mapCoresToSocket[soc])
 				{
-					defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-					defSet << defaultSettings.maxCoreFreq / 1000;
-					defSet.close();
+					for (int thread : mapThreadsToCore[cpu])
+					{
+						defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_max_freq");
+						defSet << defaultSettings.maxCoreFreq / 1000;
+						defSet.close();
 #ifdef HAVE_MSR_CORE_H
-					write_msr_by_idx(cpu, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
+						write_msr_by_idx(thread, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
+					}
 				}
 			}
 		}
