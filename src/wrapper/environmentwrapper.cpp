@@ -263,6 +263,7 @@ DVFS_WAY Environment::isDVFSpossible()
 			frequencyBounderyFile.close();
 		}
 	}
+
 	if (scalingGovernor == "userspace")
 	{
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || HAVE_GEOPM_H
@@ -315,8 +316,8 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 {
 	if (way == NO_DVFS)
 		way = isDVFSpossible();
-	
-	if (way == USRSPACE_FILE || USRSPACE_LIB)
+
+	if (way == USRSPACE_FILE || way == USRSPACE_LIB)
 	{
 		if (scalingGovernor != "userspace")
 		{
