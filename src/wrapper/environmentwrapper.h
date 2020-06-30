@@ -97,6 +97,9 @@ public:
 	static int SOCKETS_PER_NODE;	//TODO private
 	static int CORES_PER_SOCKET;
 	static int THREADS_PER_CORE;
+	
+	static std::map<int, std::vector<int>> mapThreadsToCore;
+	static std::map<int, std::vector<int>> mapCoresToSocket;
 
 	static SYSTEM_TYPE systemType;
 
@@ -164,9 +167,6 @@ private:
 	static DVFS_WAY activatedDVFS;
 	static bool activatedUFS;
 	static bool activatedPWRCAP;
-	
-	static std::map<int, std::vector<int>> mapThreadsToCore;
-	static std::map<int, std::vector<int>> mapCoresToSocket;
 	
 	static std::string scalingDriver;
 	static std::string scalingGovernor;

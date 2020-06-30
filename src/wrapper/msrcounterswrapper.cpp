@@ -6,34 +6,25 @@ using namespace meric;
 
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
 uint64_t MSR::nominal_freq = 0;
-uint64_t MSR::CORES_PER_SOCKET = 1;
-uint64_t MSR::SOCKETS_PER_NODE = 1;
 
 #ifdef HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
 
 void MSR::init()
 {
-	
-	#ifdef HAVE_MSR_CORE_H
-	core_config(&CORES_PER_SOCKET, NULL, &SOCKETS_PER_NODE, NULL);
-	#endif
-	
 	//msr library as well as RAPL units has been already initialized in Environment::init(...)
 	initMap(counters);
 
 	//enable uncore-frequency monitoring
 	#ifdef HAVE_MSR_CORE_H
 	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
-	for (int i=0; i < SOCKETS_PER_NODE; i++)
+	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 		write_msr_by_idx(i, U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
 	#endif
 
+	nominal_freq = Environment::getNominalFrequency();
+
 	//TODO prepare a msr batch
-	
-	uint64_t MSR_PLATFORM_INFO_bits;
-	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	nominal_freq = ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
 }
 
 void MSR::close()
@@ -43,13 +34,27 @@ void MSR::close()
 
 void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 {
-	for(std::map<std::string, uint64_t>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	uint64_t reg, val;
+	for (int i=0; i < Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET; i++)
 	{
-		size_t pos = iterator->first.find_last_of("_");
-		uint64_t val = 0;
-		uint64_t reg = MSR_COUNTERS::counterLabel[iterator->first.substr(0,pos)];
-		read_msr_by_idx(std::stoi(iterator->first.substr(pos+1)), reg, &val);
-		record[iterator->first] = val;
+		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::APERF];
+		read_msr_by_idx(i, reg, &val);
+		record[MSR_COUNTERS::APERF + "_" + std::to_string(i)] = val;
+
+		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::MPERF];
+		read_msr_by_idx(i, reg, &val);
+		record[MSR_COUNTERS::MPERF + "_" + std::to_string(i)] = val;
+	}
+	
+	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::UCF_FREQ];
+		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
+		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
+		
+		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::RAPL_PKG_ACTIVE];
+		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
+		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = val;
 	}
 }
 
@@ -119,14 +124,14 @@ uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double run
 
 void MSR::initMap(std::map<std::string, uint64_t> & dict)
 {
-	for (int i=0; i < SOCKETS_PER_NODE * CORES_PER_SOCKET; i++)
+	for (int i=0; i < Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);
 		dict[MSR_COUNTERS::APERF + suffix] = 0;
 		dict[MSR_COUNTERS::MPERF + suffix] = 0;
 	}
 	
-	for (int i=0; i < SOCKETS_PER_NODE; i++)
+	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
 		dict[MSR_COUNTERS::UCF_FREQ+ "_" + std::to_string(i)] = 0;
 		dict[MSR_COUNTERS::RAPL_PKG_ACTIVE+ "_" + std::to_string(i)] = 0;

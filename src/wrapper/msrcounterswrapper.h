@@ -13,6 +13,7 @@
 	#include <libmsr_error.h>
 #endif
 
+#include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
 
@@ -39,8 +40,6 @@ private:
 	static std::map<std::string, uint64_t> counters;
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
-	static uint64_t CORES_PER_SOCKET;
-	static uint64_t SOCKETS_PER_NODE;
 };
 
 #else
@@ -60,8 +59,6 @@ private:
 	static void initMap(std::map<std::string, uint64_t> & dict);
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
-	static uint64_t CORES_PER_SOCKET;
-	static uint64_t SOCKETS_PER_NODE;
 };
 
 
