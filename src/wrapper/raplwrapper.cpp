@@ -1,16 +1,15 @@
 #include "raplwrapper.h"
+#include "environmentwrapper.h"
 
 using namespace meric;
 
 std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
-uint64_t RAPL::SOCKETS_PER_NODE = 1;
 std::map<std::string, double> RAPL::units;
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 std::map<std::string, unsigned long long int> RAPL::counters;
-uint64_t RAPL::CORES_PER_SOCKET = 1;
 
 /**
  * returns result value of the counter (std::string) based on its startValue and
@@ -49,15 +48,6 @@ unsigned long long RAPL::getResultValue(unsigned long long int startValue, unsig
 void RAPL::init(bool detailed)
 {
 	detailedMode = detailed;
-#ifdef HAVE_MSR_CORE_H
-	core_config(&CORES_PER_SOCKET, NULL, &SOCKETS_PER_NODE, NULL);
-#elif defined HAVE_X86_ADAPT_H
-	SOCKETS_PER_NODE = x86_adapt_get_nr_avaible_devices(X86_ADAPT_DIE);
-	//CORES_PER_SOCKET is not used when using adapt
-#elif defined HAVE_GEOPM_H
-	const geopm::PlatformTopo::PlatformTopo &topo = geopm::platform_topo();
-	SOCKETS_PER_NODE = topo.num_domain(GEOPM_DOMAIN_PACKAGE);
-#endif
 	initMap(counters);
 	//initCountersUnits() is already called from environmentwrapper
 }
@@ -119,7 +109,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 	
 	if (detailedMode)
 	{
-		for (int die=0; die<(int)SOCKETS_PER_NODE; die++)
+		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 		{
 			uint64_t dieEnergy = 0;
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -154,7 +144,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		}
 	}else
 	{
-		for (int die=0; die<(int)SOCKETS_PER_NODE; die++)
+		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 		{
 			uint64_t dieEnergy = 0;
 			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -185,7 +175,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 
 	if (detailedMode)
 	{
-		for (int die=0; die<(int)SOCKETS_PER_NODE; die++)
+		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 		{
 			uint64_t dieEnergy = 0;
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -194,25 +184,25 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 					continue;
 				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);
 				#ifdef HAVE_MSR_CORE_H
-					read_msr_by_idx(die * CORES_PER_SOCKET, counterDefines[itemName], &dieEnergy);
+					read_msr_by_idx(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &dieEnergy);
 				#elif defined HAVE_GEOPM_H
-					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), die * CORES_PER_SOCKET));
+					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
 				#endif
 				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 		}
 	}else
 	{
-		for (int die=0; die<(int)SOCKETS_PER_NODE; die++)
+		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 		{
 			uint64_t dieEnergy = 0;
 
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				#ifdef HAVE_MSR_CORE_H
-					read_msr_by_idx(die * CORES_PER_SOCKET, counterDefines[iterator->first], &dieEnergy);
+					read_msr_by_idx(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &dieEnergy);
 				#elif defined HAVE_GEOPM_H
-					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), die * CORES_PER_SOCKET));
+					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
 				#endif
 				record [iterator->first] += (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
@@ -283,7 +273,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 
 	if (detailedMode)
 	{
-		for(int die = 0; die != (int)SOCKETS_PER_NODE; die++)
+		for(int die = 0; die != Environment::SOCKETS_PER_NODE; die++)
 		{
 			for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
 			{

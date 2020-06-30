@@ -56,7 +56,6 @@ private:
 		//list of counters
 	static std::map<std::string, unsigned long long int> counters;
 	static std::string suffix;
-	static uint64_t CORES_PER_SOCKET;
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
 #else
@@ -80,7 +79,6 @@ private:
 	static unsigned long long int COUNTERMAX;
 #endif
 	static std::map<std::string, double> units;
-	static uint64_t SOCKETS_PER_NODE;
 };
 
 }
