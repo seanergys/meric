@@ -2,15 +2,16 @@
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
   - RAPL energy consumption measurements show millijoules inseat of joules
-  - new MERIC_COUNTERS=msr - CPU core and uncore freq monitoring using libmsr
+  - new MERIC_COUNTERS=msr - CPU core and uncore frequency, and RAPL activity monitoring, using libmsr
   - fixed restore of the system hardware settings in the energyMeasureStop
-  - improved systemInfo tool 
+  - improved systemInfo tool
 		+ extended amount of the reported information
 		+ provides posibility to restore the system settings
   - HW tuning and RAPL energy measurement using GEOPM
   - continual mode is now default
   - it is not necessary any more to set MERIC_CONTINUAL for energy measurement systems that does not support non-continual measurement
   - unified output label for all the energy measurement systems
+  - implemented system topology detection
   - removed the duty to compile MERIC with numactl when libmsr or x86_adapt or GEOPM not available
 
 ### 30.04.2019 #################################################################
