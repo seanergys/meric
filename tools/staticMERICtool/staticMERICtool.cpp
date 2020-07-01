@@ -69,10 +69,10 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
 			unsigned long long value = RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
-			std::cout << iterator->first << " [J] =\t" << value << std::endl;
+			std::cout << iterator->first << " [mJ] =\t" << value << std::endl;
 			summary += value;
 		}
-		summary += RAPL_BASELINE*runtime;
+		summary += RAPL_BASELINE*runtime/1000;
 		std::cout << std::endl << RAPL_SUM_ENERGY << " =\t" << summary << std::endl;
 	}else
 	{
@@ -80,7 +80,7 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		{
 			summary += RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
 		}
-		std::cout <<  summary + RAPL_BASELINE*runtime << std::endl;
+		std::cout <<  summary + RAPL_BASELINE*runtime/1000 << std::endl;
 	}
 }
 #endif
@@ -91,17 +91,17 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-	          << "Run energyMeasureStart to start the energy measurement (RAPL) and change system parameters\n"
+	          << "Run energyMeasureStart to start the energy measurement (using RAPL) and change system parameters\n"
 	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
 	          << "\nenergyMeasureStart parameters:\n"
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-t = #OpenMP threads\n"
-	          << "\t-p = power capping [mW]\n"
+	          << "\t-p = power capping power limit [mW]\n"
 	          << "\t-w = power capping time window [ms]\n"
 	          << "\nenergyMeasureStop parameters:\n"
-	          << "\t-b = node baseline power [W]\n"
-	          << "\t-q = print the overall consumed energy only [J]\n"
+	          << "\t-b = node baseline (static) power [W]\n"
+	          << "\t-q = print the overall consumed energy only [mJ]\n"
 	          << std::endl;
 	exit(1);
 }
