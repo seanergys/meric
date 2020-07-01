@@ -72,7 +72,7 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 			std::cout << iterator->first << " [mJ] =\t" << value << std::endl;
 			summary += value;
 		}
-		summary += RAPL_BASELINE*runtime/1000;
+		summary += RAPL_BASELINE*runtime;
 		std::cout << std::endl << RAPL_SUM_ENERGY << " =\t" << summary << std::endl;
 	}else
 	{
@@ -80,7 +80,7 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		{
 			summary += RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
 		}
-		std::cout <<  summary + RAPL_BASELINE*runtime/1000 << std::endl;
+		std::cout <<  summary + RAPL_BASELINE*runtime << std::endl;
 	}
 }
 #endif
