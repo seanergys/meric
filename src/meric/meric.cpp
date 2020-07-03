@@ -97,7 +97,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
 	if (defaultParameter.powerCapPKG < 0 || defaultParameter.powerCapPKGtime < 0)
 	{
-		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_POWER [W] and MERIC_PWRCAP_TIME [us]\n";
+		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_POWER [mW] and MERIC_PWRCAP_TIME [ms]\n";
 		ret = 1;
 	}
 	else if (defaultParameter.powerCapPKG != 0)
@@ -108,7 +108,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.powerCapPKGtime != 0)
 	{
-		std::cerr << "MERIC ERROR: MERIC_PWRCAP_POWER [W] must be set to change MERIC_PWRCAP_TIME [us]\n";
+		std::cerr << "MERIC ERROR: MERIC_PWRCAP_POWER [mW] must be set to change MERIC_PWRCAP_TIME [ms]\n";
 		ret = 1;
 	}
 #else
