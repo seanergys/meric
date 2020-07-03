@@ -6,6 +6,8 @@ build
 *.a
 *.mod
 *.json
+*.txt
+*.pdf
 test/mericMeasurement*
 test/hdeemMeasurement*
 tools/__pycache__/
