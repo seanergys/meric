@@ -33,11 +33,10 @@ enum MODE	//this application keeps this order
 	USING_MSR,
 	USING_ADAPT,
 	USING_GEOPM,
-	USING_NUMA,	//currently numactl not in use
 	USING_NONE
 };
 
-void sysInfoSize()
+void sysInfoSize(bool detailed = false)
 {
 	int SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE;
 	std::vector <int> onlineThreads;
@@ -45,16 +44,32 @@ void sysInfoSize()
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
 	          << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
-	          << "\tThreads per Core: " << THREADS_PER_CORE << std::endl;
+	          << "\tThreads per Core: " << THREADS_PER_CORE;
 	          
 	if (onlineThreads.size() != SOCKETS_PER_NODE * CORES_PER_SOCKET * THREADS_PER_CORE)
 	{
 		std::sort (onlineThreads.begin(), onlineThreads.end());
-		std::cout << "\tActive threads: ";
+		std::cout << "\n\tActive threads: ";
 		for (int i=onlineThreads.size()-1; i>=0; i--)
 			std::cout << onlineThreads[i] << " ";
 	}
 	std::cout << std::endl;
+
+	if (detailed)
+	{
+		std::cout << std::endl;
+		for (int socket = 0; socket < SOCKETS_PER_NODE; socket++)
+		{
+			std::cout << "\tSOCKET "<< socket <<":\n";
+			for (const auto &core : meric::Environment::mapCoresToSocket[socket])
+			{
+				std::cout << "\t\tCore " << core << ":";
+				for (const auto &thread : meric::Environment::mapThreadsToCore[core])
+					std::cout << " " << thread;
+				std::cout << std::endl;
+			}
+		}
+	}
 }
 
 bool sysInfoFrequencies(meric::systemLimits& limits)
@@ -151,7 +166,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	}
 	else if (freq == 1)
 	{
-		std::cout << "\tTurbo CPU core frequencies: ";
+		std::cout << "\tTurbo CPU core frequencies:  ";
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
@@ -208,7 +223,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMax CPU core frequency:     " << freq/1000 << " kHz\n";
+		std::cout << "\tMax CPU core frequency:      " << freq/1000 << " kHz\n";
 		if (freq != limits.maxCoreFreq)
 			ok = false;
 	}
@@ -216,7 +231,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	
 	unsigned long nominalFreq = meric::Environment::getNominalFrequency();
 	if (nominalFreq > 0)
-		std::cout << "\tNominal CPU core frequency: " << nominalFreq/1000 << " kHz\n";
+		std::cout << "\tNominal CPU core frequency:  " << nominalFreq/1000 << " kHz\n";
 
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	if (frequencyBounderyFile.is_open())
@@ -225,7 +240,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMin CPU core frequency:     " << freq/1000 << " kHz\n";
+		std::cout << "\tMin CPU core frequency:      " << freq/1000 << " kHz\n";
 		if (freq != limits.minCoreFreq)
 			ok = false;
 	}
@@ -236,7 +251,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		std::string freqBound = "";
 		getline(frequencyBounderyFile, freqBound);
 		frequencyBounderyFile.close();
-		std::cout << "\tAvailable CPU core frequencies: " << freqBound << " kHz\n";
+		std::cout << "\tAvailable CPU core frequencies:  " << freqBound << " kHz\n";
 	}
 
 // IA32_ENERGY_PERF_BIAS
@@ -255,11 +270,11 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_X86_ADAPT_H
@@ -268,7 +283,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	uint64_t setting = 0;
 	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 	freq = setting * 100000000;
-	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 		
@@ -277,17 +292,17 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
 	freq = setting * 100000000;
-	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;
 #elif defined HAVE_GEOPM_H
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-	std::cout << "\tMax CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
 		ok = false;
 	
 	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
-	std::cout << "\tMin CPU uncore frequency:   " << freq/1000 << " kHz\n";
+	std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.minUncoreFreq)
 		ok = false;	
 #elif defined __x86_64 //intel CPUs only
@@ -300,7 +315,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound);
-		std::cout << "\tMax memory frequency:       " << freq << " Hz\n";
+		std::cout << "\tMax memory frequency:        " << freq << " Hz\n";
 		if (freq != limits.maxUncoreFreq)
 			ok = false;
 	}
@@ -312,7 +327,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		frequencyBounderyFile >> freqBound;
 		frequencyBounderyFile.close();
 		freq = std::stol(freqBound);
-		std::cout << "\tMin memory frequency:       " << freq << " Hz\n";
+		std::cout << "\tMin memory frequency:        " << freq << " Hz\n";
 		if (freq != limits.maxUncoreFreq)
 			ok = false;
 	}
@@ -323,7 +338,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		std::string freqBound = "";
 		getline(frequencyBounderyFile, freqBound);
 		frequencyBounderyFile.close();
-		std::cout << "\tAvailable memory frequencies:   " << freqBound << " Hz\n";
+		std::cout << "\tAvailable memory frequencies:    " << freqBound << " Hz\n";
 	}
 #endif
 	return ok;
@@ -693,11 +708,22 @@ void checkMsrWhitelist()
 int main(int argc, char **argv)
 {
 	bool restore = false;
+	bool printTopology = false;
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
 		if (arg == "-r")
 			restore = true;
+		if (arg == "-t")
+			printTopology = true;
+		else
+		{
+			std::cerr << "Utility prints information about the system topology and HW knobs ranges\n"
+			          << "Parameters:\n"
+			          << "\t-t = prints detailed topology of the node\n"
+			          << "\t-r = if the system is not in the default setting, the tool restore it\n\n";
+			return 1;
+		}	
 	}
 
 	MODE status = USING_NONE;
@@ -723,8 +749,6 @@ int main(int argc, char **argv)
 		{
 			#ifdef HAVE_GEOPM_H
 			status = USING_GEOPM;
-			#elif defined HAVE_NUMA_H
-			status = USING_NUMA;
 			#endif
 		}
 	}
@@ -733,7 +757,7 @@ int main(int argc, char **argv)
 	bool restoreFile = meric::Environment::readRestoreFile();
 	meric::systemLimits limits = meric::Environment::getSystemSettings();
 	meric::RAPL::initCountersUnits(); //not necessary if meric::Environment::init() would have been called before
-	sysInfoSize();
+	sysInfoSize(printTopology);
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
