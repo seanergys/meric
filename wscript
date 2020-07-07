@@ -1,6 +1,6 @@
 
 from waflib import Logs
-import os
+import os, shutil
 
 def configure(ctx):
     ctx.load(ctx.options.cpp)
@@ -98,31 +98,33 @@ def build(ctx):
     # STATIC MERIC TOOL
     ctx.program(
         source= 
-            ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
+            ctx.path.ant_glob('tools/src/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
         use="msr x86_adapt numa geopm",
         env=ctx.all_envs['start'].derive(),
-        install_path = ctx.path.abspath()+"/tools/staticMERICtool"
+        install_path = ctx.path.abspath()+"/tools/"
     )
     ctx.program(
         source= 
-            ctx.path.ant_glob('tools/staticMERICtool/staticMERICtool.cpp') +
+            ctx.path.ant_glob('tools/src/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
         use="msr x86_adapt numa geopm",
         env=ctx.all_envs['stop'].derive(),
-        install_path = ctx.path.abspath()+"/tools/staticMERICtool"
+        install_path = ctx.path.abspath()+"/tools/"
     )
+    shutil.copy("tools/src/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/tools/")
+    shutil.copy("tools/src/staticMERICtool/multiNodeStaticMeasureStop.sh" , ctx.path.abspath()+"/tools/")
 
     # MERICwrapper
     ctx.program(
         source= 
-            ctx.path.ant_glob('tools/wrapper.cpp') +
+            ctx.path.ant_glob('tools/src/wrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
@@ -134,7 +136,7 @@ def build(ctx):
     # SYSTEM INFO TOOL    
     ctx.program(
         source=
-            ctx.path.ant_glob('tools/systemInfo.cpp') +
+            ctx.path.ant_glob('tools/src/systemInfo.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),

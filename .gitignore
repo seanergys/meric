@@ -13,8 +13,8 @@ test/hdeemMeasurement*
 tools/__pycache__/
 tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
-tools/staticMERICtool/energyMeasureStart
-tools/staticMERICtool/energyMeasureStop
+tools/energyMeasureSt*
+tools/*.sh
 tools/systemInfo
 tools/DBI/*
 tools/wrapper
