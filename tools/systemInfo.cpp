@@ -27,6 +27,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
+std::map <uint64_t,uint64_t> currentWhitelist;
 
 enum MODE	//this application keeps this order
 {
@@ -169,9 +170,11 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		std::cout << "\tTurbo CPU core frequencies:  ";
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
-		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
+		if (!currentWhitelist.count(MSR_TURBO_RATIO_LIMIT))
+			read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
 		uint64_t MSR_TURBO_RATIO_LIMIT_CORES_bits = 0x0;
-		read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT_CORES, &MSR_TURBO_RATIO_LIMIT_CORES_bits);
+		if (!currentWhitelist.count(MSR_TURBO_RATIO_LIMIT_CORES))
+			read_msr_by_idx(0, MSR_TURBO_RATIO_LIMIT_CORES, &MSR_TURBO_RATIO_LIMIT_CORES_bits);
 		
 		std::vector <int> turboRatio;
 		turboRatio.reserve(16);
@@ -259,7 +262,8 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	if (ok)
 	{
 		uint64_t IA32_ENERGY_PERF_BIAS_bits = 0x0;
-		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
+		if (!currentWhitelist.count(IA32_ENERGY_PERF_BIAS))
+			read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
 		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
 			ok = false;
 	}
@@ -268,7 +272,8 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 // UNCORE FREQUENCY
 #ifdef HAVE_MSR_CORE_H
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
-	read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+	if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))
+		read_msr_by_idx(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 	freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 	std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 	if (ok && freq != limits.maxUncoreFreq)
@@ -368,7 +373,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #ifdef HAVE_MSR_CORE_H
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
-	read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+	if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
+		read_msr_by_idx(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 
 	std::cout 
 		<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
@@ -383,7 +389,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		;
 
 // DRAM
-	read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+	if (!currentWhitelist.count(MSR_DRAM_POWER_INFO))
+		read_msr_by_idx(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 	std::cout 
 		<< "\tDRAM max power limit:  "
 		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
@@ -435,7 +442,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	// PKG
 		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 	#ifdef HAVE_MSR_CORE_H
-		read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+		if (!currentWhitelist.count(MSR_PKG_POWER_LIMIT))
+			read_msr_by_idx(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
 	#elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 		int adaptRegisterHandler;
@@ -485,7 +493,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	// DRAM
 		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
 	#ifdef HAVE_MSR_CORE_H
-		read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
+		if (!currentWhitelist.count(MSR_DRAM_POWER_LIMIT))
+			read_msr_by_idx(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
 	#elif defined HAVE_X86_ADAPT_H
 		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
 		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
@@ -596,11 +605,15 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 	uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
-	read_msr_by_idx(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
-	if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
+	if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
 	{
-		usleep(2);
 		read_msr_by_idx(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+		if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
+		{
+			usleep(2);
+			
+			read_msr_by_idx(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+		}
 	}
 #endif
 
@@ -608,7 +621,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	{
 		uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
-		read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
+		if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
+			read_msr_by_idx(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
 		if (MSR_PLATFORM_POWER_LIMIT_bits)
 		{
 			std::cout << "\tPLATFORM power limit #1: " 
@@ -667,7 +681,6 @@ void sysEnergyMeasurement()
 
 void checkMsrWhitelist()
 {
-	std::map <uint64_t,uint64_t> currentWhitelist;
 	currentWhitelist.insert(msr_whitelist.begin(), msr_whitelist.end());
 	std::ifstream msrfile("/dev/cpu/msr_whitelist");
 	if (!msrfile)
@@ -702,6 +715,7 @@ void checkMsrWhitelist()
 				std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
 		}
 	}
+	std::cerr << std::endl;
 }
 
 //****************************************************************************//
@@ -752,6 +766,9 @@ int main(int argc, char **argv)
 			#endif
 		}
 	}
+	
+	if (status == USING_MSR)
+		checkMsrWhitelist();
 
 	bool systemInTheDefaultSettings = true;
 	bool restoreFile = meric::Environment::readRestoreFile();
@@ -761,9 +778,6 @@ int main(int argc, char **argv)
 	systemInTheDefaultSettings = sysInfoFrequencies(limits);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
-
-	if (status == USING_MSR)
-		checkMsrWhitelist();
 	
 	if (!systemInTheDefaultSettings && restoreFile)
 	{
