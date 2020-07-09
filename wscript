@@ -82,6 +82,10 @@ def configure(ctx):
     ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
 
     ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
+    
+    # SBI tool
+    if ctx.options.cpp=="g++" and ctx.check_cc(header_name="BPatch.h", lib=["dyninstAPI", "instructionAPI"], uselib_store="dyninst", mandatory=False) and ctx.check_cc(header_name="boost/thread.hpp", lib=["boost_thread", "boost_system", "boost_date_time"], uselib_store="boost", mandatory=False):
+        ctx.env.append_unique("SBI", "SBI")
 
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
     for dep in ctx.env.DEFINES:
@@ -172,6 +176,21 @@ def build(ctx):
         install_path = ctx.path.abspath()+"/tools"
     )
 
+    # SBI TOOL
+    if ctx.env.SBI:
+        ctx.program(
+            source       = ctx.path.ant_glob('tools/src/SBI/dinst_instrument.cpp'),
+            target       = "dinst_instrument",
+            use          = "boost dyninst",
+            install_path = ctx.path.abspath()+"/tools"
+        )
+        ctx.program(
+            source       = ctx.path.ant_glob('tools/src/SBI/dinst_profile.cpp'),
+            target       = "dinst_profile",
+            use          = "boost dyninst",
+            install_path = ctx.path.abspath()+"/tools"
+        )
+    
     ctx.objects(
         source =
             ctx.path.ant_glob('src/basis/*.cpp') +
