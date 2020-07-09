@@ -38,7 +38,7 @@ The library was originally developed for x86 systems (tested on HSW, BDW, KNL, a
 --------------------------------------------------------------------------------
 #     1] System parameters tuning                                              #
 --------------------------------------------------------------------------------
-MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` application (part of the MERIC repository, located in the tools/ directory).
+MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the tools/ directory).
 
 
 ### CPU core frequency ###
@@ -53,8 +53,6 @@ MERIC provides several ways how to change the CPU core frequency:
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
 
 MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
-
-When using msr-safe to tune uncore frequency, it may happen, that the MSR_UNCORE_RATIO_LIMIT register is not available. In that case add `0x620 0x7F7F` to the system's whitelist.
 
 
 ### Intel RAPL power capping ###
@@ -253,7 +251,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - MPI
 * optionally - [PAPI](http://icl.cs.utk.edu/papi/)
 * optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
-* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe)
+* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for HW parameters tuning
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
