@@ -7,17 +7,16 @@ def configure(ctx):
     if (ctx.options.cpp == ""):
         ctx.add_os_flags('CC')
         ctx.add_os_flags('CXX')
-    
+        
         if ('CXX' in ctx.env):
-            ctx.options.cpp=ctx.env['CXX'][0]
+            ctx.options.cpp=ctx.env['CXX'][0].split('/')[-1]
         elif ('CC' in ctx.env):
-            if (ctx.env['CC'][0] == 'icc'):
+            if (ctx.env['CC'][0].split('/')[-1] == 'icc'):
                 ctx.options.cpp="icpc"
-            elif (ctx.env['CC'][0] == 'gcc'):
+            elif (ctx.env['CC'][0].split('/')[-1] == 'gcc'):
                 ctx.options.cpp="g++"
         else:
             ctx.options.cpp="g++" # default C++ compiler
-    
     try:
         ctx.load(ctx.options.cpp)
     except:
@@ -27,7 +26,9 @@ def configure(ctx):
     if (ctx.options.mpi == ""):
         ctx.add_os_flags('MPICXX')
         if ('MPICXX' in ctx.env):
-            ctx.options.mpi=ctx.env['MPICXX'][0]
+            ctx.options.mpi=ctx.env['MPICXX'][0].split('/')[-1]
+        elif (ctx.options.cpp=="icpc"):
+        	ctx.options.mpi="mpiicpc"
         else:
             ctx.options.mpi="mpic++" # default MPI compiler
 
