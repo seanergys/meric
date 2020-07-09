@@ -46,7 +46,7 @@ all:
 	make install
 
 configure:
-	./waf configure --cpp=icpc --mpi=mpiicpc --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
+	./waf configure --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
 
 install:
 	./waf install
@@ -59,8 +59,8 @@ ddt:
 	./waf configure --cpp=icpc --mpi=mpiicpc --flag="-O0 -g" --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
 	./waf install -v
 
-gcc:
-	./waf configure --withgcc --cpp=g++ --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
+intel:
+	./waf configure --cpp=icpc --mpi=mpiicpc --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
 	make install
 
 fortran:

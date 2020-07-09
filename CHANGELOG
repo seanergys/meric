@@ -13,6 +13,7 @@
   - unified output label for all the energy measurement systems
   - implemented system topology detection
   - removed the duty to compile MERIC with numactl when libmsr or x86_adapt or GEOPM not available
+  - compiler detection has been added, if not detected, the default compiler is GNU (instead of Intel compiler, which was default previously)
 
 ### 30.04.2019 #################################################################
   - new Dynamic Binary Instrymentation (DBI) tool for MERIC instrumentation

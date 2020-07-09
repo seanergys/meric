@@ -109,7 +109,7 @@ BSC's ThunderX energy measurement system doesn't effects the CPUs, however it me
 #     3] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
-If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with a MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
+If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with an MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
 
  *	`void MERIC_Init()`
 
@@ -275,7 +275,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 
 Beside these libraries waf requires Python.
 
-Default compilation expects Intel compiler, if you want to compile using GCC use `make gcc` instead of `make`. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If a MPI application without OpenMP should be analyzed, compilation with `--noopenmp` must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
+The compilation mechanism detects the compiler type, howevr if the detection fails, the default is GNU C++ compiler. To compile MERIC using any other compiler, you may specify `--cpp=` and `--mpi=` flags for `./waf configure` command, or use `make intel` for compilation using Intel compiler. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If an MPI application without OpenMP should be analyzed, compilation with `--noopenmp` waf flag must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
 
 --------------------------------------------------------------------------------
 #     6] MERIC input parameters                                                #

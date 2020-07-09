@@ -3,7 +3,33 @@ from waflib import Logs
 import os, shutil
 
 def configure(ctx):
-    ctx.load(ctx.options.cpp)
+    # C++ compiler
+    if (ctx.options.cpp == ""):
+        ctx.add_os_flags('CC')
+        ctx.add_os_flags('CXX')
+    
+        if ('CXX' in ctx.env):
+            ctx.options.cpp=ctx.env['CXX'][0]
+        elif ('CC' in ctx.env):
+            if (ctx.env['CC'][0] == 'icc'):
+                ctx.options.cpp="icpc"
+            elif (ctx.env['CC'][0] == 'gcc'):
+                ctx.options.cpp="g++"
+        else:
+            ctx.options.cpp="g++" # default C++ compiler
+    
+    try:
+        ctx.load(ctx.options.cpp)
+    except:
+        ctx.fatal("C++ compiler not foud, set a correct one by '--cpp=' parameter")
+    
+    # MPI compiler
+    if (ctx.options.mpi == ""):
+        ctx.add_os_flags('MPICXX')
+        if ('MPICXX' in ctx.env):
+            ctx.options.mpi=ctx.env['MPICXX'][0]
+        else:
+            ctx.options.mpi="mpic++" # default MPI compiler
 
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
@@ -21,16 +47,16 @@ def configure(ctx):
             else:
                 ctx.env.append_unique("LINKFLAGS", "-L"+path)
 
-    if ctx.options.withgcc:
+    if ctx.options.cpp == "g++":
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])                  #GCC
+            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
             ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-    else:
+    else: #Intel
         if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])                  #Intel
+            ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])
             ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
@@ -260,15 +286,15 @@ def options(opt):
     opt.add_option(
         "--cpp",
         action="store",
-        default="g++",
-        help="C++ compiler"
+        default="",
+        help="C++ compiler, default GNU"
     )
 
     opt.add_option(
         "--mpi",
         action="store",
-        default="mpic++",
-        help="MPI C++ compiler"
+        default="",
+        help="MPI C++ compiler, default mpic++"
     )
 
     opt.add_option(
