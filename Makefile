@@ -33,7 +33,6 @@ LIBPATH_DAVIDE=-L$(HOME)/rest-client/libs/ -lrestclient-cpp $(CPUFREQ_LIB_DAVIDE
 INCLUDES_MERIC=
 LIBPATH_MERIC=
 
-unexport CXX
 
 ifeq ($(FC),ifort)
 	FORTFLAGS=-module
