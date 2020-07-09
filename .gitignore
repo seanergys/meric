@@ -8,24 +8,16 @@ build
 *.json
 *.txt
 *.pdf
-test/mericMeasurement*
-test/hdeemMeasurement*
+
 tools/__pycache__/
 tools/jetsonMeasurement/
 tools/yokogawaMeasurement/
 tools/energyMeasureSt*
 tools/*.sh
 tools/systemInfo
-tools/DBI/*
 tools/wrapper
-include/meric
+tools/dinst_*
 
-test/sleepTest
-test/test_mpi
-test/test
-test/overHead
-test/samples
-test/blasTest
-test/fortTest
+include/meric
 
 test/*
