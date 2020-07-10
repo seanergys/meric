@@ -276,13 +276,6 @@ def build(ctx):
 ################################################################################
 def options(opt):
     opt.add_option(
-        "--withgcc",
-        action="store_true",
-        default=False,
-        help="use GCC instead of Intel compiler"
-    )
-
-    opt.add_option(
         "--verbose",
         action="store_true",
         default=False,
