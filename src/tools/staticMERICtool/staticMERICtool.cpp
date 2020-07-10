@@ -1,6 +1,6 @@
 
-#include "../../../src/wrapper/environmentwrapper.h"
-#include "../../../src/wrapper/raplwrapper.h"
+#include "../../wrapper/environmentwrapper.h"
+#include "../../wrapper/raplwrapper.h"
 
 using namespace meric;
 

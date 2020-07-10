@@ -7,8 +7,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <thread>
-#include "../../src/wrapper/environmentwrapper.h"
-#include "../../src/wrapper/raplwrapper.h"
+#include "../wrapper/environmentwrapper.h"
+#include "../wrapper/raplwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_rapl.h>
