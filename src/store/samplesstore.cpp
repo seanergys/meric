@@ -115,9 +115,9 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 
 		ss << "# Blade summary" << std::endl
 		   << "Energy consumption [J]" << "," << energyConsumption << std::endl
-		   << "Maximal power [W]" << "," << maxWatts[0] << std::endl
-		   << "Minimal power [W]" << "," << minWatts[0] << std::endl
-		   << "Average power [W]" << "," << avgWatts << std::endl
+		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
+		   << "MIN power [W]" << "," << minWatts[0] << std::endl
+		   << "AVG power [W]" << "," << avgWatts << std::endl
 		   << "ID of first blade sample" << "," << firstBlade << std::endl
 		   << "ID of last blade sample" << "," << lastBlade-1 << std::endl;
 	} else {
@@ -145,9 +145,9 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 
 		    ss << "# Voltage regulator (" << TSystem::vrSensorLabel[sensorID] << ") summary" <<std::endl
 		       << "Energy consumption [J]" << "," << energyConsumption << std::endl
-		       << "Maximal power [W]" << "," << maxWatts[sensorID] << std::endl
-		       << "Minimal power [W]" << "," << minWatts[sensorID] << std::endl
-		       << "Average power [W]" << "," << avgWatts << std::endl
+		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
+		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
+		       << "AVG power [W]" << "," << avgWatts << std::endl
 		       << "ID of first VR sample" << "," << firstVR << std::endl
 		       << "ID of last VR sample" << "," << lastVR-1 << std::endl;
 		}
