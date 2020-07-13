@@ -10,29 +10,31 @@ The library was originally developed for x86 systems (tested on HSW, BDW, KNL, a
 <!--> master branch links 
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
- 3. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-and-timeprof-interface-and-shared-score-pmeric-api)
- 4. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#4-meric-binary-instrumentation)
- 5. [Compilation](https://code.it4i.cz/vys0053/meric#5-compilation)
- 6. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#6-meric-input-parameters)
- 7. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#7-content-of-test-folder-and-example-application-run)
- 8. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#8-code-dynamism-investigation)
- 9. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#9-meric-with-a-fortran-code)
-10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#10-tool-for-static-tuning)
-11. [Acknowledgement](https://code.it4i.cz/vys0053/meric#11-acknowledgement)
+ 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-interface-and-shared-score-pmeric-api)
+ 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric#4-timeprof-library)
+ 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#5-meric-binary-instrumentation)
+ 6. [Compilation](https://code.it4i.cz/vys0053/meric#6-compilation)
+ 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#7-meric-input-parameters)
+ 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#8-content-of-test-folder-and-example-application-run)
+ 9. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#9-code-dynamism-investigation)
+10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#10-meric-with-a-fortran-code)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 <!-->
 
 <!--> dev branch links <!-->
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
- 3. [MERIC and TIMEPROF interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-and-timeprof-interface-and-shared-score-pmeric-api)
- 4. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#4-meric-binary-instrumentation)
- 5. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#5-compilation)
- 6. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#6-meric-input-parameters)
- 7. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#7-content-of-test-folder-and-example-application-run)
- 8. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#8-code-dynamism-investigation)
- 9. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#9-meric-with-a-fortran-code)
-10. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#10-tool-for-static-tuning)
-11. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#11-acknowledgement)
+ 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-interface-and-shared-score-pmeric-api)
+ 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
+ 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
+ 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
+ 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#7-meric-input-parameters)
+ 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#8-content-of-test-folder-and-example-application-run)
+ 9. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#9-code-dynamism-investigation)
+10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 
 
 --------------------------------------------------------------------------------
@@ -104,7 +106,7 @@ Part of the MERIC repository is a python power measurement script that runs on n
 BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
 
 --------------------------------------------------------------------------------
-#     3] MERIC and TIMEPROF interface and Shared Score-P/MERIC API             #
+#     3] MERIC interface and Shared Score-P/MERIC API                          #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with an MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
@@ -170,41 +172,8 @@ MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in
 MERIC_MeasureStop()
 ```
 
-## TIMEPROF interface ##
-The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0. The interface is defined in `include/timeprof.h`. 
-
- *	`void TIMEPROF_regionStart(const char * regionName)`
-
-	Start time measurement of region called regionName
-
- *	`double TIMEPROF_regionStop(const char * regionName)`
- 
-	End of the time measurement, returns region duration in seconds.
-
- *	`void TIMEPROF_evaluate()`
-
-	At the end of the application run should be called this function 
-	to evaluate the measurements. It will produce a list of the regions 
-	with duration longer than time threshold (export environment variable 
-	`TIMEPROF_TIME` [ms]) and store it to the fileName (export environment 
-	variable `TIMEPROF_OUTPUT`).
-	If no threshold provided, it will print complete list of measured functions with its minimum runtime.
-	If no output file specified, the list of functions will be printed to stdout.
-
- *	`void TIMEPROF_captureScope(const char * regionName)`
-
-	[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
-	In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
-
- *	`double TIMEPROF_getLastRegionDuration()`
-
-	Since scope time measurement does not return the time measured, it can be obtained using this function.
-
-
 ## Shared MERIC/Score-P interface ##
 Into include folder the C header file `readex.h` and Fortran `readex.inc` were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
-
-TIMEPROF is not currently supported in readex header file.
 
 Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
 
@@ -225,8 +194,44 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 
 READEX interface doesn't contain all Score-P API functions, because there is no support for these in MERIC. For the rest functionality user may use usual Score-P API, the functions will be ignored if the code will be compiled without Score-P.
 
+
 --------------------------------------------------------------------------------
-#     4] MERIC binary instrumentation                                          #
+#     4] TIMEPROF library                                                      #
+--------------------------------------------------------------------------------
+
+The TIMEPROF library provides light-weight runtime measurement of the instrumented regions in the code. The library is part of the MERIC repository since its main task is to identify regions for the future instrumentation with MERIC.
+
+The library produces a list of the regions, which duration is longer than time threshold (export environment variable `TIMEPROF_TIME` [ms]). When no threshold provided, the TIMEPROF will print complete list of measured regions with its minimum runtime. If environment variable `TIMEPROF_OUTPUT` exported, the list of regions is stored to the file, otherwise it is printed to the stdout.
+
+The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0.
+
+
+## TIMEPROF interface ##
+The interface is defined in `include/timeprof.h`. 
+
+ *	`void TIMEPROF_regionStart(const char * regionName)`
+
+	Start time measurement of region called regionName.
+
+ *	`double TIMEPROF_regionStop(const char * regionName)`
+ 
+	End of the time measurement, returns region duration in seconds.
+
+ *	`void TIMEPROF_evaluate()`
+
+	At the end of the application run should be called this function to evaluate the measurements.
+
+ *	`void TIMEPROF_captureScope(const char * regionName)`
+
+	[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
+	In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+
+ *	`double TIMEPROF_getLastRegionDuration()`
+
+	Since scope time measurement does not return the time measured, it can be obtained using this function.
+
+--------------------------------------------------------------------------------
+#     5] MERIC binary instrumentation                                          #
 --------------------------------------------------------------------------------
 Manual application instrumentation is straightforward, however it requires at least some basic knowledge about the target application, access to the source files and also time to instrument the code. All these steps can be overcome when using static binary instrumentation (SBI). We provide two tools based on [Dyninst library](https://dyninst.org/):
  * `dinst_profile` - Provides list of all functions that are defined in the binary (shared libraries are not taken into account) and provides information whether the function can or cannot be instrumented.
@@ -241,7 +246,7 @@ The Dyninst supports compilation using GNU compiler only, however it can analyze
  * If instrumented application is compiled with the same list of modules as the Dyninst tools, sometimes the new binary is corrupted. Can be tested using `ldd` command. If it happens, we suggest to use different set of modules for the application or the Dyninst tool.
 
 --------------------------------------------------------------------------------
-#    5] Compilation                                                            #
+#    6] Compilation                                                            #
 --------------------------------------------------------------------------------
 MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, a Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
 
@@ -273,7 +278,7 @@ Beside these libraries waf requires Python.
 The compilation mechanism detects the compiler type, howevr if the detection fails, the default is GNU C++ compiler. To compile MERIC using any other compiler, you may specify `--cpp=` and `--mpi=` flags for `./waf configure` command, or use `make intel` for compilation using Intel compiler. Together with MERIC also TIMEPROF is being compiled. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If an MPI application without OpenMP should be analyzed, compilation with `--noopenmp` waf flag must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
 
 --------------------------------------------------------------------------------
-#     6] MERIC input parameters                                                #
+#     7] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
 ## SET MERIC STATIC PARAMETERS - mandatory parameters ##
@@ -380,7 +385,7 @@ To define ignore settings, write a object with the keyword "@IGNORE", and value 
 Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
-#     7] Content of test folder and example application run                    #
+#     8] Content of test folder and example application run                    #
 --------------------------------------------------------------------------------
 * source codes
 	* test.cpp
@@ -433,7 +438,7 @@ export MERIC_MODE=7              # time measurement only
 ```
 
 --------------------------------------------------------------------------------
-#      8] Code dynamism investigation                                          #
+#      9] Code dynamism investigation                                          #
 --------------------------------------------------------------------------------
 MERIC's output is stored in the directory in default named `mericMeasurement` that contains result files in folders with names of the regions. To change output folder name export MERIC_OUTPUT_DIR="NEW_NAME".
 Each csv file carry 3 types of data:
@@ -480,23 +485,23 @@ Edit description file `measurementInfo.json` in your output data folder. This st
 We have implemented a python tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI](https://code.it4i.cz/vys0053/SGS18-READEX).
 
 --------------------------------------------------------------------------------
-#      9] MERIC with a Fortran code                                            #
+#      10] MERIC with a Fortran code                                           #
 --------------------------------------------------------------------------------
 There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
 
 To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
 	
 --------------------------------------------------------------------------------
-#     10] Tool for static tuning                                               #
+#     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the tools/ directory.
 
 Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL energy measurement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
-For a static analysis of a selected application, the directory with the tool contain `staticAnalysis.sh` bash script too. It not only runs the application in variety of available HW settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
+For a static analysis of a selected application, the directory with the tool contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
 --------------------------------------------------------------------------------
-#     11] Acknowledgement                                                      #
+#     12] Acknowledgement                                                      #
 --------------------------------------------------------------------------------
 MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
 Please, open an issue, if you meet any problem. 
