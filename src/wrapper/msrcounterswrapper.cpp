@@ -19,7 +19,7 @@ void MSR::init()
 	#ifdef HAVE_MSR_CORE_H
 	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
-		write_msr_by_idx(i, U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
+		write_msr_by_idx(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
 	#endif
 
 	nominal_freq = Environment::getNominalFrequency();
