@@ -28,7 +28,7 @@ def configure(ctx):
         if ('MPICXX' in ctx.env):
             ctx.options.mpi=ctx.env['MPICXX'][0].split('/')[-1]
         elif (ctx.options.cpp=="icpc"):
-        	ctx.options.mpi="mpiicpc"
+            ctx.options.mpi="mpiicpc"
         else:
             ctx.options.mpi="mpic++" # default MPI compiler
 
@@ -63,29 +63,39 @@ def configure(ctx):
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
    
+    SBImandatory = False
     # check for HW-tuning software
-    if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) & (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) & (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) & (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
-        if ctx.check_cxx(lib="cpufreq", mandatory=False):
-            ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
-            ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
-    ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
-#    ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
+    if not ctx.options.sbi:
+        if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) & (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) & (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) & (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
+            if ctx.check_cxx(lib="cpufreq", mandatory=False):
+                ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
+                ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
+        ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
+#        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
     
-    # check for energy measurment systems
-    if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
-        # missing include <freeipmi/freeipmi.h>
-        ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
-    ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
+        # check for energy measurment systems
+        if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
+            # missing include <freeipmi/freeipmi.h>
+            ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
+        ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
     
-    #check for libs to read performance counters
-    ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
-    ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
+        #check for libs to read performance counters
+        ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
+        ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
 
-    ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
+        ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     
     # SBI tool
-    if ctx.options.cpp=="g++" and ctx.check_cc(header_name="BPatch.h", lib=["dyninstAPI", "instructionAPI"], uselib_store="dyninst", mandatory=False) and ctx.check_cc(header_name="boost/thread.hpp", lib=["boost_thread", "boost_system", "boost_date_time"], uselib_store="boost", mandatory=False):
-        ctx.env.append_unique("SBI", "SBI")
+    else:
+        SBImandatory = True
+        if ctx.options.cpp !="g++":
+            ctx.fatal("Dyninst (SBI) tools require compilation with GNU compiler, "+ctx.options.cpp+" used instead")
+    if ctx.options.cpp =="g++" and ctx.check_cc(header_name="BPatch.h", lib=["dyninstAPI", "instructionAPI"], uselib_store="dyninst", mandatory=SBImandatory) and ctx.check_cc(header_name="boost/thread.hpp", lib=["boost_thread", "boost_system", "boost_date_time"], uselib_store="boost", mandatory=SBImandatory):
+        if ctx.options.sbi:
+            ctx.env.append_unique("SBI", "SBI_ONLY")
+            return
+        else:
+            ctx.env.append_unique("SBI", "SBI")
 
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
     for dep in ctx.env.DEFINES:
@@ -126,6 +136,32 @@ def configure(ctx):
 
 ################################################################################
 def build(ctx):
+    # SBI TOOL
+    if ctx.env.SBI:
+        ctx.program(
+            source       = ctx.path.ant_glob('src/tools/SBI/dinst_instrument.cpp'),
+            target       = "dinst_instrument",
+            use          = "boost dyninst",
+            install_path = ctx.path.abspath()+"/tools"
+        )
+        ctx.program(
+            source       = ctx.path.ant_glob('src/tools/SBI/dinst_profile.cpp'),
+            target       = "dinst_profile",
+            use          = "boost dyninst",
+            install_path = ctx.path.abspath()+"/tools"
+        )
+    if "SBI_ONLY" in ctx.env.SBI:
+        return
+    
+    ctx.objects(
+        source =
+            ctx.path.ant_glob('src/basis/*.cpp') +
+            ctx.path.ant_glob('src/store/*.cpp') +
+            ctx.path.ant_glob('src/meric/*.cpp') +
+            ctx.path.ant_glob('src/wrapper/*.cpp'),
+        target = "basis"
+    )
+    
     # STATIC MERIC TOOL
     ctx.program(
         source= 
@@ -164,7 +200,7 @@ def build(ctx):
         install_path = ctx.path.abspath()+"/tools/"
     )
     
-    # SYSTEM INFO TOOL    
+    # SYSTEM INFO TOOL
     ctx.program(
         source=
             ctx.path.ant_glob('src/tools/systemInfo.cpp') +
@@ -174,30 +210,6 @@ def build(ctx):
         target="systemInfo",
         use="msr x86_adapt numa geopm",
         install_path = ctx.path.abspath()+"/tools"
-    )
-
-    # SBI TOOL
-    if ctx.env.SBI:
-        ctx.program(
-            source       = ctx.path.ant_glob('src/tools/SBI/dinst_instrument.cpp'),
-            target       = "dinst_instrument",
-            use          = "boost dyninst",
-            install_path = ctx.path.abspath()+"/tools"
-        )
-        ctx.program(
-            source       = ctx.path.ant_glob('src/tools/SBI/dinst_profile.cpp'),
-            target       = "dinst_profile",
-            use          = "boost dyninst",
-            install_path = ctx.path.abspath()+"/tools"
-        )
-    
-    ctx.objects(
-        source =
-            ctx.path.ant_glob('src/basis/*.cpp') +
-            ctx.path.ant_glob('src/store/*.cpp') +
-            ctx.path.ant_glob('src/meric/*.cpp') +
-            ctx.path.ant_glob('src/wrapper/*.cpp'),
-        target = "basis"
     )
     
     if not ctx.env.NOOPENMP:
@@ -279,21 +291,28 @@ def options(opt):
         "--verbose",
         action="store_true",
         default=False,
-        help="verbose"
+        help="Verbose mode"
+    )
+    
+    opt.add_option(
+        "--sbi",
+        action="store_true",
+        default=False,
+        help="Compile SBI tools only"
     )
     
     opt.add_option(
         "--dummy",
         action="store_true",
         default=False,
-        help="use dummy HDEEM wrapper"
+        help="Use dummy HDEEM wrapper"
     )
 
     opt.add_option(
         "--debug",
         action="store_true",
         default=False,
-        help="active debug output"
+        help="Activate debug output"
     )
 
     opt.add_option(
@@ -312,7 +331,7 @@ def options(opt):
 
     opt.add_option(
         "--noopenmp",
-        action="store",
+        action="store_true",
         default=False,
         help="Compilation of MPI version without OpenMP"
     )
@@ -329,12 +348,12 @@ def options(opt):
         type="string",
         metavar="INCLUDE_PATHS",
         default="",
-        help="List of paths to include.")
+        help="List of paths to include")
 
     opt.add_option("--libpaths",
         action="store",
         type="string",
         metavar="LIB_PATHS",
         default="",
-        help="List of paths to libraries.")
+        help="List of paths to libraries")
 

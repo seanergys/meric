@@ -65,6 +65,10 @@ intel:
 fortran:
 	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
+sbi:
+	./waf configure --sbi --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
+	make install
+
 love:
 	./waf distclean
 
