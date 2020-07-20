@@ -521,14 +521,15 @@ bool Environment::readRestoreFile()
 		if (jsonFile.is_open())
 		{
 			while (getline(jsonFile,line))
-			{
 				jsonString += " " + line;
-			}
 			jsonFile.close();
 		}
+		if (jsonString == "")
+			return false;
+		
 		const char * json = jsonString.c_str();
 		struct json_value_s* root = json_parse(json, strlen(json));
-		if (root ==  NULL)
+		if (root == NULL)
 		{
 			std::cerr << "MERIC ERROR: invalid " << defaultSettingFile << std::endl;
 			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
@@ -779,7 +780,7 @@ void Environment::readSystemDefaultSettings()
 void Environment::storeSystemDefaultSettings()
 {
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-	struct stat info;
+	struct stat info; //test if the file exists, another process has already created it
 	if(stat(defaultSettingFile.c_str(), &info ) != 0 && (activatedDVFS || activatedUFS || activatedPWRCAP))
 	{
 		std::ofstream defaultRestoreFile;
