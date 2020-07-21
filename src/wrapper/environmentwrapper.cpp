@@ -22,62 +22,19 @@ DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
 
+
+#ifdef __x86_64
 /**
- * prints processor Family, Model and Stepping
+ * Provides the processor name, reads it from register
  **/
-#if defined __x86_64
-void Environment::getCPUversion()
+void Environment::getCPUbrandString(std::string & CPUname)
 {
-	unsigned int regs[4];
-	regs[eax] = 0x01;
-	regs[ebx] = 0x0;
-	regs[ecx] = 0x0;
-	regs[edx] = 0x0;
-	CPUID(regs);
-	
-	uint64_t family = ((regs[eax] & CPUID_EAX_01_family_id_mask) >> CPUID_EAX_01_family_id_shift);
-	if (family != 0xF)
-		std::cout << "Family ID " << family << std::endl;
-	else
-		std::cout << "Family ID " << ((regs[eax] & CPUID_EAX_01_extended_family_id_mask) >> CPUID_EAX_01_extended_family_id_shift) + family << std::endl;
-	
-	if (family == 0x6 || family == 0xF)
-		std::cout << "Model ID " << 
-		((((regs[eax] & CPUID_EAX_01_extended_model_id_mask) >> CPUID_EAX_01_extended_model_id_shift) << CPUID_EAX_01_display_model_shift)
-		+ ((regs[eax] & CPUID_EAX_01_model_mask) >> CPUID_EAX_01_model_shift)) << std::endl;
-	else
-		std::cout << "Model ID " << ((regs[eax] & CPUID_EAX_01_model_mask) >> CPUID_EAX_01_model_shift) << std::endl;
+	const int STRING_SIZE=256;
+	char buff[STRING_SIZE];
 
-	std::cout << "Stepping ID " << (regs[eax] & CPUID_EAX_01_stepping_id_mask) << std::endl;
-
-//	printf 'wl_%.2x%x\n' $(head -10 /proc/cpuinfo | grep "cpu family\s*:" | awk -F: '{print $2}') $(head -10 /proc/cpuinfo | grep "model\s*:" | awk -F: '{print $2}')
-//	std::cout << "wl_" << hex << family_ex << model_ex << std::endl;
-}
-#else
-	//TODO parse /proc/cpuinfo for the processor Family/Model/Stepping
-#endif
-
-/**
- * returns nominal CPU core frequency in Hz
- * if libmsr available uses MSR_PLATFORM_INFO register
- * else if it is x86 architecture uses CPUID instruction
- * else if acpi-cpufreq scaling driver is used returns value from the system file
- * else returns 0
- **/
-#ifdef HAVE_MSR_CORE_H
-long Environment::getNominalFrequency()
-{
-	uint64_t MSR_PLATFORM_INFO_bits;
-	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
-	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
-};
-
-#elif defined __x86_64
-void Environment::getCPUbrandString(char *buff, int buff_size)
-{
 	unsigned int regs[4];
 	unsigned int size_reg = sizeof(unsigned int);
-	memset(buff, 0x0, sizeof(char) * buff_size);
+	memset(buff, 0x0, sizeof(char) * STRING_SIZE);
 
 	regs[eax] = 0x80000000;
 	regs[ebx] = 0x0;
@@ -117,25 +74,78 @@ void Environment::getCPUbrandString(char *buff, int buff_size)
 		memcpy(buff+(size_reg*10), &regs[ecx], size_reg);
 		memcpy(buff+(size_reg*11), &regs[edx], size_reg);
 	}
+	CPUname = std::string(buff);
 }
 
+#else
+/**
+ * Parse /proc/cpuinfo for the processor name, if not available, than creates internal name to recognise the hardware
+ **/
+void Environment::getCPUbrandString(std::string & CPUname)
+{
+	std::ifstream CPUinfoFile;
+	CPUname = "";
+	std::string line;
+
+	CPUinfoFile.open ("/proc/cpuinfo");
+	if (CPUinfoFile.is_open())
+	{
+		while (getline(CPUinfoFile,line))
+		{
+			if (line.substr(0,10) == "model name")
+			{
+				CPUname = line.substr(line.find(':')+2);
+				break;
+			}
+		}
+		CPUinfoFile.close();
+	}
+	if (CPUname != "")
+		return;
+
+	//internal alternative name of the hardware
+	if (!mapThreadsToCore.size())
+		initHWSizes();
+	CPUname = std::to_string(SOCKETS_PER_NODE)+"x"+std::to_string(CORES_PER_SOCKET)+"x"+std::to_string(THREADS_PER_CORE);
+	if (defaultSettings.maxCoreFreq > 0)
+		CPUname += " @ "+std::to_string(defaultSettings.maxCoreFreq/1e9)+"GHz";
+	else
+	{
+		CPUinfoFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		if (CPUinfoFile.is_open())
+		{
+			CPUinfoFile >> line;
+			CPUinfoFile.close();
+			CPUname += " @ "+std::to_string(std::stol(line)/1e6)+"GHz";
+		}
+	}
+}
+#endif
+
+/**
+ * returns nominal CPU core frequency in Hz
+ * if libmsr available uses MSR_PLATFORM_INFO register
+ * else if it is x86 architecture uses CPUID instruction
+ * else if acpi-cpufreq scaling driver is used returns value from the system file
+ * else returns 0
+ **/
+#ifdef HAVE_MSR_CORE_H
 long Environment::getNominalFrequency()
 {
-	const int STRING_SIZE=256;
-	char cpu_model[STRING_SIZE];
-	const char s1[2] = "@";
-	const char s2[4] = "GHz";
-	char *token1;
-	char *token2;
-
-	getCPUbrandString(cpu_model, STRING_SIZE);
-	
-	token1 = strtok(cpu_model, s1);
-	token1 = strtok(NULL, s1);
-	token2 = strtok(token1, s2);
-	
-	return (long) (atof(token2) * 1E9);
+	uint64_t MSR_PLATFORM_INFO_bits;
+	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
+	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
 }
+
+#elif defined __x86_64
+long Environment::getNominalFrequency()
+{
+	std::string CPUname;
+	getCPUbrandString(CPUname);
+	CPUname = CPUname.substr(CPUname.find('@')+1);
+	return std::stod(CPUname.substr(0,CPUname.size()-3))*1e9;
+}
+
 #else
 long Environment::getNominalFrequency()
 {

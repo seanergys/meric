@@ -136,7 +136,6 @@ public:
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	
 #ifdef __x86_64
-	static void getCPUversion();
 	static bool isHWPactive(std::string &status);
 #endif
 
@@ -145,7 +144,7 @@ private:
 	static void storeSystemDefaultSettings();
 	static void stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly = false);
 #ifdef __x86_64
-	static void getCPUbrandString(char *buff, int buff_size);
+	static void getCPUbrandString(std::string & CPUname);
 	static inline void CPUID(unsigned int *regs)
 	{
 		asm volatile("cpuid"
