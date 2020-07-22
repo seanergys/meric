@@ -771,7 +771,9 @@ int main(int argc, char **argv)
 		checkMsrWhitelist();
 
 	bool systemInTheDefaultSettings = true;
-	bool restoreFile = meric::Environment::readRestoreFile();
+	timespec modifTime;
+	std::string restoreJson;
+	bool restoreFile = meric::Environment::readRestoreFile(restoreJson, modifTime);
 	meric::systemLimits limits = meric::Environment::getSystemSettings();
 	meric::RAPL::initCountersUnits(); //not necessary if meric::Environment::init() would have been called before
 	sysInfoSize(printTopology);

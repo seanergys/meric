@@ -519,41 +519,57 @@ void Environment::initHWSizes()
 /**
  * reads a file with the default setting of the system that MERIC stored during 
  * a previous run
+ * parameter restoreJson will be filled with the content of the read file
+ * modifTime holds time of the last modification, a modified file will not be re-written
  * returns true if the restore file exists and was read, otherwise false
  **/
-bool Environment::readRestoreFile()
+bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTime)
 {
+	restoreJson = "";
 	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-	if (access(defaultSettingFile.c_str(), R_OK) == 0)
+	
+	struct stat info;
+	if(stat(defaultSettingFile.c_str(), &info) == 0)
 	{
+		modifTime = info.st_mtim;
 		std::ifstream jsonFile (defaultSettingFile);
-		std::string line, jsonString = "";
+		std::string line = "";
 		if (jsonFile.is_open())
 		{
 			while (getline(jsonFile,line))
-				jsonString += " " + line;
+				restoreJson += " " + line+"\n";
 			jsonFile.close();
 		}
-		if (jsonString == "")
+		if (restoreJson == "")
 			return false;
 		
-		const char * json = jsonString.c_str();
+		const char * json = restoreJson.c_str();
 		struct json_value_s* root = json_parse(json, strlen(json));
 		if (root == NULL)
 		{
 			std::cerr << "MERIC ERROR: invalid " << defaultSettingFile << std::endl;
 			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
+			restoreJson = "";
 			return false;
 		}
-		else
-		{
-			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
 
-			while(data != NULL)
+		std::string CPUname;
+		getCPUbrandString(CPUname);
+		struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
+		while(data != NULL)
+		{
+			if (std::string(data->name->string) != CPUname)
 			{
-				if (std::string(data->name->string) == "DVFS")
+				data = data->next;
+				continue;
+			}
+			
+			struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
+			while(architectureData != NULL)
+			{
+				if (std::string(architectureData->name->string) == "DVFS")
 				{
-					struct json_object_element_s* dvfs = ((struct json_object_s*)data->value->payload)->start;
+					struct json_object_element_s* dvfs = ((struct json_object_s*)architectureData->value->payload)->start;
 					do
 					{
 						if (std::string(dvfs->name->string) == "GOVERNOR")
@@ -583,9 +599,9 @@ bool Environment::readRestoreFile()
 						dvfs = dvfs->next;
 					}while(dvfs != NULL);
 				}
-				else if (std::string(data->name->string) == "UFS")
+				else if (std::string(architectureData->name->string) == "UFS")
 				{
-					struct json_object_element_s* ufs = ((struct json_object_s*)data->value->payload)->start;
+					struct json_object_element_s* ufs = ((struct json_object_s*)architectureData->value->payload)->start;
 					do
 					{
 						if (std::string(ufs->name->string) == "MAX")
@@ -603,9 +619,9 @@ bool Environment::readRestoreFile()
 						ufs = ufs->next;
 					}while(ufs != NULL);
 				}
-				else if (std::string(data->name->string) == "PWRCAP")
+				else if (std::string(architectureData->name->string) == "PWRCAP")
 				{
-					struct json_object_element_s* pwr = ((struct json_object_s*)data->value->payload)->start;
+					struct json_object_element_s* pwr = ((struct json_object_s*)architectureData->value->payload)->start;
 					do
 					{
 						if (std::string(pwr->name->string) == "PKG")
@@ -619,25 +635,28 @@ bool Environment::readRestoreFile()
 						pwr = pwr->next;
 					}while(pwr != NULL);
 				}
-				data = data->next;
+				architectureData = architectureData->next;
 			}
 			free(root);
+			return true;
 		}
 	}
-	else
-		return false;
-	
-	return true;
+
+	return false;
 }
 
 /**
  * reads system default CPU core and uncore frequencies and power capping limits
+ * if available, reads the settings from a json file, that should provide the default settings before we have started any tuning tests
+ * if the configuration not available in the json, than updates the file
  **/
 void Environment::readSystemDefaultSettings()
 {
-	if (!readRestoreFile())
+	timespec modifTime;
+	std::string restoreJson;
+	if (!readRestoreFile(restoreJson, modifTime))
 	{
-	//if the json file does not exists or is corrupted
+	//if the json file does not exists, does not contain current architecture or is corrupted
 	//we have to read the default settings from the system
 
 // CORE freq -----------------------------------------------------------------//
@@ -756,14 +775,46 @@ void Environment::readSystemDefaultSettings()
 #endif
 		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
 		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
-	}
 
-#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
-	if (defaultSettings.defaultUncoreFreq != -1)
-		activatedUFS = true;
-#endif
-	if (defaultSettings.defaultPowerCapPKG != 0x0)
-		activatedPWRCAP = true;
+// store the configuration to the file
+		std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+		struct stat info; //test if the file has been modified since we tried to read it
+		if (stat(defaultSettingFile.c_str(), &info ) != 0 || modifTime == info.st_mtim)
+		{
+			std::ofstream defaultRestoreFile;
+			defaultRestoreFile.open (defaultSettingFile);
+			
+			if (restoreJson == "")
+				restoreJson = "{\n";
+			else
+			{
+				restoreJson = restoreJson.substr(0,restoreJson.find_last_of("}")-1) + ",\n";
+			}
+			
+			std::string CPUname;
+			getCPUbrandString(CPUname);
+			
+			restoreJson += "\t\""+CPUname+"\": {\n";
+			
+			restoreJson += "\t\t\"DVFS\" : {\n\t\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
+				        +  "\t\t\t\"TURBO\" : " + std::to_string(defaultSettings.maxTurboFreq) + ",\n"
+				        +  "\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxCoreFreq) + ",\n"
+				        +  "\t\t\t\"MIN\" : " + std::to_string(defaultSettings.minCoreFreq) + ",\n"
+				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq) + ",\n"
+				        +  "\t\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings.IA32_ENERGY_PERF_BIAS_default) + "\n\t\t},\n";
+
+			restoreJson += "\t\t\"UFS\" : {\n\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxUncoreFreq) + ",\n"
+				        +  "\t\t\t\"MIN\" : " + std::to_string(defaultSettings.minUncoreFreq) + ",\n"
+				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t\t},\n";
+
+			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
+				        +  "\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t\t}";
+
+			restoreJson += "\n\t}\n}\n";
+			defaultRestoreFile << restoreJson;
+			defaultRestoreFile.close();
+		}
+	}
 
 	MERIC_INFO
 		<< "CF"  << std::endl
@@ -781,39 +832,6 @@ void Environment::readSystemDefaultSettings()
 		<< "PWRcap" << std::endl
 		<< "\tPKG " << defaultSettings.defaultPowerCapPKG << std::endl
 		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl;
-}
-
-/**
- * the restoreFile does not exist, so we have read the settings from the system 
- * and store it into a file, that will be used for restore the system in the future
- **/
-void Environment::storeSystemDefaultSettings()
-{
-	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-	struct stat info; //test if the file exists, another process has already created it
-	if(stat(defaultSettingFile.c_str(), &info ) != 0 && (activatedDVFS || activatedUFS || activatedPWRCAP))
-	{
-		std::ofstream defaultRestoreFile;
-		defaultRestoreFile.open (defaultSettingFile);
-	
-		std::string content  = "{\n";
-		content += "\t\"DVFS\" : {\n\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
-		         + "\t\t\"TURBO\" : " + std::to_string(defaultSettings.maxTurboFreq) + ",\n"
-		         + "\t\t\"MAX\" : " + std::to_string(defaultSettings.maxCoreFreq) + ",\n"
-		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings.minCoreFreq) + ",\n"
-		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq) + ",\n"
-		         + "\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings.IA32_ENERGY_PERF_BIAS_default) + "\n\t},\n";
-
-		content += "\t\"UFS\" : {\n\t\t\"MAX\" : " + std::to_string(defaultSettings.maxUncoreFreq) + ",\n"
-		         + "\t\t\"MIN\" : " + std::to_string(defaultSettings.minUncoreFreq) + ",\n"
-		         + "\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t},\n";
-
-		content+= "\t\"PWRCAP\" : {\n\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
-		        + "\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t}";
-		content += "\n}\n";
-		defaultRestoreFile << content;
-		defaultRestoreFile.close();
-	}
 }
 
 /**
@@ -850,12 +868,18 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 	if(!rank)
 	{
 		readSystemDefaultSettings();
+
 //ACTIVATE DVFS
 		if (defaultParameter.frequency != 0)
 		{
 			activatedDVFS = activateDVFS();
 		}
+
 //ACTIVATE UFS
+#if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+		if (defaultSettings.defaultUncoreFreq != -1)
+			activatedUFS = true;
+#endif
 		if (systemType == SYS_JETSON)
 		{
 			if (defaultParameter.uncoreFrequency != 0 && access("/sys/kernel/debug/clock/override.emc/state", W_OK) == 0)
@@ -871,8 +895,11 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 				}
 			}
 		}
-		
-		storeSystemDefaultSettings();
+
+//ACTIVATE POWERCAP
+		if (defaultSettings.defaultPowerCapPKG != 0x0)
+			activatedPWRCAP = true;
+
 
 		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);

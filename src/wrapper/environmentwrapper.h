@@ -128,7 +128,7 @@ public:
 	};
 	static void restoreSystemSettings(bool hardReset = false);
 	static systemLimits getSystemSettings() { return defaultSettings; };	//TODO
-	static bool readRestoreFile();
+	static bool readRestoreFile(std::string & restoreJson, timespec & modifTime);
 	static long getNominalFrequency();
 	static long getMaximumTurboFrequency();
 	static std::string getScalingDriver();
@@ -141,7 +141,6 @@ public:
 
 private:
 	static void readSystemDefaultSettings();
-	static void storeSystemDefaultSettings();
 	static void stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly = false);
 #ifdef __x86_64
 	static void getCPUbrandString(std::string & CPUname);

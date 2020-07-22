@@ -76,6 +76,14 @@ struct mutils {
 	}
 };
 
+inline bool operator==(const timespec &a, const timespec &b)
+{
+	if (a.tv_sec == b.tv_sec && a.tv_nsec == b.tv_nsec)
+		return true;
+	else
+		return false;
+}
+
 inline timespec operator-(const timespec &a, const timespec &b)
 {
 	timespec diff;
