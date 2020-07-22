@@ -16,6 +16,7 @@
   - compiler detection has been added, if not recognised, the default compiler is GNU (instead of Intel compiler, which was default previously)
   - SBI tools are compiled together with MERIC when using GNU compiler (Dyninst must be compiled using GNU compiler)
   - all the MERIC's utilities are located in the tools directory, the source files re-located
+  - new format of the file that keeps the default settings, now supports multiple architectures from one installation
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation
