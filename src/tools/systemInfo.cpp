@@ -728,7 +728,7 @@ int main(int argc, char **argv)
 		std::string arg = argv[i];
 		if (arg == "-r")
 			restore = true;
-		if (arg == "-t")
+		else if (arg == "-t")
 			printTopology = true;
 		else
 		{
