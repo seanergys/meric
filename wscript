@@ -191,7 +191,7 @@ def build(ctx):
     # MERICwrapper
     ctx.program(
         source= 
-            ctx.path.ant_glob('src/tools/wrapper.cpp') +
+            ctx.path.ant_glob('src/tools/wrapper/wrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),

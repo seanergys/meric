@@ -19,9 +19,9 @@
 	#include <filesystem>
 #endif
 
-#include "../wrapper/environmentwrapper.h"
-#include "../basis/utils.h"
-#include "../basis/json.h"
+#include "../../wrapper/environmentwrapper.h"
+#include "../../basis/utils.h"
+#include "../../basis/json.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_core.h>
@@ -34,12 +34,12 @@
 	#include <x86_adapt.h>
 #endif
 
-#include "../wrapper/hdeemwrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/counters.h"
-#include "../wrapper/davidewrapper.h"
-#include "../wrapper/thunderwrapper.h"
-#include "../wrapper/jetsonwrapper.h"
+#include "../../wrapper/hdeemwrapper.h"
+#include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/counters.h"
+#include "../../wrapper/davidewrapper.h"
+#include "../../wrapper/thunderwrapper.h"
+#include "../../wrapper/jetsonwrapper.h"
 
 
 
