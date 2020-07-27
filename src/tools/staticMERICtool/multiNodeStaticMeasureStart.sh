@@ -4,7 +4,7 @@
 
 ################################################################ RAPL or HDEEM #
 
-OPT=`getopt -o hc:u: --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
+OPT=`getopt -o hc:u:t:w:p: --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
 if [ $? != 0 ]
 then
 	exit 1
@@ -14,16 +14,22 @@ eval set -- "$OPT"
 HDEEM=false
 RAPL=false
 HELP=false
-Cfreq=0
-Ufreq=0
+Cfreq=""
+Ufreq=""
+Threads=""
+PowerLimit=""
+PowerWindow=""
 
 while true
 do
   case "$1" in
     --hdeem 	) HDEEM=true; shift ;;
     --rapl   	) RAPL=true; shift ;;
-    -c          ) Cfreq=$2; shift; shift;;
-    -u          ) Ufreq=$2; shift; shift;;
+    -c          ) Cfreq="-c "$2; shift; shift;;
+    -u          ) Ufreq="-u "$2; shift; shift;;
+    -t          ) Threads="-t "$2; shift; shift;;
+    -p          ) PowerLimit="-p "$2; shift; shift;;
+    -w          ) PowerWindow="-w "$2; shift; shift;;
     -h | --help	) HELP=true; shift ;;
     -- ) shift; break ;;
     * ) break ;;
@@ -32,10 +38,13 @@ done
 
 if $HELP
 then
-	echo "select --hdeem or --rapl to choose energy measurement interface"
-	echo "in case of RAPL it is possible to change CPU core and uncore frequencies"
-	echo " -c = CPU core frequency [12-25]"
-	echo " -u = CPU uncore frequency [12-30]"
+	echo "Select --hdeem or --rapl to choose energy measurement interface"
+	echo "In case of RAPL it is also possible to tune hardware settings:"
+	echo " -c = CPU core frequency [Hz]"
+	echo " -u = CPU uncore frequency [Hz]"
+	echo " -t = number of active OpenMP threads [#]"
+	echo " -p = power capping power limit [mW]"
+	echo " -w = power capping time window [ms]"
 	exit 0
 fi
 
@@ -45,7 +54,9 @@ then
 	exit 1
 fi
 
-######################################################## get the list of nodes #
+HWparamters=$Cfreq" "$Ufreq" "$Threads" "$PowerLimit" "$PowerWindow
+
+############################################################ get list of nodes #
 if $(printenv | grep -q "SLURM")
 then	# SLURM
 	# taurusi6605
@@ -83,15 +94,12 @@ else	# PBS
 fi
 
 #################################################### run the measurement there #
-LOCATION=$( dirname "${BASH_SOURCE[0]}" )
-if [ $LOCATION == "." ]
-then
-        export LOCATION=$(pwd)
-fi
+LOCATION=$(pwd)'/'$( dirname "${BASH_SOURCE[0]}" )
 
 if $RAPL
 then
-	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $LOCATION/energyMeasureStart -c $Cfreq -u $Ufreq"
+	# loading modules from set_env file, located in MERIC root directory
+	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; source $LOCATION/../set_env 2> /dev/null; $LOCATION/energyMeasureStart $HWparamters"
 else #HDEEM
 	pdsh -w $NODE_LIST "source /etc/profile.d/10_modules.sh 2>/dev/null; stopHdeem; sleep 2; clearHdeem; startHdeem"
 fi

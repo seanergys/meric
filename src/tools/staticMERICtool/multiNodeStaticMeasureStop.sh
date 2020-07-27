@@ -3,7 +3,7 @@
 
 ################################################################ RAPL or HDEEM #
 
-OPT=`getopt -o hc:u: --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
+OPT=`getopt -o h --long hdeem,rapl,help -n 'energyMeasure' -- "$@"`
 if [ $? != 0 ]
 then
 	exit 1
@@ -13,16 +13,12 @@ eval set -- "$OPT"
 HDEEM=false
 RAPL=false
 HELP=false
-Cfreq=0
-Ufreq=0
 
 while true
 do
   case "$1" in
     --hdeem 	) HDEEM=true; shift ;;
     --rapl   	) RAPL=true; shift ;;
-    -c          ) Cfreq=$2; shift; shift;;
-    -u          ) Ufreq=$2; shift; shift;;
     -h | --help	) HELP=true; shift ;;
     -- ) shift; break ;;
     * ) break ;;
@@ -31,10 +27,8 @@ done
 
 if $HELP
 then
+	echo "Ends the energy measurement executed at allocated nodes and restores the hardware settings"
 	echo "select --hdeem or --rapl to choose energy measurement interface"
-	echo "in case of RAPL it is possible to change CPU core and uncore frequencies"
-	echo " -c = CPU core frequency [12-25]"
-	echo " -u = CPU uncore frequency [12-30]"
 	exit 0
 fi
 
@@ -82,22 +76,15 @@ else	# PBS
 fi
 
 ############################# get the results of the measurement for each node #
-LOCATION=$( dirname "${BASH_SOURCE[0]}" )
-if [ $LOCATION == "." ]
-then
-        export LOCATION=$(pwd)
-fi
+LOCATION=$(pwd)'/'$( dirname "${BASH_SOURCE[0]}" )
 
 if $RAPL	
 then
 	# source /etc/profile.d/10_modules.sh necessary for Taurus slurm
-	# loading modules necessary for Salomon cluster
-	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; module load x86_adapt 2> /dev/null; module load intel 2> /dev/null; export LD_LIBRARY_PATH+=:/usr/local/lib; $LOCATION/energyMeasureStop")
-	
+	# loading modules from set_env file, located in MERIC root directory
+	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; source $LOCATION/../set_env 2> /dev/null; $LOCATION/energyMeasureStop")
 	TIME=$(grep -oP "(?<=Runtime \[s\] = )\d+\.\d+"  <<< $OUTPUT | head -1)
-	NODES=$(grep -oP "(?<=Energy summary \[J\] = )\d+"  <<< $OUTPUT )
-	CPU0=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_0 \[J\] = )\d+"  <<< $OUTPUT )
-	CPU1=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_1 \[J\] = )\d+"  <<< $OUTPUT )
+	NODES=$(grep -oP "(?<=Energy consumption \[mJ\] = )\d+"  <<< $OUTPUT )
 	echo "Runtime [s] =" $TIME
 else #HDEEM
 	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; file=$HOME/hostname; stopHdeem; checkHdeem | grep -o -E 'BLADE\s+[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+\s++[0-9]+\.[0-9]+\s+[0-9]+\.[0-9]+' | sed 's/  */ /g' | cut -d ' ' -f 5")
@@ -111,14 +98,7 @@ for VAL in $NODES
 do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
-echo "Overall nodes energy consumption [J] =" $SUM
-
-SUM=0.0
-for VAL in $CPU0 $CPU1
-do
-	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
-done
-echo "Overall CPUs energy consumption [J] =" $SUM
+echo "Overall nodes energy consumption [mJ] =" $SUM
 
 exit 0
 
