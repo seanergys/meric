@@ -1322,8 +1322,13 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedDVFS || hardReset)
 	{
-		if (defaultSettings.defaultCoreFreq > 0 && (usedDVFS || hardReset))
-			frequency(defaultSettings.defaultCoreFreq);
+		if (usedDVFS || hardReset)
+		{
+			if (defaultSettings.defaultCoreFreq > 0)
+				frequency(defaultSettings.defaultCoreFreq);
+			else
+				frequency(defaultSettings.maxTurboFreq);
+		}
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
 			std::ofstream governorFile;
