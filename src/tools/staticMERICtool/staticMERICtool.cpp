@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 		std::cerr << "missing machine hostname\n";
 		exit(1);
 	}
-	OUTPUT_FILE = std::string(MERIC_PATH)+"/tools/staticMERICtool/.MERICmeasure-" + std::string(hostname) +".data";
+	OUTPUT_FILE = std::string(MERIC_PATH)+"/build/.MERICmeasure-" + std::string(hostname) +".data";
 	RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
 
 	for (int i = 1; i < argc; ++i)
