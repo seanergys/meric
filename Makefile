@@ -55,8 +55,13 @@ i:
 
 ddt:
 	make love
-	./waf configure --cpp=icpc --mpi=mpiicpc --flag="-O0 -g" --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
+	./waf configure --flag="-O0 -g" --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
 	./waf install -v
+
+scorep:
+	make love
+	./waf configure  --flag="-g" --scorep --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
+	./waf install -j 1 -v
 
 intel:
 	./waf configure --cpp=icpc --mpi=mpiicpc --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"

@@ -31,7 +31,7 @@ def configure(ctx):
             ctx.options.mpi="mpiicpc"
         else:
             ctx.options.mpi="mpic++" # default MPI compiler
-
+    
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
@@ -47,7 +47,7 @@ def configure(ctx):
                 ctx.env.append_unique("LINKFLAGS", path)
             else:
                 ctx.env.append_unique("LINKFLAGS", "-L"+path)
-
+    
     if ctx.options.cpp == "g++":
         if not ctx.options.noopenmp:
             ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
@@ -62,7 +62,7 @@ def configure(ctx):
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-   
+    
     SBImandatory = False
     # check for HW-tuning software
     if not ctx.options.sbi:
@@ -72,17 +72,17 @@ def configure(ctx):
                 ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
-    
+        
         # check for energy measurment systems
         if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
             # missing include <freeipmi/freeipmi.h>
             ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
         ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
-    
+        
         #check for libs to read performance counters
         ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
         ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
-
+        
         ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
     
     # SBI tool
@@ -96,7 +96,7 @@ def configure(ctx):
             return
         else:
             ctx.env.append_unique("SBI", "SBI")
-
+    
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
     for dep in ctx.env.DEFINES:
         if dep[:5] == "HAVE_":
@@ -105,23 +105,33 @@ def configure(ctx):
     
     if os.path.exists(ctx.path.abspath()+"/build/systemDefault.json"):
         os.remove(ctx.path.abspath()+"/build/systemDefault.json")
-
+    
     ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
     if ctx.options.debug:
         ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
     if ctx.options.verbose:
         ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
-
+    
     if ctx.options.noopenmp:
         ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True)
     else:
         ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
+    
+    if ctx.options.scorep:
+        ctx.env.CXXFLAGS.insert(0, ctx.env.CXX[0])
+        ctx.env.LINKFLAGS.insert(0, ctx.env.CXX[0])
+        ctx.env.CXX[0] = "scorep"
+    
     if ctx.env.MPICXX:
         ctx.setenv("mpi", ctx.env.derive())
-        ctx.env.CXX = list(ctx.env.MPICXX)
-        ctx.env.LINK_CXX = ctx.env.CXX
+        if ctx.options.scorep:
+            ctx.env.CXXFLAGS = [ctx.env.MPICXX[0]] + ctx.env.CXXFLAGS[1:]
+            ctx.env.LINKFLAGS = [ctx.env.MPICXX[0]] + ctx.env.LINKFLAGS[1:]
+        else:
+            ctx.env.CXX = list(ctx.env.MPICXX)
+            ctx.env.LINK_CXX = ctx.env.CXX
         ctx.env.append_unique("DEFINES", [ "HAVE_MPI_H=1" ])
-
+    
     ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
     if not ctx.env.MPICXX:
         Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
@@ -130,9 +140,12 @@ def configure(ctx):
     ctx.env.append_unique("DEFINES", [ "START" ])
     ctx.setenv('stop', env)
     ctx.env.append_unique("DEFINES", [ "STOP" ])
-#    print ctx.env
-#    print ctx.all_envs['start']
-#    print ctx.all_envs['stop']
+#    print(ctx.env.CXX)
+#    print(ctx.options)
+#    print(ctx.env)
+#    print(ctx.all_envs['mpi'])
+#    print(ctx.all_envs['start'])
+#    print(ctx.all_envs['stop'])
 
 ################################################################################
 def build(ctx):
@@ -187,7 +200,7 @@ def build(ctx):
     )
     shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/tools/")
     shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStop.sh" , ctx.path.abspath()+"/tools/")
-
+    
     # MERICwrapper
     ctx.program(
         source= 
@@ -220,14 +233,14 @@ def build(ctx):
             use          = "basis",
             install_path = ctx.path.abspath()+"/lib"
         )
-
+        
         ctx.shlib(
             source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
             target       = "meric",
             use          = "basis",
             install_path = ctx.path.abspath()+"/lib"
         )
-
+        
         #TIMEPROF
         ctx.stlib(
             source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
@@ -235,7 +248,7 @@ def build(ctx):
             use          = "basis",
             install_path = ctx.path.abspath()+"/lib"
         )
-
+        
         ctx.shlib(
             source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
             target       = "timeprof",
@@ -245,13 +258,13 @@ def build(ctx):
         suffix=""
     else:
         suffix="only"
-
+    
     #MERIC MPI
     if not ctx.env.MPICXX:
         return
     
     ctx.all_envs["mpi"].LINK_CXX = ctx.all_envs["mpi"].CXX
-
+    
     ctx.stlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
         target       = "mericmpi"+suffix,
@@ -259,7 +272,7 @@ def build(ctx):
         install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
-
+    
     ctx.shlib(
         source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
         target       = "mericmpi"+suffix,
@@ -276,7 +289,7 @@ def build(ctx):
         install_path = ctx.path.abspath()+"/lib",
         env          = ctx.all_envs["mpi"]
     )
-
+    
     ctx.shlib(
         source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
         target       = "timeprofmpi"+suffix,
@@ -307,28 +320,35 @@ def options(opt):
         default=False,
         help="Use dummy HDEEM wrapper"
     )
-
+    
     opt.add_option(
         "--debug",
         action="store_true",
         default=False,
         help="Activate debug output"
     )
-
+    
+    opt.add_option(
+        "--scorep",
+        action="store_true",
+        default=False,
+        help="Compile MERIC with Score-P"
+    )
+    
     opt.add_option(
         "--cpp",
         action="store",
         default="",
         help="C++ compiler, default GNU"
     )
-
+    
     opt.add_option(
         "--mpi",
         action="store",
         default="",
         help="MPI C++ compiler, default mpic++"
     )
-
+    
     opt.add_option(
         "--noopenmp",
         action="store_true",
@@ -349,7 +369,7 @@ def options(opt):
         metavar="INCLUDE_PATHS",
         default="",
         help="List of paths to include")
-
+    
     opt.add_option("--libpaths",
         action="store",
         type="string",
