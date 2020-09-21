@@ -367,8 +367,8 @@ It is also possible to specify the settings for a socket on a specific node, in 
 	"@SOCKET" : {
 		"0" : {
 			"A" : {
-				"FREQUENCY" : 1300MHz,
-				"UNCORE_FREQUENCY" : 1400MHz
+				"FREQUENCY" : "1300MHz",
+				"UNCORE_FREQUENCY" : "1400MHz"
 			}
 		}
 	}
