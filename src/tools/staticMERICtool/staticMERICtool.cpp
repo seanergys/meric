@@ -61,19 +61,19 @@ double readStoredValues(std::map<std::string, unsigned long long int> & oldRecor
 void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose)
 {
 	std::map<std::string, unsigned long long int> record;
-	unsigned long long int summary = 0;
+	double summary = 0.0;
 	
 	if (verbose)
 	{
-		std::cout << "Runtime [s] =\t" << runtime << std::endl;
+		std::cout << "Runtime [s] = " << runtime << std::endl;
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
-			unsigned long long value = RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
-			std::cout << iterator->first << " [J] =\t" << value << std::endl;
+			double value = RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
+			std::cout << RAPL::getCounterLabel(iterator->first) << " = " << value << std::endl;
 			summary += value;
 		}
 		summary += RAPL_BASELINE*runtime;
-		std::cout << std::endl << RAPL_SUM_ENERGY << " =\t" << summary << std::endl;
+		std::cout << std::endl << RAPL_SUM_ENERGY << " = " << summary << std::endl;
 	}else
 	{
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)

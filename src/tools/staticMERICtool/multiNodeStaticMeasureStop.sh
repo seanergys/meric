@@ -84,14 +84,16 @@ then
 	# loading modules from set_env file, located in MERIC root directory
 	OUTPUT=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; source $LOCATION/../set_env 2> /dev/null; $LOCATION/energyMeasureStop")
 	TIME=$(grep -oP "(?<=Runtime \[s\] = )\d+\.\d+"  <<< $OUTPUT | head -1)
-	NODES=$(grep -oP "(?<=Energy consumption \[J\] = )\d+"  <<< $OUTPUT )
-	#CPU0=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_0 \[J\] = )\d+"  <<< $OUTPUT )
-	#CPU1=$(grep -oP "(?<=Intel_RAPL_Pckg_Energy_1 \[J\] = )\d+"  <<< $OUTPUT )
+	NODES=$(grep -oP "(?<=Energy consumption \[J\] = )\d+\.?\d*"  <<< $OUTPUT )
+	CPU0=$(grep -oP "(?<=RAPL_PCKG_0 \[J\] = )\d+\.?\d*"  <<< $OUTPUT )
+	CPU1=$(grep -oP "(?<=RAPL_PCKG_1 \[J\] = )\d+\.?\d*"  <<< $OUTPUT )
+	#RAM0=$(grep -oP "(?<=RAPL_RAM_0 \[J\] = )\d+\.?\d*"  <<< $OUTPUT )
+	#RAM1=$(grep -oP "(?<=RAPL_RAM_1 \[J\] = )\d+\.?\d*"  <<< $OUTPUT )
 else #HDEEM
 	NODES=$(pdsh -w $NODE_LIST -N "source /etc/profile.d/10_modules.sh 2>/dev/null; stopHdeem; checkHdeem | grep -o -E 'BLADE(\s+[0-9]+\.[0-9]+){2,4}' -m 1 | awk -F' ' '{print \$NF}'")
 	TIME=$(checkHdeem | grep -oE 'Duration\s+for\s+stats\s+\(s\)\s+:\s+([0-9]+\.[0-9]+)' -m 1 | awk -F' ' '{print $NF}')
-	#CPU0=$(pdsh -w $NODE_LIST -N "checkHdeem | grep -o -E 'CPU0(\s+[0-9]+\.[0-9]+){2,4}' -m 1 | awk -F' ' '{print \$NF}'")
-	#CPU1=$(pdsh -w $NODE_LIST -N "checkHdeem | grep -o -E 'CPU1(\s+[0-9]+\.[0-9]+){2,4}' -m 1 | awk -F' ' '{print \$NF}'")
+	CPU0=$(pdsh -w $NODE_LIST -N "checkHdeem | grep -o -E 'CPU0(\s+[0-9]+\.[0-9]+){2,4}' -m 1 | awk -F' ' '{print \$NF}'")
+	CPU1=$(pdsh -w $NODE_LIST -N "checkHdeem | grep -o -E 'CPU1(\s+[0-9]+\.[0-9]+){2,4}' -m 1 | awk -F' ' '{print \$NF}'")
 fi
 
 ############################################## get the overall consumed energy #
@@ -100,14 +102,14 @@ for VAL in $NODES
 do
 	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
 done
-echo "Overall nodes energy consumption [J] =" $SUM
+echo "Overall energy consumption [J] =" $SUM
 
-#SUM=0.0
-#for VAL in $CPU0 $CPU1
-#do
-#	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
-#done
-#echo "Overall CPUs energy consumption [J] =" $SUM
+SUM=0.0
+for VAL in $CPU0 $CPU1
+do
+	SUM=$(echo $SUM $VAL | awk '{print $1 + $2}')
+done
+echo "Overall CPUs energy consumption [J] =" $SUM
 
 echo "Runtime [s] =" $TIME
 
