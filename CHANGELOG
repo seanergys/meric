@@ -2,7 +2,7 @@
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - implemented system topology detection
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
-  - RAPL energy consumption measurements show millijoules inseat of joules
+  - RAPL now provides the energy consumption in double data type
   - new MERIC_COUNTERS=msr - CPU core and uncore frequency, and RAPL activity monitoring, using libmsr
   - fixed restore of the system hardware settings in the energyMeasureStop
   - improved systemInfo tool

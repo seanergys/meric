@@ -84,11 +84,11 @@ DistributedMeric::DistributedMeric()
 			} else {
 				if (Meric::AGGREGATE)
 				{
-					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double>>(_storingProcs, !_MPInodeRank));
+					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double, double>>(_storingProcs, !_MPInodeRank));
 				}
 				else
 				{
-					_storeList.push_back(new CountersStore<HDEEM, double>(!_MPInodeRank));
+					_storeList.push_back(new CountersStore<HDEEM, double, double>(!_MPInodeRank));
 				}
 			}
 		}
@@ -98,10 +98,10 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int, double>>(_storingProcs, !_MPInodeRank));
 		}
 		else
-			_storeList.push_back(new CountersStore<RAPL, unsigned long long int>(!_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
 	}
 	
 	if (Meric::MODE == MODE_JETSON)
@@ -135,32 +135,32 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_worldCopy, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>>(_worldCopy, true));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int>>(_currentNode, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>>(_currentNode, true));
 			}
 		}
 		else if (Meric::COUNTERS == "papi")
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_worldCopy, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int, unsigned long long int>>(_worldCopy, true));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int>>(_currentNode, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PAPI, unsigned long long int, unsigned long long int>>(_currentNode, true));
 			}
 		}
 		else if (Meric::COUNTERS == "msr")
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t>>(_storingProcs, !_MPInodeRank));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t, uint64_t>>(_storingProcs, !_MPInodeRank));
 			}
 			else
-				_storeList.push_back(new CountersStore<MSR, uint64_t>(!_MPInodeRank));
+				_storeList.push_back(new CountersStore<MSR, uint64_t, uint64_t>(!_MPInodeRank));
 		}
 	}
 	

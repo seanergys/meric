@@ -12,6 +12,7 @@ class CountersAggregateStore: public AggregateStoreBase<TStore> {
 
 public:
 	typedef typename TStore::dataType StoreDataType;
+	typedef typename TStore::resultType StoreResultType;
 	typedef typename TStore::counterType StoreCounterType;
 	CountersAggregateStore(MPI_Comm &comm, bool write): AggregateStoreBase<TStore>(comm, write)
 	{
@@ -39,13 +40,13 @@ protected:
 		}
 		T avg = sum/(dataSize/stride);
 		ss << "AVG "<< description << "," << std::fixed << std::setprecision(5) << avg << std::endl
-		   << "MAX "<< description << "," << max << std::endl
-		   << "MIN "<< description << "," << min << std::endl;
+		   << "MAX "<< description << "," << std::fixed << std::setprecision(5) << max << std::endl
+		   << "MIN "<< description << "," << std::fixed << std::setprecision(5) << min << std::endl;
 		if (storeSum)
-			ss << "SUM "<< description << "," << sum << std::endl;
+			ss << "SUM "<< description << "," << std::fixed << std::setprecision(5) << sum << std::endl;
 	}
 	
-	std::vector <StoreDataType> _bufferCounters;
+	std::vector <StoreResultType> _bufferCounters;
 	std::vector <double> _bufferRatios;
 	MPI_Datatype consolidate;
 };

@@ -69,7 +69,7 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
 			unsigned long long value = RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
-			std::cout << iterator->first << " [mJ] =\t" << value << std::endl;
+			std::cout << iterator->first << " [J] =\t" << value << std::endl;
 			summary += value;
 		}
 		summary += RAPL_BASELINE*runtime;
@@ -101,7 +101,7 @@ void printHelp()
 	          << "\t-w = power capping time window [ms]\n"
 	          << "\nenergyMeasureStop parameters:\n"
 	          << "\t-b = node baseline (static) power [W]\n"
-	          << "\t-q = print the overall consumed energy only [mJ]\n"
+	          << "\t-q = print the overall consumed energy only [J]\n"
 	          << std::endl;
 	exit(1);
 }

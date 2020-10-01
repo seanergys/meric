@@ -14,7 +14,7 @@
 
 using namespace meric;
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addStart(int region, RegionParameters configuration)
+template <class TCounter, typename TType, typename RType> void CountersStore<TCounter, TType, RType>::addStart(int region, RegionParameters configuration)
 {
 	std::map<std::string, TType> record;
 	struct timespec time;
@@ -25,7 +25,7 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	_records.push_back(CountersRecord<TType>(region, record, time, configuration));
 }
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::addEnd(int region)
+template <class TCounter, typename TType, typename RType> void CountersStore<TCounter, TType, RType>::addEnd(int region)
 {
 	std::map<std::string, TType> record;
 	struct timespec time;
@@ -36,14 +36,14 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::a
 	_records.push_back(CountersRecord<TType>(region, record, time, _records.back().configuration));
 }
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::fillRegionStats(std::vector<TType> &stats, std::map <std::string, double> &ratios, double *time, size_t iStarts, size_t iEnd)
+template <class TCounter, typename TType, typename RType> void CountersStore<TCounter, TType, RType>::fillRegionStats(std::vector<RType> &stats, std::map <std::string, double> &ratios, size_t iStarts, size_t iEnd)
 {
-	unsigned long long int summary = 0;
-	TType value;
-	*time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
+	RType summary = 0;
+	RType value;
+	double time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
 	{
-		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, *time, counterIt.first);
+		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, counterIt.first);
 		stats.push_back(value);
 		summary += value;
 	}
@@ -53,10 +53,10 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::f
 		stats[distance(_records[iEnd].record.begin(),_records[iEnd].record.find(TCounter::getSummaryCounterName()))] = summary;
 	}
 
-	TCounter::getRatios(_records[iStarts].record, _records[iEnd].record, *time, ratios);
+	TCounter::getRatios(_records[iStarts].record, _records[iEnd].record, time, ratios);
 }
 
-template <class TCounter, typename TType> void CountersStore<TCounter, TType>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
+template <class TCounter, typename TType, typename RType> void CountersStore<TCounter, TType, RType>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	ss << "# CALLTREE;init_" << _initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++) {
@@ -71,8 +71,8 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 //	   << "Runtime of function [s]," << runtime << std::endl;
 
 
-	TType summary = 0;
-	TType value;
+	RType summary = 0;
+	RType value;
 	ss << "# COUNTERS - "<< TCounter::getSourceLabel() <<":\n"
 	   << "Runtime of function [s]," << runtime << std::endl;
 	for(auto const &counterIt : _records[iEnd].record)
@@ -81,12 +81,12 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 			continue;
 		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
 		summary += value;
-		ss << TCounter::getCounterLabel(counterIt.first) << "," << value << std::endl;
+		ss << TCounter::getCounterLabel(counterIt.first) << "," << std::fixed << std::setprecision(5) << value << std::endl;
 	}
 
 	if (TCounter::getSummaryCounterName() != "") //RAPL only
 	{
-		ss << TCounter::getSummaryCounterName() << "," << summary << std::endl;
+		ss << TCounter::getSummaryCounterName() << "," << std::fixed << std::setprecision(5) << summary << std::endl;
 	}
 
 // Counters ratios
@@ -100,9 +100,9 @@ template <class TCounter, typename TType> void CountersStore<TCounter, TType>::s
 	}
 }
 
-template class CountersStore <PERFEVENT, unsigned long long int>;
-template class CountersStore <PAPI, unsigned long long int>;
-template class CountersStore <MSR, uint64_t>;
-template class CountersStore <RAPL, unsigned long long int>;
-template class CountersStore <HDEEM, double>;
+template class CountersStore <PERFEVENT, unsigned long long int, unsigned long long int>;
+template class CountersStore <PAPI, unsigned long long int, unsigned long long int>;
+template class CountersStore <MSR, uint64_t, uint64_t>;
+template class CountersStore <RAPL, unsigned long long int, double>;
+template class CountersStore <HDEEM, double, double>;
 

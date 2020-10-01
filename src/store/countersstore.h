@@ -22,16 +22,17 @@ struct CountersRecord {
 template <class TStore>
 class CountersAggregateStore;
 
-template <class TCounter, typename TType> class CountersStore: public Store {
+template <class TCounter, typename TType, typename RType> class CountersStore: public Store {
 
 	friend class CountersAggregateStore<CountersStore>;
 public:
 	typedef TType dataType;
+	typedef RType resultType;
 	typedef TCounter counterType;
 	void addStart(int region, RegionParameters configuration);
 	void addEnd(int region);
 	double getRegionDuration() {return 0.0;};
-	void fillRegionStats(std::vector<TType> &stats, std::map <std::string, double> &ratios, double *time, size_t iStarts, size_t iEnd);
+	void fillRegionStats(std::vector<RType> &stats, std::map <std::string, double> &ratios, size_t iStarts, size_t iEnd);
 
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
