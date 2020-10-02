@@ -106,10 +106,6 @@ const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "Intel_RAPL_POWER_UNIT_TIMEWINDO
 static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
 	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
 	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 }
@@ -134,10 +130,6 @@ const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW"
 static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
 	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
 	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 
@@ -145,10 +137,6 @@ static std::map<const std::string, std::string> counterLabel = {
 static std::map<const std::string, uint64_t> counterDefines = {
 	{ RAPL_PCKG_ENERGY,      MSR_PKG_ENERGY_STATUS  },
 	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },
-	{ RAPL_PCKG_ENERGY+"_0", MSR_PKG_ENERGY_STATUS  },
-	{ RAPL_PCKG_ENERGY+"_1", MSR_PKG_ENERGY_STATUS  },
-	{ RAPL_RAM_ENERGY+"_0",  MSR_DRAM_ENERGY_STATUS },
-	{ RAPL_RAM_ENERGY+"_1",  MSR_DRAM_ENERGY_STATUS },
 	{ RAPL_SUM_ENERGY,       0x0                    }
 };
 #endif
@@ -172,10 +160,6 @@ const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_W
 static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
 	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_PCKG_ENERGY+"_0", "RAPL_PCKG_0 [J]"        },
-	{ RAPL_PCKG_ENERGY+"_1", "RAPL_PCKG_1 [J]"        },
-	{ RAPL_RAM_ENERGY+"_0",  "RAPL_RAM_0 [J]"         },
-	{ RAPL_RAM_ENERGY+"_1",  "RAPL_RAM_1 [J]"         },
 	{ RAPL_SUM_ENERGY,       "Energy consumption [J]" }
 };
 }

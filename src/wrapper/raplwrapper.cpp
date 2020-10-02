@@ -23,7 +23,7 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 	
 	std::string counterName;
 	if (detailedMode)
-		counterName = counter.substr(0,counter.length() - suffix.length() - 1);
+		counterName = counter.substr(0, counter.find_last_of('_'));
 	else
 		counterName = counter;
 	
@@ -125,10 +125,9 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
-//TODO this version doesn't expect more than 10 sockets per node
-				if ((iterator->first.back()-'0') != die)
+				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
 					continue;
-				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);
+				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
 				if (itemId < 0) //== -ENXIO
 				{
@@ -141,7 +140,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -184,15 +183,15 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			uint64_t dieEnergy = 0;
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
-				if ((iterator->first.back()-'0') != die)
+				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
 					continue;
-				std::string itemName = iterator->first.substr(0,iterator->first.length() - suffix.length() - 1);
+				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
 				#ifdef HAVE_MSR_CORE_H
 					read_msr_by_idx(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &dieEnergy);
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
 				#endif
-				record [itemName+suffix+std::to_string(die)] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
 			}
 		}
 	}else
@@ -271,17 +270,24 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 // in detailed mode RAPL gives us values for each cpu 
 // this is a reason for adding a suffix with number of a socket for each counter
 
-//	suffix = "_";	//set suffix you want
-
 // DO NOT EDIT THE REST OF THIS FUNCTION
-
 	if (detailedMode)
 	{
+		const int suffixLength = log10(Environment::SOCKETS_PER_NODE)+1;
 		for(int die = 0; die != Environment::SOCKETS_PER_NODE; die++)
 		{
 			for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
 			{
-				dict[*it + suffix + std::to_string(die)] = 0;
+				std::ostringstream os;
+				os << std::setfill('0') << std::setw(suffixLength) << die;
+				const std::string counterName = *it + suffix + os.str();
+				dict[counterName] = 0;
+				
+				counterLabel[counterName] = counterLabel[*it].substr(0,counterLabel[*it].find(' '))+suffix + os.str() + counterLabel[*it].substr(counterLabel[*it].find(' '));
+
+#ifdef SRC_WRAPPER_MSRS_H_
+				counterDefines[counterName] = counterDefines[*it];
+#endif
 			}
 		}
 	}else
@@ -289,9 +295,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 		for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
 		{
 			dict[*it] = 0;
-			dict[*it] = 0;
 		}
-		
 	}
 }
 

@@ -5,7 +5,10 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <math.h>
+#include <locale>
 
 #ifdef HAVE_X86_ADAPT_H
 	#include <x86_adapt.h>
