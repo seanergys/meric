@@ -96,6 +96,205 @@
  	DisplayModel = (Extended_Model_ID << 4) + Model_ID;
  ELSE 
  	DisplayModel = Model_ID;
+ *
+ * IA32_THERM_STATUS register *************************************************
+ * The processor supports a digital thermal sensor if CPUID.06H.EAX[0] = 1. If 
+ * the processor supports digital thermal sensor, EBX[bits 3:0] determine the 
+ * number of thermal thresholds that are available for use.
+ *
+ * Software sets thermal thresholds by using the IA32_THERM_INTERRUPT MSR. 
+ * Software reads output of the digital thermal sensor using the 
+ * IA32_THERM_STATUS MSR.
+ *
+ * Unlike traditional analog thermal devices, the output of the digital thermal 
+ * sensor is a temperature relative to the maximum supported operating 
+ * temperature of the processor. Temperature measurements returned by digital 
+ * thermal sensors are always at or below Thermal Control Circuitry (TCC) 
+ * activation temperature. Critical temperature conditions are detected using 
+ * the "Critical Temperature Status" bit. When this bit is set, the processor is 
+ * operating at a critical temperature and immediate shutdown of the system 
+ * should occur. Once the "Critical Temperature Status" bit is set, reliable 
+ * operation is not guaranteed.
+ * 0x19C 0x00000000F87F0FFF
+ * Thermal Status (bit 0):
+ 	This bit indicates whether the digital thermal sensor high-temperature 
+ 	output signal (PROCHOT#) is currently active. Bit 0 = 1 indicates the 
+ 	feature is active. This bit may not be written by software; it reflects the 
+ 	state of the digital thermal sensor.
+ * Thermal Status Log (bit 1):
+ 	This is a sticky bit that indicates the history of the thermal sensor high 
+ 	temperature output signal (PROCHOT#). Bit 1 = 1 if PROCHOT# has been 
+ 	asserted since a previous RESET or the last time software cleared the bit. 
+ 	Software may clear this bit by writing a zero.
+ * PROCHOT# or FORCEPR# Event (bit 2):
+ 	Indicates whether PROCHOT# or FORCEPR# is being asserted by another agent on 
+ 	the platform.
+ * PROCHOT# or FORCEPR# Log (bit 3):
+ 	Sticky bit that indicates whether PROCHOT# or FORCEPR# has been asserted by 
+ 	another agent on the platform since the last clearing of this bit or a 
+ 	reset. If bit 3 = 1, PROCHOT# or FORCEPR# has been externally asserted. 
+ 	Software may clear this bit by writing a zero. External PROCHOT# assertions 
+ 	are only acknowledged if the Bidirectional Prochot feature is enabled.
+ * Critical Temperature Status (bit 4):
+ 	Indicates whether the critical temperature detector output signal is 
+ 	currently active. If bit 4 = 1, the critical temperature detector output 
+ 	signal is currently active.
+ * Critical Temperature Log (bit 5):
+ 	Sticky bit that indicates whether the critical temperature detector output 
+ 	signal has been asserted since the last clearing of this bit or reset. If 
+ 	bit 5 = 1, the output signal has been asserted. Software may clear this bit 
+ 	by writing a zero.
+ * Thermal Threshold #1 Status (bit 6):
+ 	Indicates whether the actual temperature is currently higher than or equal 
+ 	to the value set in Thermal Threshold #1. If bit 6 = 0, the actual 
+ 	temperature is lower. If bit 6 = 1, the actual temperature is greater than 
+ 	or equal to TT#1. Quantitative information of actual temperature can be 
+ 	inferred from Digital Readout, bits 22:16.
+ * Thermal Threshold #1 Log (bit 7):
+ 	Sticky bit that indicates whether the Thermal Threshold #1 has been reached 
+ 	since the last clearing of this bit or a reset. If bit 7 = 1, the Threshold 
+ 	#1 has been reached. Software may clear this bit by writing a zero.
+ * Thermal Threshold #2 Status (bit 8):
+ 	Indicates whether actual temperature is currently higher than or equal to 
+ 	the value set in Thermal Threshold #2. If bit 8 = 0, the actual temperature 
+ 	is lower. If bit 8 = 1, the actual temperature is greater than or equal to 
+ 	TT#2. Quantitative information of actual temperature can be inferred from 
+ 	Digital Readout, bits 22:16.
+ * Thermal Threshold #2 Log (bit 9):
+ 	Sticky bit that indicates whether the Thermal Threshold #2 has been reached 
+ 	since the last clearing of this bit or a reset. If bit 9 = 1, the Thermal 
+ 	Threshold #2 has been reached. Software may clear this bit by writing a 
+ 	zero.
+ * Power Limit Notification Status (bit 10):
+ 	Indicates whether the processor is currently operating below OS-requested 
+ 	P-state (specified in IA32_PERF_CTL) or OS-requested clock modulation duty 
+ 	cycle (specified in IA32_CLOCK_MODULATION). This field is supported only 
+ 	if CPUID.06H:EAX[bit 4] = 1. Package level power limit notification can be 
+ 	delivered independently to IA32_PACKAGE_THERM_STATUS MSR.
+ * Power Limit Notification Log (bit 11):
+ 	Sticky bit that indicates the processor went below OS-requested P-state or 
+ 	OS-requested clock modulation duty cycle since the last clearing of this or 
+ 	RESET. This field is supported only if CPUID.06H:EAX[bit 4] = 1. Package 
+ 	level power limit notification is indicated independently in 
+ 	IA32_PACKAGE_THERM_STATUS MSR.
+ * Current Limit Status (bit 12):
+ 	If set (1), indicates an electrical current limit (e.g. Electrical Design 
+ 	Point/IccMax) is being exceeded and is adversely impacting energy efficiency 
+ 	optimizations.
+ * Current Limit Log (bit 13):
+ 	If set (1), an electrical current limit has been exceeded that has adversely 
+ 	impacted energy efficiency optimizations since the last clearing of this bit 
+ 	or a reset. This bit is sticky, software may clear this bit by writing a 
+ 	zero (0).
+ * Cross-domain Limit Status (bit 14):
+ 	If set (1), indicates another hardware domain (e.g. processor graphics) is 
+ 	currently limiting energy efficiency optimizations in the processor core 
+ 	domain.
+ * Cross-domain Limit Log (bit 15):
+ 	If set (1), indicates another hardware domain (e.g. processor graphics) has 
+ 	limited energy efficiency optimizations in the processor core domain since 
+ 	the last clearing of this bit or a reset. This bit is sticky, software may 
+ 	clear this bit by writing a zero (0).
+ * Digital Readout (bits 22:16):
+ 	Digital temperature reading in 1 degree Celsius relative to the TCC 
+ 	activation temperature.
+	- 0: TCC Activation temperature,
+	- 1: (TCC Activation - 1) , etc. See the processor's data sheet for details 
+	regarding TCC activation.
+	A lower reading in the Digital Readout field (bits 22:16) indicates a higher 
+	actual temperature.
+ * Reserved (bits 26:23)
+ * Resolution in Deg. Celsius (bits 30:27):
+ 	Specifies the resolution (or tolerance) of the digital thermal sensor. The 
+ 	value is in degrees Celsius. It is recommended that new threshold values be 
+ 	offset from the current temperature by at least the resolution + 1 in order 
+ 	to avoid hysteresis of interrupt generation.
+ * Reading Valid (bit 31)
+ * Reserved (bits 63:32):
+ 	Indicates if the digital readout in bits 22:16 is valid. 
+ 	The readout is valid if bit 31 = 1.
+ *
+ * IA32_PACKAGE_THERM_STATUS register *****************************************
+ * The thermal management facilities like IA32_THERM_INTERRUPT and 
+ * IA32_THERM_STATUS are often implemented with a processor core granularity. To 
+ * facilitate software manage thermal events from a package level granularity, 
+ * two architectural MSR is provided for package level thermal management. The 
+ * IA32_PACKAGE_THERM_STATUS and IA32_PACKAGE_THERM_INTERRUPT MSRs use similar 
+ * interfaces as IA32_THERM_STATUS and IA32_THERM_INTERRUPT, but are shared in 
+ * each physical processor package.
+ * Software can enumerate the presence of the processor's support for package 
+ * level thermal management facility (IA32_PACKAGE_THERM_STATUS and 
+ * IA32_PACKAGE_THERM_INTERRUPT) by verifying CPUID.06H:EAX[bit 6] = 1.
+ * 0x1B1 0x00000000007F0FFF
+ * PKG Thermal Status (bit 0):
+ 	This bit indicates whether the digital thermal sensor high-temperature 
+ 	output signal (PROCHOT#) for the package is currently active. Bit 0 = 1 
+ 	indicates the feature is active. This bit may not be written by software; it 
+ 	reflects the state of the digital thermal sensor.
+ * PKG Thermal Status Log (bit 1):
+ 	This is a sticky bit that indicates the history of the thermal sensor high 
+ 	temperature output signal (PROCHOT#) of the package. Bit 1 = 1 if package 
+ 	PROCHOT# has been asserted since a previous RESET or the last time software 
+ 	cleared the bit. Software may clear this bit by writing a zero.
+ * PKG PROCHOT# or FORCEPR# Event (bit 2):
+ 	Indicates whether package PROCHOT# is being asserted by another agent on the 
+ 	platform.
+ * PKG PROCHOT# or FORCEPR# Log (bit 3):
+ 	Sticky bit that indicates whether package PROCHOT# has been asserted by 
+ 	another agent on the platform since the last clearing of this bit or a 
+ 	reset. If bit 3 = 1, package PROCHOT# has been externally asserted. Software 
+ 	may clear this bit by writing a zero.
+ * PKG Critical Temperature Status (bit 4):
+ 	Indicates whether the package critical temperature detector output signal is 
+ 	currently active. If bit 4 = 1, the package critical temperature detector 
+ 	output signal is currently active.
+ * PKG Critical Temperature Log (bit 5):
+ 	Sticky bit that indicates whether the package critical temperature detector 
+ 	output signal has been asserted since the last clearing of this bit or 
+ 	reset. If bit 5 = 1, the output signal has been asserted. Software may clear 
+ 	this bit by writing a zero.
+ * PKG Thermal Threshold #1 Status (bit 6):
+ 	Indicates whether the actual package temperature is currently higher than or 
+ 	equal to the value set in Package Thermal Threshold #1. If bit 6 = 0, the 
+ 	actual temperature is lower. If bit 6 = 1, the actual temperature is greater 
+ 	than or equal to PTT#1. Quantitative information of actual package 
+ 	temperature can be inferred from Package Digital Readout, bits 22:16.
+ * PKG Thermal Threshold #1 Log (bit 7):
+ 	Sticky bit that indicates whether the Package Thermal Threshold #1 has been 
+ 	reached since the last clearing of this bit or a reset. If bit 7 = 1, the 
+ 	Package Threshold #1 has been reached. Software may clear this bit by 
+ 	writing a zero.
+ * PKG Thermal Threshold #2 Status (bit 8):
+ 	Indicates whether actual package temperature is currently higher than or 
+ 	equal to the value set in Package Thermal Threshold #2. If bit 8 = 0, the 
+ 	actual temperature is lower. If bit 8 = 1, the actual temperature is greater 
+ 	than or equal to PTT#2. Quantitative information of actual temperature can 
+ 	be inferred from Package Digital Readout, bits 22:16.
+ * PKG Thermal Threshold #2 Log (bit 9):
+ 	Sticky bit that indicates whether the Package Thermal Threshold #2 has been 
+ 	reached since the last clearing of this bit or a reset. If bit 9 = 1, the 
+ 	Package Thermal Threshold #2 has been reached. Software may clear this bit 
+ 	by writing a zero.
+ * PKG Power Limit Notification Status (bit 10):
+ 	Indicates package power limit is forcing one ore more processors to operate 
+ 	below OS-requested P-state. Note that package power limit violation may be 
+ 	caused by processor cores or by devices residing in the uncore. Software can 
+ 	examine IA32_THERM_STATUS to determine if the cause originates from a 
+ 	processor core.
+ * PKG Power Limit Notification Log (bit 11):
+ 	Sticky bit that indicates any processor in the package went below 
+ 	OS-requested P-state or OS-requested clock modulation duty cycle since the 
+ 	last clearing of this or RESET.
+ * Reserved (bits 15:12)
+ * PKG Digital Readout (bits 22:16):
+ 	Package digital temperature reading in 1 degree Celsius relative to the 
+ 	package TCC activation temperature. 
+ 	- 0: Package TCC Activation temperature,
+ 	- 1: (PTCC Activation - 1) , etc. See the processor's data sheet for details 
+ 	regarding PTCC activation.
+ 	A lower reading in the Package Digital Readout field (bits 22:16) indicates 
+ 	a higher actual temperature.
+ * Reserved (bits 63:23)
  ******************************************************************************
  **/
 
@@ -106,6 +305,15 @@
 #ifndef MSR_PLATFORM_INFO
 	#define MSR_PLATFORM_INFO   	0xCE
 #endif
+
+#ifndef IA32_THERM_STATUS
+	#define IA32_THERM_STATUS		0x19C
+#endif
+
+#ifndef IA32_PACKAGE_THERM_STATUS
+	#define IA32_PACKAGE_THERM_STATUS 0x1B1
+#endif
+
 const uint64_t MSR_PLATFORM_INFO_nominal_freq_mask  = 0xFF00;
 const uint64_t MSR_PLATFORM_INFO_nominal_freq_shift = 8;
 const uint64_t MSR_PLATFORM_INFO_prog_turbo_freq_mask  = 0x10000000;
@@ -123,6 +331,12 @@ const uint64_t CPUID_EAX_01_extended_model_id_shift = 16;
 const uint64_t CPUID_EAX_01_extended_family_id_mask = 0xFF00000;
 const uint64_t CPUID_EAX_01_extended_family_id_shift = 20;
 const uint64_t CPUID_EAX_01_display_model_shift = 4;
+
+const uint64_t IA32_THERM_STATUS_readout_mask = 0x7F0000;
+const uint64_t IA32_THERM_STATUS_readout_shift = 16;
+
+const uint64_t IA32_PACKAGE_THERM_STATUS_readout_mask = 0x7F0000;
+const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
 
 // CORE FREQUENCY //////////////////////////////////////////////////////////////
 /**
@@ -843,14 +1057,14 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
 	{ MSR_PKG_ENERGY_STATUS,       0x00000000FFFFFFFF },
 	{ MSR_DRAM_ENERGY_STATUS,      0x00000000FFFFFFFF },
-//	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF }
-//	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF }
-	// not yet supportd by MERIC
+//	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF },
+//	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF },
 	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF },
 	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF },
 	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
 	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
-	{ IA32_PM_ENABLE,              0x0000000000000001 }
+	{ IA32_THERM_STATUS,           0x00000000F87F0FFF },
+	{ IA32_PACKAGE_THERM_STATUS,   0x00000000007F0FFF }
 };
 
 #endif /* SRC_WRAPPER_MSRS_H_ */

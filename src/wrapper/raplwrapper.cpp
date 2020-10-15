@@ -228,6 +228,8 @@ std::string RAPL::getSourceLabel()
  **/
 std::string RAPL::getCounterLabel(std::string counter)
 {
+	if (counter == getSummaryCounterName())
+		return "";
 	std::map<std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
 		return it->second;
@@ -285,7 +287,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 				
 				counterLabel[counterName] = counterLabel[*it].substr(0,counterLabel[*it].find(' '))+suffix + os.str() + counterLabel[*it].substr(counterLabel[*it].find(' '));
 
-#ifdef SRC_WRAPPER_MSRS_H_
+#ifdef HAVE_MSR_CORE_H
 				counterDefines[counterName] = counterDefines[*it];
 #endif
 			}

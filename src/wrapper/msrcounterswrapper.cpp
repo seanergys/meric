@@ -37,24 +37,32 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 	uint64_t reg, val;
 	for (int i=0; i < Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET; i++)
 	{
-		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::APERF];
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::APERF];
 		read_msr_by_idx(i, reg, &val);
 		record[MSR_COUNTERS::APERF + "_" + std::to_string(i)] = val;
 
-		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::MPERF];
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::MPERF];
 		read_msr_by_idx(i, reg, &val);
 		record[MSR_COUNTERS::MPERF + "_" + std::to_string(i)] = val;
+		
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::CORE_THERM_STATUS];
+		read_msr_by_idx(i, reg, &val);
+		record[MSR_COUNTERS::CORE_THERM_STATUS + "_" + std::to_string(i)] = val;
 	}
 	
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::UCF_FREQ];
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::UCF_FREQ];
 		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
 		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
 		
-		reg = MSR_COUNTERS::counterLabel[MSR_COUNTERS::RAPL_PKG_ACTIVE];
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::RAPL_PKG_ACTIVE];
 		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
-		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = val;
+		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = (val & IA32_THERM_STATUS_readout_mask) >> IA32_THERM_STATUS_readout_shift;
+		
+		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::PACKAGE_THERM_STATUS];
+		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
+		record[MSR_COUNTERS::PACKAGE_THERM_STATUS + "_" + std::to_string(i)] = (val & IA32_PACKAGE_THERM_STATUS_readout_mask) >> IA32_PACKAGE_THERM_STATUS_readout_shift;
 	}
 }
 
@@ -63,6 +71,7 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 
 void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios)
 {
+	//frequencies
 	int i = 0;
 	std::string suffix = "_0";
 	while(stop.count(MSR_COUNTERS::APERF + suffix) && stop.count(MSR_COUNTERS::MPERF + suffix))
@@ -82,7 +91,8 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 			runtime);
 		suffix = "_" + std::to_string(++i);
 	}
-	//RAPL_PKG_ACTIVE
+	
+	//RAPL throttling activity
 	i = 0;
 	suffix = "_0";
 	while(stop.count(MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix))
@@ -90,6 +100,25 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 		ratios["RAPL_PKG_ACTIVE_RATIO"+suffix] = CountersRates::RAPL_ACTIVE_RATIO(
 			getResultValue(start[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], stop[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], runtime, "")* RAPL::getUnit(MSR_COUNTERS::RAPL_PKG_ACTIVE),
 			runtime);
+		suffix = "_" + std::to_string(++i);
+	}
+	
+	//temperature
+	i = 0;
+	suffix = "_0";
+	while(stop.count(MSR_COUNTERS::CORE_THERM_STATUS + suffix))
+	{
+		ratios["START_CORE_TEMP"+suffix+" [\370C]"] = TCC - start[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
+		ratios["STOP_CORE_TEMP"+suffix+" [\370C]"] = TCC - stop[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
+		suffix = "_" + std::to_string(++i);
+	}
+
+	i = 0;
+	suffix = "_0";
+	while(stop.count(MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix))
+	{
+		ratios["START_PKG_TEMP"+suffix+" [\370C]"] = TCC - start[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
+		ratios["STOP_PKG_TEMP"+suffix+" [\370C]"] = TCC - stop[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
 		suffix = "_" + std::to_string(++i);
 	}
 }
@@ -101,7 +130,8 @@ std::string MSR::getSourceLabel()
 
 std::string MSR::getCounterLabel(std::string counter)
 {
-	return counter;
+	//return MSR_COUNTERS::counterLabel[counter]; // currently there is no counter with a label
+	return "";
 }
 
 std::string MSR::getSummaryCounterName()
@@ -129,12 +159,15 @@ void MSR::initMap(std::map<std::string, uint64_t> & dict)
 		std::string suffix = "_" + std::to_string(i);
 		dict[MSR_COUNTERS::APERF + suffix] = 0;
 		dict[MSR_COUNTERS::MPERF + suffix] = 0;
+		dict[MSR_COUNTERS::CORE_THERM_STATUS+suffix] = 0;
 	}
 	
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		dict[MSR_COUNTERS::UCF_FREQ+ "_" + std::to_string(i)] = 0;
-		dict[MSR_COUNTERS::RAPL_PKG_ACTIVE+ "_" + std::to_string(i)] = 0;
+		std::string suffix = "_" + std::to_string(i);
+		dict[MSR_COUNTERS::UCF_FREQ + suffix] = 0;
+		dict[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix] = 0;
+		dict[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix] = 0;
 	}
 }
 

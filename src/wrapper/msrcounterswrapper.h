@@ -40,6 +40,7 @@ private:
 	static std::map<std::string, uint64_t> counters;
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
+	static const int TCC = 100; //Thermal Control Circuitry
 };
 
 #else
@@ -59,6 +60,7 @@ private:
 	static void initMap(std::map<std::string, uint64_t> & dict);
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
+	static const int TCC = 100;
 };
 
 

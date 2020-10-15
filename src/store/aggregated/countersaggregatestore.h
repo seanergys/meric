@@ -27,23 +27,26 @@ protected:
 	
 	template <typename T> void printStats (const std::string description, const T * data, const int dataSize, const int stride, bool storeSum, std::ofstream &ss)
 	{
-		T max = data[0];
-		T min = data[0];
-		T sum = data[0];
-		for(int i=stride; i<dataSize; i+=stride)
+		if (description != "")
 		{
-			if (max < data[i])
-				max = data[i];
-			else if (min > data[i])
-				min = data[i];
-			sum += data[i];
+			T max = data[0];
+			T min = data[0];
+			T sum = data[0];
+			for(int i=stride; i<dataSize; i+=stride)
+			{
+				if (max < data[i])
+					max = data[i];
+				else if (min > data[i])
+					min = data[i];
+				sum += data[i];
+			}
+			T avg = sum/(dataSize/stride);
+			ss << "AVG "<< description << "," << std::fixed << std::setprecision(5) << avg << std::endl
+			   << "MAX "<< description << "," << std::fixed << std::setprecision(5) << max << std::endl
+			   << "MIN "<< description << "," << std::fixed << std::setprecision(5) << min << std::endl;
+			if (storeSum)
+				ss << "SUM "<< description << "," << std::fixed << std::setprecision(5) << sum << std::endl;
 		}
-		T avg = sum/(dataSize/stride);
-		ss << "AVG "<< description << "," << std::fixed << std::setprecision(5) << avg << std::endl
-		   << "MAX "<< description << "," << std::fixed << std::setprecision(5) << max << std::endl
-		   << "MIN "<< description << "," << std::fixed << std::setprecision(5) << min << std::endl;
-		if (storeSum)
-			ss << "SUM "<< description << "," << std::fixed << std::setprecision(5) << sum << std::endl;
 	}
 	
 	std::vector <StoreResultType> _bufferCounters;

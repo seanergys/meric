@@ -65,13 +65,17 @@ const std::string APERF = "APERF";
 const std::string MPERF = "MPERF";
 const std::string UCF_FREQ = "UCF_FREQ_CNT";
 const std::string RAPL_PKG_ACTIVE = "RAPL_PKG_ACTIVE_RATIO";
+const std::string CORE_THERM_STATUS = "CORE_THERM_STATUS";
+const std::string PACKAGE_THERM_STATUS = "PACKAGE_THERM_STATUS";
 
-#if defined HAVE_MSR_CORE_H && defined SRC_WRAPPER_MSRCOUNTERSWRAPPER_H_
-static std::map<const std::string, uint64_t> counterLabel = {
-	{ APERF,           IA32_APERF           },
-	{ MPERF,           IA32_MPERF           },
-	{ UCF_FREQ,        U_MSR_PMON_FIXED_CTR },
-	{ RAPL_PKG_ACTIVE, MSR_PKG_PERF_STATUS  }
+#if defined SRC_WRAPPER_MSRS_H_
+static std::map<const std::string, uint64_t> counterDefines = {
+	{ APERF,                IA32_APERF                },
+	{ MPERF,                IA32_MPERF                },
+	{ UCF_FREQ,             U_MSR_PMON_FIXED_CTR      },
+	{ RAPL_PKG_ACTIVE,      MSR_PKG_PERF_STATUS       },
+	{ CORE_THERM_STATUS,    IA32_THERM_STATUS         },
+	{ PACKAGE_THERM_STATUS, IA32_PACKAGE_THERM_STATUS }
 };
 #endif
 }

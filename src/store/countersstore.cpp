@@ -77,11 +77,13 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	   << "Runtime of function [s]," << runtime << std::endl;
 	for(auto const &counterIt : _records[iEnd].record)
 	{
-		if (TCounter::getSummaryCounterName() == counterIt.first)
-			continue;
-		value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
-		summary += value;
-		ss << TCounter::getCounterLabel(counterIt.first) << "," << std::fixed << std::setprecision(5) << value << std::endl;
+		std::string label = TCounter::getCounterLabel(counterIt.first);
+		if (label != "")
+		{
+			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
+			summary += value;
+			ss << label << "," << std::fixed << std::setprecision(5) << value << std::endl;
+		}
 	}
 
 	if (TCounter::getSummaryCounterName() != "") //RAPL only
