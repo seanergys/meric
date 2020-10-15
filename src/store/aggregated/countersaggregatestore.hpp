@@ -39,7 +39,7 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 		ss << "# RATIOS:\n";
 		int j=0;
 		for(auto const &r : ratios)
-			printStats(StoreCounterType::getCounterLabel(r.first), & _bufferRatios[j++],this->_size*ratiosList.size(),ratiosList.size(), false, ss);	
+			printStats(r.first, & _bufferRatios[j++],this->_size*ratiosList.size(),ratiosList.size(), false, ss);	
 	}
 }
 

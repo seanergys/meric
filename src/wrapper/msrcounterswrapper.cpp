@@ -47,7 +47,7 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 		
 		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::CORE_THERM_STATUS];
 		read_msr_by_idx(i, reg, &val);
-		record[MSR_COUNTERS::CORE_THERM_STATUS + "_" + std::to_string(i)] = val;
+		record[MSR_COUNTERS::CORE_THERM_STATUS + "_" + std::to_string(i)] = (val & IA32_THERM_STATUS_readout_mask) >> IA32_THERM_STATUS_readout_shift;
 	}
 	
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
@@ -58,7 +58,7 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 		
 		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::RAPL_PKG_ACTIVE];
 		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
-		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = (val & IA32_THERM_STATUS_readout_mask) >> IA32_THERM_STATUS_readout_shift;
+		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = val;
 		
 		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::PACKAGE_THERM_STATUS];
 		read_msr_by_idx(Environment::mapCoresToSocket[i][0], reg, &val);
@@ -108,8 +108,8 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 	suffix = "_0";
 	while(stop.count(MSR_COUNTERS::CORE_THERM_STATUS + suffix))
 	{
-		ratios["START_CORE_TEMP"+suffix+" [\370C]"] = TCC - start[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
-		ratios["STOP_CORE_TEMP"+suffix+" [\370C]"] = TCC - stop[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
+		ratios["START_TEMP_CORE"+suffix+" [degrees C]"] = TCC - start[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
+		ratios["STOP_TEMP_CORE"+suffix+" [degrees C]"] = TCC - stop[MSR_COUNTERS::CORE_THERM_STATUS + suffix];
 		suffix = "_" + std::to_string(++i);
 	}
 
@@ -117,8 +117,8 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 	suffix = "_0";
 	while(stop.count(MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix))
 	{
-		ratios["START_PKG_TEMP"+suffix+" [\370C]"] = TCC - start[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
-		ratios["STOP_PKG_TEMP"+suffix+" [\370C]"] = TCC - stop[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
+		ratios["START_TEMP_PKG"+suffix+" [degrees C]"] = TCC - start[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
+		ratios["STOP_TEMP_PKG"+suffix+" [degrees C]"] = TCC - stop[MSR_COUNTERS::PACKAGE_THERM_STATUS + suffix];
 		suffix = "_" + std::to_string(++i);
 	}
 }
