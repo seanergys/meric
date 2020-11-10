@@ -30,7 +30,7 @@ void printHelp()
 	          << "The functions are grouped according their module\n"
 	          << "Instrumentable functions are marked with \"+\" sign, otherwise with \"-\"\n"
 	          << "\n"
-	          << "./dins_profile [nmt] binary\n"
+	          << "./dins_profile [nmtl] binary\n"
 	          << "-d\t print demangled function name [default] \n"
 	          << "-m\t print mangled function name\n"
 	          << "-t\t print typed function names\n"
