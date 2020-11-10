@@ -207,6 +207,10 @@ def build(ctx):
             ctx.path.ant_glob('src/tools/wrapper/wrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/hdeemwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/thunderwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="wrapper",
         use="msr x86_adapt numa geopm",
