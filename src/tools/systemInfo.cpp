@@ -163,7 +163,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	}
 	if (freq == 0)
 	{
-		std::cout << "\tTurbo CPU core frequencies: disabled\n";
+		std::cout << "\tTurbo CPU core frequencies:  disabled\n";
 	}
 	else if (freq == 1)
 	{
@@ -247,16 +247,17 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		if (freq != limits.minCoreFreq)
 			ok = false;
 	}
-	
-	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
-	if (frequencyBounderyFile.is_open())
-	{
-		std::string freqBound = "";
-		getline(frequencyBounderyFile, freqBound);
-		frequencyBounderyFile.close();
-		std::cout << "\tAvailable CPU core frequencies:  " << freqBound << " kHz\n";
-	}
 
+	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", F_OK ) != -1 )
+	{
+		std::vector<long> availCF;
+		meric::Environment::getAvailableCF(availCF);
+		std::cout << "\tAvailable CPU core frequencies:  ";
+		for(long CF : availCF)
+			std::cout << CF/1000 << " " ;
+		std::cout << "kHz\n";
+	}
+	
 // IA32_ENERGY_PERF_BIAS
 #ifdef HAVE_MSR_CORE_H
 	if (ok)

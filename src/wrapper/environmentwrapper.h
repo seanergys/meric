@@ -135,6 +135,10 @@ public:
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	
+	static void getAvailableCF(std::vector<long> & values);
+	static void getAvailableUCF(std::vector<long> & values);
+//	static void getAvailablePwrCap(std::vector<long> & power, std::vector<long> & time);
+	
 #ifdef __x86_64
 	static bool isHWPactive(std::string &status);
 #endif

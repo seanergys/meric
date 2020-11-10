@@ -168,6 +168,40 @@ long Environment::getNominalFrequency()
 #endif
 
 /**
+ * reads from the system list of available specific CPU core frequencies if specified
+ * otherwise the list produced using 100 MHz step 
+ **/
+void Environment::getAvailableCF(std::vector<long> & values)
+{
+	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
+	if (frequencyBounderyFile.is_open())
+	{
+		std::string freqBound = "";
+		while (frequencyBounderyFile >> freqBound)
+		{
+			long freq = std::stol(freqBound) * 1000;
+			values.push_back(freq);
+		}
+		frequencyBounderyFile.close();
+	}
+	else
+	{
+		for (long freq = defaultSettings.minCoreFreq; freq < defaultSettings.maxTurboFreq; freq+=100000000)
+			values.push_back(freq);
+	}
+}
+
+/**
+ * creates list of available uncore frequencies
+ * TODO !!! ARM system, that has memory frequency represented as the uncore frequency
+ **/
+void Environment::getAvailableUCF(std::vector<long> & values)
+{
+	for (long freq = defaultSettings.minUncoreFreq; freq < defaultSettings.maxUncoreFreq; freq+=100000000)
+		values.push_back(freq);
+}
+
+/**
  * returns maximum available non-AVX turbo CPU core frequency in Hz
  * when the information is not available, returns 0
  * note: AVX, AVX2 and AVX512 frequency limits register not available/documented
@@ -909,6 +943,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 	threadNumber(defaultParameter.nthreads);
 
 /*	//Set affinity
+#ifdef HAVE_OMP_H
 	#pragma omp parallel
 	{
 		#pragma omp critical
@@ -919,6 +954,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		//CPU_SET(omp_get_thread_num(), &cpu_set); //position according its thread num
 		sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 	}
+#endif
 */
 }
 
