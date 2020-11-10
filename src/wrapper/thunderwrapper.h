@@ -32,6 +32,7 @@ public:
 	static std::vector<std::string> vrSensorLabel; //"DC"
 	static int FREQUENCY;
 	static const int PROBE_NUMBER = 1;	//DC
+	static const std::string SUM_ENERGY_LABEL;
 
 	static void init();
 	static int getSamples();

@@ -427,7 +427,7 @@ void printHelp()
 	          << "----------------------------------------"
 	          << "----------------------------------------" << std::endl
 	          << "\t-d = generate a default config file 'defaultWrapperConfig.json'" << std::endl
-	          << "\t-r configFile = run application analysis according the configuration file" << std::endl
+	          << "\t-s configFile = run application analysis according the configuration file" << std::endl
 	          << "\t-a pathToDir = generate optimal configuration file from a data measured by MERIC" << std::endl
 	          << "\t\t-m MERIC_MODE = MERIC_MODE that were used to measure the data, no default" << std::endl
 	          << "\t\t-c MERIC_CONTINUAL = MERIC_CONTINUAL mode that were used to measure the data, default 1" << std::endl
@@ -440,6 +440,7 @@ void recogniseTargetEnergyMeasurementSystem(meric::mode mode, bool continual)
 {
 	if (mode == meric::MODE_HDEEM || mode == meric::MODE_BOTH)
 	{
+		label_energy = meric::HDEEM::SUM_ENERGY_LABEL;
 		if (continual)
 			dataSourceLabel = std::string("# SAMPLES - ")+meric::HDEEM::getSourceLabel()+":";
 		else
@@ -447,15 +448,24 @@ void recogniseTargetEnergyMeasurementSystem(meric::mode mode, bool continual)
 	}
 	else if (mode == meric::MODE_RAPL)
 	{
-		dataSourceLabel = std::string("# COUNTERS - ")+meric::RAPL::getSourceLabel()+":";
 		label_energy = MSR_RAPL_COUNTERS::RAPL_SUM_ENERGY;
+		dataSourceLabel = std::string("# COUNTERS - ")+meric::RAPL::getSourceLabel()+":";
 	}
 	else if (mode == meric::MODE_JETSON)
+	{
+		label_energy = meric::JETSON::SUM_ENERGY_LABEL;
 		dataSourceLabel = std::string("# SAMPLES - ")+meric::JETSON::getSourceLabel()+":";
+	}
 	else if (mode == meric::MODE_THUNDER)
+	{
+		label_energy = meric::THUNDER::SUM_ENERGY_LABEL;
 		dataSourceLabel = std::string("# SAMPLES - ")+meric::THUNDER::getSourceLabel()+":";
+	}
 	else if (mode == meric::MODE_DAVIDE)
+	{
+		label_energy = meric::DAVIDE::SUM_ENERGY_LABEL;
 		dataSourceLabel = std::string("# SAMPLES - ")+meric::DAVIDE::getSourceLabel()+":";
+	}
 }
 
 

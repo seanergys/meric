@@ -11,6 +11,7 @@ std::vector<double>    DAVIDE::power_samples; // vector will contain power sampl
 std::vector<std::string> DAVIDE::vrSensorLabel = {"blade"};
 //const int DAVIDE::PROBE_NUMBER = vrSensorLabel.size() + 1; 
 std::string DAVIDE::url_samples;
+const std::string DAVIDE::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 RestClient::Connection* DAVIDE::conn_samples;

@@ -8,6 +8,7 @@ std::string JETSON::filename="";
 std::vector<std::string> JETSON::vrSensorLabel = {"GPU", "CPU"}; //"DC",
 std::vector<jetsonSample> JETSON::_samples;
 int JETSON::FREQUENCY = 10;
+const std::string JETSON::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
 
 void JETSON::init() //int rank = 0)

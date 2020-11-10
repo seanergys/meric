@@ -8,6 +8,7 @@ std::string THUNDER::filename="";
 std::vector<std::string> THUNDER::vrSensorLabel = {}; //"DC",
 std::vector<thunderSample> THUNDER::_samples;
 int THUNDER::FREQUENCY = 1;
+const std::string THUNDER::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
 
 void THUNDER::init() //int rank = 0)

@@ -33,6 +33,7 @@ public:
 	static std::vector<std::string> vrSensorLabel;// = {"GPU", "CPU"}; //"DC",
 	static int FREQUENCY;
 	static const int PROBE_NUMBER = 3;	//DC + GPU + CPU	//	static const int PROBE_NUMBER = 7; //TODO
+	static const std::string SUM_ENERGY_LABEL;
 
 	static void init();
 	static int getSamples();

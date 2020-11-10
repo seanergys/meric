@@ -28,6 +28,7 @@ public:
 
 	static const int FREQUENCY = 1000;
 	static const int PROBE_NUMBER = 1;	//no voltage regulators, just blade
+	static const std::string SUM_ENERGY_LABEL;
 	static std::vector<std::string> vrSensorLabel;	//voltage regulator vector
 	static std::string storeLabel;
 

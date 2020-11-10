@@ -31,6 +31,7 @@ public:
 	static std::vector<std::string> vrSensorLabel;	//Voltage regulator
 	static std::string getCounterLabel(std::string counter) { return counter; };
 	static std::string getSourceLabel() {return "HDEEM";};
+	static const std::string SUM_ENERGY_LABEL;
 
 #ifdef HAVE_HDEEM_H
 	static void init(bool detailed = false)

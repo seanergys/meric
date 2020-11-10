@@ -6,6 +6,7 @@ using namespace meric;
 
 std::vector<std::string> HDEEM::vrSensorLabel;
 bool HDEEM::detailedMode = false;
+const std::string HDEEM::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
 #ifdef HAVE_HDEEM_H
 
