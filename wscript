@@ -70,6 +70,7 @@ def configure(ctx):
             if ctx.check_cxx(lib="cpufreq", mandatory=False):
                 ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
                 ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
+        ctx.check_cc(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", execute=False, mandatory=False)
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
         
@@ -225,7 +226,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="systemInfo",
-        use="msr x86_adapt numa geopm",
+        use="msr x86_adapt numa geopm nvml",
         install_path = ctx.path.abspath()+"/tools"
     )
     

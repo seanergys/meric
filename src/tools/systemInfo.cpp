@@ -71,6 +71,24 @@ void sysInfoSize(bool detailed = false)
 			}
 		}
 	}
+	
+#ifdef HAVE_NVML_H
+	unsigned int deviceCount;
+	nvmlReturn_t ret = nvmlDeviceGetCount(&deviceCount);
+	std::cout << "\tNvidia GPUs:      " << deviceCount << std::endl;
+
+/*
+	nvmlDevice_t deviceHandle;
+	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
+	{
+		// The name is an alphanumeric string that denotes a particular product, e.g. Tesla C2070. It will not exceed 50 characters in length (including the null terminator).
+		const int GPU_NAME_LENGTH = 50;
+		char GPUname [GPU_NAME_LENGTH];
+		ret = nvmlDeviceGetName (deviceHandle, GPUname, GPU_NAME_LENGTH);
+		std::cout << "\tGPU name: " << GPUname;
+	}
+*/
+#endif
 }
 
 bool sysInfoFrequencies(meric::systemLimits& limits)
@@ -347,6 +365,54 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 		std::cout << "\tAvailable memory frequencies:    " << freqBound << " Hz\n";
 	}
 #endif
+
+
+#ifdef HAVE_NVML_H
+	nvmlDevice_t deviceHandle;
+	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
+	{
+		uint memFreqCount = 0;
+		uint gpuFreqCount = 0;
+		uint * memFreq = NULL;
+		uint * gpuFreq = NULL;
+
+		if(nvmlDeviceGetSupportedMemoryClocks(deviceHandle, &memFreqCount, memFreq) == NVML_ERROR_INSUFFICIENT_SIZE)
+		{
+			std::cout << "\n# GPU FREQUENCIES\n";
+
+			memFreq = (uint *)malloc(memFreqCount * sizeof(uint));
+			if(nvmlDeviceGetSupportedMemoryClocks(deviceHandle, &memFreqCount, memFreq) == NVML_SUCCESS)
+			{
+				for(uint i = 0; i < memFreqCount; i++)
+				{
+					if(nvmlDeviceGetSupportedGraphicsClocks(deviceHandle, memFreq[i], &gpuFreqCount, gpuFreq) == NVML_ERROR_INSUFFICIENT_SIZE)
+					{
+						gpuFreq = (uint *)malloc(gpuFreqCount * sizeof(uint));
+						if(nvmlDeviceGetSupportedGraphicsClocks(deviceHandle, memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
+						{
+							std::cout << "\tMemory: " << memFreq[i]*1000 << " kHz\tSM: " <<  gpuFreq[0]*1000 << " - " << gpuFreq[gpuFreqCount-1]*1000 << " kHz (" << gpuFreqCount<< " steps)\n";
+						}
+						free(gpuFreq);
+						gpuFreqCount = 0;
+					}
+				}
+			}
+			free(memFreq);
+		}
+		
+		unsigned int freqMem, freqSM, freq;
+		if(nvmlDeviceGetDefaultApplicationsClock(deviceHandle, NVML_CLOCK_MEM, &freqMem) == NVML_SUCCESS &&
+		   nvmlDeviceGetDefaultApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freqSM)   == NVML_SUCCESS)
+		{
+			std::cout << "\tDefault memory frequency: " << freqMem*1000 << " kHz\n"
+			          << "\tDefault streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
+			if (nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_MEM, &freq) == NVML_SUCCESS && freq != freqMem &&
+			    nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freq)  == NVML_SUCCESS && freq != freqSM)
+				ok = false;
+		}
+	}
+#endif
+
 	return ok;
 }
 
@@ -370,7 +436,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	}
 
 // power capping limits ////////////////////////////////////////////////////////
-	std::cout << "\n# RAPL POWER LIMITS\n";	
+	std::cout << "\n# CPU RAPL POWER LIMITS\n";	
 #ifdef HAVE_MSR_CORE_H
 // PKG
 	uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
@@ -436,7 +502,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #endif
 
 // default power capping ///////////////////////////////////////////////////////
-	std::cout << "\n# DEFAULT RAPL POWER LIMITS\n";
+	std::cout << "\n# DEFAULT CPU RAPL POWER LIMITS\n";
 	uint64_t X, Y, Z, F;
 
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
@@ -653,13 +719,38 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #endif
 	}
 	
+
+// GPU
+
+#ifdef HAVE_NVML_H
+	nvmlDevice_t deviceHandle;
+	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
+	{
+		std::cout << "\n# GPU POWER LIMITS\n";
+		uint minPowerLimit, maxPowerLimit;
+		if (nvmlDeviceGetPowerManagementLimitConstraints(deviceHandle, &minPowerLimit, &maxPowerLimit) == NVML_SUCCESS)
+		{
+			std::cout << "\tGPU max power limit:     " << maxPowerLimit/1000 << " W\n"
+			          << "\tGPU min power limit:     " << minPowerLimit/1000 << " W\n";
+		}
+		
+		if (nvmlDeviceGetPowerManagementDefaultLimit(deviceHandle, &maxPowerLimit) == NVML_SUCCESS)
+		{
+			std::cout << "\tGPU default power limit: " << maxPowerLimit/1000 << " W\n";
+		}
+
+		if (nvmlDeviceGetPowerManagementLimit(deviceHandle, &minPowerLimit) == NVML_SUCCESS && minPowerLimit != maxPowerLimit)
+			ok = false;
+	}
+#endif
+
 	return ok;
 }
 
 void sysEnergyMeasurement()
 {
 	int systems = 0;
-	std::cout << "\n# AVAILABLE ENERGY MEASUREMENT SYSTEMS\n";
+	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 
 #if defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
@@ -674,6 +765,15 @@ void sysEnergyMeasurement()
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 	std::cout << "\tEXAMON\n";
 	systems++;
+#endif
+
+#ifdef HAVE_NVML_H
+	unsigned long long energy;
+	if(nvmlDeviceGetTotalEnergyConsumption(0, &energy) == NVML_SUCCESS)
+	{
+		std::cout << "\tNVML\n";
+		systems++;
+	}
 #endif
 
 	if (systems == 0)
@@ -768,6 +868,10 @@ int main(int argc, char **argv)
 		}
 	}
 	
+	#ifdef HAVE_NVML_H
+	nvmlInit(); 
+	#endif
+	
 	if (status == USING_MSR)
 		checkMsrWhitelist();
 
@@ -795,6 +899,11 @@ int main(int argc, char **argv)
 			          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
 	}
 
+
+	#ifdef HAVE_NVML_H
+	nvmlShutdown();
+	#endif
+	
 	if (status == USING_MSR)
 	{
 		#ifdef HAVE_MSR_CORE_H
