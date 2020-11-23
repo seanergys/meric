@@ -5,7 +5,7 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
-	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
 	{
 		HDEEM::init(Meric::DETAILED);
 		HDEEM::start(_startTime);
@@ -23,20 +23,20 @@ SharedMeric::SharedMeric()
 		}
 	}
 
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>());
 	}
 	
-	if (Meric::MODE == MODE_JETSON)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
 	}
-	else if (Meric::MODE == MODE_THUNDER)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES));
 	}
-	else if (Meric::MODE == MODE_DAVIDE)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES));
 	}
@@ -51,10 +51,10 @@ SharedMeric::SharedMeric()
 			_storeList.push_back(new CountersStore<MSR, uint64_t, uint64_t>());
 	}
 	
-	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
+	if (_storeList.size() > 0 || std::find(MONITORS.begin(), MONITORS.end(), MODE_TIME) != MONITORS.end())
 		_storeList.insert(_storeList.begin(), new InfoStore());
 
-	if (Meric::MODE == MODE_JETSON) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end()) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
 		Environment::init(SYS_JETSON,  defaultParameter, 0);
 	else 
 		Environment::init(SYS_OTHER, defaultParameter, 0);
@@ -69,15 +69,15 @@ SharedMeric::SharedMeric()
 		PERFEVENT::init();
 	if (Meric::COUNTERS == "papi")
 		PAPI::init();
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
-	if (Meric::MODE == MODE_JETSON)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 		JETSON::init();
-	else if (Meric::MODE == MODE_THUNDER)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 		THUNDER::init();
-	else if (Meric::MODE == MODE_DAVIDE)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::init();
 		DAVIDE::start(_startTime);
@@ -97,11 +97,11 @@ SharedMeric::SharedMeric()
 SharedMeric::~SharedMeric()
 {
 	Environment::close();
-	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
 	{
 		HDEEM::close();
 	}
-	else if (Meric::MODE == MODE_DAVIDE)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
 	}

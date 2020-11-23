@@ -56,7 +56,7 @@ DistributedMeric::DistributedMeric()
 	_nodeId--;
 	
 //STORE
-	if (Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
 		{
@@ -94,7 +94,7 @@ DistributedMeric::DistributedMeric()
 		}
 	}
 	
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -104,7 +104,7 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
 	}
 	
-	if (Meric::MODE == MODE_JETSON)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -113,13 +113,13 @@ DistributedMeric::DistributedMeric()
 		else
 			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 	}
-	else if (Meric::MODE == MODE_THUNDER)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
 		//_supportComm currently used by THUNDER only, so the split is here to make it obvious
 		MPI_Comm_split(MPI_COMM_WORLD, _MPIglobalRank, 0, &_supportComm);
 		_storeList.push_back(new SamplesAggregateStore<SamplesStore<THUNDER>>(_supportComm, !_MPIglobalRank));
 	}
-	else if (Meric::MODE == MODE_DAVIDE)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		if (Meric::AGGREGATE)
 		{
@@ -164,7 +164,7 @@ DistributedMeric::DistributedMeric()
 		}
 	}
 	
-	if (_storeList.size() > 0 || Meric::MODE == MODE_TIME)
+	if (_storeList.size() > 0 || std::find(MONITORS.begin(), MONITORS.end(), MODE_TIME) != MONITORS.end())
 	{
 		if(Meric::AGGREGATE)
 		{
@@ -175,7 +175,7 @@ DistributedMeric::DistributedMeric()
 	}
 	
 //INIT
-	if (Meric::MODE == MODE_JETSON) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end()) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
 		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank); 
 	else
 		Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
@@ -184,19 +184,19 @@ DistributedMeric::DistributedMeric()
 		currentState.socket[socket] = defaultParameter;
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
-	if (Meric::MODE == MODE_JETSON)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
 			JETSON::init();
 		sleep(5);
 	}
-	else if (Meric::MODE == MODE_THUNDER)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
 		if (!_MPIglobalRank)
 			THUNDER::init();
 		sleep(5);
 	}
-	else if (Meric::MODE == MODE_DAVIDE)
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
 			DAVIDE::init();
@@ -209,7 +209,7 @@ DistributedMeric::DistributedMeric()
 		PERFEVENT::init();
 	if (Meric::COUNTERS == "papi")
 		PAPI::init();
-	if (Meric::MODE == MODE_RAPL || Meric::MODE == MODE_BOTH)
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
@@ -227,11 +227,11 @@ DistributedMeric::DistributedMeric()
 
 DistributedMeric::~DistributedMeric()
 {
-	if ((Meric::MODE == MODE_HDEEM || Meric::MODE == MODE_BOTH) && (!_MPInodeRank))
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end() && !_MPInodeRank)
 	{
 		HDEEM::close();
 	}
-	else if (Meric::MODE == MODE_DAVIDE && (!_MPInodeRank))
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end() && !_MPInodeRank)
 	{
 		DAVIDE::close();
 	}

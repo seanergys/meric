@@ -418,6 +418,8 @@ protected:
 	static std::string OUTPUT_FILENAME;
 	static std::string REGION_OPTIONS;
 	static std::string BARRIERS;
+	static std::string MEASURE;
+	static std::vector<mode> MONITORS;
 };
 
 }

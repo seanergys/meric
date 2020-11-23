@@ -3,7 +3,7 @@
 
 using namespace meric;
 
-int         Meric::ITERATION  = mutils::getenv("MERIC_ITERATION", 0);
+int         Meric::ITERATION  = mutils::getenv<int>("MERIC_ITERATION", 0);
 int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_RUN);
 bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , true);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
@@ -15,6 +15,7 @@ std::string Meric::COUNTERS   = mutils::getenv("MERIC_COUNTERS"  , std::string("
 std::string Meric::BARRIERS   = mutils::getenv("MERIC_BARRIERS"  , std::string("all"));
 std::string Meric::OUTPUT_DIR = mutils::getenv("MERIC_OUTPUT_DIR", std::string("mericMeasurement"));
 std::string Meric::REGION_OPTIONS  = mutils::getenv("MERIC_REGION_OPTIONS", std::string(""));
+std::string Meric::MEASURE    = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};
@@ -31,6 +32,7 @@ bool Meric::MPIbarriers = true;
 bool Meric::OMPbarriers = true;
 std::string Meric::outputFilenameInfo = "";
 std::string Meric::OUTPUT_FILENAME = "";
+std::vector <mode> Meric::MONITORS;
 
 
 void Meric::readRegionParameters()
@@ -155,12 +157,66 @@ int Meric::getDefaultParameters()
 		Meric::OUTPUT_FILENAME += outputFilenameSuffix;
 	}
 	
-	if (Meric::MODE < MODE_HDEEM || Meric::MODE >= MODE_LIMIT)
+	if (Meric::MODE != MODE_RUN)
 	{
-		std::cerr << "MERIC WARNING: MERIC MODE unknown value <"<<MODE_HDEEM<<","<<MODE_LIMIT-1<<"> - default "<< MODE_RUN <<std::endl;
-		Meric::MODE = MODE_RUN;
+		std::cerr << "MERIC ERROR: MERIC_MODE option not supported any more, use MERIC_MEASURE instead\n";
+		return 1;
 	}
-	
+
+	while (Meric::MEASURE != "")
+	{
+		std::string token;
+		size_t pos = Meric::MEASURE.find_first_of(',');
+		if(pos != std::string::npos)
+		{
+			token = Meric::MEASURE.substr(0,pos);
+			Meric::MEASURE = Meric::MEASURE.substr(pos+1, Meric::MEASURE.size()-pos);
+		}
+		else
+		{
+			token = Meric::MEASURE;
+			Meric::MEASURE = "";
+		}
+		std::transform(token.begin(), token.end(), token.begin(), ::toupper);
+		if (token == HDEEM::getSourceLabel())
+		{
+			MONITORS.push_back(MODE_HDEEM);
+			#ifndef HAVE_HDEEM_H
+				std::cerr << "MERIC WARNING: HDEEM power monitoring not available\n";
+			#endif 
+		}
+		else if (token == RAPL::getSourceLabel())
+		{
+			MONITORS.push_back(MODE_RAPL);
+			#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
+				std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";
+			#endif
+		}
+		else if (token == THUNDER::getSourceLabel())
+			MONITORS.push_back(MODE_THUNDER);
+		else if (token == JETSON::getSourceLabel())
+			MONITORS.push_back(MODE_JETSON);
+		else if (token == DAVIDE::getSourceLabel())
+		{
+			MONITORS.push_back(MODE_DAVIDE);
+			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+				std::cerr << "MERIC WARNING: DAVIDE power monitoring not available\n";
+			#endif
+		}	
+		else if (token == "TIME")
+			MONITORS.push_back(MODE_TIME);
+		else if (token == "NONE")
+		{
+			MONITORS.clear();
+			break;
+		}
+		else
+		{
+			std::cerr << "MERIC ERROR: invalid input MEASUREMENT mode '"<<token<<"'\n";
+			return 1;
+		}	
+	}
+		
 	if (Meric::BARRIERS != "all")
 	{
 		if (Meric::BARRIERS == "mpi")

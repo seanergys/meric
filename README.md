@@ -76,7 +76,7 @@ To simplify MERIC's interface, the memory frequency is set the same way as Intel
 --------------------------------------------------------------------------------
 #     2] Supported energy measurement systems                                  #
 --------------------------------------------------------------------------------
-Energy measurement system can be selected using `MERIC_MODE` environment variable.
+Energy measurement system can be selected using `MERIC_MEASURE` environment variable.
 
 ### Intel RAPL ###
 From the Sandy Bridge microarchitecture all contemporary Intel processors provides software-based energy meter with sampling frequency 1 kHz of the PKG (CPUs) and DRAM. The system does not cover energy consumption of the node itself.
@@ -296,16 +296,15 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_PWRCAP_TIME=3000`
 	- Time window size for power capping specified in milliseconds.
 
-## SET MERIC WORKING MODE ##
-* `export MERIC_MODE=0`
-	- 0 = hdeem - uses HDEEM to measure energy consumption
-	- 1 = rapl - uses RAPL counters to measure energy consumption
-	- 2 = hdeem & rapl - uses HDEEM and RAPL at the same time
-	- 3 = run - doesn't measure energy consumption, but provides you the option to set configuration for inserted regions (default)
-	- 4 = jetson - energy measurement on BSC Jetson TX1 system
-	- 5 = thunder - energy measurement on BSC ThunderX system
-	- 6 = davide - energy measurement on CINECA D.A.V.I.D.E. system
-	- 7 = time - storing runtime of the regions only
+## SET MERIC MEASUREMENT MODE ##
+* `export MERIC_MEASUREMENT=RAPL,HDEEM`
+	- NONE    = default option, no time or energy measurement
+	- HDEEM   = Bull|Atos energy and power measurement
+	- RAPL    = Intel RAPL energy measurement
+	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system
+	- JETSON  = BSC Jetson TX1 power and energy measurement
+	- THUNDER = BSC ThunderX power and energy measurement
+	- TIME    = runtime measuement, default for other modes
 
 * `export MERIC_ITERATION=0`
 	- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
@@ -433,7 +432,7 @@ export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
 export MERIC_NUM_THREADS=0       # non-OpenMP application
 export MERIC_PWRCAP_POWER=0      # no RAPL power capping
 export MERIC_PWRCAP_TIME=0       # no RAPL power capping
-export MERIC_MODE=7              # time measurement only
+export MERIC_MEASURE=TIME        # time measurement only
 
 ./test                           # run the application as usual
 ```
@@ -452,7 +451,7 @@ To find the best settings for each region, you should run your code with several
 ## Run an application in several configurations you want to test ##
 In test directory are provided example scripts `run.sh` or `run-mpi.sh`
 ```
-export MERIC_MODE=1
+export MERIC_MEASURE=RAPL,HDEEM
 for thread in {24..1..1}
 do
 	for cpu_freq in {25..12..1}

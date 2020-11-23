@@ -1,4 +1,5 @@
 ### XX.XX.XXXX #################################################################
+  - MERIC_MODE option has been replaced by MERIC_MEASURE, comma separated list of measurement options
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - implemented system topology detection
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds

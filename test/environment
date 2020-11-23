@@ -1,0 +1,68 @@
+#!/bin/bash 
+# script for loading default settings for MERIC and to show current settings
+# the script must be sourced to be able change the environment
+#
+# parameters:
+#	-t = optional, doesn't change the environment only prints a list of MERIC variables, that are set
+
+################################################################################
+
+ ### PRINT LIST OF ENV VARIABLES ###
+variables()
+{
+	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_PWRCAP_POWER MERIC_PWRCAP_TIME MERIC_COUNTERS MERIC_CONTINUAL MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MEASURE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS MERIC_ITERATION
+	do
+        	if [ ! -z ${!exp} ]
+	        then
+                	echo $exp "=" ${!exp}
+        	fi
+	done
+}
+
+################################################################################
+
+ ### TEST IF THE SCRIPT HAS BEEN SOURCED ###
+if [[ $- != *i* ]]
+then
+	echo "WARNING: source this script to set environment. List of set variables only."
+	echo
+	variables
+	exit 1
+fi
+
+ ### TEST OPTIONS ONLY ###
+if [[ $1 == "-t" ]]
+then
+	variables
+	return 0
+fi
+
+################################################################################
+
+ ### SPECIFY MERIC SETTINGS ###
+export MERIC_FREQUENCY=0         # [Hz] no DVFS
+export MERIC_UNCORE_FREQUENCY=0  # [Hz] no UFS
+export MERIC_NUM_THREADS=0       # [#]  non-OpenMP application
+export MERIC_PWRCAP_POWER=0      # [W]  no power capping
+export MERIC_PWRCAP_TIME=0       # [us] default power capping time window
+
+export MERIC_MEASURE=NONE   # comma separated list of {HDEEM, RAPL, DAVIDE, JETSON, THUNDER, TIME, NONE}
+export MERIC_ITERATION=0    # iteration of the same configuration run
+export MERIC_COUNTERS=msr   # perfevent, papi
+export MERIC_AGGREGATE=1    # aggregated data from all the nodes
+export MERIC_CONTINUAL=1    # energy read at the end of the runtime
+# export MERIC_DETAILED=1   # detailed information about the system
+# export MERIC_DEBUG=0      # HDEEM debug mode off
+# export MERIC_SAMPLES=0    # do not store power samples
+# export MERIC_BARRIERS=all # {all, mpi, omp, none}
+
+# export MERIC_OUTPUT_DIR=mericMeasurement
+# export MERIC_OUTPUT_FILENAME=log.csv
+# export MERIC_REGION_OPTIONS=region.options
+
+
+echo
+variables
+
+
+
