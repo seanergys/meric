@@ -184,7 +184,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
-        use="msr x86_adapt numa geopm",
+        use="msr x86_adapt numa geopm nvml",
         env=ctx.all_envs['start'].derive(),
         install_path = ctx.path.abspath()+"/tools/"
     )
@@ -195,7 +195,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
-        use="msr x86_adapt numa geopm",
+        use="msr x86_adapt numa geopm nvml",
         env=ctx.all_envs['stop'].derive(),
         install_path = ctx.path.abspath()+"/tools/"
     )
@@ -214,7 +214,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="wrapper",
-        use="msr x86_adapt numa geopm",
+        use="msr x86_adapt numa geopm nvml",
         install_path = ctx.path.abspath()+"/tools/"
     )
     

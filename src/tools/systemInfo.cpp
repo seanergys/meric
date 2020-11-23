@@ -25,6 +25,10 @@
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
+#ifdef HAVE_NVML_H
+	#include <nvml.h>
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 std::map <uint64_t,uint64_t> currentWhitelist;
@@ -869,7 +873,7 @@ int main(int argc, char **argv)
 	}
 	
 	#ifdef HAVE_NVML_H
-	nvmlInit(); 
+	nvmlInit();
 	#endif
 	
 	if (status == USING_MSR)
