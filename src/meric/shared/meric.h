@@ -139,11 +139,11 @@ public:
 	{
 		stop(); //applicationMainRegion
 		
-		if (MODE == MODE_HDEEM || MODE == MODE_BOTH)
+		if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
 		{
 			HDEEM::stop(_stopTime);
 		}
-		else if (Meric::MODE == MODE_DAVIDE && Meric::CONTINUAL)
+		else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 		{
 			DAVIDE::stop(_stopTime);
 		}
