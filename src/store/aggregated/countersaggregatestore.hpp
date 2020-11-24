@@ -31,7 +31,10 @@ void CountersAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector
 	//for(std::map<std::string, StoreResultType>::iterator counterIt = this->_store->_records[iEnd].record.begin(); ...)
 	for(auto counterIt = this->_store->_records[iEnd].record.begin(); counterIt != this->_store->_records[iEnd].record.end(); ++counterIt)
 	{
-		printStats(StoreCounterType::getCounterLabel(counterIt->first), & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
+		std::string label = StoreCounterType::getCounterLabel(counterIt->first);
+		if (label=="" && counterIt->first == StoreCounterType::getSummaryCounterName())
+			label = counterIt->first;
+		printStats(label, & _bufferCounters[j++],this->_size*stats.size(),stats.size(), true, ss);
 	}
 
 	if (ratiosList.size())
