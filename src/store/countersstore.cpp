@@ -50,7 +50,7 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 
 	if (TCounter::getSummaryCounterName() != "")
 	{
-		stats[distance(_records[iEnd].record.begin(),_records[iEnd].record.find(TCounter::getSummaryCounterName()))] = summary;
+		stats.push_back(summary);
 	}
 
 	TCounter::getRatios(_records[iStarts].record, _records[iEnd].record, time, ratios);
@@ -86,12 +86,12 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 		}
 	}
 
-	if (TCounter::getSummaryCounterName() != "") //RAPL only
+	if (TCounter::getSummaryCounterName() != "")
 	{
 		ss << TCounter::getSummaryCounterName() << "," << std::fixed << std::setprecision(5) << summary << std::endl;
 	}
 
-// Counters ratios
+	// Counters ratios
 	std::map <std::string, double> ratios;
 	TCounter::getRatios(_records[iStarts.back()].record, _records[iEnd].record, runtime, ratios);
 	if (ratios.size())

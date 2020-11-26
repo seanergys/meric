@@ -14,13 +14,10 @@ std::map<std::string, unsigned long long int> RAPL::counters;
 /**
  * returns result value of the counter (std::string) based on its startValue and
  * stopValue and time between these two measurements
- * solve counter overflow
+ * handles counter overflow
  **/
 double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
 {
-	if (counter == RAPL_SUM_ENERGY)
-		return 0;
-	
 	std::string counterName;
 	if (detailedMode)
 		counterName = counter.substr(0, counter.find_last_of('_'));
@@ -35,7 +32,7 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * units[counterName] << std::endl;
 			return ((COUNTERMAX - startValue) + stopValue) * units[counterName];
 		} //else: unit modifier is missing
-		return 0;
+		return 0.0;
 	}
 	else
 		return (stopValue - startValue) * units[counterName];
@@ -106,10 +103,8 @@ void RAPL::initCountersUnits()
  **/
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
-
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
-	record[RAPL_SUM_ENERGY] = 0; //will be filled when the measurement is over
 	
 	if (detailedMode)
 	{
@@ -174,7 +169,6 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		record[iterator->first] = 0;
-	record[RAPL_SUM_ENERGY] = 0;
 
 	if (detailedMode)
 	{
@@ -228,24 +222,11 @@ std::string RAPL::getSourceLabel()
  **/
 std::string RAPL::getCounterLabel(std::string counter)
 {
-	if (counter == getSummaryCounterName())
-		return "";
 	std::map<std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
 		return it->second;
 	else
 		return counter;
-}
-
-/**
- * Since RAPL only provides measurement for specific domains, and we are 
- * interested in the overall energy consumption of the node (domains under one 
- * node) we had to create a "fake" counter
- * this method returns name of this counter
- **/
-std::string RAPL::getSummaryCounterName()
-{
-	return RAPL_SUM_ENERGY;
 }
 
 /**

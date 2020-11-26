@@ -48,7 +48,13 @@ public:
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter);
-	static std::string getSummaryCounterName();
+/**
+ * Since RAPL only provides measurement for specific domains, and we are 
+ * interested in the overall energy consumption of the node (domains under one 
+ * node) we had to create a "fake" counter
+ * getSummaryCounterName() returns name of this counter
+ **/
+	static inline std::string getSummaryCounterName() { return RAPL_SUM_ENERGY; };
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
