@@ -10,7 +10,7 @@
  ### PRINT LIST OF ENV VARIABLES ###
 variables()
 {
-	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_PWRCAP_POWER MERIC_PWRCAP_TIME MERIC_COUNTERS MERIC_CONTINUAL MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MODE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS MERIC_ITERATION
+	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_PWRCAP_POWER MERIC_PWRCAP_TIME MERIC_COUNTERS MERIC_CONTINUAL MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MEASURE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS MERIC_ITERATION
 	do
         	if [ ! -z ${!exp} ]
 	        then
@@ -46,9 +46,9 @@ export MERIC_NUM_THREADS=0       # [#]  non-OpenMP application
 export MERIC_PWRCAP_POWER=0      # [mW] no power capping
 export MERIC_PWRCAP_TIME=0       # [ms] default power capping time window
 
+export MERIC_MEASURE=NONE   # comma separated list of {HDEEM, RAPL, NVML, DAVIDE, JETSON, THUNDER, TIME, NONE}
 export MERIC_ITERATION=0    # iteration of the same configuration run
 export MERIC_COUNTERS=msr   # perfevent, papi, msr
-export MERIC_MODE=3	        # {hdeem=0, rapl=1, both=2, run=3, jetson=4, thunder=5, davide=6, time=7}
 export MERIC_AGGREGATE=1    # aggregated data from all the nodes
 export MERIC_CONTINUAL=1    # energy read at the end of the runtime
 # export MERIC_DETAILED=1   # detailed information about the system
