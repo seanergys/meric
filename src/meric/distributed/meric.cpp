@@ -103,7 +103,17 @@ DistributedMeric::DistributedMeric()
 		else
 			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
 	}
-	
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
+		}
+		else
+			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
+	}
+		
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		if (Meric::AGGREGATE)
@@ -211,6 +221,8 @@ DistributedMeric::DistributedMeric()
 		PAPI::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+		NVML::init();
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
 

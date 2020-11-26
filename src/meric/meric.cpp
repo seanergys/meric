@@ -183,13 +183,20 @@ int Meric::getDefaultParameters()
 			MONITORS.push_back(MODE_HDEEM);
 			#ifndef HAVE_HDEEM_H
 				std::cerr << "MERIC WARNING: HDEEM power monitoring not available\n";
-			#endif 
+			#endif
 		}
 		else if (token == RAPL::getSourceLabel())
 		{
 			MONITORS.push_back(MODE_RAPL);
 			#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
 				std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";
+			#endif
+		}
+		else if (token == NVML::getSourceLabel())
+		{
+			MONITORS.push_back(MODE_NVML);
+			#ifndef HAVE_NVML_H
+				std::cerr << "MERIC WARNING: NVML power monitoring not available\n";
 			#endif
 		}
 		else if (token == THUNDER::getSourceLabel())
@@ -202,7 +209,7 @@ int Meric::getDefaultParameters()
 			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 				std::cerr << "MERIC WARNING: DAVIDE power monitoring not available\n";
 			#endif
-		}	
+		}
 		else if (token == "TIME")
 			MONITORS.push_back(MODE_TIME);
 		else if (token == "NONE")

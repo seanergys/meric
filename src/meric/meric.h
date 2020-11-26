@@ -21,6 +21,7 @@
 #include "../wrapper/perfeventwrapper.h"
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
+#include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/msrcounterswrapper.h"
 
 namespace meric {

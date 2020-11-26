@@ -7,6 +7,7 @@
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/raplwrapper.h"
+#include "../wrapper/nvmlwrapper.h"
 
 #ifdef HAVE_MPI_H
 #include <mpi.h>
@@ -107,4 +108,5 @@ template class CountersStore <PAPI, unsigned long long int, unsigned long long i
 template class CountersStore <MSR, uint64_t, uint64_t>;
 template class CountersStore <RAPL, unsigned long long int, double>;
 template class CountersStore <HDEEM, double, double>;
+template class CountersStore <NVML, unsigned long long, double>;
 

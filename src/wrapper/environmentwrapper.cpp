@@ -1,5 +1,6 @@
 #include "environmentwrapper.h"
 #include "raplwrapper.h"
+#include "nvmlwrapper.h"
 
 using namespace meric;
 
@@ -895,6 +896,11 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #elif defined HAVE_GEOPM_H
 	pio.save_control();
 #endif
+
+#ifdef HAVE_NVML_H
+	nvmlInit();
+#endif
+
 	initHWSizes();
 	RAPL::initCountersUnits();
 	systemType = system;
@@ -1489,6 +1495,9 @@ void Environment::restoreSystemSettings(bool hardReset)
  **/
 void Environment::close()
 {
+#ifdef HAVE_NVML_H
+	nvmlShutdown();
+#endif
 #ifdef HAVE_X86_ADAPT_H
 	x86_adapt_finalize();
 #endif

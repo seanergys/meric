@@ -28,6 +28,11 @@ SharedMeric::SharedMeric()
 		_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>());
 	}
 	
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
+	}
+	
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
@@ -71,6 +76,8 @@ SharedMeric::SharedMeric()
 		PAPI::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+		NVML::init();
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
