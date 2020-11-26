@@ -42,11 +42,9 @@ void NVML::init()
 	initMap(counters);
 }
 
-
-
 /**
  * read values of the counters (std::string) from the input dictionary and store
- * the values into the dictionary (unsigned long long int)
+ * the values into the dictionary (unsigned long long)
  **/
 void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
 {
@@ -63,6 +61,7 @@ void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
 /**
  * each counter has a label, that will represent this counter in the output file
  * returns a label of the input counter
+ * in NVML there is just one kind of lable, so it returns the input
  **/
 std::string NVML::getCounterLabel(std::string counter)
 {
@@ -70,12 +69,10 @@ std::string NVML::getCounterLabel(std::string counter)
 }
 
 /**
- * Since RAPL only provides measurement for specific domains, and we are 
- * interested in the overall energy consumption of the node (domains under one 
- * node) we had to create a "fake" counter
- * this method returns name of this counter
+ * summary counter represents energy consumption of all the GPUs at one node
+ * returns label of the "artificial" summary counter
  **/
-std::string NVML::getSummaryCounterName() //TODO popis - only if there is more than one GPU
+std::string NVML::getSummaryCounterName()
 {
 //const std::string NVML_SUM_ENERGY  = "NVML Energy consumption [J]";
 	if (GPUhandles.size() > 0)
@@ -85,7 +82,7 @@ std::string NVML::getSummaryCounterName() //TODO popis - only if there is more t
 }
 
 /**
- * fill-in the RAPL counters into the dictionary, that will keep values of the required counters
+ * fill-in the NVML counters into the dictionary, that will keep the energy consumption of each GPU
  **/
 void NVML::initMap(std::map<std::string, unsigned long long> & dict)
 {
