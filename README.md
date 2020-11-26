@@ -97,6 +97,8 @@ Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores
 
 To activate possibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
 
+### Nvidia Managemenet Library (NVML) ###
+[NVML](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures.
 
 ### BSC ARM Jetson ###
 Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
@@ -256,10 +258,11 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - MPI
 * optionally - [PAPI](http://icl.cs.utk.edu/papi/)
 * optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
-* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for HW parameters tuning
+* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel HW parameters tuning
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
+* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - required for Nvidia GPUs
 * optionally - [numa](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) (mandatory for DiG energy measurement system)
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
@@ -301,6 +304,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- NONE    = default option, no time or energy measurement
 	- HDEEM   = Bull|Atos energy and power measurement
 	- RAPL    = Intel RAPL energy measurement
+	- NVML    = Nvidia GPUs energy measurement
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system
 	- JETSON  = BSC Jetson TX1 power and energy measurement
 	- THUNDER = BSC ThunderX power and energy measurement
