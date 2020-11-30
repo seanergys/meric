@@ -52,9 +52,9 @@ void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
 	{
 		unsigned long long energy;
 		if (nvmlDeviceGetTotalEnergyConsumption(GPUhandles[i], &energy) == NVML_SUCCESS)
-			record["Energy_GPU_"+std::to_string(i)] = energy;
+			record[std::to_string(i)] = energy;
 		else
-			record["Energy_GPU_"+std::to_string(i)] = 0;
+			record[std::to_string(i)] = 0;
 	}
 }
 
@@ -65,7 +65,7 @@ void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
  **/
 std::string NVML::getCounterLabel(std::string counter)
 {
-	return counter;
+	return "Energy_GPU_"+counter+" [J]";
 }
 
 /**
@@ -83,17 +83,14 @@ std::string NVML::getSummaryCounterName()
 
 /**
  * fill-in the NVML counters into the dictionary, that will keep the energy consumption of each GPU
+ * since NVML supports overall energy cosumption of a GPU only, the GPU id (std::string) 
+ * keeps the energy consumption of the GPU
+ * corresponding counter label is created in getCounterLabel(std::string counter)
  **/
 void NVML::initMap(std::map<std::string, unsigned long long> & dict)
 {
 	for (int i=0; i<GPUhandles.size(); i++)
-		dict["Energy_GPU_"+std::to_string(i)] = 0;
-/*
-// fill this vector
-	std::vector <std::string> names;
-	names.push_back(RAPL_PCKG_ENERGY);
-	names.push_back(RAPL_RAM_ENERGY);
-*/
+		dict[std::to_string(i)] = 0;
 }
 
 
