@@ -53,6 +53,9 @@ public:
 	static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
 	static inline double getUnit(std::string counterName) { return 1000.0; };
+
+	static nvmlDevice_t getGPUHandle(int id) { return GPUhandles[id]; };
+	static size_t getGPUsPerNode() { return GPUhandles.size(); };
 private:
 		//list of counters
 	static std::map<std::string, unsigned long long> counters;

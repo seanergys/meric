@@ -76,8 +76,6 @@ SharedMeric::SharedMeric()
 		PAPI::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
-		NVML::init();
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())

@@ -182,6 +182,7 @@ def build(ctx):
             ctx.path.ant_glob('src/tools/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
         use="msr x86_adapt numa geopm nvml",
@@ -193,6 +194,7 @@ def build(ctx):
             ctx.path.ant_glob('src/tools/staticMERICtool/staticMERICtool.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
         use="msr x86_adapt numa geopm nvml",
@@ -208,6 +210,7 @@ def build(ctx):
             ctx.path.ant_glob('src/tools/wrapper/wrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/hdeemwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/thunderwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
@@ -224,6 +227,7 @@ def build(ctx):
             ctx.path.ant_glob('src/tools/systemInfo.cpp') +
             ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
             ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
+            ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="systemInfo",
         use="msr x86_adapt numa geopm nvml",

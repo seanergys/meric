@@ -4,7 +4,7 @@
 
 using namespace meric;
 
-systemLimits Environment::defaultSettings = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0};
+systemLimits Environment::defaultSettings; // = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0, 0, 0, 0, std::map <uint, std::vector<uint>>()};
 
 int Environment::SOCKETS_PER_NODE = 1;
 int Environment::CORES_PER_SOCKET = 1;
@@ -123,6 +123,24 @@ void Environment::getCPUbrandString(std::string & CPUname)
 }
 #endif
 
+
+#ifdef HAVE_NVML_H
+/**
+ * Get name of an Nvidia GPU
+ * The name is an alphanumeric string that denotes a particular product.
+ * It will not exceed 50 characters in length (including the null terminator).
+ **/
+void Environment::getGPUbrandString(std::string & GPUname)
+{
+	const int GPU_NAME_LENGTH = 50;
+	char name [GPU_NAME_LENGTH];
+	if (NVML::getGPUsPerNode() && nvmlDeviceGetName (NVML::getGPUHandle(0), name, GPU_NAME_LENGTH) == NVML_SUCCESS)
+		GPUname = std::string(name);
+	else
+		GPUname = "";
+}
+#endif
+
 /**
  * returns nominal CPU core frequency in Hz
  * if libmsr available uses MSR_PLATFORM_INFO register
@@ -201,6 +219,67 @@ void Environment::getAvailableUCF(std::vector<long> & values)
 	for (long freq = defaultSettings.minUncoreFreq; freq < defaultSettings.maxUncoreFreq; freq+=100000000)
 		values.push_back(freq);
 }
+
+#ifdef HAVE_NVML_H
+/**
+ * reads available GPU memory and corresponding streaming multiprocessor frequencies
+ **/
+void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values)
+{
+	if (NVML::getGPUsPerNode() == 0)
+		return;
+	
+	uint memFreqCount = 0;
+	uint gpuFreqCount = 0;
+	uint *memFreq = NULL;
+	uint *gpuFreq = NULL;
+
+	if(nvmlDeviceGetSupportedMemoryClocks(NVML::getGPUHandle(0), &memFreqCount, memFreq) == NVML_ERROR_INSUFFICIENT_SIZE)
+	{
+		memFreq = (uint *)malloc(memFreqCount * sizeof(uint));
+		if(nvmlDeviceGetSupportedMemoryClocks(NVML::getGPUHandle(0), &memFreqCount, memFreq) == NVML_SUCCESS)
+		{
+			for(uint i = 0; i < memFreqCount; i++)
+			{
+				if(nvmlDeviceGetSupportedGraphicsClocks(NVML::getGPUHandle(0), memFreq[i], &gpuFreqCount, gpuFreq) == NVML_ERROR_INSUFFICIENT_SIZE)
+				{
+					gpuFreq = (uint *)malloc(gpuFreqCount * sizeof(uint));
+					if(nvmlDeviceGetSupportedGraphicsClocks(NVML::getGPUHandle(0), memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
+					{
+						std::vector<uint> SMfreq(gpuFreqCount); //(gpuFreq, gpuFreq + sizeof gpuFreq / sizeof gpuFreq[0]);
+						for (uint j = 0; j<gpuFreqCount; j++)
+							SMfreq[j] = gpuFreq[j]*1e6;
+						values[memFreq[i]*1e6] = SMfreq;
+					}
+					else
+					{
+						std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+						return;
+					}
+					free(gpuFreq);
+					gpuFreqCount = 0;
+				}
+				else
+				{
+					std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+					return;
+				}
+			}
+		}
+		else
+		{
+			std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+			return;
+		}
+		free(memFreq);
+	}
+	else
+	{
+		std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+	}
+	return;
+}
+#endif
 
 /**
  * returns maximum available non-AVX turbo CPU core frequency in Hz
@@ -602,7 +681,7 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 			struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
 			while(architectureData != NULL)
 			{
-				if (std::string(architectureData->name->string) == "DVFS")
+				if (std::string(architectureData->name->string) == "CF")
 				{
 					struct json_object_element_s* dvfs = ((struct json_object_s*)architectureData->value->payload)->start;
 					do
@@ -694,7 +773,7 @@ void Environment::readSystemDefaultSettings()
 	//if the json file does not exists, does not contain current architecture or is corrupted
 	//we have to read the default settings from the system
 
-// CORE freq -----------------------------------------------------------------//
+// CPU CORE freq -------------------------------------------------------------//
 		defaultSettings.defaultCoreFreq = 0;
 		std::ifstream frequencyBounderyFile;
 		frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
@@ -735,7 +814,7 @@ void Environment::readSystemDefaultSettings()
 		read_msr_by_idx(0, IA32_ENERGY_PERF_BIAS, &defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
 
-// UnCORE freq ---------------------------------------------------------------//
+// CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef HAVE_MSR_CORE_H
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
@@ -782,7 +861,7 @@ void Environment::readSystemDefaultSettings()
 		}
 #endif
 
-// POWERcap ------------------------------------------------------------------//
+// CPU POWERcap --------------------------------------------------------------//
 		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
 #ifdef HAVE_MSR_CORE_H
@@ -808,10 +887,23 @@ void Environment::readSystemDefaultSettings()
 		
 		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_RAM_POWER_LIMIT, pio.signal_domain_type(RAPL_RAM_POWER_LIMIT), 0));
 #endif
-		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
-		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits * 1000;
+		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits * 1000;
 
-// store the configuration to the file
+// GPU POWERcap and FREQUENCIES ----------------------------------------------//
+#ifdef HAVE_NVML_H
+		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_MEM, &defaultSettings.defaultGPUMemFreq) != NVML_SUCCESS)
+			defaultSettings.defaultGPUMemFreq = 0;
+		defaultSettings.defaultGPUMemFreq *= 1e6;
+		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_SM, &defaultSettings.defaultGPUSMFreq) != NVML_SUCCESS)
+			defaultSettings.defaultGPUSMFreq = 0;
+		defaultSettings.defaultGPUSMFreq *= 1e6;
+		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetPowerManagementLimit(NVML::getGPUHandle(0), &defaultSettings.defaultPowerCapGPU) != NVML_SUCCESS)
+			defaultSettings.defaultPowerCapGPU = 0;
+		getAvailableGPUfrequencies(defaultSettings.availableGPUFreq);
+#endif
+
+// store the configuration to the file ---------------------------------------//
 		std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
 		struct stat info; //test if the file has been modified since we tried to read it
 		if (stat(defaultSettingFile.c_str(), &info ) != 0 || modifTime == info.st_mtim)
@@ -826,12 +918,13 @@ void Environment::readSystemDefaultSettings()
 				restoreJson = restoreJson.substr(0,restoreJson.find_last_of("}")-1) + ",\n";
 			}
 			
+			//CPU
 			std::string CPUname;
 			getCPUbrandString(CPUname);
 			
 			restoreJson += "\t\""+CPUname+"\": {\n";
 			
-			restoreJson += "\t\t\"DVFS\" : {\n\t\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
+			restoreJson += "\t\t\"CF\" : {\n\t\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
 				        +  "\t\t\t\"TURBO\" : " + std::to_string(defaultSettings.maxTurboFreq) + ",\n"
 				        +  "\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxCoreFreq) + ",\n"
 				        +  "\t\t\t\"MIN\" : " + std::to_string(defaultSettings.minCoreFreq) + ",\n"
@@ -845,7 +938,35 @@ void Environment::readSystemDefaultSettings()
 			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
 				        +  "\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t\t}";
 
-			restoreJson += "\n\t}\n}\n";
+			restoreJson += "\n\t}\n";
+
+			//GPU
+#ifdef HAVE_NVML_H
+			std::string GPUname;
+			getGPUbrandString(GPUname);
+			restoreJson += "\t\""+GPUname+"\": {\n";
+			
+			restoreJson += "\t\t\"FREQ\" : {\n\t\t\t\"DEFAULT_MEMORY\" : " + std::to_string(defaultSettings.defaultGPUMemFreq) + ",\n"
+				        +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq) + ",\n"
+				        +  "\t\t\t\"AVAILABLE\" : {\n";
+			
+			for (auto memFreq : defaultSettings.availableGPUFreq)
+			{
+				std::string GPUfreqString;
+				std::stringstream ss;
+				std::copy(memFreq.second.begin(), memFreq.second.end(), std::ostream_iterator<uint>(ss, ", "));
+				GPUfreqString = ss.str();
+				restoreJson += "\t\t\t\t" + std::to_string(memFreq.first) + " : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
+			}
+			restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
+				        + "\n\t\t},\n";
+			
+			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +"\n\t\t}";
+//*/
+			restoreJson += "\n\t}\n";
+#endif
+			
+			restoreJson += "}\n";
 			defaultRestoreFile << restoreJson;
 			defaultRestoreFile.close();
 		}
@@ -866,7 +987,15 @@ void Environment::readSystemDefaultSettings()
 		<< "\tDEF " << defaultSettings.defaultUncoreFreq << std::endl
 		<< "PWRcap" << std::endl
 		<< "\tPKG " << defaultSettings.defaultPowerCapPKG << std::endl
-		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl;
+		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl
+		<< "GPU def" << std::endl
+		<< "\tMEM " << defaultSettings.defaultGPUMemFreq << std::endl
+		<< "\tSMP " << defaultSettings.defaultGPUSMFreq << std::endl
+		<< "\tPCP " << defaultSettings.defaultPowerCapGPU << std::endl
+		<< "GPU freqs" << std::endl
+		<< "\tMEM " << defaultSettings.availableGPUFreq.size() << std::endl
+		<< "\tSMP " << defaultSettings.availableGPUFreq.begin()->second.size() << std::endl;
+	
 }
 
 /**
@@ -900,7 +1029,8 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #ifdef HAVE_NVML_H
 	nvmlInit();
 #endif
-
+	NVML::init();
+	
 	initHWSizes();
 	RAPL::initCountersUnits();
 	systemType = system;

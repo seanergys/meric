@@ -67,8 +67,8 @@ struct systemLimits{
 
 	long maxPowerCapPKGtime;     //ms
 
-	long maxPowerCapRAM;         //W
-	long minPowerCapRAM;         //W
+	long maxPowerCapRAM;         //mW
+	long minPowerCapRAM;         //mW
 
 	long maxPowerCapRAMtime;     //us
 

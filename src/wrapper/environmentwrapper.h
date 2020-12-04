@@ -37,10 +37,12 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <iterator>
+#include <sstream>
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_TIME, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
+enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_TIME, MODE_NVML, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
 enum SYSTEM_TYPE {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
 
 enum DVFS_WAY {NO_DVFS = 0, USRSPACE_FILE, USRSPACE_LIB, INT_PSTATE};
@@ -58,10 +60,10 @@ enum reg_cpuid
 struct RegionParameters { //must be able to carry -1
 	long frequency;       //Hz
 	long uncoreFrequency; //Hz
-	int nthreads;         //#omp threads
-	long powerCapPKG;     //W
+	int  nthreads;        //#omp threads
+	long powerCapPKG;     //mW
 	long powerCapPKGtime; //us
-//	long powerCapRAM;     //W
+//	long powerCapRAM;     //mW
 //	long powerCapRAMtime; //us
 };
 
@@ -77,17 +79,22 @@ struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supporte
 	long defaultUncoreFreq;      //Hz - set only if one specific default frequency exists, otherwise zero
 	long minUncoreFreq;          //Hz
 
-	long maxPowerCapPKG;         //W
-	long minPowerCapPKG;         //W
+	long maxPowerCapPKG;         //mW
+	long minPowerCapPKG;         //mW
 	long maxPowerCapPKGtime;     //us
 	uint64_t defaultPowerCapPKG; //raw register value
 
-	long maxPowerCapRAM;         //W
-	long minPowerCapRAM;         //W
+	long maxPowerCapRAM;         //mW
+	long minPowerCapRAM;         //mW
 	long maxPowerCapRAMtime;     //us
 	uint64_t defaultPowerCapRAM; //raw register value
 
 	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
+	//GPU - NVML uses uint
+	uint defaultGPUMemFreq;      //Hz
+	uint defaultGPUSMFreq;       //Hz
+	uint defaultPowerCapGPU;     //mW
+	std::map <uint, std::vector<uint>> availableGPUFreq; //Hz, Hz - MEM: <SM>
 };
 
 
@@ -160,6 +167,10 @@ private:
 			  "c" (regs[2]),   // in ECX
 			  "d" (regs[3]));  // in EDX
 	};
+#endif
+#ifdef HAVE_NVML_H
+	static void getGPUbrandString(std::string & GPUname);
+	static void getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values);
 #endif
 
 	static systemLimits defaultSettings;
