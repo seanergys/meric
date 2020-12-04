@@ -4,8 +4,11 @@
 using namespace meric;
 
 unsigned long long NVML::COUNTERMAX = pow(2,32);
-std::vector <nvmlDevice_t> NVML::GPUhandles;
 std::map<std::string, unsigned long long> NVML::counters;
+
+#ifdef HAVE_NVML_H
+	std::vector <nvmlDevice_t> NVML::GPUhandles;
+#endif
 
 /**
  * returns result value of the counter (std::string) based on its startValue and
@@ -30,15 +33,18 @@ double NVML::getResultValue(unsigned long long startValue, unsigned long long st
  **/
 void NVML::init()
 {
-	unsigned int deviceCount;
-	nvmlReturn_t ret = nvmlDeviceGetCount(&deviceCount);
-	for (int i=0; i < deviceCount; i++)
+	unsigned int deviceCount = 0;
+	#ifdef HAVE_NVML_H
+	if (nvmlDeviceGetCount(&deviceCount) == NVML_SUCCESS)
 	{
-		nvmlDevice_t deviceHandle;
-		if (nvmlDeviceGetHandleByIndex(i, &deviceHandle) == NVML_SUCCESS)
-			GPUhandles.push_back(deviceHandle);
+		for (int i=0; i < deviceCount; i++)
+		{
+			nvmlDevice_t deviceHandle;
+			if (nvmlDeviceGetHandleByIndex(i, &deviceHandle) == NVML_SUCCESS)
+				GPUhandles.push_back(deviceHandle);
+		}
 	}
-	
+	#endif
 	initMap(counters);
 }
 
@@ -48,12 +54,14 @@ void NVML::init()
  **/
 void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
 {
-	for (int i=0; i<GPUhandles.size(); i++)
+	for (int i=0; i<getGPUsPerNode(); i++)
 	{
 		unsigned long long energy;
+#ifdef HAVE_NVML_H
 		if (nvmlDeviceGetTotalEnergyConsumption(GPUhandles[i], &energy) == NVML_SUCCESS)
 			record[std::to_string(i)] = energy;
 		else
+#endif
 			record[std::to_string(i)] = 0;
 	}
 }
@@ -75,7 +83,7 @@ std::string NVML::getCounterLabel(std::string counter)
 std::string NVML::getSummaryCounterName()
 {
 //const std::string NVML_SUM_ENERGY  = "NVML Energy consumption [J]";
-	if (GPUhandles.size() > 0)
+	if (getGPUsPerNode() > 0)
 		return "NVML Energy consumption [J]";
 	else
 		return "";
@@ -89,7 +97,7 @@ std::string NVML::getSummaryCounterName()
  **/
 void NVML::initMap(std::map<std::string, unsigned long long> & dict)
 {
-	for (int i=0; i<GPUhandles.size(); i++)
+	for (int i=0; i<getGPUsPerNode(); i++)
 		dict[std::to_string(i)] = 0;
 }
 

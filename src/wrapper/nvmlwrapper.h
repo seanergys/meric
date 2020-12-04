@@ -8,18 +8,9 @@
 #include <fstream>
 #include <time.h>
 #include <ctime>
-
 #include <vector>
 #include <map>
-/*
-#include <array>
-
-
-#include <unistd.h>
-#include <sys/stat.h>
-*/
 #include <cmath>
-
 
 #ifdef HAVE_NVML_H
 	#include <nvml.h>
@@ -27,16 +18,6 @@
 
 
 namespace meric {
-
-/*
-struct nvmlSample {
-	double timestamp;
-	double energy;
-//	double DC;
-//	double SM; //streaming multiprocesor
-//	double memory;
-};
-*/
 
 class NVML {
 
@@ -53,17 +34,21 @@ public:
 	static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
 	static inline double getUnit(std::string counterName) { return 1000.0; };
-
+#ifdef HAVE_NVML_H
 	static nvmlDevice_t getGPUHandle(int id) { return GPUhandles[id]; };
 	static size_t getGPUsPerNode() { return GPUhandles.size(); };
+#else
+	static size_t getGPUsPerNode() { return 0; };
+#endif
+
 private:
 		//list of counters
 	static std::map<std::string, unsigned long long> counters;
-//	static std::string suffix;
-//	static bool detailedMode;
 	static unsigned long long COUNTERMAX;
-//	static std::map<std::string, double> units;
+
+#ifdef HAVE_NVML_H
 	static std::vector <nvmlDevice_t> GPUhandles;
+#endif
 };
 
 
