@@ -1528,7 +1528,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		max = gpu+1;
 	}
 
-#ifndef HAVE_NVML_H
+#ifdef HAVE_NVML_H
 //	MERIC_INFO << "NVML set GPU frequency
 	usedGPUDVFS = true;
 	

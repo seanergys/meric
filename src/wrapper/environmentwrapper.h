@@ -115,8 +115,8 @@ public:
 	static void uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket = -1);	
 	static void threadNumber(int nthreads);
 	static void CPUpowercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
-	static void GPUpowercap(uint64_t power, int GPU = -1);
-	static void GPUfrequency(uint64_t freqMEM, uint64_t freqSM, int gpu = -1);
+	static void GPUpowercap(uint power, int GPU = -1);
+	static void GPUfrequency(uint freqMEM, uint freqSM, int gpu = -1);
 
 	static void init(SYSTEM_TYPE system, RegionParameters defaultParameter, int rank);
 	static void close();

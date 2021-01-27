@@ -438,7 +438,7 @@ void printHelp()
 
 void recogniseTargetEnergyMeasurementSystem(meric::mode mode, bool continual)
 {
-	if (mode == meric::MODE_HDEEM || mode == meric::MODE_BOTH)
+	if (mode == meric::MODE_HDEEM) // || mode == meric::MODE_BOTH)
 	{
 		label_energy = meric::HDEEM::SUM_ENERGY_LABEL;
 		if (continual)
