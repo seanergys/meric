@@ -37,12 +37,13 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <functional>
 #include <iterator>
 #include <sstream>
 
 namespace meric {
 
-enum mode {MODE_HDEEM, MODE_RAPL, MODE_BOTH, MODE_RUN, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_TIME, MODE_NVML, MODE_LIMIT}; //keep MODE_LIMIT always as the last MODE in the list
+enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML};
 enum SYSTEM_TYPE {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
 
 enum DVFS_WAY {NO_DVFS = 0, USRSPACE_FILE, USRSPACE_LIB, INT_PSTATE};
@@ -113,7 +114,9 @@ public:
 	static void frequency(uint64_t freq, int socket = -1);
 	static void uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket = -1);	
 	static void threadNumber(int nthreads);
-	static void powercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
+	static void CPUpowercap(uint64_t power, uint64_t timeWindow = 0, int socket = -1);
+	static void GPUpowercap(uint64_t power, int GPU = -1);
+	static void GPUfrequency(uint64_t freqMEM, uint64_t freqSM, int gpu = -1);
 
 	static void init(SYSTEM_TYPE system, RegionParameters defaultParameter, int rank);
 	static void close();
@@ -177,6 +180,8 @@ private:
 	static bool usedDVFS;
 	static bool usedUFS;
 	static bool usedPWRCAP;
+	static bool usedGPUDVFS;
+	static bool usedGPUPWRCAP;
 	static DVFS_WAY activatedDVFS;
 	static bool activatedUFS;
 	static bool activatedPWRCAP;

@@ -362,11 +362,11 @@ protected:
 				for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if(change.socket[socket].powerCapPKG)
-						Environment::powercap(currentState.socket[socket].powerCapPKG, currentState.socket[socket].powerCapPKGtime, socket);
+						Environment::CPUpowercap(currentState.socket[socket].powerCapPKG, currentState.socket[socket].powerCapPKGtime, socket);
 				}
 			}
 			else if (diffCapPower)
-				Environment::powercap(currentState.socket[0].powerCapPKG, currentState.socket[0].powerCapPKGtime);
+				Environment::CPUpowercap(currentState.socket[0].powerCapPKG, currentState.socket[0].powerCapPKGtime);
 		}
 		if(change.socket[0].nthreads)
 			Environment::threadNumber(currentState.socket[0].nthreads);	

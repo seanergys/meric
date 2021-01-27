@@ -43,7 +43,7 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	RType value;
 	double time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
-	{
+	{	 //TODO in case of msrcounters it doesnt make sence share the values since they are not used
 		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, counterIt.first);
 		stats.push_back(value);
 		summary += value;

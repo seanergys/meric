@@ -19,6 +19,8 @@ std::string Environment::scalingDriver = "";
 bool Environment::usedDVFS = false;
 bool Environment::usedUFS = false;
 bool Environment::usedPWRCAP = false;
+bool Environment::usedGPUDVFS = false;
+bool Environment::usedGPUPWRCAP = false;
 DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
@@ -1074,7 +1076,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency, defaultParameter.uncoreFrequency);
-		powercap(defaultParameter.powerCapPKG, defaultParameter.powerCapPKGtime);
+		CPUpowercap(defaultParameter.powerCapPKG, defaultParameter.powerCapPKGtime);
 	}
 	threadNumber(defaultParameter.nthreads);
 
@@ -1361,18 +1363,18 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
  * timeWindow [ms], if zero the time window will not change
  * if no socket specified (implicit -1) set the same limit to all sockets
  **/
-void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
+void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 {
 	if (power == 0)
 		return;
 
 	int socket_min, socket_max;
 #ifdef HAVE_MSR_CORE_H
-	MERIC_INFO << "LIBMSR set powercap to: "<< power << " mW";
+	MERIC_INFO << "LIBMSR set CPU powercap to: "<< power << " mW";
 #elif defined HAVE_X86_ADAPT_H
-	MERIC_INFO << "X86ADAPT set powercap to: "<< power << " mW";
+	MERIC_INFO << "X86ADAPT set CPU powercap to: "<< power << " mW";
 #elif defined HAVE_GEOPM_H
-	MERIC_INFO << "GEOPM set powercap to: "<< power << " mW";
+	MERIC_INFO << "GEOPM set CPU powercap to: "<< power << " mW";
 #else
 	return;
 #endif
@@ -1479,6 +1481,110 @@ void Environment::powercap(uint64_t power, uint64_t timeWindow, int socket)
 #endif
 
 }
+
+/**
+ * set GPU streaming multiprocessors and memory frequencies
+ * freqMEM [Hz], frequency of the memory, ignore if zero
+ * freqSM [Hz], frequency of the streaming multiprocessors, ignore if zero
+ * if no specific GPU specified (implicit -1), set the frequencies to all the available GPUs
+ **/
+void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
+{
+
+#ifndef HAVE_NVML_H
+	return;
+#endif
+
+	if (freqMEM == 0 || freqSM == 0)
+		return;
+	
+	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
+	std::map<uint, std::vector<uint>>::iterator MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
+	if (MEMit == defaultSettings.availableGPUFreq.end())
+		MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
+
+	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
+	if(SMit == MEMit->second.end())
+		SMit = std::upper_bound(MEMit->second.begin(), MEMit->second.end(), freqSM);
+	
+	freqMEM = MEMit->first;
+	freqSM = *SMit;
+	
+	int min, max;
+	if (gpu == -1)
+	{
+		min = 0;
+		max = NVML::getGPUsPerNode();
+	}
+	else
+	{
+		if (NVML::getGPUsPerNode() <= gpu)
+		{
+			std::cerr << "MERIC ERROR: specifying frequency of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
+			return;
+		}
+		
+		min = gpu;
+		max = gpu+1;
+	}
+
+#ifndef HAVE_NVML_H
+//	MERIC_INFO << "NVML set GPU frequency
+	usedGPUDVFS = true;
+	
+	for (int id=min; id<max; id++)
+	{
+		if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM, freqSM) != NVML_SUCCESS)
+			std::cerr << "NVML ERROR: failed to set GPU frequency\n";
+	}
+#endif
+}
+
+/**
+ * change GPU power capping limit
+ * power [mW], if zero return immediately
+ * GPU, if no explicit GPU id specified (implicit -1), set the same limit to all GPUs
+ **/
+void Environment::GPUpowercap(uint power, int gpu)
+{
+#ifdef HAVE_NVML_H
+	MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW";
+#else
+	return;
+#endif
+
+	//TODO test if the power limit is not too high or too low
+
+	int min = 0;
+	int max;
+	if (gpu == -1)
+	{
+		min = gpu;
+		max = gpu+1;
+	}
+	else
+	{
+		if (NVML::getGPUsPerNode() <= gpu)
+		{
+			std::cerr << "MERIC ERROR: specifying power limit (" << power/1000.0 << "W) of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
+			return;
+		}
+		max = NVML::getGPUsPerNode();
+	}
+	
+#ifdef HAVE_NVML_H	
+	usedGPUPWRCAP = true;
+	for (int id=min; id<max; id++)
+	{
+		if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), power) != NVML_SUCCESS)
+		{
+			std::cerr << "NVML ERROR setting power limit failed\n";
+		}
+	}
+#endif
+}
+
+
 
 /**
  * sets the default scaling governor, CPU core frequency, CPU uncore frequency limits and powercap limits
@@ -1618,6 +1724,29 @@ void Environment::restoreSystemSettings(bool hardReset)
 		}
 #endif
 	}
+	
+#ifdef HAVE_NVML_H
+	//GPU frequencies
+	if (usedGPUDVFS)
+	{
+		for (int id=0; id<NVML::getGPUsPerNode(); id++)
+		{
+			if (nvmlDeviceResetApplicationsClocks(NVML::getGPUHandle(id)) != NVML_SUCCESS)
+				std::cerr << "NVML ERROR: failed to reset GPU frequency\n";
+		}
+	}
+	
+	//GPU power capping limit
+	if (usedGPUPWRCAP)
+	{
+		for (int id=0; id<NVML::getGPUsPerNode(); id++)
+		{
+			if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), defaultSettings.defaultPowerCapGPU) != NVML_SUCCESS)
+				std::cerr << "NVML ERROR: failed to reset GPU power capping limit\n";
+		}
+	}
+#endif
+	
 }
 
 /**
