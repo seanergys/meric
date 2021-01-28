@@ -2,7 +2,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for x86 systems (tested on HSW, BDW, KNL, and CSL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for x86 systems (tested on HSW, BDW, KNL, SKL, and CSL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -67,6 +67,9 @@ Please, note that RAPL power capping system uses equation to specify the window 
 
 ### Number of active OMP threads ###
 Using OpenMP API.
+
+### Nvidia GPU power capping ###
+Using [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of Nvidia GPUs.
 
 
 ### ARM Jetson memory frequency ###
@@ -298,6 +301,8 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Average processor PKG power in milliwatts under the selected time window.
 * `export MERIC_PWRCAP_TIME=3000`
 	- Time window size for power capping specified in milliseconds.
+* `export MERIC_PWRCAP_GPU=140000`
+	- GPU power limit in milliwatts.
 
 ## SET MERIC MEASUREMENT MODE ##
 * `export MERIC_MEASUREMENT=RAPL,HDEEM`
@@ -436,6 +441,7 @@ export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
 export MERIC_NUM_THREADS=0       # non-OpenMP application
 export MERIC_PWRCAP_POWER=0      # no RAPL power capping
 export MERIC_PWRCAP_TIME=0       # no RAPL power capping
+export MERIC_PWRCAP_GPU=0        # no GPU power capping
 export MERIC_MEASURE=TIME        # time measurement only
 
 ./test                           # run the application as usual
@@ -456,6 +462,10 @@ To find the best settings for each region, you should run your code with several
 In test directory are provided example scripts `run.sh` or `run-mpi.sh`
 ```
 export MERIC_MEASURE=RAPL,HDEEM
+export MERIC_PWRCAP_POWER=0
+export MERIC_PWRCAP_TIME=0
+export MERIC_PWRCAP_GPU=0
+
 for thread in {24..1..1}
 do
 	for cpu_freq in {25..12..1}
