@@ -940,17 +940,18 @@ void Environment::readSystemDefaultSettings()
 			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
 				        +  "\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t\t}";
 
-			restoreJson += "\n\t}\n";
+			restoreJson += "\n\t}";
 
 			//GPU
-#ifdef HAVE_NVML_H
+#ifndef HAVE_NVML_H
+			restoreJson += "\n";
+#else
 			std::string GPUname;
 			getGPUbrandString(GPUname);
-			restoreJson += "\t\""+GPUname+"\": {\n";
-			
-			restoreJson += "\t\t\"FREQ\" : {\n\t\t\t\"DEFAULT_MEMORY\" : " + std::to_string(defaultSettings.defaultGPUMemFreq) + ",\n"
-				        +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq) + ",\n"
-				        +  "\t\t\t\"AVAILABLE\" : {\n";
+			restoreJson += ",\n\t\""+GPUname+"\": {\n"
+			            +  "\t\t\"FREQ\" : {\n\t\t\t\"DEFAULT_MEMORY\" : " + std::to_string(defaultSettings.defaultGPUMemFreq) + ",\n"
+			            +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq) + ",\n"
+			            +  "\t\t\t\"AVAILABLE\" : {\n";
 			
 			for (auto memFreq : defaultSettings.availableGPUFreq)
 			{
@@ -961,11 +962,10 @@ void Environment::readSystemDefaultSettings()
 				restoreJson += "\t\t\t\t" + std::to_string(memFreq.first) + " : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
 			}
 			restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
-				        + "\n\t\t},\n";
+			            + "\n\t\t},\n";
 			
-			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +"\n\t\t}";
-//*/
-			restoreJson += "\n\t}\n";
+			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +"\n\t\t}"
+			            +  "\n\t}\n";
 #endif
 			
 			restoreJson += "}\n";
