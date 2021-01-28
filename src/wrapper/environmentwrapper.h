@@ -66,6 +66,7 @@ struct RegionParameters { //must be able to carry -1
 	long powerCapPKGtime; //us
 //	long powerCapRAM;     //mW
 //	long powerCapRAMtime; //us
+	long powerCapGPU;     //mW
 };
 
 

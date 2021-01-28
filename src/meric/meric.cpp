@@ -104,7 +104,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.powerCapPKG != 0)
 	{
-		Meric::outputFilenameInfo +="PWR_";
+		Meric::outputFilenameInfo +="CPUPWR_";
 		if (defaultParameter.powerCapPKGtime != 0)
 			Meric::outputFilenameInfo +="Twindow_";
 	}
@@ -118,6 +118,19 @@ int Meric::getDefaultParameters()
 	defaultParameter.powerCapPKGtime = 0;
 #endif
 
+#ifdef HAVE_NVML_H
+	defaultParameter.powerCapGPU = mutils::getenv("MERIC_PWRCAP_GPU", -1);
+	if (defaultParameter.powerCapGPU < 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_PWRCAP_GPU [mW]\n";
+		ret = 1;
+	}
+	else if (defaultParameter.powerCapGPU != 0)
+	{
+		Meric::outputFilenameInfo +="GPUPWR_";
+	}
+#endif
+
 #ifndef HAVE_HDF5_H
 	Meric::HDF5 = false;
 #endif 
@@ -129,7 +142,8 @@ int Meric::getDefaultParameters()
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
 	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << " Hz\n";
 	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << " Hz\n";
-	MERIC_INFO << "Default powercap: " << defaultParameter.powerCapPKG << " mW\t" << defaultParameter.powerCapPKGtime << " ms\n";
+	MERIC_INFO << "Default CPU powercap: " << defaultParameter.powerCapPKG << " mW\t" << defaultParameter.powerCapPKGtime << " ms\n";
+	MERIC_INFO << "Default GPU powercap: " << defaultParameter.powerCapGPU << " mW\n";
 
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
 	if (outputFilenameSuffix.size() == 0)
@@ -419,6 +433,11 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data)
 		{
 			if (defaultParameter.powerCapPKGtime != 0)
 				param.powerCapPKGtime = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
+		else if ("PWRCAP_GPU" == std::string(set->name->string))
+		{
+			if (defaultParameter.powerCapGPU != 0)
+				param.powerCapGPU = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
 		else
 			std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;

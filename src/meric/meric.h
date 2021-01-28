@@ -222,7 +222,7 @@ protected:
 				}			
 			}
 			
-			//power cap
+			//CPU power cap
 			if (next.powerCapPKG)
 			{
 				paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG-next.powerCapPKG : next.powerCapPKG-prev.socket[socket].powerCapPKG;
@@ -258,6 +258,26 @@ protected:
 				{
 					change.socket[socket].powerCapPKGtime = paramChange;
 					prev.socket[socket].powerCapPKGtime = defaultParameter.powerCapPKGtime;
+				}
+			}
+			
+			//GPU power cap
+			if (next.powerCapGPU)
+			{
+				paramChange = prev.socket[socket].powerCapGPU > next.powerCapGPU ? prev.socket[socket].powerCapGPU-next.powerCapGPU : next.powerCapGPU-prev.socket[socket].powerCapGPU;
+				if (paramChange > ignoreSettings.powerCapGPU)
+				{
+					change.socket[socket].powerCapGPU = paramChange;
+					prev.socket[socket].powerCapGPU = next.powerCapGPU;
+				}
+			}
+			else
+			{
+				paramChange = prev.socket[socket].powerCapGPU > defaultParameter.powerCapGPU ? prev.socket[socket].powerCapGPU-defaultParameter.powerCapGPU : defaultParameter.powerCapGPU-prev.socket[socket].powerCapGPU;
+				if (paramChange > ignoreSettings.powerCapGPU)
+				{
+					change.socket[socket].powerCapGPU = paramChange;
+					prev.socket[socket].powerCapGPU = defaultParameter.powerCapGPU;
 				}
 			}
 
