@@ -773,7 +773,8 @@ void sysEnergyMeasurement()
 
 #ifdef HAVE_NVML_H
 	unsigned long long energy;
-	if(nvmlDeviceGetTotalEnergyConsumption(0, &energy) == NVML_SUCCESS)
+	nvmlDevice_t deviceHandle;
+	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS && nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS)
 	{
 		std::cout << "\tNVML\n";
 		systems++;
