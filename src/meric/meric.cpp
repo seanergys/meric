@@ -130,7 +130,7 @@ int Meric::getDefaultParameters()
 		Meric::outputFilenameInfo +="GPUF_";
 	}
 #else
-	defaultParameter.frequencyGPU = 0
+	defaultParameter.frequencyGPU = 0;
 #endif
 
 #ifdef HAVE_NVML_H

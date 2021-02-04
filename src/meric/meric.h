@@ -343,11 +343,11 @@ protected:
 				}
 			}
 #else
+			change.socket[socket].frequencyGPU = 0;
+			change.socket[socket].frequencyGPUmem = 0;
 			change.socket[socket].powerCapGPU = 0;
-			change.socket[socket].powerCapGPUmem = 0;
-			change.socket[socket].powerCapGPU = 0;
-			prev.socket[socket].powerCapGPU = 0;
-			prev.socket[socket].powerCapGPUmem = 0;
+			prev.socket[socket].frequencyGPU = 0;
+			prev.socket[socket].frequencyGPUmem = 0;
 			prev.socket[socket].powerCapGPU = 0;
 #endif
 
