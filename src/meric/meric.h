@@ -163,6 +163,7 @@ protected:
 		{
 			long paramChange = 0;
 			//core frequency
+#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if (next.frequency)
 			{
 				paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency-next.frequency : next.frequency-prev.socket[socket].frequency;
@@ -181,8 +182,12 @@ protected:
 					prev.socket[socket].frequency = defaultParameter.frequency;
 				}
 			}
-			
+#else
+			change.socket[socket].frequency = 0;
+			prev.socket[socket].frequency = 0;
+#endif
 			//uncore frequency
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if(next.uncoreFrequency)
 			{
 				paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency-next.uncoreFrequency : next.uncoreFrequency-prev.socket[socket].uncoreFrequency;
@@ -199,10 +204,15 @@ protected:
 				{
 					change.socket[socket].uncoreFrequency = paramChange;
 					prev.socket[socket].uncoreFrequency = defaultParameter.uncoreFrequency;
-				}			
+				}
 			}
+#else
+			change.socket[socket].uncoreFrequency = 0;
+			prev.socket[socket].uncoreFrequency = 0;
+#endif
 			
 			//threads
+#ifdef HAVE_OMP_H
 			if(next.nthreads)
 			{
 				paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads-next.nthreads : next.nthreads-prev.socket[socket].nthreads;
@@ -221,8 +231,13 @@ protected:
 					prev.socket[socket].nthreads = defaultParameter.nthreads;
 				}			
 			}
+#else
+			change.socket[socket].nthreads = paramChange;
+			prev.socket[socket].nthreads = defaultParameter.nthreads;
+#endif
 			
 			//CPU power cap
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if (next.powerCapPKG)
 			{
 				paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG-next.powerCapPKG : next.powerCapPKG-prev.socket[socket].powerCapPKG;
@@ -260,7 +275,54 @@ protected:
 					prev.socket[socket].powerCapPKGtime = defaultParameter.powerCapPKGtime;
 				}
 			}
-			
+#else
+			change.socket[socket].powerCapPKG = 0;
+			change.socket[socket].powerCapPKGtime = 0;
+			prev.socket[socket].powerCapPKG = 0;
+			prev.socket[socket].powerCapPKGtime = 0;
+#endif
+
+#ifdef HAVE_NVML_H			
+			//GPU SM frequency
+			if (next.frequencyGPU)
+			{
+				paramChange = prev.socket[socket].frequencyGPU > next.frequencyGPU ? prev.socket[socket].frequencyGPU-next.frequencyGPU : next.frequencyGPU-prev.socket[socket].frequencyGPU;
+				if (paramChange > ignoreSettings.frequencyGPU)
+				{
+					change.socket[socket].frequencyGPU = paramChange;
+					prev.socket[socket].frequencyGPU = next.frequencyGPU;
+				}
+			}
+			else
+			{
+				paramChange = prev.socket[socket].frequencyGPU > defaultParameter.frequencyGPU ? prev.socket[socket].frequencyGPU-defaultParameter.frequencyGPU : defaultParameter.frequencyGPU-prev.socket[socket].frequencyGPU;
+				if (paramChange > ignoreSettings.frequencyGPU)
+				{
+					change.socket[socket].frequencyGPU = paramChange;
+					prev.socket[socket].frequencyGPU = defaultParameter.frequencyGPU;
+				}
+			}
+
+			//GPU memory frequency
+			if (next.frequencyGPUmem)
+			{
+				paramChange = prev.socket[socket].frequencyGPUmem > next.frequencyGPUmem ? prev.socket[socket].frequencyGPUmem-next.frequencyGPUmem : next.frequencyGPUmem-prev.socket[socket].frequencyGPUmem;
+				if (paramChange > ignoreSettings.frequencyGPUmem)
+				{
+					change.socket[socket].frequencyGPUmem = paramChange;
+					prev.socket[socket].frequencyGPUmem = next.frequencyGPUmem;
+				}
+			}
+			else
+			{
+				paramChange = prev.socket[socket].frequencyGPUmem > defaultParameter.frequencyGPUmem ? prev.socket[socket].frequencyGPUmem-defaultParameter.frequencyGPUmem : defaultParameter.frequencyGPUmem-prev.socket[socket].frequencyGPUmem;
+				if (paramChange > ignoreSettings.frequencyGPUmem)
+				{
+					change.socket[socket].frequencyGPUmem = paramChange;
+					prev.socket[socket].frequencyGPUmem = defaultParameter.frequencyGPUmem;
+				}
+			}
+						
 			//GPU power cap
 			if (next.powerCapGPU)
 			{
@@ -280,6 +342,14 @@ protected:
 					prev.socket[socket].powerCapGPU = defaultParameter.powerCapGPU;
 				}
 			}
+#else
+			change.socket[socket].powerCapGPU = 0;
+			change.socket[socket].powerCapGPUmem = 0;
+			change.socket[socket].powerCapGPU = 0;
+			prev.socket[socket].powerCapGPU = 0;
+			prev.socket[socket].powerCapGPUmem = 0;
+			prev.socket[socket].powerCapGPU = 0;
+#endif
 
 		};
 	

@@ -119,6 +119,36 @@ int Meric::getDefaultParameters()
 #endif
 
 #ifdef HAVE_NVML_H
+	defaultParameter.frequencyGPU = mutils::frequencyToHz(mutils::getenv("MERIC_GPU_FREQUENCY", std::string("")));
+	if (defaultParameter.frequencyGPU < 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_GPU_FREQUENCY [Hz]\n";
+		ret = 1;
+	}
+	else if (defaultParameter.frequencyGPU != 0)
+	{
+		Meric::outputFilenameInfo +="GPUF_";
+	}
+#else
+	defaultParameter.frequencyGPU = 0
+#endif
+
+#ifdef HAVE_NVML_H
+	defaultParameter.frequencyGPUmem = mutils::frequencyToHz(mutils::getenv("MERIC_GPU_MEM_FREQUENCY", std::string("")));
+	if (defaultParameter.frequencyGPUmem < 0)
+	{
+		std::cerr << "MERIC ERROR: set MERIC_GPU_MEM_FREQUENCY [Hz]\n";
+		ret = 1;
+	}
+	else if (defaultParameter.frequencyGPUmem != 0)
+	{
+		Meric::outputFilenameInfo +="GPUMEMF_";
+	}
+#else
+	defaultParameter.frequencyGPUmem = 0;
+#endif
+
+#ifdef HAVE_NVML_H
 	defaultParameter.powerCapGPU = mutils::getenv("MERIC_PWRCAP_GPU", -1);
 	if (defaultParameter.powerCapGPU < 0)
 	{
@@ -129,6 +159,8 @@ int Meric::getDefaultParameters()
 	{
 		Meric::outputFilenameInfo +="GPUPWR_";
 	}
+#else
+	defaultParameter.powerCapGPU = 0;
 #endif
 
 #ifndef HAVE_HDF5_H
@@ -139,11 +171,13 @@ int Meric::getDefaultParameters()
 		return ret;
 
 //OPTIONAL SECTION
-	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n";
-	MERIC_INFO << "Default frequency: " << defaultParameter.frequency << " Hz\n";
-	MERIC_INFO << "Default uncore frequency: " << defaultParameter.uncoreFrequency << " Hz\n";
-	MERIC_INFO << "Default CPU powercap: " << defaultParameter.powerCapPKG << " mW\t" << defaultParameter.powerCapPKGtime << " ms\n";
-	MERIC_INFO << "Default GPU powercap: " << defaultParameter.powerCapGPU << " mW\n";
+	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n"
+	           << "Default CPU frequency: " << defaultParameter.frequency << " Hz\n"
+	           << "Default CPU uncore frequency: " << defaultParameter.uncoreFrequency << " Hz\n"
+	           << "Default CPU powercap: " << defaultParameter.powerCapPKG << " mW\t" << defaultParameter.powerCapPKGtime << " ms\n"
+	           << "Default GPU streaming multiprocessors frequency: " << defaultParameter.frequencyGPU << " Hz\n"
+	           << "Default GPU memory frequency: " << defaultParameter.frequencyGPUmem << " Hz\n"
+	           << "Default GPU powercap: " << defaultParameter.powerCapGPU << " mW\n";
 
 	std::string outputFilenameSuffix = mutils::getenv("MERIC_OUTPUT_FILENAME", std::string(""));
 	if (outputFilenameSuffix.size() == 0)
@@ -433,6 +467,16 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data)
 		{
 			if (defaultParameter.powerCapPKGtime != 0)
 				param.powerCapPKGtime = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
+		else if ("GPU_FREQUENCY" == std::string(set->name->string))
+		{
+			if (defaultParameter.frequencyGPU != 0)
+				param.frequencyGPU = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
+		}
+		else if ("GPU_MEM_FREQUENCY" == std::string(set->name->string))
+		{
+			if (defaultParameter.frequencyGPUmem != 0)
+				param.frequencyGPUmem = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
 		else if ("PWRCAP_GPU" == std::string(set->name->string))
 		{

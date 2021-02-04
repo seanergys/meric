@@ -66,6 +66,8 @@ struct RegionParameters { //must be able to carry -1
 	long powerCapPKGtime; //us
 //	long powerCapRAM;     //mW
 //	long powerCapRAMtime; //us
+	long frequencyGPU;    //Hz
+	long frequencyGPUmem; //Hz
 	long powerCapGPU;     //mW
 };
 
@@ -175,6 +177,8 @@ private:
 #ifdef HAVE_NVML_H
 	static void getGPUbrandString(std::string & GPUname);
 	static void getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values);
+	static uint currentGPUMemFreq; //Hz
+	static uint currentGPUSMFreq;  //Hz
 #endif
 
 	static systemLimits defaultSettings;

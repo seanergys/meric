@@ -125,6 +125,8 @@ protected:
 					+ (records[starts.back()].configuration.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
 					+ (records[starts.back()].configuration.powerCapPKG == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKG) +"_" )
 					+ (records[starts.back()].configuration.powerCapPKGtime == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKGtime) +"_" )
+					+ (records[starts.back()].configuration.frequencyGPU == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPU)  +"_" )
+					+ (records[starts.back()].configuration.frequencyGPUmem == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPUmem)  +"_" )
 					+ (records[starts.back()].configuration.powerCapGPU == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapGPU) +"_" )					
 					+ outputFilename;
 				if (filenamePrefix.back() == '_')

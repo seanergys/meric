@@ -24,6 +24,10 @@ bool Environment::usedGPUPWRCAP = false;
 DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
+#ifdef HAVE_NVML_H
+uint Environment::currentGPUMemFreq = 0;
+uint Environment::currentGPUSMFreq = 0;
+#endif
 
 
 #ifdef __x86_64
@@ -1486,28 +1490,45 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
  * set GPU streaming multiprocessors and memory frequencies
  * freqMEM [Hz], frequency of the memory, ignore if zero
  * freqSM [Hz], frequency of the streaming multiprocessors, ignore if zero
- * if no specific GPU specified (implicit -1), set the frequencies to all the available GPUs
+ * if no specific GPU specified (implicit -1) set the frequencies to all the available GPUs
  **/
 void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 {
 
 #ifndef HAVE_NVML_H
 	return;
-#endif
+#else
 
-	if (freqMEM == 0 || freqSM == 0)
+	if (freqMEM == 0 && freqSM == 0)
 		return;
 	
 	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
-	std::map<uint, std::vector<uint>>::iterator MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
-	if (MEMit == defaultSettings.availableGPUFreq.end())
-		MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
-
+	std::map<uint, std::vector<uint>>::iterator MEMit;
+	if (freqMEM == 0)
+	{
+		if (currentGPUMemFreq == 0)
+			currentGPUMemFreq = defaultSettings.defaultGPUMemFreq;
+		freqMEM = currentGPUMemFreq;
+		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
+	}
+	else
+	{
+		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
+		if (MEMit == defaultSettings.availableGPUFreq.end())
+			MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
+		freqMEM = MEMit->first;
+	}
+	
+	if (freqSM == 0)
+	{
+		if (currentGPUSMFreq == 0)
+			currentGPUSMFreq = defaultSettings.defaultGPUSMFreq;
+		freqSM = currentGPUSMFreq;
+	}
+	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
 	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
 	if(SMit == MEMit->second.end())
 		SMit = std::upper_bound(MEMit->second.begin(), MEMit->second.end(), freqSM);
-	
-	freqMEM = MEMit->first;
 	freqSM = *SMit;
 	
 	int min, max;
@@ -1528,8 +1549,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		max = gpu+1;
 	}
 
-#ifdef HAVE_NVML_H
-//	MERIC_INFO << "NVML set GPU frequency
+	MERIC_INFO << "NVML set GPU frequency MEM: " << freqMEM << "\tSM: " << freqSM << std::endl;
 	usedGPUDVFS = true;
 	
 	for (int id=min; id<max; id++)
@@ -1537,6 +1557,8 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM, freqSM) != NVML_SUCCESS)
 			std::cerr << "NVML ERROR: failed to set GPU frequency\n";
 	}
+	currentGPUMemFreq = freqMEM;
+	currentGPUSMFreq  = freqSM;
 #endif
 }
 
