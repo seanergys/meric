@@ -58,15 +58,25 @@ MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://githu
 
 
 ### Intel RAPL power capping ###
-Intel processors with RAPL energy measurement system provides possibility to specify average power consumption of the PKG or DRAM in a specific time window.
+Intel processors from Sandy Bridge architecture provides Runnnig Average Power Limit (RAPL), that keeps the power consumption of the available domains bellow the specified power limit in a specific time window (long-term and short-term windows). MERIC allows to specify power limit of the Package power domain within its long-term time window, whcich can be also adjusted.
+
+MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap is supported.
 	
-MERIC requires requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap is supported.
-	
-Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. Due to that it might be impossible to set exactly the window size you have specified.
+Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond. <!--> and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. <!--> Due to that it might be impossible to set exactly the window size you have specified.
 
 
 ### Number of active OMP threads ###
 Using OpenMP API.
+
+
+### Nvidia GPU streaming multiprocessors frequency ###
+Some Nvidia GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
+To tune the SM frequency, MERIC requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml).
+
+
+### Nvidia GPU memory frequency ###
+Nvidia GPUs with GDDR memory provide possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml).
+
 
 ### Nvidia GPU power capping ###
 Using [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of Nvidia GPUs.
@@ -84,7 +94,7 @@ Energy measurement system can be selected using `MERIC_MEASURE` environment vari
 ### Intel RAPL ###
 From the Sandy Bridge microarchitecture all contemporary Intel processors provides software-based energy meter with sampling frequency 1 kHz of the PKG (CPUs) and DRAM. The system does not cover energy consumption of the node itself.
 
-Since we are speaking about counters, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size.
+Since we are speaking about performance counters (non-continual mode only), overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size.
 
 Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
 	
@@ -92,23 +102,25 @@ In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/
 
 
 ### HDEEM ###
-[High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run.
+[High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz (blade), 100 Hz (on node components) respectively. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run. Both continual and non-continual modeas are available, however considering these features continual mode is prefered.
 
 
 ### DiG ###
-Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON](http://projects.eees.dei.unibo.it/monitoring/wordpress/) framework.
+Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON](http://projects.eees.dei.unibo.it/monitoring/wordpress/) framework. Continual mode available only.
 
 To activate possibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
 
-### Nvidia Managemenet Library (NVML) ###
-[NVML](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures.
+
+### NVML ###
+[Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurment. Currently only non-continual mode is supported.
+
 
 ### BSC ARM Jetson ###
-Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
+Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py. Continual mode available only.
 
 
 ### BSC ARM ThunderX ###
-BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
+BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Continual mode available only.
 
 --------------------------------------------------------------------------------
 #     3] MERIC interface and Shared Score-P/MERIC API                          #
@@ -301,18 +313,24 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Average processor PKG power in milliwatts under the selected time window.
 * `export MERIC_PWRCAP_TIME=3000`
 	- Time window size for power capping specified in milliseconds.
+* `export MERIC_GPU_FREQUENCY=1400MHz`
+* `export MERIC_GPU_MEM_FREQUENCY=1800MHz`
+	- Specification of GPU streaming multiprocessors frequency and frequency of the GPU memory.
+	- As well as CPU frequencies these are also specified as integer in Hz (default), kHz, MHz or GHz.
+	- Only GDDR memories are possible to tune.
+	- *NOTE:* Available frequencies of streaming multiprocessors depend on frequency of the memory.
 * `export MERIC_PWRCAP_GPU=140000`
 	- GPU power limit in milliwatts.
 
 ## SET MERIC MEASUREMENT MODE ##
 * `export MERIC_MEASUREMENT=RAPL,HDEEM`
 	- NONE    = default option, no time or energy measurement
-	- HDEEM   = Bull|Atos energy and power measurement
+	- HDEEM   = Bull|Atos HDEEM energy and power measurement
 	- RAPL    = Intel RAPL energy measurement
 	- NVML    = Nvidia GPUs energy measurement
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system
-	- JETSON  = BSC Jetson TX1 power and energy measurement
-	- THUNDER = BSC ThunderX power and energy measurement
+	- JETSON  = BSC Jetson TX1 energy and power measurement
+	- THUNDER = BSC ThunderX energy and power measurement
 	- TIME    = runtime measuement, default for other modes
 
 * `export MERIC_ITERATION=0`
@@ -328,7 +346,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 ## SET MERIC OUTPUT FORMAT ##
 * `export MERIC_CONTINUAL=0`
 	- Some energy measurement systems support two modes how they operate.
-	- In the continual mode (MERIC_CONTINUAL=1) the systems stores power samples in an internal memory, MERIC stores only timestamps during an application run and evaluate the energy consumption at the end of the application run.
+	- In the continual mode (MERIC_CONTINUAL=1) the systems stores power samples in an internal memory, MERIC stores only timestamps during an application run and evaluates the energy consumption at the end of the application run.
 	- In the non-continual mode (MERIC_CONTINUAL=0) the energy measurement system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to continual mode.
 	- Currently both modes are available for the HDEEM only.
 
@@ -441,6 +459,8 @@ export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
 export MERIC_NUM_THREADS=0       # non-OpenMP application
 export MERIC_PWRCAP_POWER=0      # no RAPL power capping
 export MERIC_PWRCAP_TIME=0       # no RAPL power capping
+export MERIC_GPU_FREQUENCY=0     # no GPU streaming multiprocessors frequency tuning
+export MERIC_GPU_MEM_FREQUENCY=0 # no GPU memory frequency tuning
 export MERIC_PWRCAP_GPU=0        # no GPU power capping
 export MERIC_MEASURE=TIME        # time measurement only
 
@@ -464,6 +484,8 @@ In test directory are provided example scripts `run.sh` or `run-mpi.sh`
 export MERIC_MEASURE=RAPL,HDEEM
 export MERIC_PWRCAP_POWER=0
 export MERIC_PWRCAP_TIME=0
+export MERIC_GPU_FREQUENCY=0
+export MERIC_GPU_MEM_FREQUENCY=0
 export MERIC_PWRCAP_GPU=0
 
 for thread in {24..1..1}
