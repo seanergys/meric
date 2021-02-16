@@ -5,7 +5,7 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
 	{
 		HDEEM::init(Meric::DETAILED);
 		HDEEM::start(_startTime);
@@ -13,13 +13,24 @@ SharedMeric::SharedMeric()
 		if (Meric::DEBUG)
 		{
 			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
-		} else {
-			if (Meric::CONTINUAL)
-			{
-				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
-			} else {
-				_storeList.push_back(new CountersStore<HDEEM, double, double>());
-			}
+		}
+		else
+		{
+			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
+		}
+	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
+	{
+		HDEEM::init(Meric::DETAILED);
+		HDEEM::start(_startTime);
+
+		if (Meric::DEBUG)
+		{
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<HDEEM, double, double>());
 		}
 	}
 
@@ -102,7 +113,7 @@ SharedMeric::SharedMeric()
 SharedMeric::~SharedMeric()
 {
 	Environment::close();
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
 	{
 		HDEEM::close();
 	}

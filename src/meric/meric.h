@@ -43,7 +43,7 @@ public:
 	virtual double stop()
 	{
 		//stop should be in opposite order as start
-		//if MERIC_CONTINUAL is used, we want to start it first and stop it last
+		//if continual mode is in use (MERIC_HDEEM_SAMPLES), we want to start it first and stop it last
 		for(int i=-1+_storeList.size();i>=0; i--)
 		{
 			if (_storeList[i]->getMPIWrite())
@@ -123,7 +123,7 @@ public:
 		if (COUNTERS == "papi")
 			PAPI::close();
 		// close() is not needed for RAPL
-//		if (meric::Meric::MODE == meric::MODE_RAPL || meric::MODE_BOTH)
+//		if(std::find(MONITORS.begin(), MONITORS.end(), meric::MODE_RAPL) != MONITORS.end())
 //			meric::RAPL::close();
 	}
 
@@ -496,7 +496,6 @@ protected:
 	static std::string outputFilenameInfo;
 
 	static int ITERATION;
-	static bool CONTINUAL;
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;

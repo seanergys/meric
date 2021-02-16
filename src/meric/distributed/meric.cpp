@@ -56,7 +56,7 @@ DistributedMeric::DistributedMeric()
 	_nodeId--;
 	
 //STORE
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
 		{
@@ -72,24 +72,43 @@ DistributedMeric::DistributedMeric()
 			} else {
 				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
-		} else {
-			if (Meric::CONTINUAL)
+		}
+		else
+		{
+			if (Meric::AGGREGATE)
 			{
-				if (Meric::AGGREGATE)
-				{
-					_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
-				} else {
-					_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
-				}
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 			} else {
-				if (Meric::AGGREGATE)
-				{
-					_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double, double>>(_storingProcs, !_MPInodeRank));
-				}
-				else
-				{
-					_storeList.push_back(new CountersStore<HDEEM, double, double>(!_MPInodeRank));
-				}
+				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
+			}
+		}
+	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
+	{
+		if (!_MPInodeRank)
+		{
+			HDEEM::init(Meric::DETAILED);
+			HDEEM::start(_startTime);
+		}
+	
+		if (Meric::DEBUG)
+		{
+		    if(Meric::AGGREGATE)
+		    {
+				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
+			} else {
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
+			}
+		}
+		else
+		{
+			if (Meric::AGGREGATE)
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<HDEEM, double, double>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<HDEEM, double, double>(!_MPInodeRank));
 			}
 		}
 	}
@@ -237,11 +256,11 @@ DistributedMeric::DistributedMeric()
 
 DistributedMeric::~DistributedMeric()
 {
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end() && !_MPInodeRank)
+	if (!_MPInodeRank && (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end()))
 	{
 		HDEEM::close();
 	}
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end() && !_MPInodeRank)
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
 	}

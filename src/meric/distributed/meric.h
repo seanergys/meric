@@ -155,7 +155,7 @@ public:
 
 		if (!_MPInodeRank)
 		{
-			if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM) != MONITORS.end())
+			if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
 			{
 				HDEEM::stop(_stopTime);
 			}

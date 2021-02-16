@@ -345,13 +345,13 @@ void generateDefaultWrapperConfigFile()
 
 	content+= std::string("\t\"MERIC\" : {\n")
 #ifdef HAVE_HDEEM_H
-			+ "\t\t\"MODE\" : 0,\n"
+			+ "\t\t\"MEASURE\" : HDEEM-S,\n"
 #elif defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-			+ "\t\t\"MODE\" : 1,\n"
+			+ "\t\t\"MEASURE\" : RAPL,\n"
 #elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-			+ "\t\t\"MODE\" : 6,\n"
+			+ "\t\t\"MEASURE\" : DAVIDE,\n"
 #else //just time measurement
-			+ "\t\t\"MODE\" : 7,\n"
+			+ "\t\t\"MEASURE\" : TIME,\n"
 #endif
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			+ "\t\t\"PWRCAP_POWER\" : 0,\n"
@@ -365,7 +365,6 @@ void generateDefaultWrapperConfigFile()
 			+ "\t\t\"COUNTERS\" : \"msr\",\n"
 #endif
 			+ "\t\t\"AGGREGATE\"  : 1,\n"
-			+ "\t\t\"CONTINUAL\"  : 1,\n"
 			+ "\t\t\"DETAILED\"   : 1,\n"
 			+ "\t\t\"SAMPLES\"    : 0,\n"
 			+ "\t\t\"BARRIERS\"   : \"all\",\n"
@@ -429,22 +428,22 @@ void printHelp()
 	          << "\t-d = generate a default config file 'defaultWrapperConfig.json'" << std::endl
 	          << "\t-s configFile = run application analysis according the configuration file" << std::endl
 	          << "\t-a pathToDir = generate optimal configuration file from a data measured by MERIC" << std::endl
-	          << "\t\t-m MERIC_MODE = MERIC_MODE that were used to measure the data, no default" << std::endl
-	          << "\t\t-c MERIC_CONTINUAL = MERIC_CONTINUAL mode that were used to measure the data, default 1" << std::endl
+	          << "\t\t-m MERIC_MEASURE = measurement system that was used to measure the data, no default." << std::endl
 	          << "\t\t-b baseline = power baseline [W] that should be used for analysis, default 0" << std::endl
 	          << "\t-- = follows command to run the application to analyze" << std::endl;
 	exit(1);
 }
 
-void recogniseTargetEnergyMeasurementSystem(meric::mode mode, bool continual)
+void recogniseTargetEnergyMeasurementSystem(meric::mode mode)
 {
-	if (mode == meric::MODE_HDEEM) // || mode == meric::MODE_BOTH)
+	if (mode == meric::MODE_HDEEM_SAMPLES)
 	{
 		label_energy = meric::HDEEM::SUM_ENERGY_LABEL;
-		if (continual)
-			dataSourceLabel = std::string("# SAMPLES - ")+meric::HDEEM::getSourceLabel()+":";
-		else
-			dataSourceLabel = std::string("# COUNTERS - ")+meric::HDEEM::getSourceLabel()+":";
+		dataSourceLabel = std::string("# SAMPLES - ")+meric::HDEEM::getSourceLabel()+":";
+	}
+	else if (mode == meric::MODE_HDEEM_COUNTERS)
+	{
+		dataSourceLabel = std::string("# COUNTERS - ")+meric::HDEEM::getSourceLabel()+":";
 	}
 	else if (mode == meric::MODE_RAPL)
 	{
@@ -482,7 +481,6 @@ int readParameters(int argc, char **argv)
 	if (argc == 1)
 		printHelp();
 	std::string settingsFile = "";
-	bool continual = true;
 	meric::mode MERIC_MODE = meric::MODE_TIME;
 	for (int i = 1; i < argc; ++i)
 	{
@@ -500,13 +498,15 @@ int readParameters(int argc, char **argv)
 		{
 			baseline = std::stol(argv[++i]);
 		}
-		else if (arg == "-m") //MERIC_MODE
+		else if (arg == "-m") //measurement system
 		{
-			MERIC_MODE = (meric::mode) std::stoi(argv[++i]);
-		}
-		else if (arg == "-c") //MERIC_CONTINUAL
-		{
-			continual = std::stoi(argv[++i]);
+			std::string val = std::string(argv[++i]);
+			if (meric::modeString.count(val) == 0)
+			{
+				std::cerr << "Invalid measurement system selected, currently only one at the time is supported.\n";
+			}
+			else
+				MERIC_MODE = meric::modeString[val];
 		}
 		else if (arg == "-s") //start a new analysis
 		{
@@ -525,10 +525,10 @@ int readParameters(int argc, char **argv)
 	{
 		if (MERIC_MODE == meric::MODE_TIME)
 		{
-			std::cerr << "ERROR: wrong input MERIC MODE (-m)\n";
+			std::cerr << "ERROR: wrong input MERIC MEASUREMENT system (-m)\n";
 			printHelp();
 		}
-		recogniseTargetEnergyMeasurementSystem(MERIC_MODE, continual);
+		recogniseTargetEnergyMeasurementSystem(MERIC_MODE);
 		return 2;
 	}
 
@@ -542,7 +542,6 @@ int readParameters(int argc, char **argv)
 	struct timespec timeNow;
 	clock_gettime(CLOCK_REALTIME, &timeNow);
 	MERIC_OUTPUT_DIR = "MERICwrapper-"+std::to_string(timeNow.tv_sec); //default name
-	bool continualMode = true;
 
 	struct stat info;
 	struct json_value_s* root = NULL;
@@ -848,20 +847,21 @@ int readParameters(int argc, char **argv)
 							params.MERIC_NUM_THREADS = std::string(((struct json_string_s*)meric->value->payload)->string);
 							setenv("MERIC_NUM_THREADS", params.MERIC_NUM_THREADS.c_str(), 1);
 						}
-						else if (std::string(meric->name->string) == "MODE")
+						else if (std::string(meric->name->string) == "MEASURE")
 						{
-							MERIC_MODE = (meric::mode) std::stoi(std::string(((struct json_string_s*)meric->value->payload)->string));
-							setenv("MERIC_MODE", std::to_string(MERIC_MODE).c_str(), 1);
+							for (auto &i : meric::modeString)
+							{
+								if (i.second == MERIC_MODE)
+								{
+									setenv("MERIC_MEASURE", i.first.c_str(), 1);
+									break;
+								}
+							}
 						}
 						else if (std::string(meric->name->string) == "COUNTERS")
 							setenv("MERIC_COUNTERS", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "AGGREGATE")
 							setenv("MERIC_AGGREGATE", ((struct json_string_s*)meric->value->payload)->string, 1);
-						else if (std::string(meric->name->string) == "CONTINUAL")
-						{
-							continualMode = std::stoi(std::string(((struct json_string_s*)meric->value->payload)->string));
-							setenv("MERIC_CONTINUAL", ((struct json_string_s*)meric->value->payload)->string, 1);
-						}
 						else if (std::string(meric->name->string) == "DETAILED")
 							setenv("MERIC_DETAILED", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "SAMPLES")
@@ -899,7 +899,7 @@ int readParameters(int argc, char **argv)
 		return 10;
 	}
 	
-	recogniseTargetEnergyMeasurementSystem(MERIC_MODE, continualMode);
+	recogniseTargetEnergyMeasurementSystem(MERIC_MODE);
 	
 	setenv("MERIC_OUTPUT_DIR", MERIC_OUTPUT_DIR.c_str(), 1);
 #if __cplusplus >= 201703L

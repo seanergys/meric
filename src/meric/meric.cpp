@@ -4,8 +4,6 @@
 using namespace meric;
 
 int         Meric::ITERATION  = mutils::getenv<int>("MERIC_ITERATION", 0);
-int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_RUN);
-bool        Meric::CONTINUAL  = mutils::getenv("MERIC_CONTINUAL" , true);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
 bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
@@ -226,50 +224,45 @@ int Meric::getDefaultParameters()
 			Meric::MEASURE = "";
 		}
 		std::transform(token.begin(), token.end(), token.begin(), ::toupper);
-		if (token == HDEEM::getSourceLabel())
-		{
-			MONITORS.push_back(MODE_HDEEM);
-			#ifndef HAVE_HDEEM_H
-				std::cerr << "MERIC WARNING: HDEEM power monitoring not available\n";
-			#endif
-		}
-		else if (token == RAPL::getSourceLabel())
-		{
-			MONITORS.push_back(MODE_RAPL);
-			#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
-				std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";
-			#endif
-		}
-		else if (token == NVML::getSourceLabel())
-		{
-			MONITORS.push_back(MODE_NVML);
-			#ifndef HAVE_NVML_H
-				std::cerr << "MERIC WARNING: NVML power monitoring not available\n";
-			#endif
-		}
-		else if (token == THUNDER::getSourceLabel())
-			MONITORS.push_back(MODE_THUNDER);
-		else if (token == JETSON::getSourceLabel())
-			MONITORS.push_back(MODE_JETSON);
-		else if (token == DAVIDE::getSourceLabel())
-		{
-			MONITORS.push_back(MODE_DAVIDE);
-			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-				std::cerr << "MERIC WARNING: DAVIDE power monitoring not available\n";
-			#endif
-		}
-		else if (token == "TIME")
-			MONITORS.push_back(MODE_TIME);
-		else if (token == "NONE")
-		{
-			MONITORS.clear();
-			break;
-		}
-		else
+		
+		if (modeString.count(token) == 0)
 		{
 			std::cerr << "MERIC ERROR: invalid input MEASUREMENT mode '"<<token<<"'\n";
 			return 1;
-		}	
+		}
+		else
+		{
+			MONITORS.push_back(modeString[token]);
+			
+			#ifndef HAVE_HDEEM_H
+				if (modeString[token] == MODE_HDEEM_SAMPLES || modeString[token] == MODE_HDEEM_COUNTERS)
+				{
+					std::cerr << "MERIC WARNING: HDEEM power monitoring not available\n";
+					continue;
+				}
+			#endif
+			#if !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
+				if (modeString[token] == MODE_RAPL)
+				{
+					std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";
+					continue;
+				}
+			#endif
+			#ifndef HAVE_NVML_H
+				if (modeString[token] == MODE_NVML)
+				{
+					std::cerr << "MERIC WARNING: NVML power monitoring not available\n";
+					continue;
+				}
+			#endif
+			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+				if (modeString[token] == MODE_DAVIDE)
+				{
+					std::cerr << "MERIC WARNING: DAVIDE power monitoring not available\n";
+					continue;
+				}
+			#endif
+		}
 	}
 		
 	if (Meric::BARRIERS != "all")
