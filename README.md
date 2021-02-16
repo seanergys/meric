@@ -306,32 +306,39 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_FREQUENCY=2400MHz`
 * `export MERIC_UNCORE_FREQUENCY=2GHz`
 	- Both frequencies can be specified as integer in Hz (default), kHz, MHz or GHz.
+
 * `export MERIC_NUM_THREADS=24`
 	- Number of openMP threads that should be used to run the application.
 	- *IMPORTANT:* When using hyper-threading, thread pinning should be specified, otherwise DVFS may not work.
+
 * `export MERIC_PWRCAP_POWER=100000`
 	- Average processor PKG power in milliwatts under the selected time window.
+
 * `export MERIC_PWRCAP_TIME=3000`
 	- Time window size for power capping specified in milliseconds.
+
 * `export MERIC_GPU_FREQUENCY=1400MHz`
 * `export MERIC_GPU_MEM_FREQUENCY=1800MHz`
 	- Specification of GPU streaming multiprocessors frequency and frequency of the GPU memory.
 	- As well as CPU frequencies these are also specified as integer in Hz (default), kHz, MHz or GHz.
 	- Only GDDR memories are possible to tune.
 	- *NOTE:* Available frequencies of streaming multiprocessors depend on frequency of the memory.
+
 * `export MERIC_PWRCAP_GPU=140000`
 	- GPU power limit in milliwatts.
 
 ## SET MERIC MEASUREMENT MODE ##
-* `export MERIC_MEASUREMENT=RAPL,HDEEM`
-	- NONE    = default option, no time or energy measurement
-	- HDEEM   = Bull|Atos HDEEM energy and power measurement
-	- RAPL    = Intel RAPL energy measurement
-	- NVML    = Nvidia GPUs energy measurement
-	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system
-	- JETSON  = BSC Jetson TX1 energy and power measurement
-	- THUNDER = BSC ThunderX energy and power measurement
-	- TIME    = runtime measuement, default for other modes
+* `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
+	- NONE    = Default option, no time or energy measurement.
+	- HDEEM-S = Bull|Atos HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
+	- HDEEM-C = Bull|Atos HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
+	- HDEEM   = Equals to HDEEM-S option.
+	- RAPL    = Intel RAPL energy measurement.
+	- NVML    = Nvidia GPUs energy measurement.
+	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
+	- JETSON  = BSC Jetson TX1 energy and power measurement.
+	- THUNDER = BSC ThunderX energy and power measurement.
+	- TIME    = Runtime measuement, default for other modes.
 
 * `export MERIC_ITERATION=0`
 	- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
@@ -344,25 +351,6 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- none = do not use barriers
 
 ## SET MERIC OUTPUT FORMAT ##
-* `export MERIC_CONTINUAL=0`
-	- Some energy measurement systems support two modes how they operate.
-	- In the continual mode (MERIC_CONTINUAL=1) the systems stores power samples in an internal memory, MERIC stores only timestamps during an application run and evaluates the energy consumption at the end of the application run.
-	- In the non-continual mode (MERIC_CONTINUAL=0) the energy measurement system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to continual mode.
-	- Currently both modes are available for the HDEEM only.
-
-* `export MERIC_DETAILED=1`
-	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
-
-* `export MERIC_DEBUG=1`
-	- Data are taken both from samples and Stats structure, so we can compare them.
-	- Data are taken from blade and Voltage Regulators too.
-	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
-
-* `export MERIC_SAMPLES=1`
-	- If the energy measurement system stores power samples, MERIC will add the corresponding samples to the output files.
-	- Available only in non-aggregated (MERIC_AGGREGATE=0) continual mode (MERIC_CONTINUAL=1).
-	- WARNING: Output files may become very big when measured regions run for a long time.
-
 * `export MERIC_AGGREGATE=0`
 	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
@@ -371,10 +359,24 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr.
 	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
 	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
+
+* `export MERIC_DEBUG=1`
+	- Data are taken both from samples and Stats structure, so we can compare them.
+	- Data are taken from blade and Voltage Regulators too.
+	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
+
+* `export MERIC_DETAILED=1`
+	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
+
+* `export MERIC_SAMPLES=1`
+	- If the energy measurement system stores power samples, MERIC will add the corresponding samples to the output files.
+	- Available only in non-aggregated (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
+	- WARNING: Output files may become very big when measured regions run for a long time.
 	
 ## SET OUTPUT FILES/FOLDERS NAME ##
 * `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
 	- Default name is mericMeasurement.
+
 * `export MERIC_OUTPUT_FILENAME="log"`
 	- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
 
