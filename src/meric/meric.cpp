@@ -4,6 +4,7 @@
 using namespace meric;
 
 int         Meric::ITERATION  = mutils::getenv<int>("MERIC_ITERATION", 0);
+int         Meric::MODE       = mutils::getenv<int>("MERIC_MODE" , MODE_RUN);
 bool        Meric::DETAILED   = mutils::getenv("MERIC_DETAILED"  , false);
 bool        Meric::AGGREGATE  = mutils::getenv("MERIC_AGGREGATE" , true);
 bool        Meric::DEBUG      = mutils::getenv("MERIC_DEBUG"     , false);
