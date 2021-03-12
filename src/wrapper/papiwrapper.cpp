@@ -181,7 +181,7 @@ std::string PAPI::getSummaryCounterName()
 }
 
 // solve counter overflow
-unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
+unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName)
 {
 	if (stopValue < startValue)
 	{

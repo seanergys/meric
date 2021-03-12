@@ -127,7 +127,7 @@ public:
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
 	
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
-	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter);
+	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter, std::string regionName);
 	static std::string getSummaryCounterName();
 
 private:
@@ -201,7 +201,7 @@ private:
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};
 
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
-	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter) {return stopValue - startValue;};
+	static double getResultValue(double startValue, double stopValue, double runtime, std::string counter, std::string regionName) {return stopValue - startValue;};
 	static std::string getSummaryCounterName();
 
 private:

@@ -15,7 +15,7 @@ std::map<std::string, unsigned long long> NVML::counters;
  * stopValue and time between these two measurements
  * handles counter overflow
  **/
-double NVML::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, std::string counter)
+double NVML::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, std::string counter, std::string regionName)
 {
 	if (stopValue < startValue)
 	{	

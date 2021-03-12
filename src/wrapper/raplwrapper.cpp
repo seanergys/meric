@@ -16,7 +16,7 @@ std::map<std::string, unsigned long long int> RAPL::counters;
  * stopValue and time between these two measurements
  * handles counter overflow
  **/
-double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter)
+double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName)
 {
 	std::string counterName;
 	if (detailedMode)

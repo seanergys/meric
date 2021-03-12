@@ -43,8 +43,8 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	RType value;
 	double time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
-	{	 //TODO in case of msrcounters it doesnt make sence share the values since they are not used
-		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, counterIt.first);
+	{	 //TODO in case of msrcounters it doesn't make sence share the values since they are not used
+		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, counterIt.first, _name[_records[iStarts].region]);
 		stats.push_back(value);
 		summary += value;
 	}
@@ -81,7 +81,7 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 		std::string label = TCounter::getCounterLabel(counterIt.first);
 		if (label != "")
 		{
-			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first);
+			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first, _name[_records[iStarts.back()].region]);
 			summary += value;
 			ss << label << "," << std::fixed << std::setprecision(5) << value << std::endl;
 		}
