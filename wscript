@@ -75,7 +75,7 @@ def configure(ctx):
 #        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
         
         # check for energy measurment systems
-        if (not ctx.check_cc(header_name="hdeem.h", execute=False, mandatory=False)):
+        if (not ctx.check_cc(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False) or not ctx.check_cc(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)):
             # missing include <freeipmi/freeipmi.h>
             ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
         ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
@@ -217,7 +217,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="wrapper",
-        use="msr x86_adapt numa geopm nvml",
+        use="msr x86_adapt numa geopm nvml hdeem freeipmi",
         install_path = ctx.path.abspath()+"/tools/"
     )
     
