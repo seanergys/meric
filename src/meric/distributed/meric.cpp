@@ -77,6 +77,8 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
+				if (Meric::SAMPLES)
+					std::cerr << "MERIC WARNING: HDEEM power samples are available in non-aggregate mode only\n";
 				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 			} else {
 				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
