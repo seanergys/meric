@@ -404,7 +404,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 			free(memFreq);
 		}
 		
-		unsigned int freqMem, freqSM, freq;
+		unsigned int freqMem, freqSM, freq = 0;
 		if(nvmlDeviceGetDefaultApplicationsClock(deviceHandle, NVML_CLOCK_MEM, &freqMem) == NVML_SUCCESS &&
 		   nvmlDeviceGetDefaultApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freqSM)   == NVML_SUCCESS)
 		{
@@ -414,6 +414,14 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 			    nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freq)  == NVML_SUCCESS && freq != freqSM)
 				ok = false;
 		}
+		
+		//nvmlReturn_t nvmlDeviceGetClock ( nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz )
+		
+		//NVML_CLOCK_MEM, NVML_CLOCK_SM
+		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqMem)
+			std::cout << "\tCurrent memory frequency: " << freq*1000 << " kHz\n";
+		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqSM)
+			std::cout << "\tCurrent streaming multiprocessor frequency: " << freq*1000 << " kHz\n";
 	}
 #endif
 
