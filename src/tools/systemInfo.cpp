@@ -899,17 +899,16 @@ int main(int argc, char **argv)
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
 	
-	if (!systemInTheDefaultSettings && restoreFile)
+	if (restore && restoreFile)
 	{
-		if (restore)
-		{
-			meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
-			meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
-			meric::Environment::restoreSystemSettings(true);
-		}
-		else
-			std::cerr << "\n\tWARNING: system not in the default settings!"
-			          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+		meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+		meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
+		meric::Environment::restoreSystemSettings(true);
+	}
+	else if (!systemInTheDefaultSettings)
+	{
+		std::cerr << "\n\tWARNING: system not in the default settings!"
+		          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
 	}
 
 
