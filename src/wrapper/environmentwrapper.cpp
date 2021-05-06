@@ -893,8 +893,8 @@ void Environment::readSystemDefaultSettings()
 		
 		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_RAM_POWER_LIMIT, pio.signal_domain_type(RAPL_RAM_POWER_LIMIT), 0));
 #endif
-		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits * 1000;
-		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits * 1000;
+		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
+		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
 
 // GPU POWERcap and FREQUENCIES ----------------------------------------------//
 #ifdef HAVE_NVML_H
