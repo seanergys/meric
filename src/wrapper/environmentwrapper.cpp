@@ -168,7 +168,14 @@ long Environment::getNominalFrequency()
 	std::ifstream frequencyBounderyFile;
 	std::string freqBound = "";
 
-	if (getScalingDriver() == "acpi-cpufreq")
+	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_nominal_freq");
+	if (frequencyBounderyFile.is_open())
+	{
+		frequencyBounderyFile >> freqBound;
+		frequencyBounderyFile.close();
+		frequency = std::stol(freqBound)*1000;
+	}
+	else if (getScalingDriver() == "acpi-cpufreq")
 	{
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 		if (frequencyBounderyFile.is_open())
@@ -201,10 +208,10 @@ long Environment::getNominalFrequency()
 
 /**
  * reads from the system list of available specific CPU core frequencies if specified
- * otherwise the list produced using 100 MHz step 
+ * otherwise the list produced using 100 MHz step
  **/
 void Environment::getAvailableCF(std::vector<long> & values)
-{
+{	//TODO test /sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{

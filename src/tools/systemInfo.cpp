@@ -161,16 +161,13 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 	
 	long freq = -1;
 	//files have the CPU core frequency in KHz
-	if (scalingDriver == "acpi-cpufreq")
+	frequencyBounderyFile.open("/sys/devices/system/cpu/cpufreq/boost");
+	if (frequencyBounderyFile.is_open())
 	{
-		frequencyBounderyFile.open("/sys/devices/system/cpu/cpufreq/boost");
-		if (frequencyBounderyFile.is_open())
-		{
-			std::string turboInfo = "";
-			frequencyBounderyFile >> turboInfo;
-			frequencyBounderyFile.close();
-			freq = std::stoi(turboInfo);
-		}
+		std::string turboInfo = "";
+		frequencyBounderyFile >> turboInfo;
+		frequencyBounderyFile.close();
+		freq = std::stoi(turboInfo);
 	}
 	else if (scalingDriver == "intel_pstate")
 	{
