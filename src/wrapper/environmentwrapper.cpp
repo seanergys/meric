@@ -161,16 +161,6 @@ long Environment::getNominalFrequency()
 	read_msr_by_idx(0, MSR_PLATFORM_INFO, &MSR_PLATFORM_INFO_bits);
 	return ((MSR_PLATFORM_INFO_bits & MSR_PLATFORM_INFO_nominal_freq_mask) >> MSR_PLATFORM_INFO_nominal_freq_shift) * 100000000;
 }
-
-#elif defined __x86_64
-long Environment::getNominalFrequency()
-{
-	std::string CPUname;
-	getCPUbrandString(CPUname);
-	CPUname = CPUname.substr(CPUname.find('@')+1);
-	return std::stod(CPUname.substr(0,CPUname.size()-3))*1e9;
-}
-
 #else
 long Environment::getNominalFrequency()
 {
@@ -185,9 +175,26 @@ long Environment::getNominalFrequency()
 		{
 			frequencyBounderyFile >> freqBound;
 			frequencyBounderyFile.close();
-			frequency = (std::stol(freqBound)-1000) * 1000;
+			frequency = std::stol(freqBound);
+			if (frequency%10000 == 1000)
+				frequency = (frequency-1000) * 1000;
+			else
+				frequency *= 1000;
 		}
 	}
+	#ifdef __x86_64
+	else
+	{
+		std::string CPUname;
+		getCPUbrandString(CPUname);
+		std::size_t pos = CPUname.find('@');
+		if (pos != std::string::npos)
+		{
+			CPUname = CPUname.substr(pos+1);
+			frequency = std::stod(CPUname.substr(0,CPUname.size()-3))*1e9;
+		}
+	}
+	#endif
 	return frequency;
 }
 #endif
