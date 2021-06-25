@@ -1,6 +1,6 @@
 
 from waflib import Logs
-import os, shutil
+import os, shutil, copy
 
 def configure(ctx):
     # C++ compiler
@@ -15,6 +15,8 @@ def configure(ctx):
                 ctx.options.cpp="icpc"
             elif (ctx.env['CC'][0].split('/')[-1] == 'gcc'):
                 ctx.options.cpp="g++"
+            elif (ctx.env['CC'][0].split('/')[-1] == 'clang'):
+                ctx.options.cpp="clang++"
         else:
             ctx.options.cpp="g++" # default C++ compiler
     try:
@@ -48,17 +50,17 @@ def configure(ctx):
             else:
                 ctx.env.append_unique("LINKFLAGS", "-L"+path)
     
-    if ctx.options.cpp == "g++":
-        if not ctx.options.noopenmp:
-            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
-            ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
-            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
-        else:
-            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-    else: #Intel
+    if ctx.options.cpp == "icpc":
         if not ctx.options.noopenmp:
             ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])
             ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
+        else:
+            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
+    else:
+        if not ctx.options.noopenmp:
+            ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
+            ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
             ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )

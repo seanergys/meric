@@ -161,7 +161,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 }
 
-template class SamplesStore <HDEEM>;
-template class SamplesStore <JETSON>;
-template class SamplesStore <THUNDER>;
-template class SamplesStore <DAVIDE>;
+template class meric::SamplesStore <HDEEM>;
+template class meric::SamplesStore <JETSON>;
+template class meric::SamplesStore <THUNDER>;
+template class meric::SamplesStore <DAVIDE>;

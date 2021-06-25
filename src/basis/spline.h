@@ -462,3 +462,4 @@ double spline::deriv(int order, double x) const
 } // namespace
 
 #endif /* TK_SPLINE_H */
+

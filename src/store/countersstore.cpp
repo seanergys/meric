@@ -103,10 +103,10 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	}
 }
 
-template class CountersStore <PERFEVENT, unsigned long long int, unsigned long long int>;
-template class CountersStore <PAPI, unsigned long long int, unsigned long long int>;
-template class CountersStore <MSR, uint64_t, uint64_t>;
-template class CountersStore <RAPL, unsigned long long int, double>;
-template class CountersStore <HDEEM, double, double>;
-template class CountersStore <NVML, unsigned long long, double>;
+template class meric::CountersStore <PERFEVENT, unsigned long long int, unsigned long long int>;
+template class meric::CountersStore <PAPI, unsigned long long int, unsigned long long int>;
+template class meric::CountersStore <MSR, uint64_t, uint64_t>;
+template class meric::CountersStore <RAPL, unsigned long long int, double>;
+template class meric::CountersStore <HDEEM, double, double>;
+template class meric::CountersStore <NVML, unsigned long long, double>;
 

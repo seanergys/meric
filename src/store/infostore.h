@@ -23,24 +23,24 @@ class InfoStore: public Store {
 	friend class InfoAggregateStore<InfoStore>;
 
 public:
-	void addStart(int region, RegionParameters configuration);
-	void addEnd(int region);
-	double getRegionDuration();
+	void addStart(int region, RegionParameters configuration) override;
+	void addEnd(int region) override;
+	double getRegionDuration() override;
 	void fillRegionStats(InfoStats &stats, size_t iStarts, size_t iEnd);
 
-	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
+	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "") override
 	{
 		_name = regionNames;
 		iterate(_records, prefix, outputDir, outputFilename);
 	}
     
 	void save(const std::string prefix, const std::string outputDir, const std::string outputFilename,
-              std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+              std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval) override
 	{
 		iterate(_records, prefix, outputDir, outputFilename, processInterval);
 	}
 
-	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
+	void save(std::function<void(std::vector<size_t> &iStarts, size_t iEnd)> processInterval) override
 	{
 		iterate(_records, processInterval);
 	}
@@ -99,7 +99,7 @@ public:
 
 
 protected:
-	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
+	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) override;
 
 	std::vector<InfoRecord> _records;
 	std::vector<timespec> _timeStack;
