@@ -66,9 +66,14 @@ def configure(ctx):
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
     
     SBImandatory = False
+    MSRSAFEavailable = False
+    # check for msr_safe
+    if os.path.isfile("/dev/cpu/0/msr_safe") and os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
+        MSRSAFEavailable = True
+        ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
     # check for HW-tuning software
     if not ctx.options.sbi:
-        if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) & (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) & (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) & (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False))):
+        if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not MSRSAFEavailable)):
             if ctx.check_cxx(lib="cpufreq", mandatory=False):
                 ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
                 ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
