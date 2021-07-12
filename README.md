@@ -45,22 +45,22 @@ MERIC allows to set selected system parameters for the whole application run or 
 
 ### CPU core frequency ###
 MERIC provides several ways how to change the CPU core frequency:
- *  Under Intel P-State using [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe), requires write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+ *  Intel processor P-State tuning via MSR - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
  *  Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
  *  Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
- *  Using direct write to the `/sys/devices/system/cpu/cpu<ID>/cpufreq/scaling_setspeed`.
+ *  Using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
 
 
 ### CPU uncore frequency ###
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
 
-MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
+MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
 
 
 ### Intel RAPL power capping ###
 Intel processors from Sandy Bridge architecture provides Runnnig Average Power Limit (RAPL), that keeps the power consumption of the available domains bellow the specified power limit in a specific time window (long-term and short-term windows). MERIC allows to specify power limit of the Package power domain within its long-term time window, whcich can be also adjusted.
 
-MERIC requires [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap is supported.
+MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap is supported.
 	
 Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond. <!--> and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. <!--> Due to that it might be impossible to set exactly the window size you have specified.
 
@@ -98,7 +98,7 @@ Since we are speaking about performance counters (non-continual mode only), over
 
 Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
 	
-In MERIC [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
+In MERIC [msr-safe](https://github.com/LLNL/msr-safe) + ideally [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters. In the detailed mode MERIC stores values for each CPU and for each DRAM, otherwise it aggregates the values.
 
 
 ### HDEEM ###
@@ -273,7 +273,8 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - MPI
 * optionally - [PAPI](http://icl.cs.utk.edu/papi/)
 * optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
-* optionally - [libmsr](https://github.com/LLNL/libmsr)+[msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel HW parameters tuning
+* optionally - [msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel CPUs parameters tuning
+* optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
