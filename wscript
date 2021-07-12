@@ -68,7 +68,7 @@ def configure(ctx):
     SBImandatory = False
     MSRSAFEavailable = False
     # check for msr_safe
-    if os.path.isfile("/dev/cpu/0/msr_safe") and os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
+    if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
         MSRSAFEavailable = True
         ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
     # check for HW-tuning software
