@@ -21,26 +21,27 @@
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
+#include "../basis/msrutil.h"
 #include "msrs.h"
 #include "counters.h"
 #include "countersrates.h"
 #include "../basis/utils.h"
 
-#ifdef HAVE_X86_ADAPT_H
-	using namespace X86ADAPT_RAPL_COUNTERS;
-#elif defined HAVE_MSR_CORE_H
+#ifdef HAVE_HSR_SAFE
 	using namespace MSR_RAPL_COUNTERS;
+#elif HAVE_X86_ADAPT_H
+	using namespace X86ADAPT_RAPL_COUNTERS;
 #elif defined HAVE_GEOPM_H
 	using namespace GEOPM_RAPL_COUNTERS;
 #else
-	using namespace X86ADAPT_RAPL_COUNTERS;
+	using namespace MSR_RAPL_COUNTERS;
 #endif
 
 
 namespace meric {
 
 class RAPL {
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
 public:
 	static void init(bool detailed = false);
 	static void close() {};

@@ -8,7 +8,7 @@ bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 std::map<std::string, double> RAPL::units;
 
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
 std::map<std::string, unsigned long long int> RAPL::counters;
 
 /**
@@ -57,8 +57,8 @@ void RAPL::initCountersUnits()
 	if (units.size())
 		return; //already initialized
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
-#ifdef HAVE_MSR_CORE_H
-	read_msr_by_idx(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
+#ifdef HAVE_MSR_SAFE
+	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
 #elif defined HAVE_X86_ADAPT_H
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	if (fd < 0)
@@ -77,7 +77,7 @@ void RAPL::initCountersUnits()
 	{
 		units[RAPL_PCKG_POWER_LIMIT] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
 		units[RAPL_RAM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
-#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_SAFE
 		units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 #endif
 
@@ -85,7 +85,7 @@ void RAPL::initCountersUnits()
 		//DRAM ENERGY unit is fixed to 15.3uJ
 		//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
 		units[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
-#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_SAFE
 		units[RAPL_PLATFORM_ENERGY] = units[RAPL_PCKG_ENERGY];
 #endif
 
@@ -164,7 +164,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#elif defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#elif defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -180,8 +180,8 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
 					continue;
 				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
-				#ifdef HAVE_MSR_CORE_H
-					read_msr_by_idx(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &dieEnergy);
+				#ifdef HAVE_MSR_SAFE
+					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &dieEnergy);
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
 				#endif
@@ -196,8 +196,8 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
-				#ifdef HAVE_MSR_CORE_H
-					read_msr_by_idx(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &dieEnergy);
+				#ifdef HAVE_MSR_SAFE
+					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &dieEnergy);
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
 				#endif
@@ -268,7 +268,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 				
 				counterLabel[counterName] = counterLabel[*it].substr(0,counterLabel[*it].find(' '))+suffix + os.str() + counterLabel[*it].substr(counterLabel[*it].find(' '));
 
-#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_SAFE
 				counterDefines[counterName] = counterDefines[*it];
 #endif
 			}

@@ -13,6 +13,7 @@
 	#include <memory>
 #endif
 
+#include "../basis/msrutil.h"
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>

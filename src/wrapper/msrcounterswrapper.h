@@ -7,19 +7,20 @@
 #include <vector>
 #include <omp.h>
 
-#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_SAFE
 	#include "msrs.h"
+#endif
+#ifdef HAVE_MSR_CORE_H
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
 #endif
-
 #include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
 
 namespace meric {
 
-#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_SAFE
 
 class MSR{
 
