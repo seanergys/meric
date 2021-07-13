@@ -977,7 +977,7 @@ void Environment::readSystemDefaultSettings()
 				std::stringstream ss;
 				std::copy(memFreq.second.begin(), memFreq.second.end(), std::ostream_iterator<uint>(ss, ", "));
 				GPUfreqString = ss.str();
-				restoreJson += "\t\t\t\t" + std::to_string(memFreq.first) + " : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
+				restoreJson += "\t\t\t\t\"" + std::to_string(memFreq.first) + "\" : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
 			}
 			restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
 			            + "\n\t\t},\n";
