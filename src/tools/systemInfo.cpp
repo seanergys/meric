@@ -445,296 +445,296 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 	if (pwrCapInfo == "")
 	{
-		std::cout << "\n# RAPL power capping NOT available\n\n";
-		return ok;
+		std::cout << "\n# CPU RAPL power capping NOT available\n";
 	}
-
+	else
+	{
 // power capping limits ////////////////////////////////////////////////////////
-	std::cout << "\n# CPU RAPL POWER LIMITS\n";	
+		std::cout << "\n# CPU RAPL POWER LIMITS\n";	
 #ifdef HAVE_MSR_SAFE
-// PKG
-	uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
-	if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
-		meric::read_msr(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+	// PKG
+		uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
+		if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
+			meric::read_msr(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 
-	std::cout 
-		<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
-		<< "\tPKG max power limit:   " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
-		
-		<< "\tPKG min power limit:   " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
+		std::cout 
+			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
+			<< "\tPKG max power limit:   " 
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
+			
+			<< "\tPKG min power limit:   " 
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
 
-//		<< "\tPKG max time window:   " 
-//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
-		;
+	//		<< "\tPKG max time window:   " 
+	//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
+			;
 
-// DRAM
-	if (!currentWhitelist.count(MSR_DRAM_POWER_INFO))
-		meric::read_msr(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
-	std::cout 
-		<< "\tDRAM max power limit:  "
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
+	// DRAM
+		if (!currentWhitelist.count(MSR_DRAM_POWER_INFO))
+			meric::read_msr(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+		std::cout 
+			<< "\tDRAM max power limit:  "
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
 
-		<< "\tDRAM min power limit:  " 
-		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
+			<< "\tDRAM min power limit:  " 
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
 
-//		<< "\tDRAM max time window:  " 
-//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
-		;
+	//		<< "\tDRAM max time window:  " 
+	//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
+			;
 #else
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+		}
 
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_max_power_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		std::cout << "\tPKG max power limit #2: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_max_power_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			std::cout << "\tPKG max power limit #2: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+		}
 
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_max_power_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		std::cout << "\tDRAM max power limit:   " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_max_power_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			std::cout << "\tDRAM max power limit:   " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
+		}
 #endif
 
 #if defined __x86_64 && !defined HAVE_MSR_SAFE && ! defined HAVE_X86_ADAPT_H //currently supported only intel
-	std::cout << "\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
+		std::cout << "\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
 #endif
 
 // default power capping ///////////////////////////////////////////////////////
-	std::cout << "\n# DEFAULT CPU RAPL POWER LIMITS\n";
-	uint64_t X, Y, Z, F;
+		std::cout << "\n# DEFAULT CPU RAPL POWER LIMITS\n";
+		uint64_t X, Y, Z, F;
 
 #if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
-	// PKG
-		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
-	#ifdef HAVE_MSR_SAFE
-		if (!currentWhitelist.count(MSR_PKG_POWER_LIMIT))
-			meric::read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
-	#elif defined HAVE_X86_ADAPT_H
-		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-		int adaptRegisterHandler;
+		// PKG
+			uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
+		#ifdef HAVE_MSR_SAFE
+			if (!currentWhitelist.count(MSR_PKG_POWER_LIMIT))
+				meric::read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+		#elif defined HAVE_X86_ADAPT_H
+			int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+			int adaptRegisterHandler;
 
-		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
-	#elif defined HAVE_GEOPM_H
-		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
-	#endif
-		if (MSR_PKG_POWER_LIMIT_bits != 0x0)
-		{
-			std::cout << "\tPKG power limit #1: " 
-				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-				<< " + clamping "
-				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-				<< std::endl
-				<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
-
-			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
-			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			std::cout << "\tPKG time window #1: "
-					  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
-
-	#ifdef HAVE_MSR_SAFE
-			MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
-	#elif defined HAVE_X86_ADAPT_H
-			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
 			x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
-	#elif defined HAVE_GEOPM_H
-				MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
-	#endif
-			std::cout << "\tPKG power limit #2: " 
-				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-				<< " + clamping "
-				<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
-				<< std::endl
-				<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
+		#elif defined HAVE_GEOPM_H
+			MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
+		#endif
+			if (MSR_PKG_POWER_LIMIT_bits != 0x0)
+			{
+				std::cout << "\tPKG power limit #1: " 
+					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+					<< " + clamping "
+					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+					<< std::endl
+					<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
 
-			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
-			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			std::cout << "\tPKG time window #2: "
-					  << pow(2,Y) * (1.0 + Z/4.0) *meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
-		}
+				Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
+				Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
+				std::cout << "\tPKG time window #1: "
+						  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << " s\n";
 
-	// DRAM
-		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
-	#ifdef HAVE_MSR_SAFE
-		if (!currentWhitelist.count(MSR_DRAM_POWER_LIMIT))
-			meric::read_msr(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
-	#elif defined HAVE_X86_ADAPT_H
-		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
-		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
+		#ifdef HAVE_MSR_SAFE
+				MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
+		#elif defined HAVE_X86_ADAPT_H
+				adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+				x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+		#elif defined HAVE_GEOPM_H
+					MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
+		#endif
+				std::cout << "\tPKG power limit #2: " 
+					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+					<< " + clamping "
+					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+					<< std::endl
+					<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
 
-		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-	#elif defined HAVE_GEOPM_H
-		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::DRAM_POWER_LIMIT#", pio.signal_domain_type("MSR::DRAM_POWER_LIMIT#"), 0));
-	#endif
-		if (MSR_DRAM_POWER_LIMIT_bits != 0x0)
-		{
-			std::cout << "\tDRAM power limit:   " 
-				<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-				<< " + clamping "
-				<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-				<< std::endl
-				<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n";
+				Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
+				Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
+				std::cout << "\tPKG time window #2: "
+						  << pow(2,Y) * (1.0 + Z/4.0) *meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << " s\n";
+			}
 
-			F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
-			Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
-			std::cout << "\tDRAM time window:   "
-					  << pow(2,Y) * F * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
-		}
+		// DRAM
+			uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
+		#ifdef HAVE_MSR_SAFE
+			if (!currentWhitelist.count(MSR_DRAM_POWER_LIMIT))
+				meric::read_msr(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
+		#elif defined HAVE_X86_ADAPT_H
+			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
+			x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
+
+			if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+				std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+		#elif defined HAVE_GEOPM_H
+			MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::DRAM_POWER_LIMIT#", pio.signal_domain_type("MSR::DRAM_POWER_LIMIT#"), 0));
+		#endif
+			if (MSR_DRAM_POWER_LIMIT_bits != 0x0)
+			{
+				std::cout << "\tDRAM power limit:   " 
+					<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+					<< " + clamping "
+					<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+					<< std::endl
+					<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n";
+
+				F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
+				Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
+				std::cout << "\tDRAM time window:   "
+						  << pow(2,Y) * F * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << " s\n";
+			}
 #else
-	// PKG
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/enabled");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		std::cout << "\tPKG power capping:  " << (pwrCapInfo == "0" ? "disabled" : "enabled") << std::endl;
-	}
+		// PKG
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/enabled");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			std::cout << "\tPKG power capping:  " << (pwrCapInfo == "0" ? "disabled" : "enabled") << std::endl;
+		}
 
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tPKG power limit #1: " << std::stol(pwrCapInfo)/1000000 << " W\n";
-	}
-	
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_time_window_us");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tPKG time window #1: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
-	}
-	
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tPKG power limit #2: " << std::stol(pwrCapInfo)/1000000 << " W\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tPKG power limit #1: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		}
+		
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_time_window_us");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tPKG time window #1: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		}
+		
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tPKG power limit #2: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		}
 
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_time_window_us");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tPKG time window #2: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_time_window_us");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tPKG time window #2: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		}
 
-	// DRAM
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/enabled");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		std::cout << "\tDRAM power capping: " << (pwrCapInfo == "0" ? "disabled" : "enabled") << std::endl;
-	}
-	
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_power_limit_uw");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tDRAM power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
-	}
+		// DRAM
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/enabled");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			std::cout << "\tDRAM power capping: " << (pwrCapInfo == "0" ? "disabled" : "enabled") << std::endl;
+		}
+		
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_power_limit_uw");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tDRAM power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
+		}
 
-	pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_time_window_us");
-	if (pwrCapFile.is_open())
-	{
-		pwrCapInfo = "";
-		pwrCapFile >> pwrCapInfo;
-		pwrCapFile.close();
-		if (pwrCapInfo != "")
-			std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
-	}
+		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_time_window_us");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapInfo = "";
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+			if (pwrCapInfo != "")
+				std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+		}
 #endif
 
 // PLATFORM
 
-	uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
+		uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
 #ifdef HAVE_MSR_SAFE
-	if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
-	{
-		meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
-		if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
+		if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
 		{
-			usleep(2);
 			meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+			if (!MSR_PLATFORM_ENERGY_COUNTER_bits)
+			{
+				usleep(2);
+				meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
+			}
 		}
-	}
 #endif
 
-	if (MSR_PLATFORM_ENERGY_COUNTER_bits)
-	{
-		uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
-#ifdef HAVE_MSR_SAFE
-		if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
-			meric::read_msr(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
-		if (MSR_PLATFORM_POWER_LIMIT_bits)
+		if (MSR_PLATFORM_ENERGY_COUNTER_bits)
 		{
-			std::cout << "\tPLATFORM power limit #1: " 
-				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-				<< " + clamping "
-				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
-				<< std::endl
-				<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n";
+			uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
+#ifdef HAVE_MSR_SAFE
+			if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
+				meric::read_msr(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
+			if (MSR_PLATFORM_POWER_LIMIT_bits)
+			{
+				std::cout << "\tPLATFORM power limit #1: " 
+					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+					<< " + clamping "
+					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
+					<< std::endl
+					<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n";
 
-			Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
-			X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
-			std::cout << "\tPLATFORM time window: "
-					  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
-			const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
+				Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
+				X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
+				std::cout << "\tPLATFORM time window: "
+						  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << " s\n";
+				const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
 
-			MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
-			std::cout << "\tPLATFORM power limit #2: " 
-				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
-				<< " + clamping "
-				<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
-				<< std::endl
-				<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n"
-				<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
-				<< std::endl;
-		}
+				MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
+				std::cout << "\tPLATFORM power limit #2: " 
+					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+					<< " + clamping "
+					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+					<< std::endl
+					<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n"
+					<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
+					<< std::endl;
+			}
 #endif
+		}
 	}
 	
 
 // GPU
-
 #ifdef HAVE_NVML_H
 	nvmlDevice_t deviceHandle;
 	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
