@@ -1095,6 +1095,8 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency, defaultParameter.uncoreFrequency);
 		CPUpowercap(defaultParameter.powerCapPKG, defaultParameter.powerCapPKGtime);
+		GPUfrequency(defaultParameter.frequencyGPUmem, defaultParameter.frequencyGPU);
+		GPUpowercap(defaultParameter.powerCapGPU);
 	}
 	threadNumber(defaultParameter.nthreads);
 
@@ -1585,8 +1587,11 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
  **/
 void Environment::GPUpowercap(uint power, int gpu)
 {
+	if (power == 0)
+		return;
+	
 #ifdef HAVE_NVML_H
-	MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW";
+	MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW\n";
 #else
 	return;
 #endif
@@ -1595,10 +1600,11 @@ void Environment::GPUpowercap(uint power, int gpu)
 
 	int min = 0;
 	int max;
+
 	if (gpu == -1)
 	{
-		min = gpu;
-		max = gpu+1;
+		min = 0;
+		max = NVML::getGPUsPerNode();
 	}
 	else
 	{
@@ -1607,9 +1613,11 @@ void Environment::GPUpowercap(uint power, int gpu)
 			std::cerr << "MERIC ERROR: specifying power limit (" << power/1000.0 << "W) of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
 			return;
 		}
-		max = NVML::getGPUsPerNode();
+		
+		min = gpu;
+		max = gpu+1;
 	}
-	
+		
 #ifdef HAVE_NVML_H	
 	usedGPUPWRCAP = true;
 	for (int id=min; id<max; id++)
