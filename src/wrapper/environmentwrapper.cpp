@@ -269,6 +269,7 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 						std::vector<uint> SMfreq(gpuFreqCount); //(gpuFreq, gpuFreq + sizeof gpuFreq / sizeof gpuFreq[0]);
 						for (uint j = 0; j<gpuFreqCount; j++)
 							SMfreq[j] = gpuFreq[j]*1e6;
+						std::reverse(SMfreq.begin(),SMfreq.end());
 						values[memFreq[i]*1e6] = SMfreq;
 					}
 					else
@@ -1012,7 +1013,7 @@ void Environment::readSystemDefaultSettings()
 		<< "\tMEM " << defaultSettings.defaultGPUMemFreq << std::endl
 		<< "\tSMP " << defaultSettings.defaultGPUSMFreq << std::endl
 		<< "\tPCP " << defaultSettings.defaultPowerCapGPU << std::endl
-		<< "GPU freqs" << std::endl
+		<< "GPU freqs list size" << std::endl
 		<< "\tMEM " << defaultSettings.availableGPUFreq.size() << std::endl
 		<< "\tSMP " << defaultSettings.availableGPUFreq.begin()->second.size() << std::endl;
 	
@@ -1519,8 +1520,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 
 	if (freqMEM == 0 && freqSM == 0)
 		return;
-	
-	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
+
 	std::map<uint, std::vector<uint>>::iterator MEMit;
 	if (freqMEM == 0)
 	{
@@ -1546,7 +1546,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
 	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
 	if(SMit == MEMit->second.end())
+	{
 		SMit = std::upper_bound(MEMit->second.begin(), MEMit->second.end(), freqSM);
+	}
 	freqSM = *SMit;
 	
 	int min, max;
@@ -1572,7 +1574,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	
 	for (int id=min; id<max; id++)
 	{
-		if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM, freqSM) != NVML_SUCCESS)
+		if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM/1e6, freqSM/1e6) != NVML_SUCCESS)
 			std::cerr << "NVML ERROR: failed to set GPU frequency\n";
 	}
 	currentGPUMemFreq = freqMEM;
