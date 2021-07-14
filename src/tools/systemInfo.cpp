@@ -96,7 +96,7 @@ void sysInfoSize(bool detailed = false)
 #endif
 }
 
-bool sysInfoFrequencies(meric::systemLimits& limits)
+bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 {
 	bool DVFS = false;
 	bool ok = true;
@@ -397,6 +397,13 @@ bool sysInfoFrequencies(meric::systemLimits& limits)
 						if(nvmlDeviceGetSupportedGraphicsClocks(deviceHandle, memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
 						{
 							std::cout << "\tMemory: " << memFreq[i]*1000 << " kHz\tSM: " <<  gpuFreq[0]*1000 << " - " << gpuFreq[gpuFreqCount-1]*1000 << " kHz (" << gpuFreqCount<< " steps)\n";
+							if (detailed)
+							{
+								std::cout << "\t\t";
+								for (int f=0; f<gpuFreqCount; f++)
+									std::cout << gpuFreq[f] << " ";
+								std::cout << "MHz\n";
+							}
 						}
 						free(gpuFreq);
 						gpuFreqCount = 0;
@@ -837,14 +844,14 @@ void checkMsrWhitelist()
 int main(int argc, char **argv)
 {
 	bool restore = false;
-	bool printTopology = false;
+	bool detailedInfo = false;
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
 		if (arg == "-r")
 			restore = true;
 		else if (arg == "-t")
-			printTopology = true;
+			detailedInfo = true;
 		else
 		{
 			std::cerr << "Utility prints information about the system topology and HW knobs ranges\n"
@@ -892,8 +899,8 @@ int main(int argc, char **argv)
 	bool restoreFile = meric::Environment::readRestoreFile(restoreJson, modifTime);
 	meric::systemLimits limits = meric::Environment::getSystemSettings();
 	meric::RAPL::initCountersUnits(); //not necessary if meric::Environment::init() would have been called before
-	sysInfoSize(printTopology);
-	systemInTheDefaultSettings = sysInfoFrequencies(limits);
+	sysInfoSize(detailedInfo);
+	systemInTheDefaultSettings = sysInfoFrequencies(limits, detailedInfo);
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
 	
