@@ -89,30 +89,32 @@ struct RegionParameters { //must be able to carry -1
 
 
 struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supported should be zero
-	long maxTurboFreq;           //Hz
-	long maxCoreFreq;            //Hz
-	long defaultCoreFreq;        //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise zero
-	long minCoreFreq;            //Hz
+	long maxTurboFreq = 0;             //Hz
+	long maxCoreFreq = 0;              //Hz
+	long defaultCoreFreq = 0;          //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise zero
+	long minCoreFreq = 0;              //Hz
 
-	long maxUncoreFreq;          //Hz
-	long defaultUncoreFreq;      //Hz - set only if one specific default frequency exists, otherwise zero
-	long minUncoreFreq;          //Hz
+	long maxUncoreFreq = 0;            //Hz
+	long defaultUncoreFreq = 0;        //Hz - set only if one specific default frequency exists, otherwise zero
+	long minUncoreFreq = 0;            //Hz
 
-	long maxPowerCapPKG;         //mW
-	long minPowerCapPKG;         //mW
-	long maxPowerCapPKGtime;     //us
-	uint64_t defaultPowerCapPKG; //raw register value
+	long maxPowerCapPKG = 0;           //mW
+	long minPowerCapPKG = 0;           //mW
+	long maxPowerCapPKGtime = 0;       //us
+	uint64_t defaultPowerCapPKG = 0x0; //raw register value
 
-	long maxPowerCapRAM;         //mW
-	long minPowerCapRAM;         //mW
-	long maxPowerCapRAMtime;     //us
-	uint64_t defaultPowerCapRAM; //raw register value
+	long maxPowerCapRAM = 0;           //mW
+	long minPowerCapRAM = 0;           //mW
+	long maxPowerCapRAMtime = 0;       //us
+	uint64_t defaultPowerCapRAM = 0x0; //raw register value
 
-	uint64_t IA32_ENERGY_PERF_BIAS_default; //raw register value
+	uint64_t IA32_ENERGY_PERF_BIAS_default = 0x0; //raw register value
 	//GPU - NVML uses uint
-	uint defaultGPUMemFreq;      //Hz
-	uint defaultGPUSMFreq;       //Hz
-	uint defaultPowerCapGPU;     //mW
+	uint defaultGPUMemFreq = 0;        //Hz
+	uint defaultGPUSMFreq = 0;         //Hz
+	uint defaultPowerCapGPU = 0;       //mW
+	uint minPowerCapGPU = 0;           //mW
+	uint maxPowerCapGPU = 0;           //mW
 	std::map <uint, std::vector<uint>> availableGPUFreq; //Hz, Hz - MEM: <SM>
 };
 

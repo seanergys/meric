@@ -4,7 +4,7 @@
 
 using namespace meric;
 
-systemLimits Environment::defaultSettings; // = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0, -1, -1, -1, 0x0, 0x0, 0, 0, 0, std::map <uint, std::vector<uint>>()};
+systemLimits Environment::defaultSettings;
 
 int Environment::SOCKETS_PER_NODE = 1;
 int Environment::CORES_PER_SOCKET = 1;
@@ -266,7 +266,7 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 					gpuFreq = (uint *)malloc(gpuFreqCount * sizeof(uint));
 					if(nvmlDeviceGetSupportedGraphicsClocks(NVML::getGPUHandle(0), memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
 					{
-						std::vector<uint> SMfreq(gpuFreqCount); //(gpuFreq, gpuFreq + sizeof gpuFreq / sizeof gpuFreq[0]);
+						std::vector<uint> SMfreq(gpuFreqCount);
 						for (uint j = 0; j<gpuFreqCount; j++)
 							SMfreq[j] = gpuFreq[j]*1e6;
 						std::reverse(SMfreq.begin(),SMfreq.end());
@@ -690,88 +690,159 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 
 		std::string CPUname;
 		getCPUbrandString(CPUname);
+#ifdef HAVE_NVML_H
+		std::string GPUname;
+		getGPUbrandString(GPUname);
+#endif
 		struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
 		while(data != NULL)
 		{
-			if (std::string(data->name->string) != CPUname)
+			if (std::string(data->name->string) == CPUname)
+			{
+				struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
+				while(architectureData != NULL)
+				{
+					if (std::string(architectureData->name->string) == "CF")
+					{
+						struct json_object_element_s* dvfs = ((struct json_object_s*)architectureData->value->payload)->start;
+						do
+						{
+							if (std::string(dvfs->name->string) == "GOVERNOR")
+							{
+								scalingGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
+							}
+							else if (std::string(dvfs->name->string) == "TURBO")
+							{
+								defaultSettings.maxTurboFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							}
+							else if (std::string(dvfs->name->string) == "MAX")
+							{
+								defaultSettings.maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							}
+							else if (std::string(dvfs->name->string) == "MIN")
+							{
+								defaultSettings.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							}
+							else if (std::string(dvfs->name->string) == "DEFAULT")
+							{
+								defaultSettings.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
+							}
+							else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
+							{
+								defaultSettings.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
+							dvfs = dvfs->next;
+						}while(dvfs != NULL);
+					}
+					else if (std::string(architectureData->name->string) == "UFS")
+					{
+						struct json_object_element_s* ufs = ((struct json_object_s*)architectureData->value->payload)->start;
+						do
+						{
+							if (std::string(ufs->name->string) == "MAX")
+							{
+								defaultSettings.maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							}
+							else if (std::string(ufs->name->string) == "MIN")
+							{
+								defaultSettings.minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							}
+							else if (std::string(ufs->name->string) == "DEFAULT")
+							{
+								defaultSettings.defaultUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
+							}
+							ufs = ufs->next;
+						}while(ufs != NULL);
+					}
+					else if (std::string(architectureData->name->string) == "PWRCAP")
+					{
+						struct json_object_element_s* pwr = ((struct json_object_s*)architectureData->value->payload)->start;
+						do
+						{
+							if (std::string(pwr->name->string) == "PKG")
+							{
+								defaultSettings.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+							}
+							else if (std::string(pwr->name->string) == "DRAM")
+							{
+								defaultSettings.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
+							}
+							pwr = pwr->next;
+						}while(pwr != NULL);
+					}
+					architectureData = architectureData->next;
+				}
+			}
+#ifdef HAVE_NVML_H
+			else if (std::string(data->name->string) == GPUname)
+			{
+				struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
+				while(architectureData != NULL)
+				{
+					if (std::string(architectureData->name->string) == "FREQ")
+					{
+						struct json_object_element_s* dvfs = ((struct json_object_s*)architectureData->value->payload)->start;
+						do
+						{
+							if (std::string(dvfs->name->string) == "DEFAULT_MEMORY")
+							{
+								defaultSettings.defaultGPUMemFreq = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
+							else if (std::string(dvfs->name->string) == "DEFAULT_MULTIPROCESSOR")
+							{
+								defaultSettings.defaultGPUSMFreq = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
+							else if (std::string(dvfs->name->string) == "AVAILABLE")
+							{
+								struct json_object_element_s* freqlist = ((struct json_object_s*)dvfs->value->payload)->start;
+								while(freqlist != NULL)
+								{
+									std::vector <uint> SMfreq;
+									struct json_array_element_s* SMlist = ((struct json_array_s*)freqlist->value->payload)->start;
+									do
+									{
+										SMfreq.push_back(std::stoull(((struct json_string_s*)SMlist->value->payload)->string));
+										SMlist = SMlist->next;
+									}while(SMlist != NULL);
+									defaultSettings.availableGPUFreq[std::stoull(freqlist->name->string)] = SMfreq;
+									freqlist = freqlist->next;
+								}
+							}
+							dvfs = dvfs->next;
+						}while(dvfs != NULL);
+
+					}
+					else if (std::string(architectureData->name->string) == "PWRCAP")
+					{
+						struct json_object_element_s* pwr = ((struct json_object_s*)architectureData->value->payload)->start;
+						do
+						{
+							if (std::string(pwr->name->string) == "DEFAULT")
+							{
+								defaultSettings.defaultPowerCapGPU = std::stoull(std::string(((struct json_string_s*)pwr->value->payload)->string));
+							}
+							else if (std::string(pwr->name->string) == "MIN")
+							{
+								defaultSettings.minPowerCapGPU = std::stoull(std::string(((struct json_string_s*)pwr->value->payload)->string));
+							}
+							else if (std::string(pwr->name->string) == "MAX")
+							{
+								defaultSettings.maxPowerCapGPU = std::stoull(std::string(((struct json_string_s*)pwr->value->payload)->string));
+							}
+							pwr = pwr->next;
+						}while(pwr != NULL);
+					}
+				}
+				architectureData = architectureData->next;
+			}
+#endif
+			else
 			{
 				data = data->next;
 				continue;
 			}
 			
-			struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
-			while(architectureData != NULL)
-			{
-				if (std::string(architectureData->name->string) == "CF")
-				{
-					struct json_object_element_s* dvfs = ((struct json_object_s*)architectureData->value->payload)->start;
-					do
-					{
-						if (std::string(dvfs->name->string) == "GOVERNOR")
-						{
-							scalingGovernor = std::string(((struct json_string_s*)dvfs->value->payload)->string);
-						}
-						else if (std::string(dvfs->name->string) == "TURBO")
-						{
-							defaultSettings.maxTurboFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "MAX")
-						{
-							defaultSettings.maxCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "MIN")
-						{
-							defaultSettings.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "DEFAULT")
-						{
-							defaultSettings.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
-						}
-						else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
-						{
-							defaultSettings.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
-						}
-						dvfs = dvfs->next;
-					}while(dvfs != NULL);
-				}
-				else if (std::string(architectureData->name->string) == "UFS")
-				{
-					struct json_object_element_s* ufs = ((struct json_object_s*)architectureData->value->payload)->start;
-					do
-					{
-						if (std::string(ufs->name->string) == "MAX")
-						{
-							defaultSettings.maxUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
-						}
-						else if (std::string(ufs->name->string) == "MIN")
-						{
-							defaultSettings.minUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
-						}
-						else if (std::string(ufs->name->string) == "DEFAULT")
-						{
-							defaultSettings.defaultUncoreFreq = std::stol(std::string(((struct json_string_s*)ufs->value->payload)->string));
-						}
-						ufs = ufs->next;
-					}while(ufs != NULL);
-				}
-				else if (std::string(architectureData->name->string) == "PWRCAP")
-				{
-					struct json_object_element_s* pwr = ((struct json_object_s*)architectureData->value->payload)->start;
-					do
-					{
-						if (std::string(pwr->name->string) == "PKG")
-						{
-							defaultSettings.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
-						}
-						else if (std::string(pwr->name->string) == "DRAM")
-						{
-							defaultSettings.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
-						}
-						pwr = pwr->next;
-					}while(pwr != NULL);
-				}
-				architectureData = architectureData->next;
-			}
+
 			free(root);
 			return true;
 		}
@@ -804,7 +875,7 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile.close();
 		}
 		defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
-		std::string freqBound; //files have the value in KHz
+		std::string freqBound; //files have the values in KHz
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 		if (frequencyBounderyFile.is_open())
 		{
@@ -912,15 +983,33 @@ void Environment::readSystemDefaultSettings()
 		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
 
 // GPU POWERcap and FREQUENCIES ----------------------------------------------//
+		defaultSettings.defaultGPUMemFreq = 0;
+		defaultSettings.defaultGPUSMFreq = 0;
+		defaultSettings.defaultPowerCapGPU = 0;
+		defaultSettings.minPowerCapGPU = 0;
+		defaultSettings.maxPowerCapGPU = 0;
 #ifdef HAVE_NVML_H
-		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_MEM, &defaultSettings.defaultGPUMemFreq) != NVML_SUCCESS)
-			defaultSettings.defaultGPUMemFreq = 0;
-		defaultSettings.defaultGPUMemFreq *= 1e6;
-		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_SM, &defaultSettings.defaultGPUSMFreq) != NVML_SUCCESS)
-			defaultSettings.defaultGPUSMFreq = 0;
-		defaultSettings.defaultGPUSMFreq *= 1e6;
-		if (NVML::getGPUsPerNode() == 0 || nvmlDeviceGetPowerManagementLimit(NVML::getGPUHandle(0), &defaultSettings.defaultPowerCapGPU) != NVML_SUCCESS)
-			defaultSettings.defaultPowerCapGPU = 0;
+		if (NVML::getGPUsPerNode() > 0)
+		{
+			if (nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_MEM, &defaultSettings.defaultGPUMemFreq) == NVML_SUCCESS)
+				defaultSettings.defaultGPUMemFreq *= 1e6;
+			else
+				defaultSettings.defaultGPUMemFreq = 0;
+			if (nvmlDeviceGetDefaultApplicationsClock(NVML::getGPUHandle(0), NVML_CLOCK_SM, &defaultSettings.defaultGPUSMFreq) == NVML_SUCCESS)
+				defaultSettings.defaultGPUSMFreq *= 1e6;
+			else
+				defaultSettings.defaultGPUSMFreq = 0;
+			if (nvmlDeviceGetPowerManagementLimit(NVML::getGPUHandle(0), &defaultSettings.defaultPowerCapGPU) == NVML_SUCCESS)
+			{
+				if (nvmlDeviceGetPowerManagementLimitConstraints(NVML::getGPUHandle(0), &defaultSettings.minPowerCapGPU, &defaultSettings.maxPowerCapGPU) != NVML_SUCCESS)
+				{
+					defaultSettings.maxPowerCapGPU = 0;
+					defaultSettings.minPowerCapGPU = 0;
+				}
+			}			
+			else
+				defaultSettings.defaultPowerCapGPU = 0;
+		}
 		getAvailableGPUfrequencies(defaultSettings.availableGPUFreq);
 #endif
 
@@ -983,7 +1072,9 @@ void Environment::readSystemDefaultSettings()
 			restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
 			            + "\n\t\t},\n";
 			
-			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +"\n\t\t}"
+			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +",\n"
+			            +  "\t\t\t\"MAX\" : "+std::to_string(defaultSettings.maxPowerCapGPU) + ",\n"
+			            +  "\t\t\t\"MIN\" : "+std::to_string(defaultSettings.minPowerCapGPU) + "\n\t\t}"
 			            +  "\n\t}\n";
 #endif
 			
@@ -1006,16 +1097,19 @@ void Environment::readSystemDefaultSettings()
 		<< "\tMAX " << defaultSettings.maxUncoreFreq << std::endl
 		<< "\tMIN " << defaultSettings.minUncoreFreq << std::endl
 		<< "\tDEF " << defaultSettings.defaultUncoreFreq << std::endl
-		<< "PWRcap" << std::endl
+		<< "CPU PWRcap" << std::endl
 		<< "\tPKG " << defaultSettings.defaultPowerCapPKG << std::endl
 		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl
-		<< "GPU def" << std::endl
+		<< "GPU def freqs" << std::endl
 		<< "\tMEM " << defaultSettings.defaultGPUMemFreq << std::endl
 		<< "\tSMP " << defaultSettings.defaultGPUSMFreq << std::endl
-		<< "\tPCP " << defaultSettings.defaultPowerCapGPU << std::endl
 		<< "GPU freqs list size" << std::endl
 		<< "\tMEM " << defaultSettings.availableGPUFreq.size() << std::endl
-		<< "\tSMP " << defaultSettings.availableGPUFreq.begin()->second.size() << std::endl;
+		<< "\tSMP " << defaultSettings.availableGPUFreq.begin()->second.size() << std::endl
+		<< "GPU PWRcap" << std::endl
+		<< "\tDEF " << defaultSettings.defaultPowerCapGPU << std::endl
+		<< "\tMAX " << defaultSettings.maxPowerCapGPU << std::endl
+		<< "\tMIN " << defaultSettings.minPowerCapGPU << std::endl;
 	
 }
 
@@ -1521,6 +1615,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	if (freqMEM == 0 && freqSM == 0)
 		return;
 
+	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
 	std::map<uint, std::vector<uint>>::iterator MEMit;
 	if (freqMEM == 0)
 	{
@@ -1598,7 +1693,12 @@ void Environment::GPUpowercap(uint power, int gpu)
 	return;
 #endif
 
-	//TODO test if the power limit is not too high or too low
+	if (power < defaultSettings.minPowerCapGPU || power > defaultSettings.maxPowerCapGPU)
+	{
+		std::cerr << "GPU power limit has not changed to invalid value: " << power << std::endl;
+		MERIC_INFO << defaultSettings.maxPowerCapGPU << " - " << defaultSettings.minPowerCapGPU << std::endl;
+		return;
+	}
 
 	int min = 0;
 	int max;
