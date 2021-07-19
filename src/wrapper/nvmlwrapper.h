@@ -33,7 +33,7 @@ public:
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
-	static inline double getUnit(std::string counterName) { return 1000.0; };
+	static inline double getUnit(std::string counterName) { return 0.001; };
 #ifdef HAVE_NVML_H
 	static nvmlDevice_t getGPUHandle(int id) { return GPUhandles[id]; };
 	static size_t getGPUsPerNode() { return GPUhandles.size(); };
