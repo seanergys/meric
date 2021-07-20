@@ -832,8 +832,8 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 							pwr = pwr->next;
 						}while(pwr != NULL);
 					}
+					architectureData = architectureData->next;
 				}
-				architectureData = architectureData->next;
 			}
 #endif
 			else
