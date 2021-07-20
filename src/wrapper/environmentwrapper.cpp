@@ -1058,26 +1058,30 @@ void Environment::readSystemDefaultSettings()
 			getGPUbrandString(GPUname);
 			restoreJson += ",\n\t\""+GPUname+"\": {\n"
 			            +  "\t\t\"FREQ\" : {\n\t\t\t\"DEFAULT_MEMORY\" : " + std::to_string(defaultSettings.defaultGPUMemFreq) + ",\n"
-			            +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq) + ",\n"
-			            +  "\t\t\t\"AVAILABLE\" : {\n";
-			
-			for (auto memFreq : defaultSettings.availableGPUFreq)
+			            +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq);
+			if (defaultSettings.availableGPUFreq.size() == 0)
 			{
-				std::string GPUfreqString;
-				std::stringstream ss;
-				std::copy(memFreq.second.begin(), memFreq.second.end(), std::ostream_iterator<uint>(ss, ", "));
-				GPUfreqString = ss.str();
-				restoreJson += "\t\t\t\t\"" + std::to_string(memFreq.first) + "\" : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
+				restoreJson += "\n},\n";
 			}
-			restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
-			            + "\n\t\t},\n";
-			
-			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +",\n"
-			            +  "\t\t\t\"MAX\" : "+std::to_string(defaultSettings.maxPowerCapGPU) + ",\n"
-			            +  "\t\t\t\"MIN\" : "+std::to_string(defaultSettings.minPowerCapGPU) + "\n\t\t}"
-			            +  "\n\t}\n";
+			else
+			{
+				restoreJson += ",\n\t\t\t\"AVAILABLE\" : {\n";
+				for (auto memFreq : defaultSettings.availableGPUFreq)
+				{
+					std::string GPUfreqString;
+					std::stringstream ss;
+					std::copy(memFreq.second.begin(), memFreq.second.end(), std::ostream_iterator<uint>(ss, ", "));
+					GPUfreqString = ss.str();
+					restoreJson += "\t\t\t\t\"" + std::to_string(memFreq.first) + "\" : [" + GPUfreqString.substr(0, GPUfreqString.size()-2) + " ],\n";
+				}
+				restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
+					        + "\n\t\t},\n";
+				restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +",\n"
+					        +  "\t\t\t\"MAX\" : "+std::to_string(defaultSettings.maxPowerCapGPU) + ",\n"
+					        +  "\t\t\t\"MIN\" : "+std::to_string(defaultSettings.minPowerCapGPU) + "\n\t\t}"
+					        +  "\n\t}\n";
+			}
 #endif
-			
 			restoreJson += "}\n";
 			defaultRestoreFile << restoreJson;
 			defaultRestoreFile.close();
@@ -1626,6 +1630,11 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	}
 	else
 	{
+		if (freqMEM < defaultSettings.availableGPUFreq.begin()->first || freqMEM > defaultSettings.availableGPUFreq.rbegin()->first)
+		{
+			std::cerr << "GPU memory frequency has not changed to invalid value: " << freqMEM << std::endl;
+			return
+		}
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
 		if (MEMit == defaultSettings.availableGPUFreq.end())
 			MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
