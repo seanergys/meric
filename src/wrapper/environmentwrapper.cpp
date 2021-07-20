@@ -836,23 +836,18 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 				}
 			}
 #endif
-			else
-			{
-				data = data->next;
-				continue;
-			}
-			
-
-			free(root);
-			return true;
+			data = data->next;
 		}
+		free(root);
+		return true;
 	}
 
 	return false;
 }
 
 /**
- * reads system default CPU core and uncore frequencies and power capping limits
+ * reads current system settings, which is considered to be default, despite the 
+ * system may provide different values to be default
  * if available, reads the settings from a json file, that should provide the default settings before we have started any tuning tests
  * if the configuration not available in the json, than updates the file
  **/
@@ -1632,7 +1627,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	{
 		if (freqMEM < defaultSettings.availableGPUFreq.begin()->first || freqMEM > defaultSettings.availableGPUFreq.rbegin()->first)
 		{
-			std::cerr << "GPU memory frequency has not changed to invalid value: " << freqMEM << std::endl;
+			std::cerr << "GPU memory frequency has not changed to invalid value: " << freqMEM << " Hz\n";
 			return;
 		}
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
@@ -1648,9 +1643,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		freqSM = currentGPUSMFreq;
 	}
 	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
-	if (freqSM < *(MEMit->second.begin()) || freqSM > *(MEMit->second.end()))
+	if (freqSM < MEMit->second.front() || freqSM > MEMit->second.back())
 	{
-		std::cerr << "GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << std::endl;
+		std::cerr << "GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << " Hz\n";
 		return;
 	}
 	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
