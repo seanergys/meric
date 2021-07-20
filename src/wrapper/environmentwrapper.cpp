@@ -1061,7 +1061,7 @@ void Environment::readSystemDefaultSettings()
 			            +  "\t\t\t\"DEFAULT_MULTIPROCESSOR\" : " + std::to_string(defaultSettings.defaultGPUSMFreq);
 			if (defaultSettings.availableGPUFreq.size() == 0)
 			{
-				restoreJson += "\n},\n";
+				restoreJson += "\n\t\t},\n";
 			}
 			else
 			{
@@ -1076,11 +1076,11 @@ void Environment::readSystemDefaultSettings()
 				}
 				restoreJson = restoreJson.substr(0, restoreJson.size()-2) + "\n\t\t\t}\n"
 					        + "\n\t\t},\n";
-				restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +",\n"
+			}
+			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"DEFAULT\" : "  +std::to_string(defaultSettings.defaultPowerCapGPU) +",\n"
 					        +  "\t\t\t\"MAX\" : "+std::to_string(defaultSettings.maxPowerCapGPU) + ",\n"
 					        +  "\t\t\t\"MIN\" : "+std::to_string(defaultSettings.minPowerCapGPU) + "\n\t\t}"
 					        +  "\n\t}\n";
-			}
 #endif
 			restoreJson += "}\n";
 			defaultRestoreFile << restoreJson;
