@@ -1633,7 +1633,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		if (freqMEM < defaultSettings.availableGPUFreq.begin()->first || freqMEM > defaultSettings.availableGPUFreq.rbegin()->first)
 		{
 			std::cerr << "GPU memory frequency has not changed to invalid value: " << freqMEM << std::endl;
-			return
+			return;
 		}
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
 		if (MEMit == defaultSettings.availableGPUFreq.end())
