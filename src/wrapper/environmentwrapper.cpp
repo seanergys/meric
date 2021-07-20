@@ -1648,6 +1648,11 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		freqSM = currentGPUSMFreq;
 	}
 	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
+	if (freqSM < *(MEMit->second.begin()) || freqSM > *(MEMit->second.end()))
+	{
+		std::cerr << "GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << std::endl;
+		return;
+	}
 	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
 	if(SMit == MEMit->second.end())
 	{
