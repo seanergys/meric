@@ -21,6 +21,7 @@
   - all the MERIC's utilities are located in the tools directory, the source files re-located
   - new format of the file that keeps the default settings, now supports multiple architectures from one installation
   - it is possible to use MERIC without libmsr, with direct access to msr_safe
+  - MERIC output when no parameter is tuned is now default.csv instead of log.csv
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation

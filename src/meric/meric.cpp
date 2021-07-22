@@ -183,8 +183,8 @@ int Meric::getDefaultParameters()
 	{
 		if (Meric::outputFilenameInfo.size() == 0)
 		{
-			Meric::OUTPUT_FILENAME = "log";
-			Meric::outputFilenameInfo = "CFG";
+			Meric::OUTPUT_FILENAME = "default";
+			Meric::outputFilenameInfo = "DEF";
 		}
 		else
 		{
