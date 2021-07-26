@@ -384,7 +384,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	  - `UnCF` = CPU uncore frequency
 	  - `thrds` = number of threads
 	  - `CPUPWR` = CPU power limit
-	  - `Twindow` = CPU power limit time window
+	  - `CPUPWRtw` = CPU power limit time window
 	  - `GPUF` = GPU streaming multiprocessors frequency
 	  - `GPUMEMF` = GPU memory frequency
 	  - `GPUPWR` = GPU power limit

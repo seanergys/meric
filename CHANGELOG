@@ -23,6 +23,7 @@
   - it is possible to use MERIC without libmsr, with direct access to msr_safe
   - MERIC output when no parameter is tuned is now default.csv instead of log.csv
   - new option MERIC_OUTPUT_FORMAT
+  - RAPL power limit time window description changed from Twindow to CPUPWRtw
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation

@@ -188,7 +188,7 @@ int Meric::getDefaultParameters()
 			Meric::outputFormat.nthreads = int(true);
 		else if (token == "CPUPWR")
 			Meric::outputFormat.powerCapPKG = int(true);
-		else if (token == "Twindow")
+		else if (token == "CPUPWRtw")
 			Meric::outputFormat.powerCapPKGtime = int(true);
 		else if (token == "GPUF")
 			Meric::outputFormat.frequencyGPU = int(true);
@@ -213,7 +213,7 @@ int Meric::getDefaultParameters()
 	if (Meric::outputFormat.powerCapPKG)
 		Meric::outputFilenameInfo +="CPUPWR_";
 	if (Meric::outputFormat.powerCapPKGtime)
-		Meric::outputFilenameInfo +="Twindow_";
+		Meric::outputFilenameInfo +="CPUPWRtw_";
 	if (Meric::outputFormat.frequencyGPU)
 		Meric::outputFilenameInfo +="GPUF_";
 	if (Meric::outputFormat.frequencyGPUmem)
