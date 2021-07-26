@@ -1,5 +1,5 @@
 ### XX.XX.XXXX #################################################################
-  - MERIC_MODE nad MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options
+  - MERIC_MODE and MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options
   - support for Nvidia GPUs energy measurement using NVML (MERIC_MEASURE=NVML)
   - support Nvidia GPUs power capping, streaming multiprocessors and memory frequency tuning
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
@@ -22,6 +22,7 @@
   - new format of the file that keeps the default settings, now supports multiple architectures from one installation
   - it is possible to use MERIC without libmsr, with direct access to msr_safe
   - MERIC output when no parameter is tuned is now default.csv instead of log.csv
+  - new option MERIC_OUTPUT_FORMAT
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation
