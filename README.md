@@ -378,7 +378,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
 	- Default name is mericMeasurement.
 
-* `export MERIC_OUTPUT_FORMAT="CF_UnCF`
+* `export MERIC_OUTPUT_FORMAT="CF_UnCF"`
 	- Underscore separated list of parameters. MERIC automatically determines which parameters are tuned, and compose output filename accordingly. This parameter allows user force MERIC to extend the output files name about parameters that are not tuned. Zero will represent the non-tuned parameter. This parameter does not influence parameters order. Each supported parameter is represent by one of the following strings:
 	  -	`CF` = CPU core frequency
 	  - `UnCF` = CPU uncore frequency
