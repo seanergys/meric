@@ -494,6 +494,7 @@ protected:
 	static bool MPIbarriers;
 	static bool OMPbarriers;
 	static std::string outputFilenameInfo;
+	static RegionParameters outputFormat;
 
 	static int ITERATION;
 	static bool DETAILED;

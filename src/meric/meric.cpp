@@ -16,6 +16,7 @@ std::string Meric::OUTPUT_DIR     = mutils::getenv<std::string>("MERIC_OUTPUT_DI
 std::string Meric::REGION_OPTIONS = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
 std::string Meric::MEASURE        = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
 
+
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};
 std::vector <std::string> Meric::ignoreRegions;
@@ -23,6 +24,7 @@ std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
 SocketsRegionParameters Meric::currentState;
+RegionParameters Meric::outputFormat = {0, 0, 0, 0, 0, 0, 0, 0};
 std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;
@@ -56,7 +58,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.frequency != 0)
 	{
-		Meric::outputFilenameInfo +="CF_";
+		Meric::outputFormat.frequency = int(true);
 	}
 #else
 	defaultParameter.frequency = 0;
@@ -71,7 +73,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.uncoreFrequency != 0)
 	{
-		Meric::outputFilenameInfo +="UnCF_";
+		Meric::outputFormat.uncoreFrequency = int(true);
 	}
 #else
 	defaultParameter.uncoreFrequency = 0;
@@ -87,7 +89,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.nthreads != 0)
 	{
-		Meric::outputFilenameInfo +="thrds_";
+		Meric::outputFormat.nthreads = int(true);
 	}
 #else
 	defaultParameter.nthreads = 0;
@@ -103,9 +105,11 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.powerCapPKG != 0)
 	{
-		Meric::outputFilenameInfo +="CPUPWR_";
+		Meric::outputFormat.powerCapPKG = int(true);
 		if (defaultParameter.powerCapPKGtime != 0)
-			Meric::outputFilenameInfo +="Twindow_";
+		{
+			Meric::outputFormat.powerCapPKGtime = int(true);
+		}
 	}
 	else if (defaultParameter.powerCapPKGtime != 0)
 	{
@@ -126,7 +130,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.frequencyGPU != 0)
 	{
-		Meric::outputFilenameInfo +="GPUF_";
+		Meric::outputFormat.frequencyGPU = int(true);
 	}
 #else
 	defaultParameter.frequencyGPU = 0;
@@ -141,7 +145,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.frequencyGPUmem != 0)
 	{
-		Meric::outputFilenameInfo +="GPUMEMF_";
+		Meric::outputFormat.frequencyGPUmem = int(true);
 	}
 #else
 	defaultParameter.frequencyGPUmem = 0;
@@ -156,7 +160,7 @@ int Meric::getDefaultParameters()
 	}
 	else if (defaultParameter.powerCapGPU != 0)
 	{
-		Meric::outputFilenameInfo +="GPUPWR_";
+		Meric::outputFormat.powerCapGPU = int(true);
 	}
 #else
 	defaultParameter.powerCapGPU = 0;
@@ -168,6 +172,55 @@ int Meric::getDefaultParameters()
 
 	if (ret)
 		return ret;
+
+	size_t pos = 0;
+	std::string OUTPUT_FORMAT  = mutils::getenv<std::string>("MERIC_OUTPUT_FORMAT", "");
+	if (OUTPUT_FORMAT.size())
+		OUTPUT_FORMAT+='_';
+	while ((pos = OUTPUT_FORMAT.find('_')) != std::string::npos)
+	{
+		std::string token = OUTPUT_FORMAT.substr(0, pos);
+		if (token == "CF")
+			Meric::outputFormat.frequency = int(true);
+		else if (token == "UnCF")
+			Meric::outputFormat.uncoreFrequency = int(true);
+		else if (token == "thrds")
+			Meric::outputFormat.nthreads = int(true);
+		else if (token == "CPUPWR")
+			Meric::outputFormat.powerCapPKG = int(true);
+		else if (token == "Twindow")
+			Meric::outputFormat.powerCapPKGtime = int(true);
+		else if (token == "GPUF")
+			Meric::outputFormat.frequencyGPU = int(true);
+		else if (token == "GPUMEMF")
+			Meric::outputFormat.frequencyGPUmem = int(true);
+		else if (token == "GPUPWR")
+			Meric::outputFormat.powerCapGPU = int(true);
+		else
+		{
+			std::cerr << "MERIC error: Invalid MERIC_OUTPUT_FORMAT : " << token << "\n";
+			return 1;
+		}
+		OUTPUT_FORMAT.erase(0, pos + 1);
+	}
+	
+	if (Meric::outputFormat.frequency)
+		Meric::outputFilenameInfo +="CF_";
+	if (Meric::outputFormat.uncoreFrequency)
+		Meric::outputFilenameInfo +="UnCF_";
+	if (Meric::outputFormat.nthreads)
+		Meric::outputFilenameInfo +="thrds_";
+	if (Meric::outputFormat.powerCapPKG)
+		Meric::outputFilenameInfo +="CPUPWR_";
+	if (Meric::outputFormat.powerCapPKGtime)
+		Meric::outputFilenameInfo +="Twindow_";
+	if (Meric::outputFormat.frequencyGPU)
+		Meric::outputFilenameInfo +="GPUF_";
+	if (Meric::outputFormat.frequencyGPUmem)
+		Meric::outputFilenameInfo +="GPUMEMF_";
+	if (Meric::outputFormat.powerCapGPU)
+		Meric::outputFilenameInfo +="GPUPWR_";
+	
 
 //OPTIONAL SECTION
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n"

@@ -41,10 +41,11 @@ public:
 	void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
+					const RegionParameters &outputFormat,
 					const std::string outputFilenameInfo, //node_CF_UnCF_config
 					const std::string prefix = "") override 
 	{
-		this->_store->initStore(counter, outputDir, outputFilename, outputFilenameInfo, prefix);
+		this->_store->initStore(counter, outputDir, outputFilename, outputFormat, outputFilenameInfo, prefix);
 	}
 	
 	void loadSchedulerEnvironment()

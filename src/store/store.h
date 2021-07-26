@@ -65,11 +65,13 @@ public:
 	virtual void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
+					const RegionParameters &outputFormat,
 					const std::string outputFilenameInfo, //node_CF_UnCF_config
 					const std::string prefix = "")
 	{
 		loadSchedulerEnvironment();
 		_initCounter = counter;
+		outputFilenameFormat = outputFormat;
 		return;
 	};
 	
@@ -120,14 +122,14 @@ protected:
 			else
 			{
 				std::string filenamePrefix = (prefix.size() ? prefix + "_" : "" )
-					+ (records[starts.back()].configuration.frequency == 0  ? "" : std::to_string(records[starts.back()].configuration.frequency)  +"_" )
-					+ (records[starts.back()].configuration.uncoreFrequency == 0 ? "" : std::to_string(records[starts.back()].configuration.uncoreFrequency) +"_" )
-					+ (records[starts.back()].configuration.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
-					+ (records[starts.back()].configuration.powerCapPKG == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKG) +"_" )
-					+ (records[starts.back()].configuration.powerCapPKGtime == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKGtime) +"_" )
-					+ (records[starts.back()].configuration.frequencyGPU == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPU)  +"_" )
-					+ (records[starts.back()].configuration.frequencyGPUmem == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPUmem)  +"_" )
-					+ (records[starts.back()].configuration.powerCapGPU == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapGPU) +"_" )					
+					+ (outputFilenameFormat.frequency == 0  ? "" : std::to_string(records[starts.back()].configuration.frequency)  +"_" )
+					+ (outputFilenameFormat.uncoreFrequency == 0 ? "" : std::to_string(records[starts.back()].configuration.uncoreFrequency) +"_" )
+					+ (outputFilenameFormat.nthreads == 0 ? "" : std::to_string(records[starts.back()].configuration.nthreads) +"_" )
+					+ (outputFilenameFormat.powerCapPKG == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKG) +"_" )
+					+ (outputFilenameFormat.powerCapPKGtime == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapPKGtime) +"_" )
+					+ (outputFilenameFormat.frequencyGPU == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPU)  +"_" )
+					+ (outputFilenameFormat.frequencyGPUmem == 0  ? "" : std::to_string(records[starts.back()].configuration.frequencyGPUmem)  +"_" )
+					+ (outputFilenameFormat.powerCapGPU == 0 ? "" : std::to_string(records[starts.back()].configuration.powerCapGPU) +"_" )					
 					+ outputFilename;
 				if (filenamePrefix.back() == '_')
 					filenamePrefix.pop_back();
@@ -186,6 +188,7 @@ protected:
 	std::string _nodelist;
 	bool printSamples;
 	bool MPIProcessWrite;
+	RegionParameters outputFilenameFormat;
 };
 
 class Store: public StoreBase {
