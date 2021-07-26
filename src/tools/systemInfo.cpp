@@ -803,11 +803,21 @@ void sysEnergyMeasurement()
 
 void checkMsrWhitelist()
 {
+	std::string whitelistName;
+	if (access("/dev/cpu/msr_whitelist", F_OK ) != -1 )
+		whitelistName = "/dev/cpu/msr_whitelist";
+	else if (access("/dev/cpu/msr_allowlist", F_OK ) != -1 ) //from v1.5.0
+		whitelistName = "/dev/cpu/msr_allowlist";
+	else
+	{
+		std::cerr << "\nMSR_SAFE ERROR: No allowlist file in /dev/cpu/\n";
+		return;
+	}
 	currentWhitelist.insert(msr_whitelist.begin(), msr_whitelist.end());
-	std::ifstream msrfile("/dev/cpu/msr_whitelist");
+	std::ifstream msrfile(whitelistName);
 	if (!msrfile)
 	{
-		std::cerr << "LIBMSR ERROR: missing read access to /dev/cpu/msr_whitelist\n";
+		std::cerr << "MSR_SAFE ERROR: missing read access to "<< whitelistName <<"\n";
 		exit(5);
 	}
 
@@ -815,7 +825,7 @@ void checkMsrWhitelist()
 	std::string comments;
 	if(!std::getline (msrfile,comments))
 	{
-		std::cerr << "\nLIBMSR ERROR: Empty /dev/cpu/msr_whitelist - see msr-safe repository\n";
+		std::cerr << "\nMSR_SAFE ERROR: Empty "<< whitelistName <<" - see msr-safe repository\n";
 	}
 	else
 	{
@@ -832,7 +842,7 @@ void checkMsrWhitelist()
 		
 		if (!currentWhitelist.empty())
 		{
-			std::cerr << "\n# MISSING REGISTERS IN /dev/cpu/msr_whitelist\n\t# MSR # Write Mask\n";
+			std::cerr << "\n# MISSING REGISTERS IN "<< whitelistName <<"\n\t# MSR # Write Mask\n";
 			for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
 				std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
 		}
