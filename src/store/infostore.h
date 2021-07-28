@@ -64,11 +64,13 @@ public:
 	void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,
+					const RegionParameters &outputFormat,
 					const std::string outputFilenameInfo, //node_CF_UnCF_config
 					const std::string prefix = "") override
 	{
 		loadSchedulerEnvironment();
 		_initCounter = counter;
+		outputFilenameFormat = outputFormat;
 		if(counter == 0)
 		{
 			mutils::createDir(outputDir);
