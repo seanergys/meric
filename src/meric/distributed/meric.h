@@ -181,17 +181,23 @@ public:
 			}
 		}
 
+		std::string nodeNamePrefix;
+		if(Meric::AGGREGATE)
+			nodeNamePrefix = "";
+		else
+			nodeNamePrefix = _nodeName;
+		
 		for(unsigned int i=0; i<_storeList.size(); i++)
 		{
 			if (!_MPInodeRank)
 			{
-				_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, _nodeName);
+				_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
 				try
 				{
-					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, _nodeName);
+					_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name, nodeNamePrefix);
 				}
 				catch (int &e)
 				{
