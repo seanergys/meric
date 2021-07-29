@@ -66,16 +66,10 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	ss << std::endl;
 
 	double runtime = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
-//	ss << "# Job info - "<< TCounter::getSourceLabel() << std::endl
-//	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-//	   << "Nodelist," << _nodelist << std::endl
-//	   << "Runtime of function [s]," << runtime << std::endl;
-
 
 	RType summary = 0;
 	RType value;
-	ss << "# COUNTERS - "<< TCounter::getSourceLabel() <<":\n"
-	   << "Runtime of function [s]," << runtime << std::endl;
+	ss << "# COUNTERS - "<< TCounter::getSourceLabel() <<":\n";
 	for(auto const &counterIt : _records[iEnd].record)
 	{
 		std::string label = TCounter::getCounterLabel(counterIt.first);

@@ -70,11 +70,6 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	ss << std::endl;
 
-//	ss << "# Job info - " << HDEEM::storeLabel << std::endl
-//	   << "JOB ID," << _jobID << "." << _stepID  << std::endl
-//	   << "Nodelist," << _nodelist << std::endl
-//	   << "Runtime of function [s]," << _records[iEnd].clockTime - _records[iStarts.back()].clockTime << std::endl;
-
 	size_t firstBlade, lastBlade;
 	size_t firstVR, lastVR;
 	double * energy;
@@ -120,7 +115,6 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	
 	ss << "# Blade summary - " << HDEEM::getSourceLabel() << std::endl
-	   << "Runtime of function [s]," << duration << std::endl
 	   << "Energy consumption [J] - counters" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
 	   << "Energy consumption [J] - samples" << "," << energyConsumption << std::endl
        << "MAX power [W]" << "," << maxWatts[0] << std::endl
