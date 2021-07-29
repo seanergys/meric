@@ -55,12 +55,6 @@ public:
 		MERIC_INFO << "Create InfoStore\n";
 	}
 
-	void initStore(	int counter) override
-	{
-		loadSchedulerEnvironment();
-		_initCounter = counter;
-	};
-	
 	void initStore(	int counter,
 					const std::string outputDir,
 					const std::string outputFilename,

@@ -191,7 +191,10 @@ public:
 		{
 			if (!_MPInodeRank)
 			{
-				_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
+				if (!_MPIglobalRank)
+					_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
+				else
+					_storeList[i]->initStore(Meric::ITERATION);
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
