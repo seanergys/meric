@@ -432,6 +432,17 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqSM)
 			std::cout << "\tCurrent streaming multiprocessor frequency: " << freq*1000 << " kHz\n";
 	}
+
+	const unsigned int driverVersionLength = 256;
+	char driverVersion [driverVersionLength];
+	if (nvmlSystemGetDriverVersion (driverVersion, driverVersionLength) == NVML_SUCCESS && std::stod(driverVersion) < 465)
+	{
+		nvmlEnableState_t isRestricted;
+		if (nvmlDeviceGetAPIRestriction(deviceHandle, NVML_RESTRICTED_API_SET_APPLICATION_CLOCKS, &isRestricted) == NVML_SUCCESS && isRestricted != NVML_FEATURE_DISABLED)
+		{
+			std::cout << "\n\tGPU frequencies tuning NOT allowed - execute `sudo nvidia-smi -acp UNRESTRICTED`\n";
+		}
+	}
 #endif
 
 	return ok;
@@ -519,7 +530,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #endif
 
 #if defined __x86_64 && !defined HAVE_MSR_SAFE && ! defined HAVE_X86_ADAPT_H //currently supported only intel
-		std::cout << "\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
+		std::cout << "\n\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
 #endif
 
 // default power capping ///////////////////////////////////////////////////////
