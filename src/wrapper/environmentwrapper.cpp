@@ -449,7 +449,6 @@ DVFS_WAY Environment::isDVFSpossible()
 	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
 		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the whitelist
 #endif
-std::cout << "NO DVFS" << std::endl;
 	return NO_DVFS;
 }
 
