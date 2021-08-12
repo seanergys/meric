@@ -16,9 +16,10 @@ void MSR::init()
 
 	//enable uncore-frequency monitoring
 	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
+	#ifdef U_MSR_PMON_FIXED_CTL
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 		write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
-
+	#endif
 	nominal_freq = Environment::getNominalFrequency();
 
 	//TODO prepare a msr batch
@@ -34,32 +35,34 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 	uint64_t reg, val;
 	for (int i=0; i < Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET; i++)
 	{
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::APERF];
-		read_msr(i, reg, &val);
+#ifdef IA32_APERF
+		read_msr(i, IA32_APERF, &val);
 		record[MSR_COUNTERS::APERF + "_" + std::to_string(i)] = val;
-
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::MPERF];
-		read_msr(i, reg, &val);
+#endif
+#ifdef IA32_MPERF
+		read_msr(i, IA32_MPERF, &val);
 		record[MSR_COUNTERS::MPERF + "_" + std::to_string(i)] = val;
-		
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::CORE_THERM_STATUS];
-		read_msr(i, reg, &val);
+#endif
+#ifdef IA32_THERM_STATUS
+		read_msr(i, IA32_THERM_STATUS, &val);
 		record[MSR_COUNTERS::CORE_THERM_STATUS + "_" + std::to_string(i)] = (val & IA32_THERM_STATUS_readout_mask) >> IA32_THERM_STATUS_readout_shift;
+#endif
 	}
 	
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::UCF_FREQ];
-		read_msr(Environment::mapCoresToSocket[i][0], reg, &val);
+#ifdef U_MSR_PMON_FIXED_CTR
+		read_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTR, &val);
 		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
-		
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::RAPL_PKG_ACTIVE];
-		read_msr(Environment::mapCoresToSocket[i][0], reg, &val);
+#endif
+#ifdef MSR_PKG_PERF_STATUS
+		read_msr(Environment::mapCoresToSocket[i][0], MSR_PKG_PERF_STATUS, &val);
 		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = val;
-		
-		reg = MSR_COUNTERS::counterDefines[MSR_COUNTERS::PACKAGE_THERM_STATUS];
-		read_msr(Environment::mapCoresToSocket[i][0], reg, &val);
+#endif
+#ifdef IA32_PACKAGE_THERM_STATUS
+		read_msr(Environment::mapCoresToSocket[i][0], IA32_PACKAGE_THERM_STATUS, &val);
 		record[MSR_COUNTERS::PACKAGE_THERM_STATUS + "_" + std::to_string(i)] = (val & IA32_PACKAGE_THERM_STATUS_readout_mask) >> IA32_PACKAGE_THERM_STATUS_readout_shift;
+#endif
 	}
 }
 

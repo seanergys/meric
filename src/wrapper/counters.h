@@ -70,12 +70,24 @@ const std::string PACKAGE_THERM_STATUS = "PACKAGE_THERM_STATUS";
 
 #if defined SRC_WRAPPER_MSRS_H_
 static std::map<const std::string, uint64_t> counterDefines = {
+	#ifdef IA32_APERF
 	{ APERF,                IA32_APERF                },
+	#endif
+	#ifdef IA32_MPERF
 	{ MPERF,                IA32_MPERF                },
+	#endif
+	#ifdef U_MSR_PMON_FIXED_CTR
 	{ UCF_FREQ,             U_MSR_PMON_FIXED_CTR      },
+	#endif
+	#ifdef MSR_PKG_PERF_STATUS
 	{ RAPL_PKG_ACTIVE,      MSR_PKG_PERF_STATUS       },
+	#endif
+	#ifdef IA32_THERM_STATUS
 	{ CORE_THERM_STATUS,    IA32_THERM_STATUS         },
+	#endif
+	#ifdef IA32_PACKAGE_THERM_STATUS
 	{ PACKAGE_THERM_STATUS, IA32_PACKAGE_THERM_STATUS }
+	#endif
 };
 #endif
 }
@@ -141,13 +153,15 @@ static std::map<const std::string, std::string> counterLabel = {
 
 #ifdef SRC_WRAPPER_MSRS_H_
 static std::map<const std::string, uint64_t> counterDefines = {
+	#ifdef MSR_PKG_ENERGY_STATUS
 	{ RAPL_PCKG_ENERGY,      MSR_PKG_ENERGY_STATUS  },
-#ifdef MSR_DRAM_ENERGY_STATUS
+	#endif
+	#ifdef MSR_DRAM_ENERGY_STATUS
 	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },
-#endif
-#ifdef MSR_CORE_ENERGY_STATUS
+	#endif
+	#ifdef MSR_CORE_ENERGY_STATUS
 	{ RAPL_CORE_ENERGY,      MSR_CORE_ENERGY_STATUS },
-#endif
+	#endif
 	{ RAPL_SUM_ENERGY,       0x0                    }
 };
 #endif

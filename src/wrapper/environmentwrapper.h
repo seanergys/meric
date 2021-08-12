@@ -169,7 +169,7 @@ public:
 	static void getAvailableUCF(std::vector<long> & values);
 //	static void getAvailablePwrCap(std::vector<long> & power, std::vector<long> & time);
 	
-#ifdef __x86_64
+#ifdef __i386__
 	static bool isHWPactive(std::string &status);
 #endif
 

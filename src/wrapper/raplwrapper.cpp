@@ -57,7 +57,7 @@ void RAPL::initCountersUnits()
 	if (units.size())
 		return; //already initialized
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE && defined MSR_RAPL_POWER_UNIT
 	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
 #elif defined HAVE_X86_ADAPT_H
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);

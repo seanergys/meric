@@ -294,20 +294,22 @@
  ******************************************************************************
  **/
 
-#ifndef IA32_ENERGY_PERF_BIAS
-	#define IA32_ENERGY_PERF_BIAS	0x1B0
-#endif
+#ifdef __i386__
+	#ifndef IA32_ENERGY_PERF_BIAS
+		#define IA32_ENERGY_PERF_BIAS	0x1B0
+	#endif
 
-#ifndef MSR_PLATFORM_INFO
-	#define MSR_PLATFORM_INFO   	0xCE
-#endif
+	#ifndef MSR_PLATFORM_INFO
+		#define MSR_PLATFORM_INFO   	0xCE
+	#endif
 
-#ifndef IA32_THERM_STATUS
-	#define IA32_THERM_STATUS		0x19C
-#endif
+	#ifndef IA32_THERM_STATUS
+		#define IA32_THERM_STATUS		0x19C
+	#endif
 
-#ifndef IA32_PACKAGE_THERM_STATUS
-	#define IA32_PACKAGE_THERM_STATUS 0x1B1
+	#ifndef IA32_PACKAGE_THERM_STATUS
+		#define IA32_PACKAGE_THERM_STATUS 0x1B1
+	#endif
 #endif
 
 const uint64_t MSR_PLATFORM_INFO_nominal_freq_mask  = 0xFF00;
@@ -457,33 +459,36 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
  ******************************************************************************
  **/
 
-#ifndef IA32_PERF_CTL
-	#define IA32_PERF_CTL       	0x199
-#endif
 const uint64_t IA32_PERF_CTL_shift = 8;
-
-#ifndef MSR_TURBO_RATIO_LIMIT
-	#define MSR_TURBO_RATIO_LIMIT	0x1AD
-#endif
 const uint64_t MSR_TURBO_RATIO_LIMIT_shift = 8;
 const uint64_t MSR_TURBO_RATIO_LIMIT_mask = 0xFF;
-
-#ifndef MSR_TURBO_RATIO_LIMIT_CORES
-	#define MSR_TURBO_RATIO_LIMIT_CORES 0x1AE
-#endif
-
-#ifndef IA32_MPERF
-	#define IA32_MPERF				0xE7
-#endif
-
-#ifndef IA32_APERF
-	#define IA32_APERF				0xE8
-#endif
-
-#ifndef IA32_PM_ENABLE
-	#define IA32_PM_ENABLE			0x770
-#endif
 const uint64_t IA32_PM_ENABLE_mask = 1;
+
+#ifdef __i386__
+	#ifndef IA32_PERF_CTL
+		#define IA32_PERF_CTL       	0x199
+	#endif
+
+	#ifndef MSR_TURBO_RATIO_LIMIT
+		#define MSR_TURBO_RATIO_LIMIT	0x1AD
+	#endif
+
+	#ifndef MSR_TURBO_RATIO_LIMIT_CORES
+		#define MSR_TURBO_RATIO_LIMIT_CORES 0x1AE
+	#endif
+
+	#ifndef IA32_MPERF
+		#define IA32_MPERF				0xE7
+	#endif
+
+	#ifndef IA32_APERF
+		#define IA32_APERF				0xE8
+	#endif
+
+	#ifndef IA32_PM_ENABLE
+		#define IA32_PM_ENABLE			0x770
+	#endif
+#endif
 
 // UNCORE FREQUENCY ////////////////////////////////////////////////////////////
 /**
@@ -617,22 +622,24 @@ const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 
 const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
-#ifndef MSR_UNCORE_RATIO_LIMIT
-	#define MSR_UNCORE_RATIO_LIMIT  0x620
-#endif
+#ifdef __i386__
+	#ifndef MSR_UNCORE_RATIO_LIMIT
+		#define MSR_UNCORE_RATIO_LIMIT  0x620
+	#endif
 
-#ifndef MSR_UNCORE_CURRENT_RATIO //UNCORE_PERF_STATUS
-	#define MSR_UNCORE_CURRENT_RATIO	0x621
-#endif
+	#ifndef MSR_UNCORE_CURRENT_RATIO //UNCORE_PERF_STATUS
+		#define MSR_UNCORE_CURRENT_RATIO	0x621
+	#endif
 
-#ifndef U_MSR_PMON_FIXED_CTR
-	#define U_MSR_PMON_FIXED_CTR	0x704	//since HSW
-//	#define U_MSR_PMON_FIXED_CTR	0xC09	//IVB EP and SDB EP chips
-#endif
+	#ifndef U_MSR_PMON_FIXED_CTR
+		#define U_MSR_PMON_FIXED_CTR	0x704	//since HSW
+	//	#define U_MSR_PMON_FIXED_CTR	0xC09	//IVB EP and SDB EP chips
+	#endif
 
-#ifndef U_MSR_PMON_FIXED_CTL
-	#define U_MSR_PMON_FIXED_CTL	0x703	//since HSW
-//	#define U_MSR_PMON_FIXED_CTL	0xC08	//IVB EP and SDB EP chips
+	#ifndef U_MSR_PMON_FIXED_CTL
+		#define U_MSR_PMON_FIXED_CTL	0x703	//since HSW
+	//	#define U_MSR_PMON_FIXED_CTL	0xC08	//IVB EP and SDB EP chips
+	#endif
 #endif
 
 // POWER-CAP ///////////////////////////////////////////////////////////////////
@@ -884,32 +891,34 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_time_y_shift = 17;
 const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_mask = 0x8000000000000000;
 const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
 
-#ifndef MSR_PKG_POWER_LIMIT
-	#define MSR_PKG_POWER_LIMIT 	0x610
-#endif
+#ifdef __i386__
+	#ifndef MSR_PKG_POWER_LIMIT
+		#define MSR_PKG_POWER_LIMIT 	0x610
+	#endif
 
-#ifndef MSR_PKG_POWER_INFO
-	#define MSR_PKG_POWER_INFO  	0x614
-#endif
+	#ifndef MSR_PKG_POWER_INFO
+		#define MSR_PKG_POWER_INFO  	0x614
+	#endif
 
-#ifndef MSR_PKG_PERF_STATUS
-	#define MSR_PKG_PERF_STATUS 	0x613
-#endif
+	#ifndef MSR_PKG_PERF_STATUS
+		#define MSR_PKG_PERF_STATUS 	0x613
+	#endif
 
-#ifndef MSR_DRAM_POWER_LIMIT
-	#define MSR_DRAM_POWER_LIMIT 	0x618
-#endif
+	#ifndef MSR_DRAM_POWER_LIMIT
+		#define MSR_DRAM_POWER_LIMIT 	0x618
+	#endif
 
-#ifndef MSR_DRAM_POWER_INFO
-	#define MSR_DRAM_POWER_INFO 	0x61C
-#endif
+	#ifndef MSR_DRAM_POWER_INFO
+		#define MSR_DRAM_POWER_INFO 	0x61C
+	#endif
 
-#ifndef MSR_DRAM_PERF_STATUS
-	#define MSR_DRAM_PERF_STATUS 	0x61B
-#endif
+	#ifndef MSR_DRAM_PERF_STATUS
+		#define MSR_DRAM_PERF_STATUS 	0x61B
+	#endif
 
-#ifndef MSR_PLATFORM_POWER_LIMIT
-	#define MSR_PLATFORM_POWER_LIMIT 	0x65C
+	#ifndef MSR_PLATFORM_POWER_LIMIT
+		#define MSR_PLATFORM_POWER_LIMIT 	0x65C
+	#endif
 #endif
 
 // RAPL energy measurement /////////////////////////////////////////////////////
@@ -1072,20 +1081,48 @@ const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 ////////////////////////////////////////////////////////////////////////////////
 
 const std::map<uint64_t, uint64_t> msr_whitelist = {
+#ifdef MSR_PLATFORM_INFO
 	{ MSR_PLATFORM_INFO,           0x0000FF007080FF00 }, //MSR_PLATFORM_INFO/PLATFORM_INFO_ADDR
+#endif
+#ifdef U_MSR_PMON_FIXED_CTR
 	{ U_MSR_PMON_FIXED_CTR,        0x0000FFFFFFFFFFFF }, //U_MSR_PMON_FIXED_CTR/MSR_U_PMON_UCLK_FIXED_CTR
+#endif
+#ifdef U_MSR_PMON_FIXED_CTL
 	{ U_MSR_PMON_FIXED_CTL,        0x00500000         }, //U_MSR_PMON_FIXED_CTL/MSR_U_PMON_UCLK_FIXED_CTL
+#endif
+#ifdef MSR_UNCORE_RATIO_LIMIT
 	{ MSR_UNCORE_RATIO_LIMIT,      0x0000000000007F7F },
+#endif
+#ifdef MSR_PKG_POWER_LIMIT
 	{ MSR_PKG_POWER_LIMIT,         0x00FFFFFF00FFFFFF },
+#endif
+#ifdef MSR_PKG_POWER_INFO
 	{ MSR_PKG_POWER_INFO,          0x003F7FFF7FFF7FFF },
+#endif
+#ifdef MSR_PKG_PERF_STATUS
 	{ MSR_PKG_PERF_STATUS,         0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_DRAM_POWER_LIMIT
 	{ MSR_DRAM_POWER_LIMIT,        0x0000000000FFFFFF },
+#endif
+#ifdef MSR_DRAM_POWER_INFO
 	{ MSR_DRAM_POWER_INFO,         0x003F7FFF7FFF7FFF },
+#endif
+#ifdef MSR_DRAM_PERF_STATUS
 	{ MSR_DRAM_PERF_STATUS,        0x00000000FFFFFFFF },
+#endif
+#ifdef IA32_ENERGY_PERF_BIAS
 	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
+#endif
+#ifdef IA32_PERF_CTL
 	{ IA32_PERF_CTL,               0x000000010000FFFF },
+#endif
+#ifdef IA32_MPERF
 	{ IA32_MPERF,                  0xFFFFFFFFFFFFFFFF },
+#endif
+#ifdef IA32_APERF
 	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
+#endif
 #ifdef MSR_RAPL_POWER_UNIT
 	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
 #endif
@@ -1110,10 +1147,18 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 #ifdef MSR_PLATFORM_POWER_LIMIT
 	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF },
 #endif
+#ifdef MSR_TURBO_RATIO_LIMIT
 	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
+#endif
+#ifdef MSR_TURBO_RATIO_LIMIT_CORES
 	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
+#endif
+#ifdef IA32_THERM_STATUS
 	{ IA32_THERM_STATUS,           0x00000000F87F0FFF },
+#endif
+#ifdef IA32_PACKAGE_THERM_STATUS
 	{ IA32_PACKAGE_THERM_STATUS,   0x00000000007F0FFF }
+#endif
 };
 
 #endif /* SRC_WRAPPER_MSRS_H_ */
