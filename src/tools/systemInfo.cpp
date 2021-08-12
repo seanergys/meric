@@ -703,7 +703,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 // PLATFORM
 
 		uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_ENERGY_COUNTER
 		if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
 		{
 			meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
