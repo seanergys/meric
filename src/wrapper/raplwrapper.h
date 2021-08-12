@@ -55,7 +55,14 @@ public:
  * node) we had to create a "fake" counter
  * getSummaryCounterName() returns name of this counter
  **/
-	static inline std::string getSummaryCounterName() { return RAPL_SUM_ENERGY; };
+	static inline std::string getSummaryCounterName()
+	{
+#ifdef __i386__
+		return RAPL_SUM_ENERGY;
+#else
+		return "";
+#endif
+	};
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
@@ -76,7 +83,14 @@ public:
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName = "") {return 0;};
 	static std::string summaryCounter();
-	static std::string getSummaryCounterName() { return RAPL_SUM_ENERGY; };
+	static std::string getSummaryCounterName()
+	{
+#ifdef __i386__
+		return RAPL_SUM_ENERGY;
+#else
+		return "";
+#endif
+	};
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};

@@ -75,20 +75,29 @@ void RAPL::initCountersUnits()
 #endif
 	if (MSR_RAPL_POWER_UNIT_bits != 0)
 	{
+		//power
 		units[RAPL_PCKG_POWER_LIMIT] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
 		units[RAPL_RAM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 #ifdef HAVE_MSR_SAFE
 		units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 #endif
-
+		//energy
+#ifdef MSR_PKG_ENERGY_STATUS
 		units[RAPL_PCKG_ENERGY] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
+#endif
 		//DRAM ENERGY unit is fixed to 15.3uJ
 		//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
+#ifdef MSR_DRAM_ENERGY_STATUS
 		units[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
-#ifdef HAVE_MSR_SAFE
+#endif
+#ifdef MSR_PLATFORM_ENERGY_COUNTER
 		units[RAPL_PLATFORM_ENERGY] = units[RAPL_PCKG_ENERGY];
 #endif
+#ifdef MSR_CORE_ENERGY_STATUS
+		units[RAPL_CORE_ENERGY] = units[RAPL_PCKG_ENERGY];
+#endif
 
+		//time
 		units[RAPL_POWER_LIMIT_TIMEWINDOW] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
 		units[MSR_COUNTERS::RAPL_PKG_ACTIVE] = units[RAPL_POWER_LIMIT_TIMEWINDOW];
 	}
@@ -135,7 +144,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 					continue;					
 				}
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] = (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -155,7 +164,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] += (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
@@ -185,7 +194,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
 				#endif
-				record [iterator->first] = (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] = (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 			}
 		}
 	}else
@@ -201,7 +210,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				#elif defined HAVE_GEOPM_H
 					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
 				#endif
-				record [iterator->first] += (dieEnergy & MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask);
+				record [iterator->first] += (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 			}
 		}	
 	}
@@ -247,8 +256,13 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 // fill this vector
 	std::vector <std::string> names;
+#ifdef __i386__
 	names.push_back(RAPL_PCKG_ENERGY);
 	names.push_back(RAPL_RAM_ENERGY);
+#elif defined __amd64__
+	names.push_back(RAPL_PCKG_ENERGY);
+	names.push_back(RAPL_CORE_ENERGY);
+#endif
 
 // in detailed mode RAPL gives us values for each cpu 
 // this is a reason for adding a suffix with number of a socket for each counter

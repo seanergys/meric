@@ -119,6 +119,7 @@ namespace MSR_RAPL_COUNTERS {
 const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
 const std::string RAPL_RAM_ENERGY  = "MSR_DRAM_ENERGY_STATUS";
 const std::string RAPL_PLATFORM_ENERGY = "MSR_PLATFORM_ENERGY_COUNTER";
+const std::string RAPL_CORE_ENERGY = "MSR_CORE_ENERGY_STATUS";
 const std::string RAPL_SUM_ENERGY  = "RAPL Energy consumption [J]";	//PCKG+RAM = not a counter to measure
 /*
 const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //not available
@@ -134,13 +135,19 @@ const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW"
 static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
 	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
+	{ RAPL_CORE_ENERGY,      "RAPL_CORE [J]"          },
 	{ RAPL_SUM_ENERGY,       "RAPL Energy consumption [J]" }
 };
 
 #ifdef SRC_WRAPPER_MSRS_H_
 static std::map<const std::string, uint64_t> counterDefines = {
 	{ RAPL_PCKG_ENERGY,      MSR_PKG_ENERGY_STATUS  },
+#ifdef MSR_DRAM_ENERGY_STATUS
 	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },
+#endif
+#ifdef MSR_CORE_ENERGY_STATUS
+	{ RAPL_CORE_ENERGY,      MSR_CORE_ENERGY_STATUS },
+#endif
 	{ RAPL_SUM_ENERGY,       0x0                    }
 };
 #endif

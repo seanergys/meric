@@ -5,10 +5,6 @@
  * List of MSRs used in MERIC with official description from Intel documentation
  **/
 
-#if defined HAVE_MSR_CORE_H
-	#include <msr_core.h>
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -1000,42 +996,78 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
  * Reserved (bits 63:32)
  ******************************************************************************
  **/
+
+/**
+ * Open-Source Register Reference For AMD Family 17h Processors Models 00h-2Fh
+ * 
+ * MSR_RAPL_POWER_UNIT Register ***********************************************
+ * Description same as Intel
+ * 0xC0010299 0x00000000000F1F0F Core::X86::Msr::RAPL_PWR_UNIT
+ * MSR_PKG_ENERGY_STATUS register *********************************************
+ * Description same as Intel
+ * 0xC001029B 0x00000000FFFFFFFF Core::X86::Msr::PKG_ENERGY_STAT
+ * MSR_CORE_ENERGY_STATUS register ********************************************
+ * 0xC001029A 0x00000000FFFFFFFF Core::X86::Msr::CORE_ENERGY_STAT
+ * Total energy consumed (bits 31:0)
+ * Reserved (bits 63:32)
+ **/ 
+
 const uint64_t MSR_RAPL_POWER_UNIT_power_mask   = 0xF;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_mask  = 0x1F00;
 const uint64_t MSR_RAPL_POWER_UNIT_energy_shift = 8;
 const uint64_t MSR_RAPL_POWER_UNIT_time_mask    = 0xF0000;
 const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
-const uint64_t MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask = 0xFFFFFFFF;
+//const uint64_t MSR_PKG_DRAM_PPx_ENERGY_STATUS_mask = 0xFFFFFFFF;
+//const uint64_t MSR_PKG_ENERGY_STATUS_mask    = 0xFFFFFFFF;
 //const uint64_t MSR_DRAM_ENERGY_STATUS_mask    = 0xFFFFFFFF;
 //const uint64_t MSR_PP0_ENERGY_STATUS_mask     = 0xFFFFFFFF;
 //const uint64_t MSR_PP1_ENERGY_STATUS_mask     = 0xFFFFFFFF;
-const uint64_t MSR_PLATFORM_ENERGY_COUNTER_mask = 0xFFFFFFFF;
+//const uint64_t MSR_PLATFORM_ENERGY_COUNTER_mask = 0xFFFFFFFF;
+//const uint64_t MSR_CORE_ENERGY_STATUS_mask    = 0xFFFFFFFF;
+const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 
-#ifndef MSR_RAPL_POWER_UNIT
-	#define MSR_RAPL_POWER_UNIT 	0x606
+#ifdef __i386__
+
+	#ifndef MSR_RAPL_POWER_UNIT
+		#define MSR_RAPL_POWER_UNIT 	0x606
+	#endif
+
+	#ifndef MSR_PKG_ENERGY_STATUS
+		#define MSR_PKG_ENERGY_STATUS 	0x611
+	#endif
+
+//	#ifndef MSR_PP0_ENERGY_STATUS
+//		#define MSR_PP0_ENERGY_STATUS 	0x639
+//	#endif
+
+//	#ifndef MSR_PP1_ENERGY_STATUS
+//		#define MSR_PP1_ENERGY_STATUS 	0x641
+//	#endif
+
+	#ifndef MSR_DRAM_ENERGY_STATUS
+		#define MSR_DRAM_ENERGY_STATUS 	0x619
+	#endif
+
+	#ifndef MSR_PLATFORM_ENERGY_COUNTER
+		#define MSR_PLATFORM_ENERGY_COUNTER 0x64D
+	#endif
+#endif 
+
+#ifdef __amd64__
+
+	#ifndef MSR_RAPL_POWER_UNIT
+		#define MSR_RAPL_POWER_UNIT 	0xC0010299
+	#endif
+
+	#ifndef MSR_PKG_ENERGY_STATUS
+		#define MSR_PKG_ENERGY_STATUS 	0xC001029B
+	#endif
+
+	#ifndef MSR_CORE_ENERGY_STATUS
+		#define MSR_CORE_ENERGY_STATUS	0xC001029A
+	#endif
+
 #endif
-
-#ifndef MSR_PKG_ENERGY_STATUS
-	#define MSR_PKG_ENERGY_STATUS 	0x611
-#endif
-
-#ifndef MSR_PP0_ENERGY_STATUS
-	#define MSR_PP0_ENERGY_STATUS 	0x639
-#endif
-
-#ifndef MSR_PP1_ENERGY_STATUS
-	#define MSR_PP1_ENERGY_STATUS 	0x641
-#endif
-
-#ifndef MSR_DRAM_ENERGY_STATUS
-	#define MSR_DRAM_ENERGY_STATUS 	0x619
-#endif
-
-#ifndef MSR_PLATFORM_ENERGY_COUNTER
-	#define MSR_PLATFORM_ENERGY_COUNTER 0x64D
-#endif
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1054,13 +1086,30 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 	{ IA32_PERF_CTL,               0x000000010000FFFF },
 	{ IA32_MPERF,                  0xFFFFFFFFFFFFFFFF },
 	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
+#ifdef MSR_RAPL_POWER_UNIT
 	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
+#endif
+#ifdef MSR_PKG_ENERGY_STATUS
 	{ MSR_PKG_ENERGY_STATUS,       0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_DRAM_ENERGY_STATUS
 	{ MSR_DRAM_ENERGY_STATUS,      0x00000000FFFFFFFF },
-//	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF },
-//	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_PP0_ENERGY_STATUS
+	{ MSR_PP0_ENERGY_STATUS,       0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_PP1_ENERGY_STATUS
+	{ MSR_PP1_ENERGY_STATUS,       0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_PLATFORM_ENERGY_COUNTER
 	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_CORE_ENERGY_STATUS
+	{ MSR_CORE_ENERGY_STATUS,      0x00000000FFFFFFFF },
+#endif
+#ifdef MSR_PLATFORM_POWER_LIMIT
 	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF },
+#endif
 	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
 	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
 	{ IA32_THERM_STATUS,           0x00000000F87F0FFF },
