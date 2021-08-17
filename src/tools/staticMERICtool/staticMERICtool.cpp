@@ -97,8 +97,11 @@ void printHelp()
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-t = #OpenMP threads\n"
-	          << "\t-p = power capping power limit [mW]\n"
-	          << "\t-w = power capping time window [ms]\n"
+	          << "\t-p = CPU power capping power limit [mW]\n"
+	          << "\t-w = CPU power capping time window [ms]\n"
+	          << "\t-s = GPU SM frequency [Hz]\n"
+	          << "\t-r = GPU memory frequency [Hz]\n"
+	          << "\t-g = GPU power capping power limit [mW]\n"
 	          << "\nenergyMeasureStop parameters:\n"
 	          << "\t-b = node baseline (static) power [W]\n"
 	          << "\t-q = print the overall consumed energy only [J]\n"
@@ -118,7 +121,16 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	OUTPUT_FILE = std::string(MERIC_PATH)+"/build/.MERICmeasure-" + std::string(hostname) +".data";
-	RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+	RegionParameters defaultParameter = {
+		.frequency=0,
+		.uncoreFrequency=0,
+		.nthreads=0,
+		.powerCapPKG=0,
+		.powerCapPKGtime=0,
+		.frequencyGPU=0,
+		.frequencyGPUmem=0,
+		.powerCapGPU=0
+	};
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -195,7 +207,50 @@ int main(int argc, char **argv)
 			{
 				printHelp();
 			}
+		}else if (arg == "-s")
+		{
+			if (i + 1 < argc)
+			{
+				try{
+					defaultParameter.frequencyGPU = std::stol (argv[++i]);
+				} catch (std::exception const &e)
+				{
+					printHelp();
+				}
+			}else
+			{
+				printHelp();
+			}
+		}else if (arg == "-r")
+		{
+			if (i + 1 < argc)
+			{
+				try{
+					defaultParameter.frequencyGPUmem = std::stol (argv[++i]);
+				} catch (std::exception const &e)
+				{
+					printHelp();
+				}
+			}else
+			{
+				printHelp();
+			}
+		}else if (arg == "-g")
+		{
+			if (i + 1 < argc)
+			{
+				try{
+					defaultParameter.powerCapGPU = std::stol (argv[++i]);
+				} catch (std::exception const &e)
+				{
+					printHelp();
+				}
+			}else
+			{
+				printHelp();
+			}
 		}
+
 #elif defined STOP
 
 		if (arg == "-q")
