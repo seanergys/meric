@@ -96,12 +96,15 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< firstBlade << " in time "<< int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< lastBlade << " in time "<< int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
+	
+	const size_t staticRegionSufixLength = 7; //"_static".length()
+	const bool staticRegion = _name[_records[iStarts.back()].region].length() > staticRegionSufixLength && _name[_records[iStarts.back()].region].compare(_name[_records[iStarts.back()].region].length() - staticRegionSufixLength, staticRegionSufixLength, "_static") == 0;
 
     // Blade values
 	ss << "# SAMPLES - " << TSystem::getSourceLabel() << ":\n";
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
-		if (printSamples)
+		if (printSamples && staticRegion)
 		{
 			ss << "# Blade (" << TSystem::getSourceLabel() <<") samples [W]"<< std::endl;
 			std::vector<double> samples;
@@ -130,7 +133,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	{
 		for (unsigned int sensorID = 1; sensorID < TSystem::vrSensorLabel.size(); sensorID++)
 		{
-			if(printSamples)
+			if(printSamples && staticRegion)
 			{
 				ss << "# Voltage regulator (" << TSystem::vrSensorLabel[sensorID] << ") samples [W]" << std::endl;
 				std::vector<double> samples;
