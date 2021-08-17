@@ -81,8 +81,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	double * energy;
 	double * minWatts;
 	double * maxWatts;
-    double avgWatts = 0.0;
-    double energyConsumption = 0.0;
+	double avgWatts = 0.0;
+	double energyConsumption = 0.0;
 
 	std::string msg = "";
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
@@ -118,8 +118,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
 		   << "MIN power [W]" << "," << minWatts[0] << std::endl
 		   << "AVG power [W]" << "," << avgWatts << std::endl
-		   << "ID of first blade sample" << "," << firstBlade << std::endl
-		   << "ID of last blade sample" << "," << lastBlade-1 << std::endl;
+		   << "ID of first power sample" << "," << firstBlade << std::endl
+		   << "ID of last power sample" << "," << lastBlade-1 << std::endl;
 	} else {
 		ss << "# Blade summary - ERROR" << std::endl
 		   << TSystem::SUM_ENERGY_LABEL << ",0" << std::endl;
@@ -140,16 +140,16 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 					ss << it++ << "," << samples[i] << std::endl;
 
 			}
-	        avgWatts = energy[sensorID]/(lastVR-firstVR);
-	        energyConsumption = duration * avgWatts;
+			avgWatts = energy[sensorID]/(lastVR-firstVR);
+			energyConsumption = duration * avgWatts;
 
 		    ss << "# Voltage regulator (" << TSystem::vrSensorLabel[sensorID] << ") summary" <<std::endl
 		       << TSystem::SUM_ENERGY_LABEL << "," << energyConsumption << std::endl
 		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
 		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
 		       << "AVG power [W]" << "," << avgWatts << std::endl
-		       << "ID of first VR sample" << "," << firstVR << std::endl
-		       << "ID of last VR sample" << "," << lastVR-1 << std::endl;
+		       << "ID of first power sample" << "," << firstVR << std::endl
+		       << "ID of last power sample" << "," << lastVR-1 << std::endl;
 		}
 	}
 
