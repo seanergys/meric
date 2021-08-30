@@ -2,12 +2,15 @@
 #define SRC_WRAPPER_MSRS_H_
 
 /**
- * List of MSRs used in MERIC with official description from Intel documentation
+ * List of MSRs used in MERIC with official description from documentation
  **/
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Intel 64 and IA-32 Architectures Software Developer's Manual
+ * (Order Number: 325462-074US)
+ *
  * IA32_ENERGY_PERF_BIAS register *********************************************
  * Performance Energy Bias Hint (R/W)
  * 0x1B0 0x000000000000000F
@@ -292,7 +295,7 @@
  	a higher actual temperature.
  * Reserved (bits 63:23)
  ******************************************************************************
- **/
+ **/ 
 
 #ifdef __i386__
 	#ifndef IA32_ENERGY_PERF_BIAS
@@ -338,6 +341,9 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
 
 // CORE FREQUENCY //////////////////////////////////////////////////////////////
 /**
+ * Intel 64 and IA-32 Architectures Software Developer's Manual
+ * (Order Number: 325462-074US)
+ *
  * IA32_PERF_CTL register *****************************************************
  * Performance Control MSR (R/W) Software makes a request for a new Performance 
  * state (P-State) by writing this MSR.
@@ -448,7 +454,7 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
  *
  * IA32_PM_ENABLE register ****************************************************
  * Enable/Disable HWP, If CPUID.06H:EAX.[7] = 1, package level MSR
- * 0x770 0x000000000000001
+ * 0x770 0x0000000000000001
  * HWP_ENABLE (R/W1-Once) (bit 0):
  	Software sets this bit to enable HWP with autonomous selection of processor 
  	P-States. When set, the processor will disregard input from the legacy 
@@ -459,10 +465,245 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
  ******************************************************************************
  **/
 
+/**
+ * Open-Source Register Reference For AMD Family 17h Processors Models 00h-2Fh
+ * (56255 Rev 3.03)
+ *
+ * MSR_PSTATE_CUR_LIM register ************************************************
+ * P-state Current Limit
+ * 0xC0010061 0x0000000000000077 Core::X86::Msr::PStateCurLim
+ * CurPstateLimit: current P-state limit (bits 2:0):
+ 	Specifies the highest performance P-state (lowest value) allowed. 
+ 	CurPstateLimit is always bounded by 
+ 	Core::X86::Msr::PStateCurLim[PstateMaxVal]. Attempts to change the 
+ 	CurPstateLimit to a value greater (lower performance) than 
+ 	Core::X86::Msr::PStateCurLim[PstateMaxVal] leaves CurPstateLimit unchanged.
+ * Reserved (bit 3)
+ * PstateMaxVal: P-state maximum value (bits 6:4):
+ 	Specifies the lowest performance non-boosted P-state (highest non-boosted 
+ 	value) allowed. Attempts to change Core::X86::Msr::PStateCtl[PstateCmd] to a 
+ 	lower-performance P-state (higher value) are clipped to the value of this 
+ 	field.
+ * Reserved (bits 63:7)
+ *
+ * MSR_PSTATE_CTL register ****************************************************
+ * P-state Control
+ * 0xC0010062 0x0000000000000007 Core::X86::Msr::PStateCtl
+ * PstateCmd: P-state change command (bits 2:0):
+ 	Writes to this field cause the core to change to the indicated non-boosted 
+ 	P-state number, specified by Core::X86::Msr::PStateDef. 0=P0, 1=P1, etc. 
+ 	P-state limits are applied to any P-state requests made through this 
+ 	register. Reads from this field return the last written value, regardless of 
+ 	whether any limits are applied.
+ * Reserved (bits 63:3)
+ *
+ * MSR_PSTATE_DEF_P[0-7] register *********************************************
+ * P-state [7:0]
+ * Each of these registers specify the frequency and voltage associated with 
+ * each of the core P-states. The CpuVid field in these registers is required to 
+ * be programmed to the same value in all cores of a processor, but are allowed 
+ * to be different between processors in a multi-processor system. All other 
+ * fields in these registers are required to be programmed to the same value in 
+ * each core of the coherent fabric.
+ * 0xC0010064 - 0xC001006B 0x80000000FFFFFFFF Core::X86::Msr::PStateDef
+ * CpuFid[7:0]: core frequency ID (bits 7:0):
+ 	Specifies the core frequency multiplier. The core COF (Current operating 
+ 	frequency of a given clock domain) is a function of CpuFid (FID = Frequency 
+ 	Identifier; specifies the PLL frequency multiplier for a given clock domain) 
+ 	and CpuDid (DID = Divisor Identifier; specifies the post-PLL divisor used to 
+ 	reduce the COF), and defined by CoreCOF (Core current operating frequency in 
+ 	MHz. CoreCOF = (Core::X86::Msr::PStateDef[CpuFid[7:0]]/
+ 	Core::X86::Msr::PStateDef[CpuDfsId])*200. A nominal frequency reduction can 
+ 	occur if spread spectrum clocking is enabled.).
+ 	Valid values:
+ 	 - 0x0F - 0x00 = Reserved
+ 	 - 0xFF - 0x10 = Value * 25
+ * CpuDfsId: core divisor ID (bits 13:8):
+ 	Specifies the core frequency divisor; see Core::X86::Msr::PStateDef[CpuFid].
+ 	For values [0x1A:0x08], 1/8th integer divide steps supported down to 
+ 	VCO/3.25 (Note, L3/L2 FIFO logic related to 4-cycle data heads-up requires 
+ 	core to be 1/3 of L3 frequency or higher). For values [0x30:0x1C], 1/4th 
+ 	integer divide steps supported down to VCO/6 (DID[0] should zero 
+ 	if DID[5:0] > 1Ah). (Note, core and L3 frequencies below 400MHz are not 
+ 	supported by the architecture). Core supports DID up to 0x30, but L3 must be 
+ 	0x2C (VCO/5.5) or less.
+ 	Valid values:
+ 	 - 0x00 = Off
+ 	 - 0x07 - 0x01 = Reserved
+ 	 - 0x08 = VC0/1
+ 	 - 0x09 = VCO/1.125
+ 	 - 0x1A - 0x0A = VCO/(Value/8)
+ 	 - 0x1B = Reserved
+ 	 - 0x1C = VCO/(Value/8)
+ 	 - 0x1D = Reserved
+ 	 - 0x1E = VCO/(Value/8)
+ 	 - 0x1F = Reserved
+ 	 - 0x20 = VCO/(Value/8)
+ 	 - 0x21 = Reserved
+ 	 - 0x22 = VCO/(Value/8)
+ 	 - 0x23 = Reserved
+ 	 - 0x24 = VCO/(Value/8)
+ 	 - 0x25 = Reserved
+ 	 - 0x26 = VCO/(Value/8)
+ 	 - 0x27 = Reserved
+ 	 - 0x28 = VCO/(Value/8)
+ 	 - 0x29 = Reserved
+ 	 - 0x2A = VCO/(Value/8)
+ 	 - 0x2B = Reserved
+ 	 - 0x2C = VCO/(Value/8)
+ 	 - 0x3F - 0x2D - Reserved
+ * CpuVid[7:0]: core VID (bits 21:14):
+ 	See Core::X86::Msr::PStateDef register description.
+ 	Voltage level identifier (VID).
+ * IddValue: current value (bits 29:22):
+ 	IddDiv and IddValue combine to specify the expected maximum current 
+ 	dissipation of a single core that is in the P-state corresponding to the MSR 
+ 	number. These values are intended to be used to create ACPI-defined _PSS 
+ 	objects. The values are expressed in amps; they are not intended to convey 
+ 	final product power levels; they may not match the power levels specified 
+ 	in the Power and Thermal Datasheets.
+ * IddDiv: current divisor (bits 31:30):
+ 	See Core::X86::Msr::PStateDef[IddValue]
+ * Reserved (bits 62:32)
+ * PstateEn: P-State enable (bit 63):
+ 	0 = The P-state specified by this MSR is not valid.
+ 	1 = The P-state specified by this MSR is valid. Only then the rest of the 
+ 	P-state information in the register is valid after a reset; it controls no 
+ 	hardware.
+ *
+ * MSR_HWCR register **********************************************************
+ * Hardware configuration
+ * 0xC0010015 0x000000024F366799 Core::X86::Msr::HWCR
+ * SmmLock: SMM code lock (bit 0):
+ 	1 = SMM code in the ASeg and TSeg range and the SMM registers are Read-only 
+ 	and SMI interrupts are not intercepted in SVM.
+ * Reserved (bits 2:1)
+ * TlbCacheDis: TLB cache dissable (bit 3):
+ 	1 = Disable performance improvement that assumes that the PML4, PDP, PDE and 
+ 	PTE entries are in cacheable WB DRAM.
+ 	Operating systems that maintain page tables in any other memory type must 
+ 	set the TlbCacheDis bit to insure proper operation. TlbCacheDis does not 
+ 	override the memory type specified by the SMM ASeg and TSeg memory regions 
+ 	controlled by Core::X86::Msr::SMMAddr Core::X86::Msr::SMMMask.
+ * INVDWBINVD: INVD to WBINVD conversion (bit 4):
+ 	1 = Convert INVD to WBINVD.
+ 	This bit is required to be set for normal operation when any of the 
+ 	following are true:
+ 	 - An L2 is shared by multiple threads.
+ 	 - An L3 is shared by multiple cores.
+ 	 - CC6 is enabled.
+ 	 - Probe filter is enabled.
+ * Reserved (bits 6:5)
+ * Allow FERR on NE (bit 7):
+ 	0 = Disable legacy FERR signaling and generate FERR exception directly.
+ 	1 = Legacy FERR signaling.
+ * IgnneEm: IGNNE port emulation enable (bit 8):
+ 	1 = Enable emulation of IGNNE port.
+ * MonMwaitDis: MONITOR and MWAIT disable (bit 9):
+ 	1 = The MONITOR, MWAIT, MONITORX, and MWAITX opcodes become invalid. 
+ 	This affects what is reported back through 
+ 	Core::X86::Cpuid::FeatureIdEcx[Monitor] and 
+ 	Core::X86::Cpuid::FeatureExtIdEcx[MwaitExtended].
+ * MonMwaitUserEn: MONITOR/MWAIT user mode enable (bit 10):
+ 	0 = The MONITOR and MWAIT instructions are supported only in privilege level 
+ 	0; these instructions in privilege levels 1 to 3 cause a #UD exception. 
+ 	1 = The MONITOR and MWAIT instructions are supported in all privilege 
+ 	levels. 
+ 	The state of this bit is ignored if MonMwaitDis is set.
+ * Reserved (bits 12:11)
+ * SmiSpCycDis: SMI special bus cycle disable (bit 13):
+ 	0=A link special bus cycle, SMIACK, is generated when an SMI interrupt is 
+ 	taken.
+ 	AccessType: Core::X86::Msr::HWCR[SmmLock] ? Read-only : Read-write.
+ * RsmSpCycDis: RSM special bus cycle disable (bit 14):
+ 	0=A link special bus cycle, SMIACK, is generated on a resume from SMI.
+ 	AccessType: Core::X86::Msr::HWCR[SmmLock] ? Read-only : Read-write.
+ * Reserved (bits 16:15)
+ * Wrap32Dis: 32-bit address wrap disable (bit 17):
+ 	1 = Disable 32-bit address wrapping. 
+ 	Software can use Wrap32Dis to access physical memory above 4 Gbytes without 
+ 	switching into 64-bit mode. To do so, software should Write a greater-than 
+ 	4-Gbyte address to Core::X86::Msr::FS_BASE and Core::X86::Msr::GS_BASE. Then 
+ 	it would address +/-2 Gbytes from one of those bases using normal memory 
+ 	reference instructions with a FS or GS override prefix. However, the INVLPG, 
+ 	FST, and SSE store instructions generate 32-bit addresses in legacy mode, 
+ 	regardless of the state of Wrap32Dis.
+ * McStatusWrEn: Machine check status write enable (bit 18):
+ 	0 = MCA_STATUS registers are readable; writing a non-zero pattern to these 
+ 	registers causes a general protection fault.
+ 	1 = MCA_STATUS registers are Read-write, including Reserved fields; do not 
+ 	cause general protection faults; such Writes update all implemented bits in 
+ 	these registers; All fields of all threshold registers are Read-write when 
+ 	accessed from MSR space, including Locked, except BlkPtr which is always 
+ 	Read-only; 
+ 	Does not change the access type for the thresholding registers accessed via 
+ 	configuration space.
+ 	Can be used to debug machine check exception and interrupt handlers. 
+ 	Independent of the value of this bit, the processor may enforce 
+ 	Write-Ignored behavior on MCA_STATUS registers depending on platform 
+ 	settings.
+ * Reserved (bit 19)
+ * IoCfgGpFault: IO-space configuration causes a GP fault (bit 20):
+ 	1=IO-space accesses to configuration space cause a GP fault. The fault is 
+ 	triggered if any part of the IO Read/Rrite address range is between CF8h and 
+ 	CFFh, inclusive. These faults only result from single IO instructions, not 
+ 	to string and REP IO instructions. This fault takes priority over the IO 
+ 	trap mechanism described by Core::X86::Msr::SMI_ON_IO_TRAP_CTL_STS.
+ * LockTscToCurrentP0: Lock the TSC to the current P0 frequency (bit 21):
+ 	0 = The TSC will count at the P0 frequency.
+ 	1 = The TSC frequency is locked to the current P0 frequency at the time this 
+ 	bit is set and remains fixed regardless of future changes to the P0 
+ 	frequency.
+ * Reserved (bits 23:22)
+ * TscFreqSel: TSC frequency select (bit 24):
+ 	1 = The TSC increments at the P0 frequency.
+ * CpbDis: Core performance boost disable (bit 25):
+ 	1 = Boost is disabled.
+ 	If core performance boost is disabled while a core is in a boosted P-state, 
+ 	the core automatically transitions to the highest performance non-boosted 
+ 	P-state.
+ * EffFreqCntMwait: Effective frequency counting during mwait (bit 26):
+ 	0 = The registers do not increment. 
+ 	1 = The registers increment. 
+ 	Specifies whether Core::X86::Msr::MPERF and Core::X86::Msr::APERF increment 
+ 	while the core is in the monitor event pending state.
+ * EffFreqReadOnlyLock: Read-only effective frequency counter lock (bit 27):
+ 	1 = Core::X86::Msr::MPerfReadOnly, Core::X86::Msr::APerfReadOnly and 
+ 	Core::X86::Msr::IRPerfCount are Read-only.
+ * Reserved (bits 29:28)
+ * IRPerfEn: Instruction retired counter enable (bit 30):
+ 	1 = enable
+ * Reserved (bits 32:31)
+ * SmmPgCFGLock: SMM page config lock (bit 33):
+ 	1 = SMM page config locked. Error-on-write-1 if not in SMM mode. 
+ 	RSM unconditionally clears Core::X86::Msr::HWCR[SmmPgCfgLock].
+ * Reserved (bits 63:34)
+ *****************************************************************************
+ **/
+ 
 const uint64_t IA32_PERF_CTL_shift = 8;
 const uint64_t MSR_TURBO_RATIO_LIMIT_shift = 8;
 const uint64_t MSR_TURBO_RATIO_LIMIT_mask = 0xFF;
 const uint64_t IA32_PM_ENABLE_mask = 1;
+
+const uint64_t MSR_PSTATE_CUR_LIM_curr_limit_pstate_mask = 0x7;
+const uint64_t MSR_PSTATE_CUR_LIM_max_pstate_shift = 4;
+const uint64_t MSR_PSTATE_CUR_LIM_max_pstate_mask = 0x70;
+const uint64_t MSR_PSTATE_CTL_mask = 0x7;
+const uint64_t MSR_PSTATE_DEF_Px_frequency_id_mask = 0xFF;
+const uint64_t MSR_PSTATE_DEF_Px_divisor_shift = 8;
+const uint64_t MSR_PSTATE_DEF_Px_divisor_mask = 0x3F00;
+//const uint64_t MSR_PSTATE_DEF_Px_vid_shift = 14;
+//const uint64_t MSR_PSTATE_DEF_Px_vid_mask = 0x3FC000;
+//const uint64_t MSR_PSTATE_DEF_Px_idd_value_shift = 22;
+//const uint64_t MSR_PSTATE_DEF_Px_idd_value_mask = 0x3FC00000;
+//const uint64_t MSR_PSTATE_DEF_Px_idd_divisor_shift = 30;
+//const uint64_t MSR_PSTATE_DEF_Px_idd_divisor_mask = 0xC0000000;
+const uint64_t MSR_PSTATE_DEF_Px_pstate_enable_shift = 63;
+const uint64_t MSR_PSTATE_DEF_Px_pstate_enable_mask = 0x8000000000000000;
+const uint64_t MSR_HWCR_boost_disable_shift = 25;
+const uint64_t MSR_HWCR_boost_disable_mask = 0x2000000;
+
 
 #ifdef __i386__
 	#ifndef IA32_PERF_CTL
@@ -490,11 +731,56 @@ const uint64_t IA32_PM_ENABLE_mask = 1;
 	#endif
 #endif
 
+#ifdef __amd64__
+	#ifndef MSR_PSTATE_CUR_LIM
+		#define MSR_PSTATE_CUR_LIM 0xC0010061
+	#endif
+
+	#ifndef MSR_PSTATE_CTL
+		#define MSR_PSTATE_CTL     0xC0010062
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P0
+		#define MSR_PSTATE_DEF_P0  0xC0010064
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P1
+		#define MSR_PSTATE_DEF_P1  0xC0010065
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P2
+		#define MSR_PSTATE_DEF_P2  0xC0010066
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P3
+		#define MSR_PSTATE_DEF_P3  0xC0010067
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P4
+		#define MSR_PSTATE_DEF_P4  0xC0010068
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P5
+		#define MSR_PSTATE_DEF_P5  0xC0010069
+	#endif	
+
+	#ifndef MSR_PSTATE_DEF_P6
+		#define MSR_PSTATE_DEF_P6  0xC001006A
+	#endif
+
+	#ifndef MSR_PSTATE_DEF_P7
+		#define MSR_PSTATE_DEF_P7  0xC001006B
+	#endif	
+
+	#ifndef MSR_HWCR
+		#define MSR_HWCR           0xC0010015
+	#endif
+#endif
+
 // UNCORE FREQUENCY ////////////////////////////////////////////////////////////
 /**
- * Intel CPU uncore frequency
- * From Intel 64 and IA-32 Architectures Software Developer's Manual 
- * Volume 4: Model-Specific Registers
+ * Intel 64 and IA-32 Architectures Software Developer's Manual 
+ * Volume 4: Model-Specific Registers (Order Number: 335592-064US)
  *
  * MSR_UNCORE_RATIO_LIMIT register ********************************************
  * Uncore Ratio Limit (R/W)
@@ -511,8 +797,8 @@ const uint64_t IA32_PM_ENABLE_mask = 1;
  *
  **/
 /**
- * Following from Intel Xeon Processor E5 v2 and E7 v2 Product Families Uncore 
- * Performance Monitoring Reference Manual (Reference Number: 329468-002)
+ * Intel Xeon Processor E5 v2 and E7 v2 Product Families Uncore Performance 
+ * Monitoring Reference Manual (Reference Number: 329468-002)
  * The following registers represent state governing all PMUs in the uncore, 
  * both to exert global control and collect box-level information.
  *
@@ -620,6 +906,8 @@ const uint64_t MSR_UNCORE_RATIO_LIMIT_max_mask  = 0x7F;
 const uint64_t MSR_UNCORE_RATIO_LIMIT_min_mask  = 0x7F00;
 const uint64_t MSR_UNCORE_RATIO_LIMIT_min_shift = 8;
 
+const uint64_t MSR_UNCORE_CURRENT_RATIO_mask    = 0x7F;
+
 const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
 #ifdef __i386__
@@ -627,9 +915,9 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 		#define MSR_UNCORE_RATIO_LIMIT  0x620
 	#endif
 
-	#ifndef MSR_UNCORE_CURRENT_RATIO //UNCORE_PERF_STATUS
-		#define MSR_UNCORE_CURRENT_RATIO	0x621
-	#endif
+//	#ifndef MSR_UNCORE_CURRENT_RATIO //UNCORE_PERF_STATUS - not in use in MERIC
+//		#define MSR_UNCORE_CURRENT_RATIO	0x621
+//	#endif
 
 	#ifndef U_MSR_PMON_FIXED_CTR
 		#define U_MSR_PMON_FIXED_CTR	0x704	//since HSW
@@ -642,11 +930,16 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 	#endif
 #endif
 
-// POWER-CAP ///////////////////////////////////////////////////////////////////
+// RAPL POWER-CAP //////////////////////////////////////////////////////////////
 /**
- * Intel RAPL power capping registers description
- * From Intel 64 and IA-32 Architectures Software Developer's Manual
- * NOTE: RAPL power, energy and time units description is in the raplwrapper.
+ * RAPL power domains:
+ 	PKG      - CPU core domain (Intel)
+ 	DRAM     - memory channels (server Intel)
+ 	Platform - SoC (vendor specific, Intel)
+ **/
+/**
+ * Intel 64 and IA-32 Architectures Software Developer's Manual
+ * (Order Number: 325462-074US)
  *
  * MSR_PKG_POWER_LIMIT register ***********************************************
  * Register allows a software agent to define power limitation for the package 
@@ -923,17 +1216,17 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
 
 // RAPL energy measurement /////////////////////////////////////////////////////
 /**
- * Intel RAPL energy consumption mearurement registers description
- * From Intel 64 and IA-32 Architectures Software Developer's Manual
- *
- * Intel_RAPL_Pckg_Energy - all energy consumptions
- * Intel_RAPL_PP0_Energy  - CPU
- * Intel_RAPL_PP1_Energy  - may reflect to uncore devices
- * Intel_RAPL_RAM_Energy  - RAM
- *
- * Intel_RAPL_Pckg_Energy ~ Intel_RAPL_PP0_Energy + Intel_RAPL_PP1_Energy
- * Intel_RAPL_Pckg_Energy ~ Intel_RAPL_PP0_Energy + Intel_RAPL_RAM_Energy
- * 
+ * RAPL power domains:
+ 	PKG      - CPU core domain (Intel, AMD)
+ 	PP0      - cores (client Intel)
+ 	PP1      - integrated GPU (client Intel)
+ 	DRAM     - memory channels (server Intel)
+ 	Platform - SoC (vendor specific, Intel)
+ 	Core     - core (AMD)
+ **/
+/**
+ * Intel 64 and IA-32 Architectures Software Developer's Manual
+ * (Order Number: 325462-074US)
  *
  * MSR_RAPL_POWER_UNIT Register ***********************************************
  * Unit Multipliers used in RAPL Interfaces (R/O)
@@ -1008,6 +1301,7 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
 
 /**
  * Open-Source Register Reference For AMD Family 17h Processors Models 00h-2Fh
+ * (56255 Rev 3.03)
  * 
  * MSR_RAPL_POWER_UNIT Register ***********************************************
  * Description same as Intel
@@ -1081,17 +1375,80 @@ const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 ////////////////////////////////////////////////////////////////////////////////
 
 const std::map<uint64_t, uint64_t> msr_whitelist = {
+#ifdef IA32_ENERGY_PERF_BIAS
+	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
+#endif
 #ifdef MSR_PLATFORM_INFO
 	{ MSR_PLATFORM_INFO,           0x0000FF007080FF00 }, //MSR_PLATFORM_INFO/PLATFORM_INFO_ADDR
+#endif
+#ifdef IA32_THERM_STATUS
+	{ IA32_THERM_STATUS,           0x00000000F87F0FFF },
+#endif
+#ifdef IA32_PACKAGE_THERM_STATUS
+	{ IA32_PACKAGE_THERM_STATUS,   0x00000000007F0FFF },
+#endif
+#ifdef IA32_PERF_CTL
+	{ IA32_PERF_CTL,               0x000000010000FFFF },
+#endif
+#ifdef MSR_TURBO_RATIO_LIMIT
+	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
+#endif
+#ifdef MSR_TURBO_RATIO_LIMIT_CORES
+	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
+#endif
+#ifdef IA32_MPERF
+	{ IA32_MPERF,                  0xFFFFFFFFFFFFFFFF },
+#endif
+#ifdef IA32_APERF
+	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
+#endif
+#ifdef IA32_PM_ENABLE
+	{ IA32_PM_ENABLE,              0x0000000000000001 },
+#endif
+#ifdef MSR_PSTATE_CUR_LIM
+	{ MSR_PSTATE_CUR_LIM,          0x0000000000000077 },
+#endif
+#ifdef MSR_PSTATE_CTL
+	{ MSR_PSTATE_CTL,              0x0000000000000007 },
+#endif
+#ifdef MSR_PSTATE_DEF_P0
+	{ MSR_PSTATE_DEF_P0,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P1
+	{ MSR_PSTATE_DEF_P1,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P2
+	{ MSR_PSTATE_DEF_P2,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P3
+	{ MSR_PSTATE_DEF_P3,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P4
+	{ MSR_PSTATE_DEF_P4,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P5
+	{ MSR_PSTATE_DEF_P5,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P6
+	{ MSR_PSTATE_DEF_P6,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_PSTATE_DEF_P7
+	{ MSR_PSTATE_DEF_P7,           0x80000000FFFFFFFF },
+#endif
+#ifdef MSR_HWCR
+	{ MSR_HWCR,                    0x000000024F366799 },
+#endif
+#ifdef MSR_UNCORE_RATIO_LIMIT
+	{ MSR_UNCORE_RATIO_LIMIT,      0x0000000000007F7F },
+#endif
+#ifdef MSR_UNCORE_CURRENT_RATIO
+	{ MSR_UNCORE_CURRENT_RATIO,    0x000000000000007F },
 #endif
 #ifdef U_MSR_PMON_FIXED_CTR
 	{ U_MSR_PMON_FIXED_CTR,        0x0000FFFFFFFFFFFF }, //U_MSR_PMON_FIXED_CTR/MSR_U_PMON_UCLK_FIXED_CTR
 #endif
 #ifdef U_MSR_PMON_FIXED_CTL
 	{ U_MSR_PMON_FIXED_CTL,        0x00500000         }, //U_MSR_PMON_FIXED_CTL/MSR_U_PMON_UCLK_FIXED_CTL
-#endif
-#ifdef MSR_UNCORE_RATIO_LIMIT
-	{ MSR_UNCORE_RATIO_LIMIT,      0x0000000000007F7F },
 #endif
 #ifdef MSR_PKG_POWER_LIMIT
 	{ MSR_PKG_POWER_LIMIT,         0x00FFFFFF00FFFFFF },
@@ -1111,17 +1468,8 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 #ifdef MSR_DRAM_PERF_STATUS
 	{ MSR_DRAM_PERF_STATUS,        0x00000000FFFFFFFF },
 #endif
-#ifdef IA32_ENERGY_PERF_BIAS
-	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
-#endif
-#ifdef IA32_PERF_CTL
-	{ IA32_PERF_CTL,               0x000000010000FFFF },
-#endif
-#ifdef IA32_MPERF
-	{ IA32_MPERF,                  0xFFFFFFFFFFFFFFFF },
-#endif
-#ifdef IA32_APERF
-	{ IA32_APERF,                  0xFFFFFFFFFFFFFFFF },
+#ifdef MSR_PLATFORM_POWER_LIMIT
+	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF },
 #endif
 #ifdef MSR_RAPL_POWER_UNIT
 	{ MSR_RAPL_POWER_UNIT,         0x00000000000F1F0F },
@@ -1142,23 +1490,9 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 	{ MSR_PLATFORM_ENERGY_COUNTER, 0x00000000FFFFFFFF },
 #endif
 #ifdef MSR_CORE_ENERGY_STATUS
-	{ MSR_CORE_ENERGY_STATUS,      0x00000000FFFFFFFF },
+	{ MSR_CORE_ENERGY_STATUS,      0x00000000FFFFFFFF }
 #endif
-#ifdef MSR_PLATFORM_POWER_LIMIT
-	{ MSR_PLATFORM_POWER_LIMIT,    0x8001FFFF00FFFFFF },
-#endif
-#ifdef MSR_TURBO_RATIO_LIMIT
-	{ MSR_TURBO_RATIO_LIMIT,       0xFFFFFFFFFFFFFFFF },
-#endif
-#ifdef MSR_TURBO_RATIO_LIMIT_CORES
-	{ MSR_TURBO_RATIO_LIMIT_CORES, 0xFFFFFFFFFFFFFFFF }, //equals to MSR_TURBO_RATIO_LIMIT1
-#endif
-#ifdef IA32_THERM_STATUS
-	{ IA32_THERM_STATUS,           0x00000000F87F0FFF },
-#endif
-#ifdef IA32_PACKAGE_THERM_STATUS
-	{ IA32_PACKAGE_THERM_STATUS,   0x00000000007F0FFF }
-#endif
+
 };
 
 #endif /* SRC_WRAPPER_MSRS_H_ */
