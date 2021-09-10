@@ -678,7 +678,16 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
  	1 = SMM page config locked. Error-on-write-1 if not in SMM mode. 
  	RSM unconditionally clears Core::X86::Msr::HWCR[SmmPgCfgLock].
  * Reserved (bits 63:34)
- *****************************************************************************
+ *
+ * IA32_MPERF register ********************************************************
+ * Description same as Intel
+ * 0xE7 0xFFFFFFFFFFFFFFFF Core::X86::Msr::MPERF
+ *
+ * IA32_APERF register ********************************************************
+ * Description same as Intel
+ * 0xE8 0xFFFFFFFFFFFFFFFF Core::X86::Msr::APERF
+ * 
+ ******************************************************************************
  **/
  
 const uint64_t IA32_PERF_CTL_shift = 8;
@@ -774,6 +783,14 @@ const uint64_t MSR_HWCR_boost_disable_mask = 0x2000000;
 
 	#ifndef MSR_HWCR
 		#define MSR_HWCR           0xC0010015
+	#endif
+	
+	#ifndef IA32_MPERF
+		#define IA32_MPERF         0xE7
+	#endif
+	
+	#ifndef IA32_APERF
+		#define IA32_APERF         0xE8
 	#endif
 #endif
 
@@ -1228,7 +1245,7 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
  * Intel 64 and IA-32 Architectures Software Developer's Manual
  * (Order Number: 325462-074US)
  *
- * MSR_RAPL_POWER_UNIT Register ***********************************************
+ * MSR_RAPL_POWER_UNIT register ***********************************************
  * Unit Multipliers used in RAPL Interfaces (R/O)
  * 0x606 0x00000000000F1F0F
  * Power Units (bits 3:0):
@@ -1303,7 +1320,7 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
  * Open-Source Register Reference For AMD Family 17h Processors Models 00h-2Fh
  * (56255 Rev 3.03)
  * 
- * MSR_RAPL_POWER_UNIT Register ***********************************************
+ * MSR_RAPL_POWER_UNIT register ***********************************************
  * Description same as Intel
  * 0xC0010299 0x00000000000F1F0F Core::X86::Msr::RAPL_PWR_UNIT
  * MSR_PKG_ENERGY_STATUS register *********************************************
