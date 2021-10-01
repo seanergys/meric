@@ -57,7 +57,7 @@ public:
  **/
 	static inline std::string getSummaryCounterName()
 	{
-#ifdef __i386__
+#ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
 #else
 		return "";
@@ -85,7 +85,7 @@ public:
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName()
 	{
-#ifdef __i386__
+#ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
 #else
 		return "";

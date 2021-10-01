@@ -1,7 +1,19 @@
 
 from waflib import Logs
-import os, shutil, copy
+import os, shutil, copy, re
 
+def getCPUvendor():
+	vendor = ""
+	cpuinfo = open("/proc/cpuinfo",'r')
+	line = cpuinfo.readline()
+	while line != '' and line[:9] != "vendor_id":
+		line = cpuinfo.readline()
+	if re.search("Intel",line):
+		vendor = "_INTEL_"
+	elif re.search("AMD",line):
+		vendor = "_AMD_"
+	return vendor
+	
 def configure(ctx):
     # C++ compiler
     if (ctx.options.cpp == ""):
@@ -65,6 +77,10 @@ def configure(ctx):
         else:
             ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
     
+    vendor = getCPUvendor()
+    if vendor != "":
+        ctx.env.append_unique("DEFINES", [ vendor ])
+    	
     SBImandatory = False
     MSRSAFEavailable = False
     # check for msr_safe
@@ -108,7 +124,7 @@ def configure(ctx):
     configFile = open(ctx.path.abspath()+"/build/MERICconf.log", "w")
     for dep in ctx.env.DEFINES:
         if dep[:5] == "HAVE_":
-            configFile.write(dep[5:-4]+"\n")
+            configFile.write(dep[5:-2]+"\n")
     configFile.close()
     
     if os.path.exists(ctx.path.abspath()+"/build/systemDefault.json"):

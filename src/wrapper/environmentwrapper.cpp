@@ -189,7 +189,7 @@ long Environment::getNominalFrequency()
 				frequency *= 1000;
 		}
 	}
-	#ifdef __i386__
+	#ifdef _INTEL_
 	else
 	{
 		std::string CPUname;
@@ -354,7 +354,7 @@ std::string Environment::getScalingDriver()
  * the status std::string is set according the status of the HWP
  * enabled / disabled / not available / ""
  **/
-#ifdef __i386__
+#ifdef _INTEL_
 bool Environment::isHWPactive(std::string &status)
 {
 	status = "";
@@ -390,7 +390,7 @@ bool Environment::isHWPactive(std::string &status)
  **/
 DVFS_WAY Environment::isDVFSpossible()
 {
-	#ifdef __i386__
+	#ifdef _INTEL_
 	std::string status;
 	if (isHWPactive(status))
 		return NO_DVFS;
@@ -902,7 +902,7 @@ void Environment::readSystemDefaultSettings()
 
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
-#ifdef __i386__
+#ifdef _INTEL_
 	#ifdef HAVE_MSR_SAFE
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 			read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
@@ -1376,7 +1376,7 @@ void Environment::frequency(uint64_t freq, int socket)
  **/
 void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket)
 {
-#if !defined __i386__ && !defined __arm__
+#if !defined _INTEL_ && !defined __arm__
 	return;
 #else
 	int socket_min, socket_max;

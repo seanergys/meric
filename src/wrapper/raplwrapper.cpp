@@ -256,10 +256,10 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 // fill this vector
 	std::vector <std::string> names;
-#ifdef __i386__
+#ifdef _INTEL_
 	names.push_back(RAPL_PCKG_ENERGY);
 	names.push_back(RAPL_RAM_ENERGY);
-#elif defined __amd64__
+#elif defined _AMD_
 	names.push_back(RAPL_PCKG_ENERGY);
 	names.push_back(RAPL_CORE_ENERGY);
 #endif

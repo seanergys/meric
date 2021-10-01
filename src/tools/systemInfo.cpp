@@ -126,7 +126,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	}
 
 	bool HWP = false;
-#ifdef __i386__
+#ifdef _INTEL_
 	std::string status;
 	HWP = meric::Environment::isHWPactive(status);
 	if (status != "")
@@ -295,7 +295,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 #endif
 
 // UNCORE FREQUENCY
-#ifdef __i386__
+#ifdef _INTEL_
 	#if defined HAVE_MSR_SAFE && defined MSR_UNCORE_RATIO_LIMIT
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 		if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))

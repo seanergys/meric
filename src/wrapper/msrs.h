@@ -297,7 +297,7 @@
  ******************************************************************************
  **/ 
 
-#ifdef __i386__
+#ifdef _INTEL_
 	#ifndef IA32_ENERGY_PERF_BIAS
 		#define IA32_ENERGY_PERF_BIAS	0x1B0
 	#endif
@@ -714,7 +714,7 @@ const uint64_t MSR_HWCR_boost_disable_shift = 25;
 const uint64_t MSR_HWCR_boost_disable_mask = 0x2000000;
 
 
-#ifdef __i386__
+#ifdef _INTEL_
 	#ifndef IA32_PERF_CTL
 		#define IA32_PERF_CTL       	0x199
 	#endif
@@ -740,7 +740,7 @@ const uint64_t MSR_HWCR_boost_disable_mask = 0x2000000;
 	#endif
 #endif
 
-#ifdef __amd64__
+#ifdef _AMD_
 	#ifndef MSR_PSTATE_CUR_LIM
 		#define MSR_PSTATE_CUR_LIM 0xC0010061
 	#endif
@@ -927,7 +927,7 @@ const uint64_t MSR_UNCORE_CURRENT_RATIO_mask    = 0x7F;
 
 const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
-#ifdef __i386__
+#ifdef _INTEL_
 	#ifndef MSR_UNCORE_RATIO_LIMIT
 		#define MSR_UNCORE_RATIO_LIMIT  0x620
 	#endif
@@ -1201,7 +1201,7 @@ const uint64_t MSR_PLATFORM_POWER_LIMIT_time_y_shift = 17;
 const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_mask = 0x8000000000000000;
 const uint64_t MSR_PLATFORM_POWER_LIMIT_lock_shift = 63;
 
-#ifdef __i386__
+#ifdef _INTEL_
 	#ifndef MSR_PKG_POWER_LIMIT
 		#define MSR_PKG_POWER_LIMIT 	0x610
 	#endif
@@ -1346,7 +1346,7 @@ const uint64_t MSR_RAPL_POWER_UNIT_time_shift   = 16;
 //const uint64_t MSR_CORE_ENERGY_STATUS_mask    = 0xFFFFFFFF;
 const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 
-#ifdef __i386__
+#ifdef _INTEL_
 
 	#ifndef MSR_RAPL_POWER_UNIT
 		#define MSR_RAPL_POWER_UNIT 	0x606
@@ -1373,7 +1373,7 @@ const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 	#endif
 #endif 
 
-#ifdef __amd64__
+#ifdef _AMD_
 
 	#ifndef MSR_RAPL_POWER_UNIT
 		#define MSR_RAPL_POWER_UNIT 	0xC0010299
