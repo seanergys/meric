@@ -106,7 +106,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	{
 		if (printSamples && staticRegion)
 		{
-			ss << "# Blade (" << TSystem::getSourceLabel() <<") samples [W]"<< std::endl;
+			ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade) samples [W]:\n";
 			std::vector<double> samples;
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
@@ -116,7 +116,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
 
-		ss << "# Blade summary" << std::endl
+		ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
 		   << TSystem::SUM_ENERGY_LABEL << "," << energyConsumption << std::endl
 		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
 		   << "MIN power [W]" << "," << minWatts[0] << std::endl
@@ -135,7 +135,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		{
 			if(printSamples && staticRegion)
 			{
-				ss << "# Voltage regulator (" << TSystem::vrSensorLabel[sensorID] << ") samples [W]" << std::endl;
+				ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << ") samples [W]:\n";
 				std::vector<double> samples;
 				TSystem::getSamplesList(sensorID, firstVR, lastVR, samples);
 				size_t it = firstVR;
@@ -146,7 +146,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 			avgWatts = energy[sensorID]/(lastVR-firstVR);
 			energyConsumption = duration * avgWatts;
 
-		    ss << "# Voltage regulator (" << TSystem::vrSensorLabel[sensorID] << ") summary" <<std::endl
+		    ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << "):\n"
 		       << TSystem::SUM_ENERGY_LABEL << "," << energyConsumption << std::endl
 		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
 		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
