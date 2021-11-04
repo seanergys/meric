@@ -97,11 +97,10 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< firstBlade << " in time "<< int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< lastBlade << " in time "<< int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
 	
-	const size_t staticRegionSufixLength = std::string("_static").length(); //"_static".length()
+	const size_t staticRegionSufixLength = std::string("_static").length();
 	const bool staticRegion = _name[_records[iStarts.back()].region].length() > staticRegionSufixLength && _name[_records[iStarts.back()].region].compare(_name[_records[iStarts.back()].region].length() - staticRegionSufixLength, staticRegionSufixLength, "_static") == 0;
 
     // Blade values
-	ss << "# SAMPLES - " << TSystem::getSourceLabel() << ":\n";
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples && staticRegion)
@@ -124,7 +123,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		   << "ID of first power sample" << "," << firstBlade << std::endl
 		   << "ID of last power sample" << "," << lastBlade-1 << std::endl;
 	} else {
-		ss << "# Blade summary - ERROR" << std::endl
+		ss << "\n# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
+		   << "# Blade summary - ERROR" << std::endl
 		   << TSystem::SUM_ENERGY_LABEL << ",0" << std::endl;
 	}
 	

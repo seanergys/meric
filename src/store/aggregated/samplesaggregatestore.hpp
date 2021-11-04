@@ -34,7 +34,7 @@ void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<
 
 	if (sumEnergy > 0.0)
 	{
-		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade) summary:\n"
+		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade):\n"
 		   << "AVG energy consumption [J]," << sumEnergy/this->_size << std::endl
 		   << "MAX energy consumption [J]," << maxEnergy << std::endl
 		   << "MIN energy consumption [J]," << minEnergy << std::endl
