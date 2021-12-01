@@ -223,11 +223,49 @@ void Environment::getAvailableCF(std::vector<long> & values)
 		}
 		frequencyBounderyFile.close();
 	}
+#ifdef _AMD_
 	else
 	{
+		uint64_t MSR_PSTATE_DEF_Px = MSR_PSTATE_DEF_P0;
+		uint64_t MSR_PSTATE_DEF_Px_bits = 0x1;
+		while(MSR_PSTATE_DEF_Px_bits != 0x0)
+		{
+			read_msr(0, MSR_PSTATE_DEF_Px, &MSR_PSTATE_DEF_Px_bits);
+			if ((MSR_PSTATE_DEF_Px_bits & MSR_PSTATE_DEF_Px_pstate_enable_mask) >> MSR_PSTATE_DEF_Px_pstate_enable_shift)
+			{
+				double CPUDfsID;
+				const uint64_t MSR_PSTATE_DEF_Px_divisor = (MSR_PSTATE_DEF_Px_bits & MSR_PSTATE_DEF_Px_divisor_mask) >> MSR_PSTATE_DEF_Px_divisor_shift;
+				switch (MSR_PSTATE_DEF_Px_divisor)
+				{
+					case 0x8:
+						CPUDfsID = 1.0;
+						break;
+					case 0x9:
+						CPUDfsID = 1.125;
+						break;
+					default:
+						CPUDfsID = MSR_PSTATE_DEF_Px_divisor/8.0;
+					//`reserved` and `off` values not considered, PstateEnable=0 expected in these cases
+				}
+				const uint64_t MSR_PSTATE_DEF_Px_frequency_id = (MSR_PSTATE_DEF_Px_bits & MSR_PSTATE_DEF_Px_frequency_id_mask) * 25;
+				values.push_back((MSR_PSTATE_DEF_Px_frequency_id / CPUDfsID)*1e6);
+				
+				if (MSR_PSTATE_DEF_Px < MSR_PSTATE_DEF_P7)
+					MSR_PSTATE_DEF_Px++;
+				else
+					MSR_PSTATE_DEF_Px_bits = 0x0;
+			}
+			else
+				MSR_PSTATE_DEF_Px_bits = 0x0;
+		}
+	}
+#else
+	else
+	{	//TODO opposit order in compare to list created using the previous sources of the information
 		for (long freq = defaultSettings.minCoreFreq; freq < defaultSettings.maxTurboFreq; freq+=100000000)
 			values.push_back(freq);
 	}
+#endif
 }
 
 /**
