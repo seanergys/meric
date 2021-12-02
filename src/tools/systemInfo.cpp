@@ -181,6 +181,15 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			freq = std::stoi(turboInfo) == 0 ? 1 : 0;
 		}
 	}
+#ifdef _AMD_
+	else if (!currentWhitelist.count(MSR_HWCR))
+	{
+		uint64_t MSR_HWCR_bits = 0x0;
+		meric::read_msr(0, MSR_HWCR, &MSR_HWCR_bits);
+		freq = (MSR_HWCR_bits & MSR_HWCR_boost_disable_mask) >> MSR_HWCR_boost_disable_shift ? 0 : 1;
+	}
+#endif
+	
 	if (freq == 0)
 	{
 		std::cout << "\tTurbo CPU core frequencies:  disabled\n";
@@ -272,10 +281,10 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			ok = false;
 	}
 
-	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", F_OK ) != -1 )
+	std::vector<long> availCF;
+	meric::Environment::getAvailableCF(availCF);
+	if (availCF.size() > 0)
 	{
-		std::vector<long> availCF;
-		meric::Environment::getAvailableCF(availCF);
 		std::cout << "\tAvailable CPU core frequencies:  ";
 		for(long CF : availCF)
 			std::cout << CF/1000 << " " ;
