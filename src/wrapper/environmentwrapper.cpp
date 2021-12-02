@@ -226,10 +226,14 @@ void Environment::getAvailableCF(std::vector<long> & values)
 #ifdef _AMD_
 	else
 	{
+		uint64_t MSR_PSTATE_CUR_LIM_bits;
+		read_msr(0, MSR_PSTATE_CUR_LIM, &MSR_PSTATE_CUR_LIM_bits);
+		
 		uint64_t MSR_PSTATE_DEF_Px = MSR_PSTATE_DEF_P0;
-		uint64_t MSR_PSTATE_DEF_Px_bits = 0x1;
-		while(MSR_PSTATE_DEF_Px_bits != 0x0)
+		const int maxPstate = (MSR_PSTATE_CUR_LIM_bits & MSR_PSTATE_CUR_LIM_max_pstate_mask) >> MSR_PSTATE_CUR_LIM_max_pstate_shift;	
+		for (int i=0; i <= maxPstate; i++)
 		{
+			uint64_t MSR_PSTATE_DEF_Px_bits;
 			read_msr(0, MSR_PSTATE_DEF_Px, &MSR_PSTATE_DEF_Px_bits);
 			if ((MSR_PSTATE_DEF_Px_bits & MSR_PSTATE_DEF_Px_pstate_enable_mask) >> MSR_PSTATE_DEF_Px_pstate_enable_shift)
 			{
@@ -249,14 +253,10 @@ void Environment::getAvailableCF(std::vector<long> & values)
 				}
 				const uint64_t MSR_PSTATE_DEF_Px_frequency_id = (MSR_PSTATE_DEF_Px_bits & MSR_PSTATE_DEF_Px_frequency_id_mask) * 25;
 				values.push_back((MSR_PSTATE_DEF_Px_frequency_id / CPUDfsID)*1e6);
-				
-				if (MSR_PSTATE_DEF_Px < MSR_PSTATE_DEF_P7)
-					MSR_PSTATE_DEF_Px++;
-				else
-					MSR_PSTATE_DEF_Px_bits = 0x0;
 			}
-			else
-				MSR_PSTATE_DEF_Px_bits = 0x0;
+			//else //might be required to match frequency with AMD CPU Pstate
+			//	values.push_back(0);
+			MSR_PSTATE_DEF_Px++;
 		}
 	}
 #else
