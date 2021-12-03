@@ -209,6 +209,7 @@ long Environment::getNominalFrequency()
 /**
  * reads from the system list of available specific CPU core frequencies if specified
  * otherwise the list produced using 100 MHz step
+ * ! currently not used in MERIC
  **/
 void Environment::getAvailableCF(std::vector<long> & values)
 {	//TODO test /sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies
@@ -223,7 +224,7 @@ void Environment::getAvailableCF(std::vector<long> & values)
 		}
 		frequencyBounderyFile.close();
 	}
-#ifdef _AMD_
+#if defined _AMD_ && defined MSR_PSTATE_CUR_LIM && defined MSR_PSTATE_DEF_P0
 	else
 	{
 		uint64_t MSR_PSTATE_CUR_LIM_bits;
@@ -261,8 +262,10 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	}
 #else
 	else
-	{	//TODO opposit order in compare to list created using the previous sources of the information
-		for (long freq = defaultSettings.minCoreFreq; freq < defaultSettings.maxTurboFreq; freq+=100000000)
+	{	//TODO does not contain all turbo frequencies
+		if (defaultSettings.maxTurboFreq > defaultSettings.maxCoreFreq)
+			values.push_back(defaultSettings.maxTurboFreq);
+		for (long freq = getNominalFrequency(); freq > defaultSettings.minCoreFreq; freq-=100000000)
 			values.push_back(freq);
 	}
 #endif
@@ -270,6 +273,7 @@ void Environment::getAvailableCF(std::vector<long> & values)
 
 /**
  * creates list of available uncore frequencies
+ * ! currently not used in MERIC
  * TODO !!! ARM system, that has memory frequency represented as the uncore frequency
  **/
 void Environment::getAvailableUCF(std::vector<long> & values)
@@ -512,8 +516,11 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 					for (int thread : mapThreadsToCore[cpu])
 					{
 						governorFileO.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_governor");
-						governorFileO << "userspace";
-						governorFileO.close();
+						if (governorFileO.is_open())
+						{
+							governorFileO << "userspace";
+							governorFileO.close();
+						}
 						if (!governorFileO)
 						{
 							std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<thread<<"/cpufreq/scaling_governor\n";
@@ -529,8 +536,11 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		//Disable turbo logic of Intel P-state driver
 		std::ofstream defSet;
 		defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-		defSet << "1";
-		defSet.close();
+		if (defSet.is_open())
+		{
+			defSet << "1";
+			defSet.close();
+		}
 		if (!defSet)
 		{
 			std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/intel_pstate/no_turbo\n";
@@ -547,8 +557,11 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 				for (int thread : mapThreadsToCore[cpu])
 				{
 					defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_max_freq");
-					defSet << defaultSettings.minCoreFreq / 1000; //kHz
-					defSet.close();
+					if (defSet.is_open())
+					{
+						defSet << defaultSettings.minCoreFreq / 1000; //kHz
+						defSet.close();
+					}
 					if (!defSet)
 					{
 						std::cerr << "MERIC ERROR: Failed to write to /sys/devices/system/cpu/cpu"<<thread<<"/cpufreq/scaling_max_freq\n";
@@ -618,20 +631,27 @@ void Environment::stringOfIDsToVector(std::string list, std::vector<int> &vec, b
  **/
 void Environment::initHWSizes()
 {
-	std::string topoStr;
+	std::string topoStr = "";
 	std::ifstream topoFile;
 	
 	topoFile.open("/sys/devices/system/cpu/online");
-	topoFile >> topoStr;
-	topoFile.close();
+	if (topoFile.is_open())
+	{
+		topoFile >> topoStr;
+		topoFile.close();
+	}
 	std::vector<int> onlineThreads;
 	stringOfIDsToVector(topoStr, onlineThreads);
 	
 	while(onlineThreads.size())
 	{
+		topoStr = "";
 		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(onlineThreads[0])+"/topology/thread_siblings_list");
-		topoFile >> topoStr;
-		topoFile.close();
+		if (topoFile.is_open())
+		{
+			topoFile >> topoStr;
+			topoFile.close();
+		}
 		std::vector<int> threadSiblings;
 		stringOfIDsToVector(topoStr, threadSiblings);
 		mapThreadsToCore[threadSiblings.back()] = threadSiblings;
@@ -645,9 +665,13 @@ void Environment::initHWSizes()
 	
 	for (const auto &core : mapThreadsToCore)
 	{
+		topoStr = "";
 		topoFile.open("/sys/devices/system/cpu/cpu"+std::to_string(core.first)+"/topology/physical_package_id");
-		topoFile >> topoStr;
-		topoFile.close();
+		if (topoFile.is_open())
+		{
+			topoFile >> topoStr;
+			topoFile.close();
+		}
 		
 		const int soc = std::stoi(topoStr);
 		
@@ -1120,8 +1144,11 @@ void Environment::readSystemDefaultSettings()
 					        +  "\n\t}\n";
 #endif
 			restoreJson += "}\n";
-			defaultRestoreFile << restoreJson;
-			defaultRestoreFile.close();
+			if (defaultRestoreFile.is_open())
+			{
+				defaultRestoreFile << restoreJson;
+				defaultRestoreFile.close();
+			}
 		}
 	}
 
@@ -1212,8 +1239,11 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 			{
 				std::ofstream governorFile;
 				governorFile.open ("/sys/kernel/debug/clock/override.emc/state");
-				governorFile << "1";
-				governorFile.close();
+				if (governorFile.is_open())
+				{
+					governorFile << "1";
+					governorFile.close();
+				}
 				if (governorFile)
 				{
 					activatedUFS = true;
@@ -1396,8 +1426,11 @@ void Environment::frequency(uint64_t freq, int socket)
 		for (int cpu : mapCoresToSocket[soc])
 		{
 			coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
-			coreFile << freq / 1000;
-			coreFile.close();
+			if (coreFile.is_open())
+			{
+				coreFile << freq / 1000;
+				coreFile.close();
+			}
 			if(!coreFile)
 				std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
 		}
@@ -1506,8 +1539,11 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	// SYS_JETSON
 	std::ofstream uncoreFile;
 	uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
-	uncoreFile << maxFreq;
-	uncoreFile.close();
+	if (uncoreFile.is_open())
+	{
+		uncoreFile << maxFreq;
+		uncoreFile.close();
+	}
 	if (uncoreFile)
 		MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq << std::endl;
 	else
@@ -1808,8 +1844,10 @@ void Environment::restoreSystemSettings(bool hardReset)
 		{
 			if (defaultSettings.defaultCoreFreq > 0)
 				frequency(defaultSettings.defaultCoreFreq);
-			else
+			else if (defaultSettings.maxTurboFreq > 0)
 				frequency(defaultSettings.maxTurboFreq);
+			else
+				frequency(defaultSettings.maxCoreFreq);
 		}
 		if ((activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB || hardReset) && scalingGovernor != "userspace")
 		{
@@ -1821,8 +1859,11 @@ void Environment::restoreSystemSettings(bool hardReset)
 					for (int thread : mapThreadsToCore[cpu])
 					{
 						governorFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_governor");
-						governorFile << scalingGovernor;
-						governorFile.close();
+						if (governorFile.is_open())
+						{
+							governorFile << scalingGovernor;
+							governorFile.close();
+						}
 					}
 				}
 			}
@@ -1831,8 +1872,11 @@ void Environment::restoreSystemSettings(bool hardReset)
 		{
 			std::ofstream defSet;
 			defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-			defSet << "0";
-			defSet.close();
+			if (defSet.is_open())
+			{
+				defSet << "0";
+				defSet.close();
+			}
 			
 			for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 			{
@@ -1841,8 +1885,11 @@ void Environment::restoreSystemSettings(bool hardReset)
 					for (int thread : mapThreadsToCore[cpu])
 					{
 						defSet.open ("/sys/devices/system/cpu/cpu"+std::to_string(thread)+"/cpufreq/scaling_max_freq");
-						defSet << defaultSettings.maxCoreFreq / 1000;
-						defSet.close();
+						if (defSet.is_open())
+						{
+							defSet << defaultSettings.maxCoreFreq / 1000;
+							defSet.close();
+						}
 #if defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
 						write_msr(thread, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
