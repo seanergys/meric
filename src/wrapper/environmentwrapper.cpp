@@ -201,6 +201,30 @@ long Environment::getNominalFrequency()
 			frequency = std::stod(CPUname.substr(0,CPUname.size()-3))*1e9;
 		}
 	}
+	#elif defined _AMD_ && defined MSR_PSTATE_DEF_P0
+	else	//AMD CPU P0 frequency
+	{
+		uint64_t MSR_PSTATE_DEF_P0_bits;
+		read_msr(0, MSR_PSTATE_DEF_P0, &MSR_PSTATE_DEF_P0_bits);
+		if ((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_pstate_enable_mask) >> MSR_PSTATE_DEF_Px_pstate_enable_shift)
+		{
+			double CPUDfsID;
+			const uint64_t MSR_PSTATE_DEF_P0_divisor = (MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_divisor_mask) >> MSR_PSTATE_DEF_Px_divisor_shift;
+			switch (MSR_PSTATE_DEF_P0_divisor)
+			{
+				case 0x8:
+					CPUDfsID = 1.0;
+					break;
+				case 0x9:
+					CPUDfsID = 1.125;
+					break;
+				default:
+					CPUDfsID = MSR_PSTATE_DEF_P0_divisor/8.0;
+				//`reserved` and `off` values not considered, PstateEnable=0 expected in these cases
+			}
+			frequency = (((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_frequency_id_mask) * 25)/ CPUDfsID)*1e6;
+		}
+	}
 	#endif
 	return frequency;
 }
