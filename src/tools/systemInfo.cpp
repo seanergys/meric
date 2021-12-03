@@ -461,6 +461,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
 bool sysInfoPowercap(meric::systemLimits& limits)
 {
+#ifndef _INTEL_	//currently only Intel power capping supported
+	return true;
+#endif
 	bool ok = true;
 	std::ifstream pwrCapFile;
 	std::string pwrCapInfo = "";
