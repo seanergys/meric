@@ -151,11 +151,16 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
 					      << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
 			}
-			std::cout << "\t\t grant write access to:\n"
-				      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
+			struct stat info;
+			if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", &info) == 0)
+			{	
+				std::cout << "\t\t grant write access to:\n"
+					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
 #if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
-			std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
+				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
+					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
 #endif
+			}
 		}
 		std::cout << std::endl;
 	}
