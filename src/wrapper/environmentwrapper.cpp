@@ -284,14 +284,16 @@ void Environment::getAvailableCF(std::vector<long> & values)
 			MSR_PSTATE_DEF_Px++;
 		}
 	}
+/*
 #else
-	else
-	{	//TODO does not contain all turbo frequencies
+	else //any frequency from the nominal-minimum frequency range with 100 MHz step + maximum turbo frequency
+	{
 		if (defaultSettings.maxTurboFreq > defaultSettings.maxCoreFreq)
 			values.push_back(defaultSettings.maxTurboFreq);
 		for (long freq = getNominalFrequency(); freq > defaultSettings.minCoreFreq; freq-=100000000)
 			values.push_back(freq);
 	}
+*/
 #endif
 }
 
