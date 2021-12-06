@@ -236,7 +236,7 @@ long Environment::getNominalFrequency()
  * ! currently not used in MERIC
  **/
 void Environment::getAvailableCF(std::vector<long> & values)
-{	//TODO test /sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies
+{
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -295,6 +295,9 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	}
 */
 #endif
+	//return the frequencies ordered, the largest first
+	if (values.size() > 1 && values[0] < values[1])
+		std::reverse(values.begin(), values.end());
 }
 
 /**
@@ -393,6 +396,30 @@ long Environment::getMaximumTurboFrequency()
 			frequencyBounderyFile >> freqBound;
 			frequencyBounderyFile.close();
 			frequency = std::stol(freqBound) * 1000;
+		}
+	}
+	else
+	{
+		struct stat info;
+		if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies", &info) == 0)
+		{
+			std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies");
+			std::vector<long> values;
+			if (frequencyBounderyFile.is_open())
+			{
+				std::string freqBound = "";
+				while (frequencyBounderyFile >> freqBound)
+				{
+					long freq = std::stol(freqBound) * 1000;
+					values.push_back(freq);
+				}
+				frequencyBounderyFile.close();
+
+				if (values.size() > 2 && values[0] < values[1])
+					frequency = values.back();
+				else if (values.size())
+					frequency = values[0];
+			}
 		}
 	}
 #endif
