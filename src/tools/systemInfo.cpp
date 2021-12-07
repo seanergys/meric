@@ -47,9 +47,12 @@ void sysInfoSize(bool detailed = false)
 	int SOCKETS_PER_NODE, THREADS_PER_CORE;
 	std::vector <int> onlineThreads;
 	meric::Environment::initHWSizes(SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE, onlineThreads);
+	std::string CPUname;
+	meric::Environment::getCPUbrandString(CPUname);
 	std::cout << "# SYSTEM INFORMATION\n"
-	          << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
-	          << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
+	          << "\tCPU name:         " << CPUname << '\n'
+	          << "\tSockets per Node: " << SOCKETS_PER_NODE << '\n'
+	          << "\tCores per Socket: " << CORES_PER_SOCKET << '\n'
 	          << "\tThreads per Core: " << THREADS_PER_CORE;
 	          
 	if (onlineThreads.size() != SOCKETS_PER_NODE * CORES_PER_SOCKET * THREADS_PER_CORE)
@@ -80,19 +83,19 @@ void sysInfoSize(bool detailed = false)
 #ifdef HAVE_NVML_H
 	unsigned int deviceCount;
 	nvmlReturn_t ret = nvmlDeviceGetCount(&deviceCount);
-	std::cout << "\tNvidia GPUs:      " << deviceCount << std::endl;
-
-/*
-	nvmlDevice_t deviceHandle;
-	if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
+	if (deviceCount)
 	{
-		// The name is an alphanumeric string that denotes a particular product, e.g. Tesla C2070. It will not exceed 50 characters in length (including the null terminator).
-		const int GPU_NAME_LENGTH = 50;
-		char GPUname [GPU_NAME_LENGTH];
-		ret = nvmlDeviceGetName (deviceHandle, GPUname, GPU_NAME_LENGTH);
-		std::cout << "\tGPU name: " << GPUname;
+		nvmlDevice_t deviceHandle;
+		if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
+		{
+			// The name is an alphanumeric string that denotes a particular product, e.g. Tesla C2070. It will not exceed 50 characters in length (including the null terminator).
+			const int GPU_NAME_LENGTH = 50;
+			char GPUname [GPU_NAME_LENGTH];
+			ret = nvmlDeviceGetName (deviceHandle, GPUname, GPU_NAME_LENGTH);
+			std::cout << "\tGPU name:         " << GPUname << '\n';
+		}
+		std::cout << "\tGPUs per node:    " << deviceCount << '\n';
 	}
-*/
 #endif
 }
 

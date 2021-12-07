@@ -169,6 +169,8 @@ public:
 	static void getAvailableUCF(std::vector<long> & values);
 //	static void getAvailablePwrCap(std::vector<long> & power, std::vector<long> & time);
 	
+	static void getCPUbrandString(std::string & CPUname);
+	
 #ifdef _INTEL_
 	static bool isHWPactive(std::string &status);
 #endif
@@ -176,7 +178,6 @@ public:
 private:
 	static void readSystemDefaultSettings();
 	static void stringOfIDsToVector(std::string list, std::vector<int> &vec, bool lastOnly = false);
-	static void getCPUbrandString(std::string & CPUname);
 #ifdef __x86_64
 	static inline void CPUID(unsigned int *regs)
 	{
