@@ -186,7 +186,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			freq = std::stoi(turboInfo) == 0 ? 1 : 0;
 		}
 	}
-#ifdef _AMD_
+#if defined _AMD_ && defined MSR_HWCR
 	else if (!currentWhitelist.count(MSR_HWCR))
 	{
 		uint64_t MSR_HWCR_bits = 0x0;
