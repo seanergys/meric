@@ -168,12 +168,26 @@ long Environment::getNominalFrequency()
 	std::ifstream frequencyBounderyFile;
 	std::string freqBound = "";
 
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_nominal_freq");
-	if (frequencyBounderyFile.is_open())
+	struct stat info;
+	if(stat("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_nominal_freq", &info) == 0)
 	{
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		frequency = std::stol(freqBound)*1000;
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_nominal_freq");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			frequency = std::stol(freqBound)*1000;
+		}
+	}
+	else if(stat("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency", &info) == 0)
+	{
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			frequency = std::stol(freqBound)*1000;
+		}
 	}
 	else if (getScalingDriver() == "acpi-cpufreq")
 	{
@@ -376,7 +390,8 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 /**
  * returns maximum available non-AVX turbo CPU core frequency in Hz
  * when the information is not available, returns 0
- * note: AVX, AVX2 and AVX512 frequency limits register not available/documented
+ * does not take into consideration whether the turbo frequencies are enabled
+ * note: AVX/AVX2 and AVX512 frequency limits of Intel CPUs provided by systemInfo tool only, other vendors not supported
  **/
 long Environment::getMaximumTurboFrequency()
 {
@@ -969,6 +984,7 @@ void Environment::readSystemDefaultSettings()
 {
 	timespec modifTime;
 	std::string restoreJson;
+	struct stat info;
 	if (!readRestoreFile(restoreJson, modifTime))
 	{
 	//if the json file does not exists, does not contain current architecture or is corrupted
@@ -1003,6 +1019,55 @@ void Environment::readSystemDefaultSettings()
 			}
 		}
 		
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
+		}
+
+		if (stat("/sys/devices/system/cpu/intel_pstate/no_turbo", &info) == 0)
+		{
+			frequencyBounderyFile.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+			if (frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				if (std::stoi(freqBound) == 1)
+					defaultSettings.maxTurboFreq = 0;
+				else
+				{
+					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
+					if (defaultSettings.maxTurboFreq == 0)
+						defaultSettings.maxTurboFreq = 1;
+				}
+			}
+		}
+		else if (stat("/sys/devices/system/cpu/cpufreq/boost", &info) == 0)
+		{
+			frequencyBounderyFile.open ("/sys/devices/system/cpu/cpufreq/boost");
+			if (frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				if (std::stoi(freqBound) == 1)
+				{
+					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
+					if (defaultSettings.maxTurboFreq == 0)
+						defaultSettings.maxTurboFreq = 1;
+				}
+			}
+		}
+#if defined _AMD_ && defined MSR_HWCR
+		else
+		{
+			uint64_t MSR_HWCR_bits = 0x0;
+			read_msr(0, MSR_HWCR, &MSR_HWCR_bits);
+			defaultSettings.maxTurboFreq = (MSR_HWCR_bits & MSR_HWCR_boost_disable_mask) >> MSR_HWCR_boost_disable_shift ? 0 : 1;
+		}
+#endif
+
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 		if (frequencyBounderyFile.is_open())
 		{
@@ -1129,7 +1194,7 @@ void Environment::readSystemDefaultSettings()
 
 // store the configuration to the file ---------------------------------------//
 		std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
-		struct stat info; //test if the file has been modified since we tried to read it
+		//test if the file has been modified since we tried to read it
 		if (stat(defaultSettingFile.c_str(), &info ) != 0 || modifTime == info.st_mtim)
 		{
 			std::ofstream defaultRestoreFile;
@@ -1390,7 +1455,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		return;
 
 	// upper limit is checked only if the information about the turbo frequency is available
-	if (freq < defaultSettings.minCoreFreq || (defaultSettings.maxTurboFreq > 0 && freq > defaultSettings.maxTurboFreq))
+	if (freq < defaultSettings.minCoreFreq || (defaultSettings.maxTurboFreq > 1 && freq > defaultSettings.maxTurboFreq))
 	{
 		std::cerr << "CPU frequency has not changed to invalid value: " << freq << std::endl;
 		return;
@@ -1897,7 +1962,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 		{
 			if (defaultSettings.defaultCoreFreq > 0)
 				frequency(defaultSettings.defaultCoreFreq);
-			else if (defaultSettings.maxTurboFreq > 0)
+			else if (defaultSettings.maxTurboFreq > 1)
 				frequency(defaultSettings.maxTurboFreq);
 			else
 				frequency(defaultSettings.maxCoreFreq);
@@ -1924,11 +1989,14 @@ void Environment::restoreSystemSettings(bool hardReset)
 		if (activatedDVFS == INT_PSTATE || hardReset)
 		{
 			std::ofstream defSet;
-			defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
-			if (defSet.is_open())
+			if (defaultSettings.maxTurboFreq > 0)
 			{
-				defSet << "0";
-				defSet.close();
+				defSet.open ("/sys/devices/system/cpu/intel_pstate/no_turbo");
+				if (defSet.is_open())
+				{
+					defSet << "0";
+					defSet.close();
+				}
 			}
 			
 			for (int soc=0; soc<SOCKETS_PER_NODE; soc++)

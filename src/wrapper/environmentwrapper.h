@@ -89,10 +89,10 @@ struct RegionParameters { //must be able to carry -1
 
 
 struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supported should be zero
-	long maxTurboFreq = 0;             //Hz
-	long maxCoreFreq = 0;              //Hz
+	long maxTurboFreq = 0;             //Hz - 0 = disabled, 1 = enabled, >1 = maxTurboFrequency [Hz]
+	long maxCoreFreq = 0;              //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq
 	long defaultCoreFreq = 0;          //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise zero
-	long minCoreFreq = 0;              //Hz
+	long minCoreFreq = 0;              //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq
 
 	long maxUncoreFreq = 0;            //Hz
 	long defaultUncoreFreq = 0;        //Hz - set only if one specific default frequency exists, otherwise zero
