@@ -275,6 +275,8 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
 * optionally - [msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel CPUs parameters tuning
 * optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
+* optionally - [HDEEM](https://tu-dresden.de/zih/forschung/projekte/hdeem?set_language=en)
+* optionally - [FreeIPMI](http://www.gnu.org/software/freeipmi/) - required for the HDEEM
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
