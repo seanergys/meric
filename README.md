@@ -276,13 +276,13 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel CPUs parameters tuning
 * optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
 * optionally - [HDEEM](https://tu-dresden.de/zih/forschung/projekte/hdeem?set_language=en)
-* optionally - [FreeIPMI](http://www.gnu.org/software/freeipmi/) - required for the HDEEM
+* optionally - [FreeIPMI](http://www.gnu.org/software/freeipmi/) - mandatory for the HDEEM power monitoring
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
-* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - required for Nvidia GPUs
+* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the Nvidia GPUs monitoring and tuning
 * optionally - [numa](https://github.com/numactl/numactl)
-* optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) (mandatory for DiG energy measurement system)
+* optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
 ### TIMEPROF used libraries ###
