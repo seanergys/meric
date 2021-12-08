@@ -74,16 +74,16 @@ enum reg_cpuid
 #endif
 
 struct RegionParameters { //must be able to carry -1
-	long frequency;       //Hz
-	long uncoreFrequency; //Hz
-	int  nthreads;        //#omp threads
-	long powerCapPKG;     //mW
-	long powerCapPKGtime; //us
-//	long powerCapRAM;     //mW
-//	long powerCapRAMtime; //us
-	long frequencyGPU;    //Hz
-	long frequencyGPUmem; //Hz
-	long powerCapGPU;     //mW
+	long frequency = 0;       //Hz
+	long uncoreFrequency = 0; //Hz
+	int  nthreads = 0;        //#omp threads
+	long powerCapPKG = 0;     //mW
+	long powerCapPKGtime = 0; //us
+//	long powerCapRAM = 0;     //mW
+//	long powerCapRAMtime = 0; //us
+	long frequencyGPU = 0;    //Hz
+	long frequencyGPUmem = 0; //Hz
+	long powerCapGPU = 0;     //mW
 };
 
 

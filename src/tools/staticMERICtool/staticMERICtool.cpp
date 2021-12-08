@@ -121,16 +121,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	OUTPUT_FILE = std::string(MERIC_PATH)+"/build/.MERICmeasure-" + std::string(hostname) +".data";
-	RegionParameters defaultParameter = {
-		.frequency=0,
-		.uncoreFrequency=0,
-		.nthreads=0,
-		.powerCapPKG=0,
-		.powerCapPKGtime=0,
-		.frequencyGPU=0,
-		.frequencyGPUmem=0,
-		.powerCapGPU=0
-	};
+	RegionParameters defaultParameter;
 
 	for (int i = 1; i < argc; ++i)
 	{

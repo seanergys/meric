@@ -955,7 +955,7 @@ void constructCallPath()
 
 void constructStateSpace()
 {
-	meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+	meric::RegionParameters defaultParameter;
 	meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
 	limit = systemLimits(meric::Environment::getSystemSettings());
 	int THREADS_PER_CORE;
@@ -1726,7 +1726,7 @@ std::cerr << regName << " - improved solution\n";
 				{
 					size_t regIdx = getRegionIndex(regName);
 					configuration x_k_new;
-/*						configuration v_k_new;
+/*					configuration v_k_new;
 					configuration v_k_old = PSOhistory[regIdx][i].velocity;
 					configuration x_k_old = testConfigurationsDone[i][<regIndex>].regConfiguration;
 					configuration best_k = PSOhistory[regIdx][i].bestPosition;
@@ -1853,6 +1853,11 @@ void runApplication(appConfiguration testRun)
 {
 
 	//testRun.size() == 0 ??
+
+	//currently unsupported GPU paramters
+	setenv("MERIC_GPU_FREQUENCY", "0", 1);
+	setenv("MERIC_GPU_MEM_FREQUENCY", "0", 1);
+	setenv("MERIC_PWRCAP_GPU", "0", 1);
 	
 	std::string MERIC_OUTPUT_FILENAME = "";
 	if (testRun.size() == 1 && testRun[0].regName == "")

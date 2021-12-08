@@ -24,7 +24,7 @@ std::vector<std::string> Meric::_name;
 std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
 SocketsRegionParameters Meric::currentState;
-RegionParameters Meric::outputFormat = {0, 0, 0, 0, 0, 0, 0, 0};
+RegionParameters Meric::outputFormat;
 std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;

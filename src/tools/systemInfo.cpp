@@ -949,7 +949,7 @@ int main(int argc, char **argv)
 	
 	if (restore && restoreFile)
 	{
-		meric::RegionParameters defaultParameter = { .frequency=0, .uncoreFrequency=0, .nthreads=0, .powerCapPKG=0, .powerCapPKGtime=0};
+		meric::RegionParameters defaultParameter;
 		meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
 		meric::Environment::restoreSystemSettings(true);
 	}
