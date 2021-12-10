@@ -345,13 +345,13 @@ void generateDefaultWrapperConfigFile()
 
 	content+= std::string("\t\"MERIC\" : {\n")
 #ifdef HAVE_HDEEM_H
-			+ "\t\t\"MEASURE\" : HDEEM-S,\n"
+			+ "\t\t\"MEASURE\" : \"HDEEM-S\",\n"
 #elif defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-			+ "\t\t\"MEASURE\" : RAPL,\n"
+			+ "\t\t\"MEASURE\" : \"RAPL\",\n"
 #elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-			+ "\t\t\"MEASURE\" : DAVIDE,\n"
+			+ "\t\t\"MEASURE\" : \"DAVIDE\",\n"
 #else //just time measurement
-			+ "\t\t\"MEASURE\" : TIME,\n"
+			+ "\t\t\"MEASURE\" : \"TIME\",\n"
 #endif
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			+ "\t\t\"PWRCAP_POWER\" : 0,\n"
@@ -1032,7 +1032,7 @@ void loadData()
 				thrds
 			config
 			PWR
-			Twindow
+			CPUPWRtw
 			CFG
 			APPx
 	*/
@@ -1087,7 +1087,7 @@ void loadData()
 							selectedParams.threads = true;
 						else if (dataFormat[p] == "PWR")
 							selectedParams.powerCapPKG = true;
-						else if (dataFormat[p] == "Twindow")
+						else if (dataFormat[p] == "CPUPWRtw")
 							selectedParams.powerCapPKGtime = true;
 						/* TODO - APPx parameters */
 						else if (dataFormat[p].substr(0,3) == "APP")
@@ -1496,6 +1496,7 @@ std::string constructConfigFileName(std::string regName, configuration config)	/
 		char hostname[HOST_NAME_MAX];
 		gethostname(hostname, HOST_NAME_MAX);
 		cfgStr = std::string(hostname) +"_"+ cfgStr;
+		//cfgStr = "cn6.barbora.it4i.cz_"+ cfgStr;
 	}
 	
 	return MERIC_OUTPUT_DIR+"/"+regName+"/"+cfgStr+ConfigFileNameSuffix+".csv";
