@@ -816,6 +816,10 @@ const uint64_t MSR_HWCR_boost_disable_mask = 0x2000000;
 /**
  * Intel Xeon Processor E5 v2 and E7 v2 Product Families Uncore Performance 
  * Monitoring Reference Manual (Reference Number: 329468-002)
+ * and
+ * Intel Xeon Processor E5 and E7 v3 Family Uncore Performance Monitoring 
+ * Reference Manual (Document Number: 331051-002)
+ *
  * The following registers represent state governing all PMUs in the uncore, 
  * both to exert global control and collect box-level information.
  *
