@@ -37,6 +37,8 @@ public:
 	virtual void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
 		_name = regionNames;
+		outputDirectory = outputDir;
+		outputPrefix = prefix;
 		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
@@ -47,6 +49,7 @@ public:
 	{
 		sleep(2); // wait for HDEEM to load all samples
 		computePeriods();
+		outputDirectory = outputDir;
 
 		if(TSystem::getSamples() == 0)
 		{
@@ -78,6 +81,9 @@ protected:
 
 	timespec _start;
 	std::vector<SamplesRecord> _records;
+
+	std::string outputDirectory;
+	std::string outputPrefix;
 };
 
 }

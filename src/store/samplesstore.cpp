@@ -97,20 +97,31 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< firstBlade << " in time "<< int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
 	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< lastBlade << " in time "<< int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
 	
-	const size_t staticRegionSufixLength = std::string("_static").length();
-	const bool staticRegion = _name[_records[iStarts.back()].region].length() > staticRegionSufixLength && _name[_records[iStarts.back()].region].compare(_name[_records[iStarts.back()].region].length() - staticRegionSufixLength, staticRegionSufixLength, "_static") == 0;
+	bool staticRegion = false;
+	std::ofstream samplesStream;
+	if (printSamples)
+	{
+		const size_t staticRegionSufixLength = std::string("_static").length();
+		staticRegion = _name[_records[iStarts.back()].region].length() > staticRegionSufixLength && _name[_records[iStarts.back()].region].compare(_name[_records[iStarts.back()].region].length() - staticRegionSufixLength, staticRegionSufixLength, "_static") == 0;
+		if (staticRegion)
+		{
+			const std::string samplesDir = outputDirectory+"/"+_name[_records[iStarts.back()].region]+"/samples/";
+			mutils::createDir(samplesDir);			
+			samplesStream.open(samplesDir + outputPrefix + "_" + std::to_string(_initCounter) + ".csv", std::ofstream::app);
+		}
+	}
 
     // Blade values
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
 		if (printSamples && staticRegion)
 		{
-			ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade) samples [W]:\n";
+			samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade) power [W]:\n";
 			std::vector<double> samples;
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
 			for (size_t i = 0; i < samples.size(); i++)
-				ss << it++ << "," << samples[i] << std::endl;
+				samplesStream << it++ << "," << samples[i] << std::endl;
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
@@ -120,9 +131,11 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
 		   << "MIN power [W]" << "," << minWatts[0] << std::endl
 		   << "AVG power [W]" << "," << avgWatts << std::endl
-		   << "ID of first power sample" << "," << firstBlade << std::endl
-		   << "ID of last power sample" << "," << lastBlade-1 << std::endl;
-	} else {
+		   << "ID of first sample" << "," << firstBlade << std::endl
+		   << "ID of last sample" << "," << lastBlade-1 << std::endl;
+	}
+	else
+	{
 		ss << "\n# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
 		   << "# Blade summary - ERROR" << std::endl
 		   << TSystem::SUM_ENERGY_LABEL << ",0" << std::endl;
@@ -135,12 +148,12 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		{
 			if(printSamples && staticRegion)
 			{
-				ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << ") samples [W]:\n";
+				samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << ") power [W]:\n";
 				std::vector<double> samples;
 				TSystem::getSamplesList(sensorID, firstVR, lastVR, samples);
 				size_t it = firstVR;
 				for (size_t i = 0; i < samples.size(); i++)
-					ss << it++ << "," << samples[i] << std::endl;
+					samplesStream << it++ << "," << samples[i] << std::endl;
 
 			}
 			avgWatts = energy[sensorID]/(lastVR-firstVR);
@@ -151,10 +164,13 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
 		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
 		       << "AVG power [W]" << "," << avgWatts << std::endl
-		       << "ID of first power sample" << "," << firstVR << std::endl
-		       << "ID of last power sample" << "," << lastVR-1 << std::endl;
+		       << "ID of first sample" << "," << firstVR << std::endl
+		       << "ID of last sample" << "," << lastVR-1 << std::endl;
 		}
 	}
+	
+	if(printSamples && staticRegion)
+		samplesStream.close();
 
 	delete [] energy;
 	delete [] minWatts;
