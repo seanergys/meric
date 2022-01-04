@@ -452,7 +452,6 @@ void Meric::readRegionOptions()
 		}
 		else if(std::string(data->name->string) == "@SOCKET")
 		{
-			std::cerr << data->name->string <<"\n";
 			socket = ((struct json_object_s*)data->value->payload)->start;
 			do{
 				//list of regions
