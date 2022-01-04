@@ -496,7 +496,6 @@ protected:
 	static std::string outputFilenameInfo;
 	static RegionParameters outputFormat;
 
-	static int ITERATION;
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;

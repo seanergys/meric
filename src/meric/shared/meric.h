@@ -157,11 +157,14 @@ public:
 			exit(-1);
 		}
 		
+		unsigned int executionID = 0;
 		for(unsigned int i=0; i<_storeList.size(); i++)
 		{
-			_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo);
+			_storeList[i]->initStore(executionID, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo);
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		}
+		if (_storeList.size())
+			_storeList[0]->storeMeasurementInfo();
 	}
 
 	SharedMeric();

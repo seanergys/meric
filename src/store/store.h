@@ -56,13 +56,13 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 
-	virtual void initStore(	int counter)
+	virtual void initStore(	unsigned int & counter)
 	{
 		loadSchedulerEnvironment();
 		_initCounter = counter;
 	};
 	
-	virtual void initStore(	int counter,
+	virtual void initStore(	unsigned int & counter,
 					const std::string outputDir,
 					const std::string outputFilename,
 					const RegionParameters &outputFormat,
@@ -75,7 +75,7 @@ public:
 		return;
 	};
 	
-
+	virtual void storeMeasurementInfo() {};
 
 	
 protected:

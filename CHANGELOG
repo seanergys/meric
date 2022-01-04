@@ -1,5 +1,6 @@
 ### XX.XX.XXXX #################################################################
   - MERIC_MODE and MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options
+  - removed MERIC_ITERATION input parameter, it is generated automatically
   - support for Nvidia GPUs energy measurement using NVML (MERIC_MEASURE=NVML)
   - support Nvidia GPUs power capping, streaming multiprocessors and memory frequency tuning
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR

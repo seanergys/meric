@@ -187,14 +187,15 @@ public:
 		else
 			nodeNamePrefix = _nodeName;
 		
+		unsigned int executionID = 0;
 		for(unsigned int i=0; i<_storeList.size(); i++)
 		{
 			if (!_MPInodeRank)
 			{
 				if (!_MPIglobalRank)
-					_storeList[i]->initStore(Meric::ITERATION, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
+					_storeList[i]->initStore(executionID, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
 				else
-					_storeList[i]->initStore(Meric::ITERATION);
+					_storeList[i]->initStore(executionID);
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
@@ -209,8 +210,11 @@ public:
 				}
 			}
 		}
-		if (MPIbarriers)
-			MPI_Barrier(_currentNode);
+		
+		// re-write the measurementInfo.json
+		MPI_Barrier(MPI_COMM_WORLD);
+		if (!_MPIglobalRank && _storeList.size())
+			_storeList[0]->storeMeasurementInfo();
 	}
 
 protected:

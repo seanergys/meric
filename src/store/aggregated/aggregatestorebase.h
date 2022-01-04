@@ -18,6 +18,11 @@ public:
 		MPI_Comm_rank(_comm, &_rank);
 		MPI_Comm_size(_comm, &_size);
 	}
+	
+	void storeMeasurementInfo()
+	{
+		_store->storeMeasurementInfo();
+	}
 
 	void addStart(int region, RegionParameters configuration) { _store->addStart(region, configuration); }
 	void addEnd(int region) { _store->addEnd(region); };
@@ -38,7 +43,7 @@ public:
 		}
 	}
 	
-	void initStore(	int counter,
+	void initStore(	unsigned int & counter,
 					const std::string outputDir,
 					const std::string outputFilename,
 					const RegionParameters &outputFormat,

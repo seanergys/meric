@@ -343,10 +343,6 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- THUNDER = BSC ThunderX energy and power measurement.
 	- TIME    = Runtime measuement, default for other modes.
 
-* `export MERIC_ITERATION=0`
-	- If runing an application several times with the same configuration MERIC_ITERATION=$iteration must be exported.
-	- Always starts with 0.
-
 * `export MERIC_BARRIERS=all`
 	- all  = all barriers are applied (default)
 	- mpi  = use MPI barriers only
@@ -515,7 +511,6 @@ do
 				export MERIC_NUM_THREADS=$thread
 				export MERIC_FREQUENCY=${cpu_freq}00MHz
 				export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-				export MERIC_ITERATION=$iter
 				./test
 			done
 		done
