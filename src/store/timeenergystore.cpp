@@ -128,7 +128,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	}
 	else
 	{
-		ss << "# DEBUG - " << HDEEM::getSourceLabel() << " (Blade):\n"
+		ss << "# COUNTERS/SAMPLES - " << HDEEM::getSourceLabel() << " (Blade):\n"
 		   << HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
 		   << HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
 		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
@@ -157,7 +157,7 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 					std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << HDEEM::vrSensorLabel[sensorID]<<"\n";
 				}
 		       
-				ss << "# DEBUG - " << HDEEM::getSourceLabel() << " (" << HDEEM::vrSensorLabel[sensorID] << "):\n"
+				ss << "# COUNTERS/SAMPLES - " << HDEEM::getSourceLabel() << " (" << HDEEM::vrSensorLabel[sensorID] << "):\n"
 				   << HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl
 				   << HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
 				   << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
