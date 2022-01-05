@@ -359,19 +359,19 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
 	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
 
-* `export MERIC_DEBUG=1`
-	- Data are taken both from samples and Stats structure, so we can compare them.
-	- Data are taken from blade and Voltage Regulators too.
-	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
-
 * `export MERIC_DETAILED=1`
 	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
 
 * `export MERIC_SAMPLES=1`
-	- If the energy measurement system stores power samples, MERIC will add the corresponding samples to the output files.
-	- Available only in non-aggregated (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
-	- WARNING: Output files may become very big when measured regions run for a long time.
-	
+	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
+	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
+	- WARNING: Output may become very big when measured regions run for a long time.
+
+* `export MERIC_DEBUG=1`
+	- Uses HDEEM-S and HDEEM-C energy measurement at the same time.
+	- Ignores MERIC_DETAILED input parameter and evaluates all the voltage regulators.
+	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
+
 ## SET OUTPUT FILES/FOLDERS NAME ##
 * `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
 	- Default name is mericMeasurement.
