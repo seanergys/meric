@@ -43,21 +43,26 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
 
 
     // Init energy with 0
-    for(size_t it = 0; it < HDEEM::PROBE_NUMBER; it++) {
+    for(size_t it = 0; it < HDEEM::PROBE_NUMBER; it++)
+    {
         stats.energy[it] = 0;
     }
 
-    if(lastBlade > 0 && lastBlade > firstBlade) {
+    if(lastBlade > 0 && lastBlade > firstBlade)
+    {
         stats.energy[0] = stats.mericDuration * energy[0] / (lastBlade - firstBlade);
     }
 
-    if(lastVR > 0 && lastVR > firstVR) {
-        for (size_t it = 1; it < HDEEM::vrSensorLabel.size(); it++) {
+    if(lastVR > 0 && lastVR > firstVR)
+    {
+        for (size_t it = 1; it < HDEEM::vrSensorLabel.size(); it++)
+        {
             stats.energy[it] = stats.mericDuration * energy[it] / (lastVR - firstVR);
         }
     }
  
-    for(size_t it = 0; it < HDEEM::vrSensorLabel.size(); it++) {
+    for(size_t it = 0; it < HDEEM::vrSensorLabel.size(); it++)
+    {
         stats.energyStatsStructure[it] = _records[iEnd].energy[it] - _records[iStarts].energy[it];
     }
 }
@@ -65,7 +70,8 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
 void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
 {
 	ss << "# CALLTREE;init_" << _initCounter;
-	for (size_t j = 0; j < iStarts.size()-1; j++) {
+	for (size_t j = 0; j < iStarts.size()-1; j++)
+	{
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
 	ss << std::endl;
@@ -83,81 +89,86 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 	energy   = new double [HDEEM::PROBE_NUMBER];
 	minWatts = new double [HDEEM::PROBE_NUMBER];
 	maxWatts = new double [HDEEM::PROBE_NUMBER];
-	msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].clockTime - _start), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
+	msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts.back()].clockTime), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 
-    //////////////////
-    // Blade values //
-    //////////////////
-
-//	if(printSamples)
-//		ss << "# Blade (" << HDEEM::getSourceLabel() <<") samples [W]"<< std::endl;
-
+	bool staticRegion = false;
+	std::ofstream samplesStream;
+	if (printSamples)
+	{
+		const size_t staticRegionSufixLength = std::string("_static").length();
+		staticRegion = _name[_records[iStarts.back()].region].length() > staticRegionSufixLength && _name[_records[iStarts.back()].region].compare(_name[_records[iStarts.back()].region].length() - staticRegionSufixLength, staticRegionSufixLength, "_static") == 0;
+		if (staticRegion)
+		{
+			const std::string samplesDir = outputDirectory+"/"+_name[_records[iStarts.back()].region]+"/samples/";
+			mutils::createDir(samplesDir);			
+			samplesStream.open(samplesDir + (outputPrefix.size() ? outputPrefix + "_" : "") + std::to_string(_initCounter) + ".csv", std::ofstream::app);
+		}
+	}
+	
 	if(lastBlade > 0 && lastBlade > firstBlade)
 	{
-		if (printSamples)
+		if (printSamples && staticRegion)
 		{
-			ss << "# Blade (" << HDEEM::getSourceLabel() <<") samples [W]"<< std::endl;
+			samplesStream << "# SAMPLES - " << HDEEM::getSourceLabel() << " (Blade) power [W]:\n";
 			std::vector<double> samples;
 			HDEEM::getSamplesList(0, firstBlade, lastBlade, samples);
 			for (size_t it = firstBlade; it < lastBlade; it++)
-				ss << it << "," << samples[it] << std::endl;
+				samplesStream << it << "," << samples[it] << std::endl;
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
 	}
-	
+
 	if (_records[iEnd].energy[0] - _records[iStarts.back()].energy[0] <= 0)
 	{
 		std::cerr << "MERIC ERROR: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) region "<< _name[_records[iStarts.back()].region]<<"\n";
 	}
-	
-	ss << "# Blade summary - " << HDEEM::getSourceLabel() << std::endl
-	   << "Energy consumption [J] - counters" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
-	   << "Energy consumption [J] - samples" << "," << energyConsumption << std::endl
-       << "MAX power [W]" << "," << maxWatts[0] << std::endl
-       << "MIN power [W]" << "," << minWatts[0] << std::endl
-       << "AVG power [W]" << "," << avgWatts << std::endl
-       << "ID of first blade sample" << "," << firstBlade << std::endl
-       << "ID of last blade sample" << "," << lastBlade-1 << std::endl;
-
-
-    ///////////////////////
-    // VR sensors values //
-    ///////////////////////
-	if(lastVR > 0 && lastVR > firstVR)
+	else
 	{
-		for (unsigned int sensorID = 1; sensorID < HDEEM::vrSensorLabel.size(); sensorID++)
+		ss << "# DEBUG - " << HDEEM::getSourceLabel() << " (Blade):\n"
+		   << HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[0] - _records[iStarts.back()].energy[0] << std::endl
+		   << HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
+		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
+		   << "MIN power [W]" << "," << minWatts[0] << std::endl
+		   << "AVG power [W]" << "," << avgWatts << std::endl
+		   << "ID of first sample" << "," << firstBlade << std::endl
+		   << "ID of last sample" << "," << lastBlade-1 << std::endl;
+
+		if(lastVR > 0 && lastVR > firstVR)
 		{
-			if(printSamples)
+			for (unsigned int sensorID = 1; sensorID < HDEEM::vrSensorLabel.size(); sensorID++)
 			{
-				ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") samples [W]" << std::endl;
-				std::vector<double> samples;
-				HDEEM::getSamplesList(sensorID, firstVR, lastVR, samples);
-				for (size_t it = firstVR; it < lastVR; it++)
-					ss << it << "," << samples[it] << std::endl;
+				if(printSamples && staticRegion)
+				{
+					samplesStream << "# SAMPLES - " << HDEEM::getSourceLabel() << " (" << HDEEM::vrSensorLabel[sensorID] << ") power [W]:\n";
+					std::vector<double> samples;
+					HDEEM::getSamplesList(sensorID, firstVR, lastVR, samples);
+					for (size_t it = firstVR; it < lastVR; it++)
+						samplesStream << it << "," << samples[it] << std::endl;
+				}
+			    avgWatts = energy[sensorID]/(lastVR-firstVR);
+			    energyConsumption = duration * avgWatts;
+		       
+				if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
+				{
+					std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << HDEEM::vrSensorLabel[sensorID]<<"\n";
+				}
+		       
+				ss << "# DEBUG - " << HDEEM::getSourceLabel() << " (" << HDEEM::vrSensorLabel[sensorID] << "):\n"
+				   << HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl
+				   << HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
+				   << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
+				   << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
+				   << "AVG power [W]" << "," << avgWatts << std::endl
+				   << "ID of first sample" << "," << firstVR << std::endl
+				   << "ID of last sample" << "," << lastVR-1 << std::endl;
 			}
-	        avgWatts = energy[sensorID]/(lastVR-firstVR);
-	        energyConsumption = duration * avgWatts;
-           
-			if (_records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] <= 0)
-			{
-				std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << HDEEM::vrSensorLabel[sensorID]<<"\n";
-			}
-           
-		    ss << "# Voltage regulator (" << HDEEM::vrSensorLabel[sensorID] << ") summary" <<std::endl
-		       << "Energy consumption [J]" << "," << _records[iEnd].energy[sensorID+1] - _records[iStarts.back()].energy[sensorID+1] << std::endl
-		       << "Energy consumption [J]" << "," << energyConsumption << std::endl
-		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
-		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
-		       << "AVG power [W]" << "," << avgWatts << std::endl
-		       << "ID of first VR sample" << "," << firstVR << std::endl
-		       << "ID of last VR sample" << "," << lastVR-1 << std::endl;
 		}
 	}
-
+	
 	delete [] energy;
 	delete [] minWatts;
 	delete [] maxWatts;

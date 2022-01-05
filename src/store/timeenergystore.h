@@ -32,6 +32,8 @@ public:
 	void save(const std::string outputDir, const std::string outputFilename, std::vector<std::string> regionNames, const std::string prefix = "")
 	{
 		_name = regionNames;
+		outputDirectory = outputDir;
+		outputPrefix = prefix;
 		save(prefix, outputDir, outputFilename, [&] (std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd) {
 			saveInterval(ss, iStarts, iEnd);
 		});
@@ -43,6 +45,8 @@ public:
               std::function<void(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)> processInterval)
 	{
 		sleep(2); // wait for HDEEM to load all samples
+		outputDirectory = outputDir;
+		outputPrefix = prefix;
 		computePeriods();
 		if(HDEEM::getSamples() == 0)
 		{
@@ -75,6 +79,8 @@ protected:
 	void saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd);
 
 	std::vector<TimeEnergyRecord> _records;
+	std::string outputDirectory;
+	std::string outputPrefix;
 };
 
 }

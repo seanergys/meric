@@ -107,7 +107,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		{
 			const std::string samplesDir = outputDirectory+"/"+_name[_records[iStarts.back()].region]+"/samples/";
 			mutils::createDir(samplesDir);			
-			samplesStream.open(samplesDir + outputPrefix + "_" + std::to_string(_initCounter) + ".csv", std::ofstream::app);
+			samplesStream.open(samplesDir + (outputPrefix.size() ? outputPrefix + "_" : "") + std::to_string(_initCounter) + ".csv", std::ofstream::app);
 		}
 	}
 
