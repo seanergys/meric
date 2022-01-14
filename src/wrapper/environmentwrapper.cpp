@@ -246,7 +246,7 @@ long Environment::getNominalFrequency()
 
 /**
  * reads from the system list of available specific CPU core frequencies if specified
- * otherwise the list produced using 100 MHz step
+ * otherwise the list produced using 100 MHz step if min and max frequencies are specified
  * ! currently not used in MERIC
  **/
 void Environment::getAvailableCF(std::vector<long> & values)
@@ -262,7 +262,7 @@ void Environment::getAvailableCF(std::vector<long> & values)
 		}
 		frequencyBounderyFile.close();
 	}
-#if defined _AMD_ && defined MSR_PSTATE_CUR_LIM && defined MSR_PSTATE_DEF_P0
+#if defined _AMD_ && !defined(HAVE_E_SMI_E_SMI_H) && defined MSR_PSTATE_CUR_LIM && defined MSR_PSTATE_DEF_P0
 	else
 	{
 		uint64_t MSR_PSTATE_CUR_LIM_bits;
@@ -300,7 +300,8 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	}
 /*
 #else
-	else //any frequency from the nominal-minimum frequency range with 100 MHz step + maximum turbo frequency
+	//any frequency from the nominal-minimum frequency range with 100 MHz step + maximum turbo frequency
+	else if (defaultSettings.minCoreFreq > 0)
 	{
 		if (defaultSettings.maxTurboFreq > defaultSettings.maxCoreFreq)
 			values.push_back(defaultSettings.maxTurboFreq);
@@ -401,6 +402,10 @@ long Environment::getMaximumTurboFrequency()
 	read_msr(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
 	MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask;
 	frequency = (MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask) * 100000000;
+#elif defined HAVE_E_SMI_E_SMI_H
+	uint32_t boostlimit;
+	if (!esmi_core_boostlimit_get(0, &boostlimit))
+		frequency = boostlimit * 1e6;
 #else
 	if (getScalingDriver() == "intel-pstate")
 	{
@@ -1312,7 +1317,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #ifdef HAVE_X86_ADAPT_H
 	if (x86_adapt_init())
 	{
-		std::cerr << "X86ADAPT ERROR: init error\n";
+		std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
 //		exit(1);
 	}
 #endif
@@ -1325,6 +1330,13 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 	}
 #elif defined HAVE_GEOPM_H
 	pio.save_control();
+#endif
+
+#ifdef HAVE_E_SMI_E_SMI_H
+	if (esmi_init() != ESMI_SUCCESS)
+	{
+		std::cerr << "ESMI ERROR: Unable to initialize\n";
+	}
 #endif
 
 #ifdef HAVE_NVML_H
@@ -2134,6 +2146,9 @@ void Environment::close()
 #endif
 #ifdef HAVE_MSR_CORE_H
 	finalize_msr();
+#endif
+#ifdef HAVE_E_SMI_E_SMI_H
+	esmi_exit();
 #endif
 }
 

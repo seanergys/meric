@@ -19,6 +19,16 @@
 	#include <libmsr_error.h>
 #endif
 
+#ifdef HAVE_E_SMI_E_SMI_H
+	#ifdef __cplusplus
+		extern "C" {
+	#endif
+		#include <e_smi/e_smi.h>
+	#ifdef __cplusplus
+		}
+	#endif
+#endif
+
 #ifdef HAVE_NUMA_H
 	#include <numa.h>
 #endif

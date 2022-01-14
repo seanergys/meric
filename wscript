@@ -94,6 +94,7 @@ def configure(ctx):
                 ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
                 ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
         ctx.check_cc(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", execute=False, mandatory=False)
+        ctx.check_cc(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
         ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #        ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
         
@@ -208,7 +209,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStart",
-        use="msr x86_adapt numa geopm nvml",
+        use="msr x86_adapt numa geopm nvml esmi",
         env=ctx.all_envs['start'].derive(),
         install_path = ctx.path.abspath()+"/tools/"
     )
@@ -220,7 +221,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="energyMeasureStop",
-        use="msr x86_adapt numa geopm nvml",
+        use="msr x86_adapt numa geopm nvml esmi",
         env=ctx.all_envs['stop'].derive(),
         install_path = ctx.path.abspath()+"/tools/"
     )
@@ -240,7 +241,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="wrapper",
-        use="msr x86_adapt numa geopm nvml hdeem freeipmi",
+        use="msr x86_adapt numa geopm nvml hdeem freeipmi esmi",
         install_path = ctx.path.abspath()+"/tools/"
     )
     
@@ -253,7 +254,7 @@ def build(ctx):
             ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
             ctx.path.ant_glob('src/basis/json.cpp'),
         target="systemInfo",
-        use="msr x86_adapt numa geopm nvml",
+        use="msr x86_adapt numa geopm nvml esmi",
         install_path = ctx.path.abspath()+"/tools"
     )
     

@@ -254,6 +254,12 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			i++;
 		}
 		std::cout << "kHz(#cores)\n";
+#elif defined HAVE_E_SMI_E_SMI_H
+		freq = meric::Environment::getMaximumTurboFrequency();
+		if (freq > 0)
+			std::cout << freq/1e3 << " kHz\n";
+		else
+			std::cout << "enabled\n";
 #else
 		std::cout << "enabled\n";
 #endif		
@@ -469,10 +475,8 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
 bool sysInfoPowercap(meric::systemLimits& limits)
 {
-#ifndef _INTEL_	//currently only Intel power capping supported
-	return true;
-#endif
 	bool ok = true;
+#ifdef _INTEL_	//currently only Intel power capping supported
 	std::ifstream pwrCapFile;
 	std::string pwrCapInfo = "";
 
@@ -490,8 +494,8 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	else
 	{
 // power capping limits ////////////////////////////////////////////////////////
-		std::cout << "\n# CPU RAPL POWER LIMITS\n";	
-#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_INFO && defined MSR_DRAM_POWER_INFO
+		std::cout << "\n# CPU POWER LIMITS\n";	
+	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_INFO && defined MSR_DRAM_POWER_INFO
 	// PKG
 		uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
 		if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
@@ -522,7 +526,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	//		<< "\tDRAM max time window:  " 
 	//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
 			;
-#else
+	#else
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
 		if (pwrCapFile.is_open())
 		{
@@ -549,17 +553,17 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile.close();
 			std::cout << "\tDRAM max power limit:   " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo)/1000000)+" W") << "\n";
 		}
-#endif
+	#endif
 
-#if defined __x86_64 && !defined HAVE_MSR_SAFE && ! defined HAVE_X86_ADAPT_H //currently supported only intel
+	#if defined __x86_64 && !defined HAVE_MSR_SAFE && ! defined HAVE_X86_ADAPT_H //currently supported only intel
 		std::cout << "\n\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
-#endif
+	#endif
 
 // default power capping ///////////////////////////////////////////////////////
-		std::cout << "\n# DEFAULT CPU RAPL POWER LIMITS\n";
+		std::cout << "\n# DEFAULT CPU POWER LIMITS\n";
 		uint64_t X, Y, Z, F;
 
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+	#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 		// PKG
 			uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 		#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
@@ -640,7 +644,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 						  << pow(2,Y) * F * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 			}
-#else
+	#else
 		// PKG
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/enabled");
 		if (pwrCapFile.is_open())
@@ -720,12 +724,11 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			if (pwrCapInfo != "")
 				std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
 		}
-#endif
+	#endif
 
-// PLATFORM
-
+		// PLATFORM
 		uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
-#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_ENERGY_COUNTER
+	#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_ENERGY_COUNTER
 		if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
 		{
 			meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
@@ -735,12 +738,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 				meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
 			}
 		}
-#endif
+	#endif
 
 		if (MSR_PLATFORM_ENERGY_COUNTER_bits)
 		{
 			uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
-#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_POWER_LIMIT
+	#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
 				meric::read_msr(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
 			if (MSR_PLATFORM_POWER_LIMIT_bits)
@@ -769,10 +772,24 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
 					<< std::endl;
 			}
-#endif
+	#endif
 		}
 	}
-	
+#endif 
+
+#ifdef HAVE_E_SMI_E_SMI_H //_AMD_
+	std::cout << "\n# CPU POWER LIMITS\n";
+	uint32_t CPUPowerLimit;
+	if (!esmi_socket_power_cap_max_get(0, &CPUPowerLimit))
+	{
+		std::cout << "\tCPU max power limit:     " << CPUPowerLimit/1000 << " W\n";
+	}
+
+	if (!esmi_socket_power_cap_get(0, &CPUPowerLimit))
+	{
+		std::cout << "\tCPU power limit:         " << CPUPowerLimit/1000 << " W\n";
+	}
+#endif
 
 // GPU
 #ifdef HAVE_NVML_H
@@ -929,6 +946,13 @@ int main(int argc, char **argv)
 		}
 	}
 	
+	#ifdef HAVE_E_SMI_E_SMI_H
+	if (esmi_init() != ESMI_SUCCESS)
+	{
+		std::cerr << "ESMI ERROR: Unable to initialize\n";
+	}
+	#endif
+	
 	#ifdef HAVE_NVML_H
 	nvmlInit();
 	#endif
@@ -962,6 +986,10 @@ int main(int argc, char **argv)
 
 	#ifdef HAVE_NVML_H
 	nvmlShutdown();
+	#endif
+	
+	#ifdef HAVE_E_SMI_E_SMI_H
+	esmi_exit();
 	#endif
 	
 	if (status == USING_MSR)
