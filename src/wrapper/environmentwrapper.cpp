@@ -1527,7 +1527,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (freq == 0)
 		return;
 
-	if (activatedDVFS == NO_DVFS)
+	if (activatedDVFS == NO_DVFS && usedDVFS == false) //hard reset sets usedDVFS to true
 		return;
 
 	// upper limit is checked only if the information about the turbo frequency is available
@@ -1574,7 +1574,6 @@ void Environment::frequency(uint64_t freq, int socket)
 
 	if (freq > defaultSettings.availableCoreFreq[0]) //Turbo ON, Pstat 0
 	{
-std::cout << "Turbo ON, P-0\n";
 		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
@@ -1589,7 +1588,6 @@ std::cout << "Turbo ON, P-0\n";
 		int PstateIdx = 0;
 		while (PstateIdx < defaultSettings.availableCoreFreq.size()-1 && freq <= defaultSettings.availableCoreFreq[PstateIdx+1])
 			PstateIdx++;
-std::cout << "Turbo OFF, P-" << PstateIdx << "\n";
 		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
@@ -2069,12 +2067,22 @@ void Environment::restoreSystemSettings(bool hardReset)
 	if (!hardReset && (activatedDVFS || activatedUFS || usedPWRCAP))
 		pio.restore_control();
 #endif
-
-	if (activatedDVFS || hardReset)
+	if (hardReset)
 	{
-		if (usedDVFS || hardReset)
+		//DVFS_WAY activatedDVFS is not specified, because it requires the way how it was activated, which we may not know
+		usedDVFS = true;
+		activatedUFS = true;
+		usedUFS = true;
+		activatedPWRCAP = true;
+		usedPWRCAP = true;
+		usedGPUDVFS = true;
+		usedGPUPWRCAP = true;
+	}
+
+	if (activatedDVFS != NO_DVFS || hardReset)
+	{
+		if (usedDVFS)
 		{
-			if
 			if (defaultSettings.defaultCoreFreq > 0)
 				frequency(defaultSettings.defaultCoreFreq);
 			else if (defaultSettings.maxTurboFreq > 1)
@@ -2137,7 +2145,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (activatedUFS)
 	{
-		if(usedUFS || hardReset)
+		if(usedUFS)
 		{
 			if (defaultSettings.defaultUncoreFreq > 0)
 				uncoreFrequency(defaultSettings.defaultUncoreFreq, defaultSettings.defaultUncoreFreq);
@@ -2158,7 +2166,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 		}
 	}
 
-	if (usedPWRCAP || hardReset)
+	if (usedPWRCAP)
 	{
 #if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
 		for (int die=0; die<SOCKETS_PER_NODE; die++)
@@ -2211,7 +2219,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 		}
 #endif
 	}
-	
+
 #ifdef HAVE_NVML_H
 	//GPU frequencies
 	if (usedGPUDVFS)

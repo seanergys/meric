@@ -76,7 +76,7 @@ enum DVFS_WAY {
 	USRSPACE_FILE, // DVFS possible under userspace scaling driver - writing to ACPI CPUFREQ sysfs
 	USRSPACE_LIB,  // DVFS possible under userspace scaling driver - using a library
 	INT_PSTATE,    // DVFS possible under intel_pstate scaling driver
-	OTHER,         // DVFS possible under another (unknown) scaling driver
+	OTHER          // DVFS possible under another (unknown) scaling driver
 	};
 
 #ifdef __x86_64	// CPUID instruction reading
