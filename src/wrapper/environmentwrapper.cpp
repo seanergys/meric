@@ -215,29 +215,36 @@ long Environment::getNominalFrequency()
 			frequency = std::stod(CPUname.substr(0,CPUname.size()-3))*1e9;
 		}
 	}
-	#elif defined _AMD_ && defined MSR_PSTATE_DEF_P0
+	#elif defined _AMD_
 	else	//AMD CPU P0 frequency
 	{
-		uint64_t MSR_PSTATE_DEF_P0_bits;
-		read_msr(0, MSR_PSTATE_DEF_P0, &MSR_PSTATE_DEF_P0_bits);
-		if ((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_pstate_enable_mask) >> MSR_PSTATE_DEF_Px_pstate_enable_shift)
+		if (!defaultSettings.availableCoreFreq.empty())
+			frequency = defaultSettings.availableCoreFreq[0];
+		#if defined HAVE_MSR_SAFE && defined MSR_PSTATE_DEF_P0
+		else //else branch cannot call getAvailableCF() because the vector is filled only if esmi not available
 		{
-			double CPUDfsID;
-			const uint64_t MSR_PSTATE_DEF_P0_divisor = (MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_divisor_mask) >> MSR_PSTATE_DEF_Px_divisor_shift;
-			switch (MSR_PSTATE_DEF_P0_divisor)
+			uint64_t MSR_PSTATE_DEF_P0_bits;
+			read_msr(0, MSR_PSTATE_DEF_P0, &MSR_PSTATE_DEF_P0_bits);
+			if ((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_pstate_enable_mask) >> MSR_PSTATE_DEF_Px_pstate_enable_shift)
 			{
-				case 0x8:
-					CPUDfsID = 1.0;
-					break;
-				case 0x9:
-					CPUDfsID = 1.125;
-					break;
-				default:
-					CPUDfsID = MSR_PSTATE_DEF_P0_divisor/8.0;
-				//`reserved` and `off` values not considered, PstateEnable=0 expected in these cases
+				double CPUDfsID;
+				const uint64_t MSR_PSTATE_DEF_P0_divisor = (MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_divisor_mask) >> MSR_PSTATE_DEF_Px_divisor_shift;
+				switch (MSR_PSTATE_DEF_P0_divisor)
+				{
+					case 0x8:
+						CPUDfsID = 1.0;
+						break;
+					case 0x9:
+						CPUDfsID = 1.125;
+						break;
+					default:
+						CPUDfsID = MSR_PSTATE_DEF_P0_divisor/8.0;
+					//`reserved` and `off` values not considered, PstateEnable=0 expected in these cases
+				}
+				frequency = (((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_frequency_id_mask) * 25)/ CPUDfsID)*1e6;
 			}
-			frequency = (((MSR_PSTATE_DEF_P0_bits & MSR_PSTATE_DEF_Px_frequency_id_mask) * 25)/ CPUDfsID)*1e6;
 		}
+		#endif
 	}
 	#endif
 	return frequency;
@@ -245,12 +252,14 @@ long Environment::getNominalFrequency()
 #endif
 
 /**
- * reads from the system list of available specific CPU core frequencies if specified
- * otherwise the list produced using 100 MHz step if min and max frequencies are specified
- * ! currently not used in MERIC
+ * fills vector of CPU core frequencies [Hz] that can be set
+ * ONLY if the list is specified
+ * the highest frequency at index 0
  **/
 void Environment::getAvailableCF(std::vector<long> & values)
 {
+	if (!values.empty())
+		return;
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -262,7 +271,7 @@ void Environment::getAvailableCF(std::vector<long> & values)
 		}
 		frequencyBounderyFile.close();
 	}
-#if defined _AMD_ && !defined(HAVE_E_SMI_E_SMI_H) && defined MSR_PSTATE_CUR_LIM && defined MSR_PSTATE_DEF_P0
+#if defined _AMD_ && !defined(HAVE_E_SMI_E_SMI_H) && HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM && defined MSR_PSTATE_DEF_P0
 	else
 	{
 		uint64_t MSR_PSTATE_CUR_LIM_bits;
@@ -298,19 +307,8 @@ void Environment::getAvailableCF(std::vector<long> & values)
 			MSR_PSTATE_DEF_Px++;
 		}
 	}
-/*
-#else
-	//any frequency from the nominal-minimum frequency range with 100 MHz step + maximum turbo frequency
-	else if (defaultSettings.minCoreFreq > 0)
-	{
-		if (defaultSettings.maxTurboFreq > defaultSettings.maxCoreFreq)
-			values.push_back(defaultSettings.maxTurboFreq);
-		for (long freq = getNominalFrequency(); freq > defaultSettings.minCoreFreq; freq-=100000000)
-			values.push_back(freq);
-	}
-*/
 #endif
-	//return the frequencies ordered, the largest first
+	//return the frequencies ordered, the highest frequency first
 	if (values.size() > 1 && values[0] < values[1])
 		std::reverse(values.begin(), values.end());
 }
@@ -505,11 +503,16 @@ bool Environment::isHWPactive(std::string &status)
  **/
 DVFS_WAY Environment::isDVFSpossible()
 {
-	#ifdef _INTEL_
+#ifdef _INTEL_
 	std::string status;
 	if (isHWPactive(status))
 		return NO_DVFS;
+#elif defined _AMD_ 
+	#if defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL
+		//has not been tested for scaling driver requirement TODO !!!
+		return OTHER;
 	#endif
+#endif
 
 	// scalingGovernor is not set if neither readSystemDefaultSettings() nor readRestoreFile() have been called
 	// may happen if used from "outside" or if the restoreFile is empty
@@ -558,7 +561,7 @@ DVFS_WAY Environment::isDVFSpossible()
 		frequencyBounderyFile.close();
 	}
 
-#if defined HAVE_MSR_SAFE
+#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
 	if (getScalingDriver() == "intel_pstate" && 
 	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
 	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
@@ -861,9 +864,28 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 							{
 								defaultSettings.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 							}
+#ifdef _INTEL_
 							else if (std::string(dvfs->name->string) == "ENERGY_PERF_BIAS")
 							{
 								defaultSettings.IA32_ENERGY_PERF_BIAS_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
+#elif defined _AMD_
+							else if (std::string(dvfs->name->string) == "HWCR")
+							{
+								defaultSettings.MSR_HWCR_default = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
+#endif
+							else if (std::string(dvfs->name->string) == "AVAILABLE")
+							{
+#if !defined HAVE_E_SMI_E_SMI_H
+								//the AMD CPU may have defined P-State frequencies, however esmi allows to set any frequency, so we ignore the list
+								struct json_array_element_s* CFlist = ((struct json_array_s*)dvfs->value->payload)->start;
+								while(CFlist != NULL)
+								{
+									defaultSettings.availableCoreFreq.push_back(std::stol(((struct json_string_s*)CFlist->value->payload)->string));
+									CFlist = CFlist->next;
+								}							
+#endif
 							}
 							dvfs = dvfs->next;
 						}while(dvfs != NULL);
@@ -1012,25 +1034,6 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile.close();
 			defaultSettings.maxCoreFreq = std::stol(freqBound) * 1000;
 		}
-		
-		if (scalingGovernor == "userspace")
-		{
-			frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed");
-			if (frequencyBounderyFile.is_open())
-			{
-				frequencyBounderyFile >> freqBound;
-				frequencyBounderyFile.close();
-				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
-			}
-		}
-		
-		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-		if (frequencyBounderyFile.is_open())
-		{
-			frequencyBounderyFile >> freqBound;
-			frequencyBounderyFile.close();
-			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
-		}
 
 		if (stat("/sys/devices/system/cpu/intel_pstate/no_turbo", &info) == 0)
 		{
@@ -1064,7 +1067,7 @@ void Environment::readSystemDefaultSettings()
 				}
 			}
 		}
-#if defined _AMD_ && defined MSR_HWCR
+#if defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_HWCR
 		else
 		{
 			uint64_t MSR_HWCR_bits = 0x0;
@@ -1072,6 +1075,41 @@ void Environment::readSystemDefaultSettings()
 			defaultSettings.maxTurboFreq = (MSR_HWCR_bits & MSR_HWCR_boost_disable_mask) >> MSR_HWCR_boost_disable_shift ? 0 : 1;
 		}
 #endif
+
+
+#if !defined HAVE_E_SMI_E_SMI_H
+		//the AMD CPU may have defined P-State frequencies, however it is not limitng when using esmi
+		getAvailableCF(defaultSettings.availableCoreFreq);
+#endif
+
+		if (scalingGovernor == "userspace")
+		{
+			frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed");
+			if (frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
+			}
+		}
+#if defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+		else if (!defaultSettings.availableCoreFreq.empty())
+		{
+			uint64_t MSR_PSTATE_CTL_bits;
+			read_msr(0, MSR_PSTATE_CTL, &MSR_PSTATE_CTL_bits);
+			defaultSettings.defaultCoreFreq = defaultSettings.availableCoreFreq[MSR_PSTATE_CTL_bits & MSR_PSTATE_CUR_LIM_curr_limit_pstate_mask];
+			if (defaultSettings.maxTurboFreq > 0)
+				defaultSettings.defaultCoreFreq += 1000000; 
+		}
+#endif
+	
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
+		if (frequencyBounderyFile.is_open())
+		{
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
+		}
 
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 		if (frequencyBounderyFile.is_open())
@@ -1081,8 +1119,12 @@ void Environment::readSystemDefaultSettings()
 			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
 		}
 
-#if defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#ifdef HAVE_MSR_SAFE
+	#if defined _INTEL_ && defined IA32_ENERGY_PERF_BIAS
 		read_msr(0, IA32_ENERGY_PERF_BIAS, &defaultSettings.IA32_ENERGY_PERF_BIAS_default);
+	#elif defined _AMD_ && defined MSR_HWCR
+		read_msr(0, MSR_HWCR, &defaultSettings.MSR_HWCR_default);
+	#endif
 #endif
 
 // CPU UnCORE freq -----------------------------------------------------------//
@@ -1215,22 +1257,39 @@ void Environment::readSystemDefaultSettings()
 			//CPU
 			std::string CPUname;
 			getCPUbrandString(CPUname);
-			
+
 			restoreJson += "\t\""+CPUname+"\": {\n";
 			
 			restoreJson += "\t\t\"CF\" : {\n\t\t\t\"GOVERNOR\" : \"" + scalingGovernor + "\",\n"
 				        +  "\t\t\t\"TURBO\" : " + std::to_string(defaultSettings.maxTurboFreq) + ",\n"
 				        +  "\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxCoreFreq) + ",\n"
 				        +  "\t\t\t\"MIN\" : " + std::to_string(defaultSettings.minCoreFreq) + ",\n"
-				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq) + ",\n"
-				        +  "\t\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings.IA32_ENERGY_PERF_BIAS_default) + "\n\t\t},\n";
+#ifdef _INTEL_
+				        +  "\t\t\t\"ENERGY_PERF_BIAS\" : " + std::to_string(defaultSettings.IA32_ENERGY_PERF_BIAS_default) + ",\n"
+#elif defined _AMD_
+				        +  "\t\t\t\"HWCR\" : " + std::to_string(defaultSettings.MSR_HWCR_default) + ",\n"
+#endif
+				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq);
+			if (!defaultSettings.availableCoreFreq.empty())
+			{
+				restoreJson += ",\n\t\t\t\"AVAILABLE\" : [";
+				for (auto cFreq : defaultSettings.availableCoreFreq)
+					restoreJson += " "+std::to_string(cFreq) + ",";
+				restoreJson.pop_back();
+				restoreJson += " ]";
+			}
+			restoreJson += "\n\t\t}";
 
-			restoreJson += "\t\t\"UFS\" : {\n\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxUncoreFreq) + ",\n"
+#if defined _INTEL_ || defined __arm__
+			restoreJson += ",\n\t\t\"UFS\" : {\n\t\t\t\"MAX\" : " + std::to_string(defaultSettings.maxUncoreFreq) + ",\n"
 				        +  "\t\t\t\"MIN\" : " + std::to_string(defaultSettings.minUncoreFreq) + ",\n"
-				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t\t},\n";
+				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t\t}";
+#endif
 
-			restoreJson += "\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
+#if defined _INTEL_
+			restoreJson += ",\n\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
 				        +  "\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t\t}";
+#endif
 
 			restoreJson += "\n\t}";
 
@@ -1283,7 +1342,12 @@ void Environment::readSystemDefaultSettings()
 		<< "\tMAX " << defaultSettings.maxCoreFreq << std::endl
 		<< "\tMIN " << defaultSettings.minCoreFreq << std::endl
 		<< "\tDEF " << defaultSettings.defaultCoreFreq << std::endl
+		<< "\tAVA " << defaultSettings.availableCoreFreq.size() << std::endl
+#ifdef _INTEL_
 		<< "\tBIA " << defaultSettings.IA32_ENERGY_PERF_BIAS_default << std::endl
+#elif _AMD_
+		<< "\tHWC " << defaultSettings.MSR_HWCR_default << std::endl
+#endif
 		<< "UnCF" << std::endl
 		<< "\tMAX " << defaultSettings.maxUncoreFreq << std::endl
 		<< "\tMIN " << defaultSettings.minUncoreFreq << std::endl
@@ -1463,7 +1527,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	if (freq == 0)
 		return;
 
-	if (!activatedDVFS)
+	if (activatedDVFS == NO_DVFS)
 		return;
 
 	// upper limit is checked only if the information about the turbo frequency is available
@@ -1488,13 +1552,51 @@ void Environment::frequency(uint64_t freq, int socket)
 		socket_max = SOCKETS_PER_NODE-1;
 	}
 	
-#if defined HAVE_MSR_SAFE && defined IA32_PERF_CTL
+#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_PERF_CTL
 	MERIC_INFO << "; using LIBMSR\n";	
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
 			write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+		}
+	}
+#elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
+	if (defaultSettings.availableCoreFreq.empty())
+	{
+		getAvailableCF(defaultSettings.availableCoreFreq);
+		if (defaultSettings.availableCoreFreq.empty())
+		{
+			std::cerr << "MERIC ERROR: cannot set CPU core frequency, unknown available P-States\n";
+			return;
+		}
+	}
+
+	if (freq > defaultSettings.availableCoreFreq[0]) //Turbo ON, Pstat 0
+	{
+std::cout << "Turbo ON, P-0\n";
+		for (int soc=socket_min; soc<=socket_max; soc++)
+		{
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				write_msr(cpu, MSR_HWCR, defaultSettings.MSR_HWCR_default & (0xFFFFFFFFFFFFFFFF ^ MSR_HWCR_boost_disable_mask));
+				write_msr(cpu, MSR_PSTATE_CTL, 0x0); //P0
+			}
+		}
+	}
+	else //Turbo OFF, Pstate X
+	{
+		int PstateIdx = 0;
+		while (PstateIdx < defaultSettings.availableCoreFreq.size()-1 && freq <= defaultSettings.availableCoreFreq[PstateIdx+1])
+			PstateIdx++;
+std::cout << "Turbo OFF, P-" << PstateIdx << "\n";
+		for (int soc=socket_min; soc<=socket_max; soc++)
+		{
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				write_msr(cpu, MSR_HWCR, defaultSettings.MSR_HWCR_default | MSR_HWCR_boost_disable_mask);
+				write_msr(cpu, MSR_PSTATE_CTL, PstateIdx); //P-idx
+			}
 		}
 	}
 #elif defined HAVE_X86_ADAPT_H
@@ -1972,6 +2074,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 		if (usedDVFS || hardReset)
 		{
+			if
 			if (defaultSettings.defaultCoreFreq > 0)
 				frequency(defaultSettings.defaultCoreFreq);
 			else if (defaultSettings.maxTurboFreq > 1)
@@ -2023,7 +2126,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 							defSet << defaultSettings.maxCoreFreq / 1000;
 							defSet.close();
 						}
-#if defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
 						write_msr(thread, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
 					}

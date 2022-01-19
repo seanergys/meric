@@ -71,7 +71,13 @@ static std::map <const std::string, mode> modeString = {
 
 enum SYSTEM_TYPE {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
 
-enum DVFS_WAY {NO_DVFS = 0, USRSPACE_FILE, USRSPACE_LIB, INT_PSTATE};
+enum DVFS_WAY {
+	NO_DVFS = 0,   // it is not possible to control the CPU core frequency
+	USRSPACE_FILE, // DVFS possible under userspace scaling driver - writing to ACPI CPUFREQ sysfs
+	USRSPACE_LIB,  // DVFS possible under userspace scaling driver - using a library
+	INT_PSTATE,    // DVFS possible under intel_pstate scaling driver
+	OTHER,         // DVFS possible under another (unknown) scaling driver
+	};
 
 #ifdef __x86_64	// CPUID instruction reading
 enum reg_cpuid
@@ -99,32 +105,38 @@ struct RegionParameters { //must be able to carry -1
 
 
 struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supported should be zero
-	long maxTurboFreq = 0;             //Hz - 0 = disabled, 1 = enabled, >1 = maxTurboFrequency [Hz]
-	long maxCoreFreq = 0;              //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq
-	long defaultCoreFreq = 0;          //Hz - if the default governor is userspace, we must set this frequency at the end of the run, otherwise zero
-	long minCoreFreq = 0;              //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq
+	long maxTurboFreq = 0;               //Hz - 0 = disabled, 1 = enabled, >1 = maxTurboFrequency [Hz]
+	long maxCoreFreq = 0;                //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq
+	long defaultCoreFreq = 0;            //Hz - if we tuned the CF, we must set this frequency at the end of the run, otherwise zero
+	long minCoreFreq = 0;                //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq
+	std::vector<long> availableCoreFreq; //Hz - /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
 
-	long maxUncoreFreq = 0;            //Hz
-	long defaultUncoreFreq = 0;        //Hz - set only if one specific default frequency exists, otherwise zero
-	long minUncoreFreq = 0;            //Hz
+	long maxUncoreFreq = 0;              //Hz
+	long defaultUncoreFreq = 0;          //Hz - set only if one specific default frequency exists, otherwise zero
+	long minUncoreFreq = 0;              //Hz
 
-	long maxPowerCapPKG = 0;           //mW
-	long minPowerCapPKG = 0;           //mW
-	long maxPowerCapPKGtime = 0;       //us
-	uint64_t defaultPowerCapPKG = 0x0; //raw register value
+	long maxPowerCapPKG = 0;             //mW
+	long minPowerCapPKG = 0;             //mW
+	long maxPowerCapPKGtime = 0;         //us
+	uint64_t defaultPowerCapPKG = 0x0;   //raw register value
 
-	long maxPowerCapRAM = 0;           //mW
-	long minPowerCapRAM = 0;           //mW
-	long maxPowerCapRAMtime = 0;       //us
-	uint64_t defaultPowerCapRAM = 0x0; //raw register value
+	long maxPowerCapRAM = 0;             //mW
+	long minPowerCapRAM = 0;             //mW
+	long maxPowerCapRAMtime = 0;         //us
+	uint64_t defaultPowerCapRAM = 0x0;   //raw register value
 
+#ifdef _INTEL_
 	uint64_t IA32_ENERGY_PERF_BIAS_default = 0x0; //raw register value
+#elif defined _AMD_
+	uint64_t MSR_HWCR_default = 0x0;     //raw register value
+#endif
+
 	//GPU - NVML uses uint
-	uint defaultGPUMemFreq = 0;        //Hz
-	uint defaultGPUSMFreq = 0;         //Hz
-	uint defaultPowerCapGPU = 0;       //mW
-	uint minPowerCapGPU = 0;           //mW
-	uint maxPowerCapGPU = 0;           //mW
+	uint defaultGPUMemFreq = 0;          //Hz
+	uint defaultGPUSMFreq = 0;           //Hz
+	uint defaultPowerCapGPU = 0;         //mW
+	uint minPowerCapGPU = 0;             //mW
+	uint maxPowerCapGPU = 0;             //mW
 	std::map <uint, std::vector<uint>> availableGPUFreq; //Hz, Hz - MEM: <SM>
 };
 

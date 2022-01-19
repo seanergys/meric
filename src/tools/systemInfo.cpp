@@ -278,7 +278,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			ok = false;
 	}
 #endif
-	
+
+	std::vector<long> availCF;
+	meric::Environment::getAvailableCF(availCF); //may identify nominal frequency
 	unsigned long nominalFreq = meric::Environment::getNominalFrequency();
 	if (nominalFreq > 0)
 		std::cout << "\tNominal CPU core frequency:  " << nominalFreq/1000 << " kHz\n";
@@ -295,8 +297,6 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			ok = false;
 	}
 
-	std::vector<long> availCF;
-	meric::Environment::getAvailableCF(availCF);
 	if (availCF.size() > 0)
 	{
 		std::cout << "\tAvailable CPU core frequencies:  ";
