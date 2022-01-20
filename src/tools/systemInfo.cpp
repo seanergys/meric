@@ -257,7 +257,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 #elif defined HAVE_E_SMI_E_SMI_H
 		freq = meric::Environment::getMaximumTurboFrequency();
 		if (freq > 0)
-			std::cout << freq/1e3 << " kHz\n";
+			std::cout << freq/1000 << " kHz\n";
 		else
 			std::cout << "enabled\n";
 #else
