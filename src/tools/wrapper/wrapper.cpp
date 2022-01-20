@@ -85,11 +85,15 @@ struct systemLimits{
 		minUncoreFreq(l.minUncoreFreq),
 		stepUncoreFreq(100000000),	//0.1 GHz
 		maxPowerCapPKG(l.maxPowerCapPKG),
-		minPowerCapPKG(l.minPowerCapPKG),
+		minPowerCapPKG(l.minPowerCapPKG)
+#ifdef _INTEL_
+		,
 		maxPowerCapPKGtime(l.maxPowerCapPKGtime),
 		maxPowerCapRAM(l.maxPowerCapRAM),
 		minPowerCapRAM(l.minPowerCapRAM),
-		maxPowerCapRAMtime(l.maxPowerCapRAMtime) {}
+		maxPowerCapRAMtime(l.maxPowerCapRAMtime) 
+#endif
+		{}
 	systemLimits() :
 		coresPerSocket(1),
 		socketsPerNode(1),

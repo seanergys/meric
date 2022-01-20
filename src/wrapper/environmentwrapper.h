@@ -117,6 +117,7 @@ struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supporte
 
 	long maxPowerCapPKG = 0;             //mW
 	long minPowerCapPKG = 0;             //mW
+#ifdef _INTEL_
 	long maxPowerCapPKGtime = 0;         //us
 	uint64_t defaultPowerCapPKG = 0x0;   //raw register value
 
@@ -124,6 +125,9 @@ struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supporte
 	long minPowerCapRAM = 0;             //mW
 	long maxPowerCapRAMtime = 0;         //us
 	uint64_t defaultPowerCapRAM = 0x0;   //raw register value
+#elif defined _AMD_
+	long defaultPowerCapPKG = 0;         //mW
+#endif
 
 #ifdef _INTEL_
 	uint64_t IA32_ENERGY_PERF_BIAS_default = 0x0; //raw register value

@@ -913,6 +913,7 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 							ufs = ufs->next;
 						}while(ufs != NULL);
 					}
+#if defined _INTEL_ || defined _AMD_
 					else if (std::string(architectureData->name->string) == "PWRCAP")
 					{
 						struct json_object_element_s* pwr = ((struct json_object_s*)architectureData->value->payload)->start;
@@ -922,13 +923,16 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 							{
 								defaultSettings.defaultPowerCapPKG = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
 							}
+							#if defined _INTEL_
 							else if (std::string(pwr->name->string) == "DRAM")
 							{
 								defaultSettings.defaultPowerCapRAM = std::strtoull(std::string(((struct json_string_s*)pwr->value->payload)->string).c_str(), NULL, 0);
 							}
+							#endif
 							pwr = pwr->next;
 						}while(pwr != NULL);
 					}
+#endif
 					architectureData = architectureData->next;
 				}
 			}
@@ -1190,16 +1194,17 @@ void Environment::readSystemDefaultSettings()
 #endif
 
 // CPU POWERcap --------------------------------------------------------------//
+#ifdef _INTEL
 		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
-#ifdef HAVE_MSR_SAFE
-	#ifdef MSR_PKG_POWER_LIMIT
+	#ifdef HAVE_MSR_SAFE
+		#ifdef MSR_PKG_POWER_LIMIT
 		read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
-	#endif
-	#ifdef MSR_DRAM_POWER_LIMIT
+		#endif
+		#ifdef MSR_DRAM_POWER_LIMIT
 		read_msr(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
-	#endif
-#elif defined HAVE_X86_ADAPT_H
+		#endif
+	#elif defined HAVE_X86_ADAPT_H
 		int adaptRegisterHandler;
 		uint64_t MSR_PKG_1_POWER_LIMIT_bits, MSR_PKG_2_POWER_LIMIT_bits;
 		
@@ -1214,19 +1219,26 @@ void Environment::readSystemDefaultSettings()
 
 		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-#elif defined HAVE_GEOPM_H
+	#elif defined HAVE_GEOPM_H
 		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
 		MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_RAM_POWER_LIMIT, pio.signal_domain_type(RAPL_RAM_POWER_LIMIT), 0));
-#endif
+	#endif
 		defaultSettings.defaultPowerCapPKG = MSR_PKG_POWER_LIMIT_bits;
 		defaultSettings.defaultPowerCapRAM = MSR_DRAM_POWER_LIMIT_bits;
+#elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
+		uint32_t pcap;
+		if (!esmi_socket_power_cap_get(0, &pcap))
+		{
+			defaultSettings.defaultPowerCapPKG = pcap;
+		}
+		
+		if (!esmi_socket_power_cap_max_get(0, &pcap))
+		{
+			defaultSettings.maxPowerCapPKG = pcap;
+		}
+#endif
 
 // GPU POWERcap and FREQUENCIES ----------------------------------------------//
-		defaultSettings.defaultGPUMemFreq = 0;
-		defaultSettings.defaultGPUSMFreq = 0;
-		defaultSettings.defaultPowerCapGPU = 0;
-		defaultSettings.minPowerCapGPU = 0;
-		defaultSettings.maxPowerCapGPU = 0;
 #ifdef HAVE_NVML_H
 		if (NVML::getGPUsPerNode() > 0)
 		{
@@ -1299,9 +1311,12 @@ void Environment::readSystemDefaultSettings()
 				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t\t}";
 #endif
 
-#if defined _INTEL_
-			restoreJson += ",\n\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG) + ",\n"
-				        +  "\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM) +"\n\t\t}";
+#if defined _INTEL_ || defined _AMD_
+			restoreJson += ",\n\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG)
+			#ifdef _INTEL_
+				        +  ",\n\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM)
+			#endif
+				        +  "\n\t\t}";
 #endif
 
 			restoreJson += "\n\t}";
@@ -1356,18 +1371,25 @@ void Environment::readSystemDefaultSettings()
 		<< "\tMIN " << defaultSettings.minCoreFreq << std::endl
 		<< "\tDEF " << defaultSettings.defaultCoreFreq << std::endl
 		<< "\tAVA " << defaultSettings.availableCoreFreq.size() << std::endl
-#ifdef _INTEL_
+#if defined _INTEL_
 		<< "\tBIA " << defaultSettings.IA32_ENERGY_PERF_BIAS_default << std::endl
-#elif _AMD_
+#elif defined _AMD_
 		<< "\tHWC " << defaultSettings.MSR_HWCR_default << std::endl
 #endif
+#if defined _INTEL_ || defined __arm__
 		<< "UnCF" << std::endl
 		<< "\tMAX " << defaultSettings.maxUncoreFreq << std::endl
 		<< "\tMIN " << defaultSettings.minUncoreFreq << std::endl
 		<< "\tDEF " << defaultSettings.defaultUncoreFreq << std::endl
+#endif
+#if defined _INTEL_ || defined _AMD_
 		<< "CPU PWRcap" << std::endl
 		<< "\tPKG " << defaultSettings.defaultPowerCapPKG << std::endl
+	#if defined _INTEL_
 		<< "\tRAM " << defaultSettings.defaultPowerCapRAM << std::endl
+	#endif
+#endif
+#if defined HAVE_NVML_H
 		<< "GPU def freqs" << std::endl
 		<< "\tMEM " << defaultSettings.defaultGPUMemFreq << std::endl
 		<< "\tSMP " << defaultSettings.defaultGPUSMFreq << std::endl
@@ -1377,8 +1399,9 @@ void Environment::readSystemDefaultSettings()
 		<< "GPU PWRcap" << std::endl
 		<< "\tDEF " << defaultSettings.defaultPowerCapGPU << std::endl
 		<< "\tMAX " << defaultSettings.maxPowerCapGPU << std::endl
-		<< "\tMIN " << defaultSettings.minPowerCapGPU << std::endl;
-	
+		<< "\tMIN " << defaultSettings.minPowerCapGPU << std::endl
+#endif
+		;
 }
 
 /**
@@ -1816,7 +1839,9 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 }
 
 /**
- * change RAPL power capping limit (PKG only) of a specific socket
+ * set CPU power limit
+ *	- Intel, set RAPL long-term Package power domain limit
+ *	- AMD, set HSMP power limit, does not support time window
  * power [mW], if zero return immediately
  * timeWindow [ms], if zero the time window will not change
  * if no socket specified (implicit -1) set the same limit to all sockets
@@ -1829,12 +1854,14 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 	int socket_min, socket_max;
 #ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "LIBMSR set CPU powercap to: "<< power << " mW";
-#elif defined HAVE_MSR_SAFE
+#elif defined _INTEL_ && defined HAVE_MSR_SAFE
 	MERIC_INFO << "MSR set CPU powercap to: "<< power << " mW";
 #elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "X86ADAPT set CPU powercap to: "<< power << " mW";
 #elif defined HAVE_GEOPM_H
 	MERIC_INFO << "GEOPM set CPU powercap to: "<< power << " mW";
+#elif defined HAVE_E_SMI_E_SMI_H
+	MERIC_INFO << "ESMI set CPU powercap to: "<< power << " mW";
 #else
 	return;
 #endif
@@ -1857,10 +1884,11 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 		socket_max = SOCKETS_PER_NODE-1;
 	}	
 
+#ifdef _INTEL_
 	uint64_t MSR_PKG_POWER_LIMIT_bits;
-#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
 	read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
-#elif defined HAVE_X86_ADAPT_H
+	#elif defined HAVE_X86_ADAPT_H
 	int adaptRegisterHandler, fd;
 	fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 	if (fd < 0)
@@ -1874,14 +1902,14 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-#elif defined HAVE_GEOPM_H
+	#elif defined HAVE_GEOPM_H
 	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
-#endif
+	#endif
 	
 	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / (1000*RAPL::getUnit(RAPL_PCKG_POWER_LIMIT)))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
 
 
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H
+	#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H
 	if (timeWindow != 0)
 	{
 		/** PKG Time window size equation
@@ -1909,9 +1937,9 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 
 	for (int die=socket_min; die<=socket_max; die++)
 	{
-	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+		#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
 		write_msr(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
-	#elif defined HAVE_X86_ADAPT_H
+		#elif defined HAVE_X86_ADAPT_H
 		fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
 		if (fd < 0)
 		{
@@ -1924,9 +1952,9 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-	#endif
+		#endif
 	}
-#elif defined HAVE_GEOPM_H
+	#elif defined HAVE_GEOPM_H
 	for (int die=socket_min; die<=socket_max; die++)
 	{
 		pio.write_control(RAPL_PCKG_POWER_LIMIT_1, pio.control_domain_type(RAPL_PCKG_POWER_LIMIT_1), die, power/1000.0);
@@ -1936,6 +1964,15 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 		for (int die=socket_min; die<=socket_max; die++)
 		{
 			pio.write_control(RAPL_POWER_LIMIT_TIMEWINDOW, pio.control_domain_type(RAPL_POWER_LIMIT_TIMEWINDOW), die, timeWindow/1000.0);
+		}
+	}
+	#endif
+#elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
+	for (int die=socket_min; die<=socket_max; die++)
+	{
+		if (esmi_socket_power_cap_set(die, power) != ESMI_SUCCESS)
+		{
+			std::cerr << "ESMI ERROR: failed to set power limit\n";
 		}
 	}
 #endif
@@ -2199,39 +2236,37 @@ void Environment::restoreSystemSettings(bool hardReset)
 
 	if (usedPWRCAP)
 	{
-#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
-		for (int die=0; die<SOCKETS_PER_NODE; die++)
+#if defined _INTEL_
+		if (defaultSettings.defaultPowerCapPKG != 0x0)
+	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
 		{
-			write_msr(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
-//			write_msr(mapCoresToSocket[die][0], MSR_DRAM_POWER_LIMIT, defaultSettings.defaultPowerCapRAM);
+			for (int die=0; die<SOCKETS_PER_NODE; die++)
+				write_msr(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
 		}
-#elif defined HAVE_X86_ADAPT_H
-
-		for (int die=0; die<SOCKETS_PER_NODE; die++)
+	#elif defined HAVE_X86_ADAPT_H
 		{
-			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
-			if (fd < 0)
+			for (int die=0; die<SOCKETS_PER_NODE; die++)
 			{
-				std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
-				return;
-			}
-			int adaptRegisterHandler;
-			uint64_t POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask;
-			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
-			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
-			
-			POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG >> MSR_PKG_POWER_LIMIT_power2_shift;
-			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
-			x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
-			
-//			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
-//			x86_adapt_set_setting(fd, adaptRegisterHandler, &defaultSettings.defaultPowerCapRAM);
+				const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
+				if (fd < 0)
+				{
+					std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
+					return;
+				}
+				int adaptRegisterHandler;
+				uint64_t POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG & MSR_PKG_POWER_LIMIT_mask;
+				adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
+				x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
+				
+				POWER_LIMIT_bits = defaultSettings.defaultPowerCapPKG >> MSR_PKG_POWER_LIMIT_power2_shift;
+				adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
+				x86_adapt_set_setting(fd, adaptRegisterHandler, POWER_LIMIT_bits);
 
-			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
-				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+				if (x86_adapt_put_device(X86_ADAPT_DIE, die))
+					std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+			}
 		}
-#elif defined HAVE_GEOPM_H
-		if (hardReset)
+	#elif defined HAVE_GEOPM_H
 		{
 			for (int die=0; die<SOCKETS_PER_NODE; die++)
 			{
@@ -2248,6 +2283,11 @@ void Environment::restoreSystemSettings(bool hardReset)
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW"), die, val);
 			}
 		}
+	#endif
+//		if (defaultSettings.defaultPowerCapRAM != 0x0) //currently not tuned in MERIC
+//		...
+#elif defined _AMD_
+		CPUpowercap(defaultSettings.defaultPowerCapPKG);
 #endif
 	}
 
