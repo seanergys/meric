@@ -192,7 +192,7 @@ public:
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	
 	static void getAvailableCF(std::vector<long> & values);
-	static void getAvailableUCF(std::vector<long> & values);
+//	static void getAvailableUCF(std::vector<long> & values);
 //	static void getAvailablePwrCap(std::vector<long> & power, std::vector<long> & time);
 	
 	static void getCPUbrandString(std::string & CPUname);

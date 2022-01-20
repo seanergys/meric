@@ -318,11 +318,13 @@ void Environment::getAvailableCF(std::vector<long> & values)
  * ! currently not used in MERIC
  * TODO !!! ARM system, that has memory frequency represented as the uncore frequency
  **/
+/*
 void Environment::getAvailableUCF(std::vector<long> & values)
 {
 	for (long freq = defaultSettings.minUncoreFreq; freq < defaultSettings.maxUncoreFreq; freq+=100000000)
 		values.push_back(freq);
 }
+*/
 
 #ifdef HAVE_NVML_H
 /**
@@ -465,12 +467,11 @@ std::string Environment::getScalingDriver()
  * Discovers if the Hardware controlled P-State is active
  * returns true if HWP is active
  * the status std::string is set according the status of the HWP
- * enabled / disabled / not available / ""
+ * enabled / disabled / not available
  **/
 #ifdef _INTEL_
 bool Environment::isHWPactive(std::string &status)
 {
-	status = "";
 	bool HWP = false;
 	unsigned int regs[4];
 	unsigned int size_reg = sizeof(unsigned int);
@@ -508,7 +509,7 @@ DVFS_WAY Environment::isDVFSpossible()
 	if (isHWPactive(status))
 		return NO_DVFS;
 #elif defined _AMD_ 
-	#if defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL
+	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
 		//has not been tested for scaling driver requirement TODO !!!
 		return OTHER;
 	#endif
@@ -529,7 +530,7 @@ DVFS_WAY Environment::isDVFSpossible()
 
 	if (scalingGovernor == "userspace")
 	{
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
 		return USRSPACE_LIB;
 #else
 		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
@@ -548,7 +549,7 @@ DVFS_WAY Environment::isDVFSpossible()
 			if (availGovernor == "userspace")
 			{
 				frequencyBounderyFile.close();
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
 				return USRSPACE_LIB;
 #else
 				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
@@ -646,7 +647,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 				}			
 			}
 		}
-#if defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
 		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
@@ -1232,10 +1233,13 @@ void Environment::readSystemDefaultSettings()
 			defaultSettings.defaultPowerCapPKG = pcap;
 		}
 		
-		if (!esmi_socket_power_cap_max_get(0, &pcap))
+		//supported power limit range is not checked by MERIC
+/*		if (!esmi_socket_power_cap_max_get(0, &pcap))
 		{
 			defaultSettings.maxPowerCapPKG = pcap;
 		}
+		//no explicit minimum power limit
+*/
 #endif
 
 // GPU POWERcap and FREQUENCIES ----------------------------------------------//
@@ -1311,7 +1315,7 @@ void Environment::readSystemDefaultSettings()
 				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultUncoreFreq) + "\n\t\t}";
 #endif
 
-#if defined _INTEL_ || defined _AMD_
+#if defined _INTEL_ || ( defined _AMD_ && defined HAVE_E_SMI_E_SMI_H )
 			restoreJson += ",\n\t\t\"PWRCAP\" : {\n\t\t\t\"PKG\" : "  +std::to_string(defaultSettings.defaultPowerCapPKG)
 			#ifdef _INTEL_
 				        +  ",\n\t\t\t\"DRAM\" : " +std::to_string(defaultSettings.defaultPowerCapRAM)
@@ -1842,6 +1846,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
  * set CPU power limit
  *	- Intel, set RAPL long-term Package power domain limit
  *	- AMD, set HSMP power limit, does not support time window
+ * WARNING: range of supported power limits is not checked, any power limit is set
  * power [mW], if zero return immediately
  * timeWindow [ms], if zero the time window will not change
  * if no socket specified (implicit -1) set the same limit to all sockets
@@ -2286,7 +2291,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 	#endif
 //		if (defaultSettings.defaultPowerCapRAM != 0x0) //currently not tuned in MERIC
 //		...
-#elif defined _AMD_
+#elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
 		CPUpowercap(defaultSettings.defaultPowerCapPKG);
 #endif
 	}
