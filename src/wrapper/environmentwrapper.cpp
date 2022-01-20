@@ -700,7 +700,10 @@ void Environment::stringOfIDsToVector(std::string list, std::vector<int> &vec, b
 }
 
 /**
- * detects the system topology (which thread belongs to which core; which cores belong to which socket) and sets following variables - system sizes:
+ * detects the system topology
+ * 	- list of threads of a core
+ * 	- list of cores of a socket
+ * this method sets following variables - system sizes:
  *  - SOCKETS_PER_NODE
  *  - CORES_PER_SOCKET
  *  - THREADS_PER_CORE
@@ -761,7 +764,7 @@ void Environment::initHWSizes()
 			mapCoresToSocket[soc] = {core.first};
 	}
 	SOCKETS_PER_NODE = mapCoresToSocket.size();
-
+	
 	MERIC_INFO << "# SYSTEM INFORMATION\n"
 	           << "\tSockets per Node: " << SOCKETS_PER_NODE << std::endl
 	           << "\tCores per Socket: " << CORES_PER_SOCKET << std::endl
@@ -1067,18 +1070,27 @@ void Environment::readSystemDefaultSettings()
 				}
 			}
 		}
-#if defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_HWCR
+#if defined _AMD_
+		#if defined HAVE_E_SMI_E_SMI_H
+		else
+		{
+			defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
+			if (defaultSettings.maxTurboFreq == 0)
+				defaultSettings.maxTurboFreq = 1;
+		}
+		#elif defined HAVE_MSR_SAFE && defined MSR_HWCR
 		else
 		{
 			uint64_t MSR_HWCR_bits = 0x0;
 			read_msr(0, MSR_HWCR, &MSR_HWCR_bits);
 			defaultSettings.maxTurboFreq = (MSR_HWCR_bits & MSR_HWCR_boost_disable_mask) >> MSR_HWCR_boost_disable_shift ? 0 : 1;
 		}
+		#endif
 #endif
 
 
 #if !defined HAVE_E_SMI_E_SMI_H
-		//the AMD CPU may have defined P-State frequencies, however it is not limitng when using esmi
+		//the AMD CPU may have defined P-State frequencies, however it is not limiting when using esmi
 		getAvailableCF(defaultSettings.availableCoreFreq);
 #endif
 
@@ -1092,7 +1104,8 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-#if defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+#if defined _AMD_ && !defined HAVE_E_SMI_E_SMI_H && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+		// if using esmi, when restoring default CF we will set turbo frequency
 		else if (!defaultSettings.availableCoreFreq.empty())
 		{
 			uint64_t MSR_PSTATE_CTL_bits;
@@ -1553,7 +1566,11 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 	
 #if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_PERF_CTL
-	MERIC_INFO << "; using LIBMSR\n";	
+	#ifdef HAVE_MSR_CORE_H
+	MERIC_INFO << "; using LIBMSR\n";
+	#else
+	MERIC_INFO << "; using MSR_SAFE\n";
+	#endif
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
 		for (int cpu : mapCoresToSocket[soc])
@@ -1561,7 +1578,17 @@ void Environment::frequency(uint64_t freq, int socket)
 			write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
 		}
 	}
+#elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
+	MERIC_INFO << "; using ESMI\n";
+	for (int soc=socket_min; soc<=socket_max; soc++)
+	{
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			esmi_core_boostlimit_set(cpu, freq/1e6);
+		}
+	}
 #elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
+	MERIC_INFO << "; using MSR_SAFE\n";
 	if (defaultSettings.availableCoreFreq.empty())
 	{
 		getAvailableCF(defaultSettings.availableCoreFreq);
@@ -1718,7 +1745,11 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	#endif
 
 	#if defined HAVE_MSR_SAFE && defined MSR_UNCORE_RATIO_LIMIT
+	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
+	#else
+	MERIC_INFO << "; using MSR_SAFE\n";
+	#endif
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
 	for (int die=socket_min; die<=socket_max; die++)
 	{
