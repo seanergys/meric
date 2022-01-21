@@ -2288,6 +2288,8 @@ void Environment::restoreSystemSettings(bool hardReset)
 				pio.write_control("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW", pio.control_domain_type("MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW"), die, val);
 			}
 		}
+	#else
+		;
 	#endif
 //		if (defaultSettings.defaultPowerCapRAM != 0x0) //currently not tuned in MERIC
 //		...
