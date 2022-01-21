@@ -2,7 +2,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for x86 systems (tested on HSW, BDW, KNL, SKL, and CSL) but additionally supports OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, and CSL) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -45,10 +45,12 @@ MERIC allows to set selected system parameters for the whole application run or 
 
 ### CPU core frequency ###
 MERIC provides several ways how to change the CPU core frequency:
- *  Intel processor P-State tuning via MSR - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
- *  Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
- *  Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
- *  Using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
+ *  Intel CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`. Prefered interface for Intel CPUs.
+ *  Intel CPU using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+ *  AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/).
+ *  AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
+ *  Any CPU with userspace scaling driver using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
+ *  Any CPU with userspace scaling driver using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
 
 
 ### Intel CPU uncore frequency ###
@@ -57,12 +59,19 @@ Intel uncore frequency refers to frequency of subsystems in the physical process
 MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
 
 
-### Intel RAPL power capping ###
+### Power capping ###
+Available for Intel and AMD CPUs.
+
+##### Intel #####
 Intel processors from Sandy Bridge architecture provides Runnnig Average Power Limit (RAPL), that keeps the power consumption of the available domains bellow the specified power limit in a specific time window (long-term and short-term windows). MERIC allows to specify power limit of the Package power domain within its long-term time window, which can be also adjusted.
 
 MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able change the power limits. Currently only PKG power cap control is supported.
 	
-Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0,3> and TimeUnit is usually a fraction of microsecond. <!--> and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. <!--> Due to that it might be impossible to set exactly the window size you have specified.
+Please, note that RAPL power capping system uses equation to specify the window size for PKG: `PKGTimeLimit = 2^Y * (1.0 + Z/4.0) * TimeUnit`, where Y=<0, 31>, Z=<0, 3> and TimeUnit is usually a fraction of microsecond. <!--> and window size for DRAM: `DRAMTimeLimit = 2^Y*F * TimeUnit`, where F={1.0, 1.1, 1.2, 1.3} and Y=<0, 31>. <!--> Due to that it might be impossible to set exactly the window size you have specified.
+
+##### AMD #####
+AMD EPYC CPUs from Zen3 (19h) architecture provides [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack, that gives access to in-band (via HSMP) and out-of-band (via APML) power capping mechanism. MERIC allows to controll the in-band power limit using [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). In contrast to Intel RAPL, AMD power caping system has one power domain only, no time window support.
+
 
 
 ### Number of active OMP threads ###
@@ -92,35 +101,36 @@ To simplify MERIC's interface, the memory frequency is set the same way as Intel
 Energy measurement system can be selected using `MERIC_MEASURE` environment variable.
 
 ### RAPL ###
-From the Sandy Bridge microarchitecture all Intel processors provides software-based energy meter Runnnig Average Power Limit (RAPL) with sampling frequency 1 kHz of the Package and DRAM. The RAPL does not cover energy consumption of the node itself. Contemporary AMD CPUs have the same energy consumption meter, in contrast to Intel implementation it is not used for power capping, exposing energy consumption of the Package and each CPU core separatelly.
+From the Sandy Bridge microarchitecture all Intel processors provide software-based energy meter Runnnig Average Power Limit (RAPL) with sampling frequency 1 kHz of several power domains within the CPU (for server CPUs Package and DRAM power domains). The RAPL does not cover energy consumption of the node itself. From the Zen architecture also AMD CPUs have similar energy consumption measurement system, exposing energy consumption of the Package and each CPU core separatelly.
 
-Since we are speaking about performance counters (non-continual mode only), overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size.
+Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
 
-Based on these counters Intel processors can limit its energy consumption, using RAPL power capping system. User may specify average PKG or DRAM power consumption for a specific time window and the system itself will reduce its resources to fulfill this constraint.
+Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning).
+
 	
-In MERIC [msr-safe](https://github.com/LLNL/msr-safe) + ideally [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) is required to access the RAPL counters at Intel architecture. AMD architectures require [msr-safe](https://github.com/LLNL/msr-safe) to be installed. In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
+MERIC must be compiled and used at a node with [msr-safe](https://github.com/LLNL/msr-safe) to read RAPL counters (works well for both Intel and AMD). In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
 
 
 ### HDEEM ###
-[High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Bull's stand alone energy measurement system located on the node itself, with a power sampling frequency 1 kHz (blade), 100 Hz (on node components) respectively. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends with significant overhead of the HDEEM system, or when the application run is over, without any impact on the application run. Both continual and non-continual modeas are available, however considering these features continual mode is prefered.
+[High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Atos|Bull's stand-alone energy measurement system located on the node itself, with power sampling frequency 1 kHz (blade), 100 Hz (on node components) respectively. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends (HDEEM-C mode) with an overhead of the HDEEM system, or when the application execution is over (HDEEM-S mode), without any impact on the application run. When evaluateng the energy consmuption from the power samples (HDEEM-S) it is possible to store the raw samples to the output.
 
 
 ### DiG ###
-Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON](http://projects.eees.dei.unibo.it/monitoring/wordpress/) framework. Continual mode available only.
+Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON](http://projects.eees.dei.unibo.it/monitoring/wordpress/) framework. MERIC does not access these power samples, so it cannot be stored.
 
 To activate possibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
 
 
 ### NVML ###
-[Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurment. Currently only non-continual mode is supported.
+[Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurment.
 
 
 ### BSC ARM Jetson ###
-Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py. Continual mode available only.
+Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
 
 ### BSC ARM ThunderX ###
-BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second. Continual mode available only.
+BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
 
 --------------------------------------------------------------------------------
 #     3] MERIC interface and Shared Score-P/MERIC API                          #
@@ -273,15 +283,17 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - MPI
 * optionally - [PAPI](http://icl.cs.utk.edu/papi/)
 * optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
-* optionally - [msr-safe](https://github.com/LLNL/msr-safe) - prefered interface for Intel and AMD CPUs parameters tuning
+* optionally - [msr-safe](https://github.com/LLNL/msr-safe) - required AMD RAPL monitoring, prefered interface for Intel CPUs parameters tuning
 * optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
+* optionally - [E-SMI in-band](https://github.com/amd/esmi_ib_library) - prefered interface for AMD 19h CPUs parameters tuning
+* optionally - [HSMP](https://github.com/amd/amd_hsmp) - mandatory for E-SMI in-band library
 * optionally - [HDEEM](https://tu-dresden.de/zih/forschung/projekte/hdeem?set_language=en)
 * optionally - [FreeIPMI](http://www.gnu.org/software/freeipmi/) - mandatory for the HDEEM power monitoring
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
 * optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the Nvidia GPUs monitoring and tuning
-* optionally - [numa](https://github.com/numactl/numactl)
+* optionally - [numactl](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
@@ -297,7 +309,9 @@ The Static Binary Instrumentation tools use Dyninst library for binary analysis 
 
 Beside all the mentioned libraries waf build system requires Python.
 
-The compilation mechanism detects the compiler type, however if the detection fails, the default is GNU C++ compiler. To compile MERIC using any other compiler, you may specify `--cpp=` and `--mpi=` flags for `./waf configure` command, or use `make intel` for compilation using Intel compiler. The compilation compiles MERIC, TIMEPROF and all the tools, except the SBI tools when GNU compiler is not used, or any of the dependecies is missing. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If an MPI application without OpenMP should be analyzed, compilation with `--noopenmp` waf flag must be used to compile such version of MERIC. Please, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
+The compilation mechanism detects the compiler type, however if the detection fails, the default is GNU C++ compiler. Export `CXX` and `MPICXX` environment variables to specify the compiler. The compilation compiles MERIC, TIMEPROF and all the tools, except the SBI tools when GNU compiler is not used, or any of the dependecies is missing. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If an MPI application without OpenMP should be analyzed, use `make noopenmp` command. Accordingly, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
+
+To use MERIC for Fortran application analysis a Fortran module is provided. The module is being compiled separately from MERIC, use `make fortran` command.
 
 --------------------------------------------------------------------------------
 #     7] MERIC input parameters                                                #
@@ -333,8 +347,8 @@ Specify following parameters to zero if you do not want to tune the selected sys
 ## SET MERIC MEASUREMENT MODE ##
 * `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
 	- NONE    = Default option, no time or energy measurement.
-	- HDEEM-S = Bull|Atos HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
-	- HDEEM-C = Bull|Atos HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
+	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
+	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
 	- HDEEM   = Equals to HDEEM-S option.
 	- RAPL    = Intel RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
@@ -534,7 +548,7 @@ We have implemented a python tools for the MERIC's output data analysis. All the
 --------------------------------------------------------------------------------
 #      10] MERIC with a Fortran code                                           #
 --------------------------------------------------------------------------------
-There are Fortran module and interface in the include directory. The module is being compiled separately from MERIC, use `make fortran` command. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
+There are Fortran module and interface in the include directory. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
 
 To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
 	
