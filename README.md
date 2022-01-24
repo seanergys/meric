@@ -275,6 +275,8 @@ To run the SBI tools it is not only necessary to update LD_LIBRARY_PATH, but als
 --------------------------------------------------------------------------------
 #    6] Compilation                                                            #
 --------------------------------------------------------------------------------
+It is possible to have a single MERIC compilation for several hardware platforms, however since MERIC identifies the default configuration of the hardware just once, it is necessary to have more compilations if having the same hardware, each in a specific default configuration.
+
 MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, a Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
 
 ### MERIC used libraries ###
