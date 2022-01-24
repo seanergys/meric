@@ -1606,6 +1606,15 @@ void Environment::frequency(uint64_t freq, int socket)
 		}
 	}
 #elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
+/**
+ * AMD CPU cores are grouped into Core Complexes (CCXes), all cores grouped into 
+ * a common CCX share a Last-Level (L3) cache. Each CCX includes a clock 
+ * generator that supports a resolution of 25 MHz. If all cores of a CCX are not 
+ * programmed for the same boost limit frequency, then the lower-frequency cores 
+ * are limited to a frequency resolution that can be as low as 20% of the 
+ * requested frequency. If the specified boost limit frequency of a core is not 
+ * supported, then the processor selects the next lower supported frequency.
+ **/
 	MERIC_INFO << "; using ESMI\n";
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
