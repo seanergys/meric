@@ -24,6 +24,7 @@ bool Environment::usedGPUPWRCAP = false;
 DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
+GPU_TUNING_WAY Environment::activatedGPUtuning = NO_TUNING;
 #ifdef HAVE_NVML_H
 uint Environment::currentGPUMemFreq = 0;
 uint Environment::currentGPUSMFreq = 0;
@@ -661,6 +662,31 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 	
 	return way;
 }
+
+/**
+ * identifies CUDA driver version, if it is 465.xxx or newer then MERIC will use
+ * system utility nvidia-smi calls, for which we expect raised rights (/etc/sudoers)
+ * drivers prior 465.xxx had a posibility to raise the rights via `sudo nvidia-smi -acp UNRESTRICTED`
+ **/
+#ifdef HAVE_NVML_H
+GPU_TUNING_WAY Environment::getGPUTuningMethod()
+{
+	if (activatedGPUtuning != NO_TUNING)
+		return activatedGPUtuning;
+	
+	char driverVersion[80];
+	if (nvmlSystemGetDriverVersion(driverVersion, 80) == NVML_SUCCESS)
+	{
+		std::string name = std::string(driverVersion);
+		std::string::size_type pos = name.find('.');
+		if (pos != std::string::npos && std::stoi(name.substr(0, pos)) < 465)
+		{
+			return NVIDIA_SMI;
+		}
+	}
+	return NVML_API;
+}
+#endif
 
 /**
  * parse a list of threads IDs (comma or dash seprarated list) and inserts the ids to the vector vec
@@ -1445,6 +1471,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 
 #ifdef HAVE_NVML_H
 	nvmlInit();
+	activatedGPUtuning = getGPUTuningMethod();
 #endif
 	NVML::init();
 	
@@ -2001,11 +2028,18 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
  **/
 void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 {
-
-#ifndef HAVE_NVML_H
-	return;
+#ifdef HAVE_NVML_H
+	if (activatedGPUtuning == NVML_API)
+		MERIC_INFO << "NVML set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	else if (activatedGPUtuning == NVIDIA_SMI)
+		MERIC_INFO << "NVIDIA-SMI set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	else
+		return;
 #else
+	return;
+#endif
 
+#ifdef HAVE_NVML_H
 	if (freqMEM == 0 && freqSM == 0)
 		return;
 
@@ -2071,10 +2105,21 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	MERIC_INFO << "NVML set GPU frequency MEM: " << freqMEM << "\tSM: " << freqSM << std::endl;
 	usedGPUDVFS = true;
 	
-	for (int id=min; id<max; id++)
+	if (activatedGPUtuning == NVML_API)
 	{
-		if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM/1e6, freqSM/1e6) != NVML_SUCCESS)
-			std::cerr << "NVML ERROR: failed to set GPU frequency\n";
+		for (int id=min; id<max; id++)
+		{
+			if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM/1e6, freqSM/1e6) != NVML_SUCCESS)
+				std::cerr << "NVML ERROR: failed to set GPU frequency\n";
+		}
+	}
+	else if (activatedGPUtuning == NVIDIA_SMI)
+	{
+		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/1e6)+","+std::to_string(freqSM/1e6);
+		for (int id=min; id<max; id++)
+		{
+			system((command+" -i "+std::to_string(id)+"\n").c_str());
+		}
 	}
 	currentGPUMemFreq = freqMEM;
 	currentGPUSMFreq  = freqSM;
@@ -2090,9 +2135,14 @@ void Environment::GPUpowercap(uint power, int gpu)
 {
 	if (power == 0)
 		return;
-	
+
 #ifdef HAVE_NVML_H
-	MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW\n";
+	if (activatedGPUtuning == NVML_API)
+		MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW\n";
+	else if (activatedGPUtuning == NVIDIA_SMI)
+		MERIC_INFO << "NVIDIA-SMI set GPU powercap to: "<< power << " mW\n";
+	else
+		return;
 #else
 	return;
 #endif
@@ -2126,11 +2176,22 @@ void Environment::GPUpowercap(uint power, int gpu)
 		
 #ifdef HAVE_NVML_H	
 	usedGPUPWRCAP = true;
-	for (int id=min; id<max; id++)
+	if (activatedGPUtuning == NVML_API)
 	{
-		if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), power) != NVML_SUCCESS)
+		for (int id=min; id<max; id++)
 		{
-			std::cerr << "NVML ERROR setting power limit failed\n";
+			if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), power) != NVML_SUCCESS)
+			{
+				std::cerr << "NVML ERROR setting power limit failed\n";
+			}
+		}
+	}
+	else if (activatedGPUtuning == NVIDIA_SMI)
+	{
+		const std::string command = "sudo nvidia-smi -pl "+std::to_string(power/1e3);
+		for (int id=min; id<max; id++)
+		{
+			system((command+" -i "+std::to_string(id)+"\n").c_str());
 		}
 	}
 #endif
@@ -2311,21 +2372,22 @@ void Environment::restoreSystemSettings(bool hardReset)
 	//GPU frequencies
 	if (usedGPUDVFS)
 	{
-		for (int id=0; id<NVML::getGPUsPerNode(); id++)
+		if (activatedGPUtuning == NVML_API)
 		{
-			if (nvmlDeviceResetApplicationsClocks(NVML::getGPUHandle(id)) != NVML_SUCCESS)
-				std::cerr << "NVML ERROR: failed to reset GPU frequency\n";
+			for (int id=0; id<NVML::getGPUsPerNode(); id++)
+			{
+				if (nvmlDeviceResetApplicationsClocks(NVML::getGPUHandle(id)) != NVML_SUCCESS)
+					std::cerr << "NVML ERROR: failed to reset GPU frequency\n";
+			}
 		}
+		else
+			GPUfrequency(defaultSettings.defaultGPUMemFreq, defaultSettings.defaultGPUSMFreq);
 	}
 	
 	//GPU power capping limit
 	if (usedGPUPWRCAP)
 	{
-		for (int id=0; id<NVML::getGPUsPerNode(); id++)
-		{
-			if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), defaultSettings.defaultPowerCapGPU) != NVML_SUCCESS)
-				std::cerr << "NVML ERROR: failed to reset GPU power capping limit\n";
-		}
+		GPUpowercap(defaultSettings.defaultPowerCapGPU);
 	}
 #endif
 	

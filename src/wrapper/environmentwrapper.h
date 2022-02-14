@@ -79,6 +79,12 @@ enum DVFS_WAY {
 	OTHER          // DVFS possible under another (unknown) scaling driver
 	};
 
+enum GPU_TUNING_WAY {
+	NO_TUNING = 0, //
+	NVML_API,      // 
+	NVIDIA_SMI     // sudo rights provided via /etc/sudoers
+};
+
 #ifdef __x86_64	// CPUID instruction reading
 enum reg_cpuid
 {
@@ -190,6 +196,9 @@ public:
 	static std::string getScalingDriver();
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
+#ifdef HAVE_NVML_H
+	static GPU_TUNING_WAY getGPUTuningMethod();
+#endif
 	
 	static void getAvailableCF(std::vector<long> & values);
 //	static void getAvailableUCF(std::vector<long> & values);
@@ -234,6 +243,7 @@ private:
 	static DVFS_WAY activatedDVFS;
 	static bool activatedUFS;
 	static bool activatedPWRCAP;
+	static GPU_TUNING_WAY activatedGPUtuning;
 	
 	static std::string scalingDriver;
 	static std::string scalingGovernor;
