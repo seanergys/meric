@@ -679,7 +679,7 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 	{
 		std::string name = std::string(driverVersion);
 		std::string::size_type pos = name.find('.');
-		if (pos != std::string::npos && std::stoi(name.substr(0, pos)) < 465)
+		if (pos != std::string::npos && std::stoi(name.substr(0, pos)) > 465)
 		{
 			return NVIDIA_SMI;
 		}
@@ -2115,7 +2115,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
 	{
-		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/1e6)+","+std::to_string(freqSM/1e6);
+		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/100000)+","+std::to_string(freqSM/100000);
 		for (int id=min; id<max; id++)
 		{
 			system((command+" -i "+std::to_string(id)+"\n").c_str());
@@ -2380,8 +2380,10 @@ void Environment::restoreSystemSettings(bool hardReset)
 					std::cerr << "NVML ERROR: failed to reset GPU frequency\n";
 			}
 		}
-		else
-			GPUfrequency(defaultSettings.defaultGPUMemFreq, defaultSettings.defaultGPUSMFreq);
+		else if (activatedGPUtuning == NVIDIA_SMI)
+		{
+			system("sudo nvidia-smi -rac\n");
+		}
 	}
 	
 	//GPU power capping limit
