@@ -674,6 +674,9 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 	if (activatedGPUtuning != NO_TUNING)
 		return activatedGPUtuning;
 	
+	if (geteuid() == 0)
+		return NVML_API;
+	
 	char driverVersion[80];
 	if (nvmlSystemGetDriverVersion(driverVersion, 80) == NVML_SUCCESS)
 	{
