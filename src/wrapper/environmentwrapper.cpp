@@ -1518,9 +1518,10 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 
 //ACTIVATE POWERCAP
+#if defined _INTEL_ || defined _AMD_
 		if (defaultSettings.defaultPowerCapPKG != 0x0)
 			activatedPWRCAP = true;
-
+#endif
 
 		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);
