@@ -100,10 +100,30 @@ void Environment::getCPUbrandString(std::string & CPUname)
 	{
 		while (getline(CPUinfoFile,line))
 		{
-			if (line.substr(0,10) == "model name")
+			std::string label = line.substr(0,10);
+			std::for_each(label.begin(), label.end(), [](char & c){ c = ::tolower(c); });
+
+			if (label == "model name")
 			{
 				CPUname = line.substr(line.find(':')+2);
 				break;
+			}
+		}
+		
+		if (CPUname == "")
+		{
+			CPUinfoFile.clear();
+			CPUinfoFile.seekg(0);
+			
+			while (getline(CPUinfoFile,line))
+			{
+				std::string label = line.substr(0,3);
+				std::for_each(label.begin(), label.end(), [](char & c){ c = ::tolower(c); });
+				if (label.substr(0,3) == "cpu")
+				{
+					CPUname = line.substr(line.find(':')+2);
+					break;
+				}
 			}
 		}
 		CPUinfoFile.close();
