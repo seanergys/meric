@@ -91,14 +91,14 @@ SharedMeric::SharedMeric()
 		PAPI::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+		OCC::init(Meric::DETAILED);
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 		JETSON::init();
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 		THUNDER::init();
-	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
-		OCC::init();
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::init();

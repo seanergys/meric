@@ -147,7 +147,7 @@ private:
 
 #else
 
-	static void init(bool detailed = false)
+	static void init(bool detailed)
 	{
 		detailedMode = detailed;
 		vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };

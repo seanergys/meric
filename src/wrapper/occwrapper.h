@@ -115,7 +115,7 @@ namespace meric {
 class OCC {
 
 public:
-	static void init(bool detailed = false);
+	static void init(bool detailed);
 	static void close()
 	{
 		::close(OCC_fd);

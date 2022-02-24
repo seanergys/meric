@@ -43,7 +43,7 @@ namespace meric {
 class RAPL {
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
 public:
-	static void init(bool detailed = false);
+	static void init(bool detailed);
 	static void close() {};
 	
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
@@ -77,7 +77,7 @@ private:
 	static unsigned long long int COUNTERMAX;
 #else
 public:
-	static void init(bool detailed = false) {};
+	static void init(bool detailed) {};
 	static void close() {};
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
