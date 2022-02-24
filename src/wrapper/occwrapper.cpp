@@ -11,6 +11,7 @@ std::map<std::string, uint64_t> OCC::counters;
 /**
  * initialization of the OCC class
  * opens file descriptor, from which the counters are read
+ * in detailed mode each power sensor is reported separately
  **/
 void OCC::init(bool detailed)
 {
@@ -139,9 +140,6 @@ void OCC::initMap(std::map<std::string, uint64_t> & dict)
 	names.push_back("PWRMEM");
 	names.push_back("PWRGPU");
 
-// in detailed mode RAPL gives us values for each cpu 
-// this is a reason for adding a suffix with number of a socket for each counter
-
 // DO NOT EDIT THE REST OF THIS FUNCTION
 	if (detailedMode)
 	{
@@ -166,7 +164,7 @@ void OCC::initMap(std::map<std::string, uint64_t> & dict)
 		}
 	}
 	
-	//single counter per node
+	//single counter per node, its overal energy consumption
 	dict["PWRSYS"] = 0;
 }
 

@@ -9,14 +9,11 @@
 #include <iomanip>
 #include <math.h>
 #include <locale>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <endian.h> //be32toh()
 
-
 #include "counters.h"
-//#include "countersrates.h"
 #include "../basis/utils.h"
 
 #define TO_FP(f)    ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
@@ -106,10 +103,6 @@ typedef struct {
 
 using namespace OCC_COUNTERS;
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-
 namespace meric {
 
 class OCC {
@@ -120,20 +113,15 @@ public:
 	{
 		::close(OCC_fd);
 	};
-	
 	static void getCounterValues(std::map<std::string, uint64_t> & record);
 	static void initMap(std::map<std::string, uint64_t> & dict);
 	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter, std::string regionName = "");
-
-
 	static inline std::string getSummaryCounterName() { return ""; }; //no artifitial counter
-
 	static  inline std::string getSourceLabel() { return "OCC"; };
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
 private:
-		//list of counters
 	static std::map<std::string, uint64_t> counters;
 	static std::string suffix;
 	static bool detailedMode;
