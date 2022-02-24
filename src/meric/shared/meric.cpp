@@ -38,6 +38,10 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>());
 	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end()) //OCC not expected to be together with RAPL
+	{
+		_storeList.push_back(new CountersStore<OCC, uint64_t, uint64_t>());
+	}
 	
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
@@ -93,6 +97,8 @@ SharedMeric::SharedMeric()
 		JETSON::init();
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 		THUNDER::init();
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+		OCC::init();
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::init();
@@ -116,6 +122,10 @@ SharedMeric::~SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
 	{
 		HDEEM::close();
+	}
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+	{
+		OCC::close();
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{

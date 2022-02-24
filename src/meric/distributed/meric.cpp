@@ -124,6 +124,15 @@ DistributedMeric::DistributedMeric()
 		else
 			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
 	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore<OCC, uint64_t, uint64_t>>(_storingProcs, !_MPInodeRank));
+		}
+		else
+			_storeList.push_back(new CountersStore<OCC, uint64_t, uint64_t>(!_MPInodeRank));
+	}
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
@@ -227,6 +236,7 @@ DistributedMeric::DistributedMeric()
 			THUNDER::init();
 		sleep(5);
 	}
+	
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
@@ -242,6 +252,10 @@ DistributedMeric::DistributedMeric()
 		PAPI::init();
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 		RAPL::init(Meric::DETAILED);
+	else if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+	{
+		OCC::init(Meric::DETAILED);
+	}
 	if (Meric::COUNTERS == "msr")
 		MSR::init();
 
@@ -261,6 +275,10 @@ DistributedMeric::~DistributedMeric()
 	if (!_MPInodeRank && (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end()))
 	{
 		HDEEM::close();
+	}
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+	{
+		OCC::close();
 	}
 	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{

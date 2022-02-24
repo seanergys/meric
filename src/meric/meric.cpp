@@ -308,6 +308,13 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 			#endif
+			#ifndef HAVE_OCC
+				if (modeString[token] == MODE_OCC)
+				{
+					std::cerr << "MERIC WARNING: OCC power monitoring not available\n";
+					continue;
+				}
+			#endif
 			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 				if (modeString[token] == MODE_DAVIDE)
 				{

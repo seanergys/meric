@@ -93,6 +93,29 @@ static std::map<const std::string, uint64_t> counterDefines = {
 }
 ////////////////////////////////////////////////////////////////////////////////
 /**
+ * OCC power counters
+ **/
+namespace OCC_COUNTERS {
+
+/**
+ * PWRSYS  = Bulk power of the system/node (500us)
+ * PWRGPU  = Power consumption for GPUs per socket (OCC) read from APSS (500us)
+ * PWRPROC = Power consumption for this Processor (500us)
+ * PWRVDD  = Power consumption for this Processor's Vdd (calculated from AVSBus readings) (1ms)
+ * PWRVDN  = Power consumption for this Processor's Vdn (nest) (calculated from AVSBus readings) (1ms)
+ * PWRMEM  = Power consumption for Memory for this Processor read from APSS (500us)
+ * PWRAPSSCH0 - PWRAPSSCH15 = Power Provided by APSS channel x (where x=0...15) (500us)
+ *	APSS – Analog Power Subsystem Sweep, provide real time power measurements of voltage rails.
+ **/
+static std::map<const std::string, std::string> counterLabel = {
+	{ "PWRSYS",  "Node Energy consumption [J]" },
+	{ "PWRPROC", "CPU [J]"                       },
+	{ "PWRMEM",  "MEM [J]"                       },
+	{ "PWRGPU",  "GPU [J]"                       }
+};
+}
+////////////////////////////////////////////////////////////////////////////////
+/**
  * to add new RAPL counter:
  * 	add here counter name as it is in "x86a_read -n"
  *  insert a label for the counter, that will be used in output files

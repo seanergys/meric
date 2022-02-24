@@ -54,7 +54,7 @@
 
 namespace meric {
 
-enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML};
+enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_OCC};
 
 static std::map <const std::string, mode> modeString = {
 	{"NONE", MODE_RUN},
@@ -66,10 +66,11 @@ static std::map <const std::string, mode> modeString = {
 	{"JETSON", MODE_JETSON},
 	{"THUNDER", MODE_THUNDER},
 	{"DAVIDE", MODE_DAVIDE},
-	{"NVML", MODE_NVML}
-	};
+	{"NVML", MODE_NVML},
+	{"OCC", MODE_OCC}
+};
 
-enum SYSTEM_TYPE {SYS_HASWELL, SYS_JETSON, SYS_THUNDER, SYS_DAVIDE, SYS_OTHER};
+enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER};										//TODO remove this enum
 
 enum DVFS_WAY {
 	NO_DVFS = 0,   // it is not possible to control the CPU core frequency
@@ -77,7 +78,7 @@ enum DVFS_WAY {
 	USRSPACE_LIB,  // DVFS possible under userspace scaling driver - using a library
 	INT_PSTATE,    // DVFS possible under intel_pstate scaling driver
 	OTHER          // DVFS possible under another (unknown) scaling driver
-	};
+};
 
 enum GPU_TUNING_WAY {
 	NO_TUNING = 0, //
