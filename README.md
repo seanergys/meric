@@ -125,6 +125,9 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 [Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
 
 
+### OCC ###
+[On Chip Controller (OCC)](https://github.com/open-power/occ) provides power monitoring of compute nodes power by OpenPOWER CPUs. Available from IBM POWER8 processors. The performance counters are updated every 500 us.
+
 ### BSC ARM Jetson ###
 Part of the MERIC repository is a python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
@@ -354,6 +357,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- HDEEM   = Equals to HDEEM-S option.
 	- RAPL    = Intel RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
+	- OCC     = IBM POWER OCC energy measurement.
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
 	- JETSON  = BSC Jetson TX1 energy and power measurement.
 	- THUNDER = BSC ThunderX energy and power measurement.

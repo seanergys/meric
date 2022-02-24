@@ -3,9 +3,10 @@
   - removed MERIC_ITERATION input parameter, it is generated automatically
   - support for Nvidia GPUs energy measurement using NVML (MERIC_MEASURE=NVML)
   - support Nvidia GPUs power capping, streaming multiprocessors and memory frequency tuning
-  - support for AMD RAPL energy measurement (available from Zen architecture)
+  - support for AMD RAPL energy measurement (available from Zen architecture) 
   - support AMD Zen CPUs core frequency tuning using msr_safe
-  - support AMD EPYC Zen3 (19h) CPUs core frequency tuning and power capping using Host System Management Port (HSMP) kernel module + EPYC System Management Interface (E-SMI) In-band Library
+  - support AMD EPYC CPUs core frequency tuning and power capping using Host System Management Port (HSMP) kernel module + EPYC System Management Interface (E-SMI) In-band Library
+  - support IBM OpenPOWER OCC firmware for energy measurement (MERIC_MEASURE=OCC)
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
   - implemented system topology detection
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
