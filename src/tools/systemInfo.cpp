@@ -6,6 +6,7 @@
 #include <vector>
 #include <string.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <thread>
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/raplwrapper.h"
@@ -51,9 +52,9 @@ void sysInfoSize(bool detailed = false)
 	meric::Environment::getCPUbrandString(CPUname);
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tCPU name:         " << CPUname << '\n'
-	          << "\tSockets per Node: " << SOCKETS_PER_NODE << '\n'
-	          << "\tCores per Socket: " << CORES_PER_SOCKET << '\n'
-	          << "\tThreads per Core: " << THREADS_PER_CORE;
+	          << "\tSockets per node: " << SOCKETS_PER_NODE << '\n'
+	          << "\tCores per socket: " << CORES_PER_SOCKET << '\n'
+	          << "\tThreads per core: " << THREADS_PER_CORE;
 	          
 	if (onlineThreads.size() != SOCKETS_PER_NODE * CORES_PER_SOCKET * THREADS_PER_CORE)
 	{
@@ -80,10 +81,10 @@ void sysInfoSize(bool detailed = false)
 		}
 	}
 	
+	unsigned int GPUdeviceCount = 0;
 #ifdef HAVE_NVML_H
-	unsigned int deviceCount;
-	nvmlReturn_t ret = nvmlDeviceGetCount(&deviceCount);
-	if (deviceCount)
+	nvmlReturn_t ret = nvmlDeviceGetCount(&GPUdeviceCount);
+	if (GPUdeviceCount)
 	{
 		nvmlDevice_t deviceHandle;
 		if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
@@ -94,7 +95,43 @@ void sysInfoSize(bool detailed = false)
 			ret = nvmlDeviceGetName (deviceHandle, GPUname, GPU_NAME_LENGTH);
 			std::cout << "\tGPU name:         " << GPUname << '\n';
 		}
-		std::cout << "\tGPUs per node:    " << deviceCount << '\n';
+		std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
+	}
+#else
+	DIR *dir;
+	if ((dir = opendir ("/proc/driver/nvidia/gpus/")) != NULL)
+	{
+		struct dirent *ent;
+		/* print all the files and directories within directory */
+		std::string GPUname = "";
+		while ((ent = readdir (dir)) != NULL)
+		{
+			if (ent->d_name[0] != '.')
+			{
+				GPUdeviceCount++;
+				if (GPUname == "")
+					GPUname = std::string(ent->d_name);
+			}
+		}
+		closedir (dir);
+		
+		std::ifstream GPUinfoFile("/proc/driver/nvidia/gpus/"+GPUname+"/information");
+		if (GPUinfoFile.is_open())
+		{
+			std::getline(GPUinfoFile, GPUname);
+			GPUinfoFile.close();
+			
+			GPUname = GPUname.substr(GPUname.find(':'));
+			std::size_t pos = GPUname.find_first_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+			if (pos != std::string::npos)
+				GPUname = GPUname.substr(pos);
+		}
+		if (GPUname != "")
+			std::cout << "\tGPU name:         " << GPUname << '\n';
+		if (GPUdeviceCount)
+			std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
+		
+		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the GPUs\n";
 	}
 #endif
 }
@@ -791,6 +828,38 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	}
 #endif
 
+#ifdef HAVE_OCC
+	
+	std::ifstream pwrCapFile;
+	std::string pwrCapInfo = "";
+
+	pwrCapFile.open("/sys/firmware/opal/powercap/system-powercap/powercap-max");
+	if (pwrCapFile.is_open())
+	{
+		pwrCapFile >> pwrCapInfo;
+		pwrCapFile.close();
+
+		std::cout << "\n# NODE POWER LIMITS\n"
+		          << "\tNode max power limit:     " << pwrCapInfo << " W\n";
+
+		pwrCapFile.open("/sys/firmware/opal/powercap/system-powercap/powercap-min");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+		}
+		std::cout << "\tNode min power limit:     " << pwrCapInfo << " W\n";
+		
+		pwrCapFile.open("/sys/firmware/opal/powercap/system-powercap/powercap-current");
+		if (pwrCapFile.is_open())
+		{
+			pwrCapFile >> pwrCapInfo;
+			pwrCapFile.close();
+		}
+		std::cout << "\tNode power limit:         " << pwrCapInfo << " W\n";
+	}
+#endif
+
 // GPU
 #ifdef HAVE_NVML_H
 	nvmlDevice_t deviceHandle;
@@ -845,6 +914,11 @@ void sysEnergyMeasurement()
 		std::cout << "\tNVML\n";
 		systems++;
 	}
+#endif
+
+#ifdef HAVE_OCC
+	std::cout << "\tOCC\n";
+	systems++;
 #endif
 
 	if (systems == 0)
