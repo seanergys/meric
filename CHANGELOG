@@ -8,6 +8,7 @@
   - support AMD EPYC CPUs core frequency tuning and power capping using Host System Management Port (HSMP) kernel module + EPYC System Management Interface (E-SMI) In-band Library
   - support IBM OpenPOWER OCC firmware for energy measurement (MERIC_MEASURE=OCC)
   - new MERICwrapper tool, that provides state space search and analysis of already measured data instead of the RADAR
+  - static tools for energy measurement support not only RAPL but NVML too
   - implemented system topology detection
   - powercap is now set in milliwatts and milliseconds instead of watts and microseconds
   - RAPL now provides the energy consumption in double data type

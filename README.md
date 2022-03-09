@@ -563,7 +563,7 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 --------------------------------------------------------------------------------
 MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the tools/ directory.
 
-Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL energy measurement for a single node (similar to HDEEM commandline tools startHdeem and stopHdeem), if one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
+Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
 For a static analysis of a selected application, the directory with the tool contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
