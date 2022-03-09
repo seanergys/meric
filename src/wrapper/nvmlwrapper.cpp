@@ -33,10 +33,10 @@ double NVML::getResultValue(unsigned long long startValue, unsigned long long st
  **/
 void NVML::init(bool detailed)
 {
+	#ifdef HAVE_NVML_H
+	unsigned int deviceCount = 0;
 	if (!GPUhandles.empty())
 		return;
-	unsigned int deviceCount = 0;
-	#ifdef HAVE_NVML_H
 	if (nvmlDeviceGetCount(&deviceCount) == NVML_SUCCESS)
 	{
 		for (int i=0; i < deviceCount; i++)
@@ -46,8 +46,8 @@ void NVML::init(bool detailed)
 				GPUhandles.push_back(deviceHandle);
 		}
 	}
-	#endif
 	initMap(counters);
+	#endif
 }
 
 /**
