@@ -1,23 +1,26 @@
 
 #include "../../wrapper/environmentwrapper.h"
 #include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/nvmlwrapper.h"
 #include <limits>
 
 using namespace meric;
 
 std::string OUTPUT_FILE;
-int RAPL_BASELINE = 0;
+int POWER_BASELINE = 0;
+
 #ifdef START
-void storeValues(std::map<std::string, unsigned long long int> &record, double time);
+template <typename Tmode> void storeValues(std::map<std::string, unsigned long long int> &record, double time);
 #endif
 
 #ifdef STOP
 double readStoredValues(std::map<std::string, unsigned long long int> & oldRecord);
-void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose);
+template <typename Tmode> void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose);
 #endif
 
 //----------------------------------------------------------------------------//
 #ifdef START
+template <typename Tmode>
 void storeValues(std::map<std::string, unsigned long long int> &record, double time)
 {
 	std::remove(OUTPUT_FILE.c_str());
@@ -27,7 +30,7 @@ void storeValues(std::map<std::string, unsigned long long int> &record, double t
 	//store counters
 	for(std::map<std::string, unsigned long long int>::iterator iterator = record.begin(); iterator != record.end(); iterator++)
 	{
-		if (RAPL::getSummaryCounterName() == iterator->first)
+		if (Tmode::getSummaryCounterName() == iterator->first)
 			continue;	
 		ss << iterator->first << '\t' << iterator->second << std::endl;
 	}
@@ -59,6 +62,7 @@ double readStoredValues(std::map<std::string, unsigned long long int> & oldRecor
 	return timeOld;
 }
 
+template <typename Tmode>
 void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose)
 {
 	std::map<std::string, unsigned long long int> record;
@@ -69,19 +73,23 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		std::cout << "Runtime [s] = " << runtime << std::endl;
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
-			double value = RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
-			std::cout << RAPL::getCounterLabel(iterator->first) << " = " << value << std::endl;
+			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
+			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << value << std::endl;
 			summary += value;
 		}
-		summary += RAPL_BASELINE*runtime;
-		std::cout << std::endl << RAPL_SUM_ENERGY << " = " << summary << std::endl;
+		if (Tmode::getSummaryCounterName() != "")
+		{
+			summary += POWER_BASELINE*runtime;
+			std::cout << std::endl << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
+		}
 	}else
 	{
+		//TODO what if there is no summary
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
-			summary += RAPL::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
+			summary += Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
 		}
-		std::cout <<  summary + RAPL_BASELINE*runtime << std::endl;
+		std::cout <<  summary + POWER_BASELINE*runtime << std::endl;
 	}
 }
 #endif
@@ -89,12 +97,37 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
+template <typename Tmode> 
+void measureEnergy(bool verbose)
+{
+	Tmode::init(true);
+
+	struct timespec timeNow;
+	clock_gettime(CLOCK_REALTIME, &timeNow);
+
+	std::map<std::string, unsigned long long int> recordNow;
+	Tmode::getCounterValues(recordNow);
+
+#ifdef START
+	storeValues<Tmode>(recordNow, mutils::timeToDouble(timeNow));
+#endif
+
+#ifdef STOP
+	std::map<std::string, unsigned long long int> recordOld;
+	double timeOld = readStoredValues(recordOld);
+	printValues<Tmode>(recordOld, recordNow, mutils::timeToDouble(timeNow)-timeOld, verbose);
+	Environment::restoreSystemSettings(true);
+#endif
+}
+
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-	          << "Run energyMeasureStart to start the energy measurement (using RAPL) and change system parameters\n"
+	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
 	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
+	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
 	          << "\nenergyMeasureStart parameters:\n"
+	          << "\t-e = energy measurement system \"RAPL\" or \"NVML\"\n"
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-t = #OpenMP threads\n"
@@ -104,7 +137,8 @@ void printHelp()
 	          << "\t-r = GPU memory frequency [Hz]\n"
 	          << "\t-g = GPU power capping power limit [mW]\n"
 	          << "\nenergyMeasureStop parameters:\n"
-	          << "\t-b = node baseline (static) power [W]\n"
+	          << "\t-e = energy measurement system \"RAPL\" or \"NVML\"\n"
+	          << "\t-b = node baseline (static) power consumption [W]\n"
 	          << "\t-q = print the overall consumed energy only [J]\n"
 	          << std::endl;
 	exit(1);
@@ -112,10 +146,9 @@ void printHelp()
 
 int main(int argc, char **argv)
 {
-#ifdef STOP
-	bool verbose = true;
-#endif
+	bool verbose = true; //used only if the STOP is defined
 	char hostname[HOST_NAME_MAX];
+	std::string energyMode = "";
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
 		std::cerr << "missing machine hostname\n";
@@ -253,7 +286,7 @@ int main(int argc, char **argv)
 			if (i + 1 < argc)
 			{
 				try{
-					RAPL_BASELINE = std::stoul (argv[++i]);
+					POWER_BASELINE = std::stoul (argv[++i]);
 				} catch (std::exception const &e)
 				{
 					printHelp();
@@ -264,31 +297,36 @@ int main(int argc, char **argv)
 			}
 		}
 #endif
+		else if (arg == "-e")
+		{
+			if (i + 1 < argc)
+			{
+				energyMode = std::string(argv[++i]);
+			}else
+			{
+				printHelp();
+			}
+		}
 		else
 		{
 			printHelp();
 		}
 	}
+	if (energyMode == "" || (energyMode != "RAPL" && energyMode != "NVML"))
+		printHelp();
+	
 ////////////////////////////////////////////////////////////////////////////////	
 	Environment::init(SYS_OTHER, defaultParameter, 0);
-	RAPL::init(true);
-
-	struct timespec timeNow;
-	clock_gettime(CLOCK_REALTIME, &timeNow);
-
-	std::map<std::string, unsigned long long int> recordNow;
-	RAPL::getCounterValues(recordNow);
-
-#ifdef START
-	storeValues(recordNow, mutils::timeToDouble(timeNow));
-#endif
-
-#ifdef STOP
-	std::map<std::string, unsigned long long int> recordOld;
-	double timeOld = readStoredValues(recordOld);
-	printValues(recordOld, recordNow, mutils::timeToDouble(timeNow)-timeOld, verbose);
-	Environment::restoreSystemSettings(true);
-#endif
+	
+	if (energyMode == "RAPL")
+	{
+		measureEnergy<RAPL>(verbose);
+	}
+	else if (energyMode == "NVML")
+	{
+		measureEnergy<NVML>(verbose);
+	}
+	
 	Environment::close();
 
 	return 0;

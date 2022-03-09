@@ -31,8 +31,10 @@ double NVML::getResultValue(unsigned long long startValue, unsigned long long st
  * initialization of the NVML class
  * fills a vector of GPUs handles
  **/
-void NVML::init()
+void NVML::init(bool detailed)
 {
+	if (!GPUhandles.empty())
+		return;
 	unsigned int deviceCount = 0;
 	#ifdef HAVE_NVML_H
 	if (nvmlDeviceGetCount(&deviceCount) == NVML_SUCCESS)
