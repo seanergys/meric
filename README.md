@@ -541,10 +541,11 @@ done
 Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information about the measurement.
 ```
 {
-	"Timestamp" : "Thu Dec  6 15:37:23 2018",
-	"System"    : "IT4I Salomon",
-	"DataFormat": "node_CF_UnCF_thrds",
-	"Note"      : ""
+	"Execution ID": "0",
+	"Timestamp"   : "Thu Dec  6 15:37:23 2018",
+	"System"      : "IT4I Salomon",
+	"DataFormat"  : "CF_UnCF_thrds",
+	"Note"        : ""
 }
 ```
 
