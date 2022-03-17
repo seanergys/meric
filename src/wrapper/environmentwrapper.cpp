@@ -2139,7 +2139,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
 	{
-		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/100000)+","+std::to_string(freqSM/100000);
+		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/1000000)+","+std::to_string(freqSM/1000000);
 		for (int id=min; id<max; id++)
 		{
 			system((command+" -i "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
