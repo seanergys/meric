@@ -510,6 +510,8 @@ bool Environment::isHWPactive(std::string &status)
 			read_msr(0, IA32_PM_ENABLE, &IA32_PM_ENABLE_bits);
 			HWP = IA32_PM_ENABLE_bits & IA32_PM_ENABLE_mask;
 			status = HWP ? "enabled" : "disabled";
+		#else
+			status = "available, status unknown";
 		#endif
 	}
 	else
