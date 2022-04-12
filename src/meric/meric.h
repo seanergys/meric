@@ -133,7 +133,7 @@ public:
 protected:
 
 	static void readRegionOptions();
-	static RegionParameters getRegionSettings(json_object_element_s * data);
+	static RegionParameters getRegionSettings(json_object_element_s * data, json_value_s* root);
 	static int getDefaultParameters();
 	
 	/**

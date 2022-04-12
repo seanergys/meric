@@ -398,7 +398,7 @@ void Meric::readRegionOptions()
 	{
 		if (data->name->string[0] != '@')	//region
 		{
-			parameter[std::string(data->name->string)][std::make_pair(-1, -1)] = getRegionSettings(data);
+			parameter[std::string(data->name->string)][std::make_pair(-1, -1)] = getRegionSettings(data, root);
 		}
 		else if (std::string(data->name->string) == "@IGNORE")
 		{
@@ -418,7 +418,7 @@ void Meric::readRegionOptions()
 				}
 				else if (std::string(ignore->name->string) == "@CHANGE")
 				{
-					ignoreSettings = getRegionSettings(ignore);
+					ignoreSettings = getRegionSettings(ignore, root);
 				}
 				ignore = ignore->next;
 			}while(ignore != NULL);
@@ -439,7 +439,7 @@ void Meric::readRegionOptions()
 							//list of regions
 							region = ((struct json_object_s*)socket->value->payload)->start;
 							do{
-								parameter[std::string(region->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), std::stoi(std::string(socket->name->string)))] = getRegionSettings(region);
+								parameter[std::string(region->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), std::stoi(std::string(socket->name->string)))] = getRegionSettings(region, root);
 								region = region->next;
 							}while (region != NULL);
 							socket = socket->next;
@@ -447,7 +447,7 @@ void Meric::readRegionOptions()
 					}
 					else	//list of regions
 					{
-						parameter[std::string(socketOrRegion->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), -1)] = getRegionSettings(socketOrRegion);
+						parameter[std::string(socketOrRegion->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), -1)] = getRegionSettings(socketOrRegion, root);
 					}
 					socketOrRegion = socketOrRegion->next;
 				}while (socketOrRegion != NULL);
@@ -463,7 +463,7 @@ void Meric::readRegionOptions()
 				//list of regions
 				region = ((struct json_object_s*)socket->value->payload)->start;
 				do{
-					parameter[std::string(region->name->string)][std::make_pair(-1, std::stoi(std::string(socket->name->string)))] = getRegionSettings(region);
+					parameter[std::string(region->name->string)][std::make_pair(-1, std::stoi(std::string(socket->name->string)))] = getRegionSettings(region, root);
 					region = region->next;
 				}while (region != NULL);
 				socket = socket->next;
@@ -488,49 +488,58 @@ void Meric::readRegionOptions()
 	free(root);
 }
 
-RegionParameters Meric::getRegionSettings(json_object_element_s * data)
+RegionParameters Meric::getRegionSettings(json_object_element_s * data, json_value_s* root)
 {
+	if (data->value->type != json_type_object)
+	{
+		std::cerr << "MERIC ERROR: invalid input configuration file.\n";
+		free(root);
+		exit(1);
+	}
+
 	RegionParameters param = {};
 	struct json_object_element_s* set = ((struct json_object_s*)data->value->payload)->start;
-	
+
 	do
 	{
-		if ("FREQUENCY" == std::string(set->name->string))
+	std::cerr << std::string(set->name->string) << "\n";
+		const std::string label = std::string(set->name->string);
+		if ("FREQUENCY" == label)
 		{
 			if (defaultParameter.frequency != 0)
 				param.frequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("UNCORE_FREQUENCY" == std::string(set->name->string))
+		else if ("UNCORE_FREQUENCY" == label)
 		{
 			if (defaultParameter.uncoreFrequency != 0)
 				param.uncoreFrequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("NUM_THREADS" == std::string(set->name->string))
+		else if ("NUM_THREADS" == label)
 		{
 			if (defaultParameter.nthreads != 0)
 				param.nthreads = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("PWRCAP_POWER" == std::string(set->name->string))
+		else if ("PWRCAP_POWER" == label)
 		{
 			if (defaultParameter.powerCapPKG != 0)
 				param.powerCapPKG = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("PWRCAP_TIME" == std::string(set->name->string))
+		else if ("PWRCAP_TIME" == label)
 		{
 			if (defaultParameter.powerCapPKGtime != 0)
 				param.powerCapPKGtime = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("GPU_FREQUENCY" == std::string(set->name->string))
+		else if ("GPU_FREQUENCY" == label)
 		{
 			if (defaultParameter.frequencyGPU != 0)
 				param.frequencyGPU = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("GPU_MEM_FREQUENCY" == std::string(set->name->string))
+		else if ("GPU_MEM_FREQUENCY" == label)
 		{
 			if (defaultParameter.frequencyGPUmem != 0)
 				param.frequencyGPUmem = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
 		}
-		else if ("PWRCAP_GPU" == std::string(set->name->string))
+		else if ("PWRCAP_GPU" == label)
 		{
 			if (defaultParameter.powerCapGPU != 0)
 				param.powerCapGPU = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
