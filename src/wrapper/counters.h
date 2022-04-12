@@ -143,9 +143,9 @@ const std::string RAPL_RAM_POWER_LIMIT  = "Intel_RAPL_RAM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "Intel_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_SUM_ENERGY,       "RAPL Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]" },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"  },
+	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 };
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,10 +168,10 @@ const std::string RAPL_PLATFORM_POWER_LIMIT = "MSR_PLATFORM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_CORE_ENERGY,      "RAPL_CORE [J]"          },
-	{ RAPL_SUM_ENERGY,       "RAPL Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]" },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"  },
+	{ RAPL_CORE_ENERGY,      "RAPL_CORE [J]" },
+	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 };
 
 #ifdef SRC_WRAPPER_MSRS_H_
@@ -206,9 +206,9 @@ const std::string RAPL_RAM_POWER_LIMIT  = "MSR::DRAM_POWER_LIMIT:POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]"          },
-	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"           },
-	{ RAPL_SUM_ENERGY,       "RAPL Energy consumption [J]" }
+	{ RAPL_PCKG_ENERGY,      "RAPL_PCKG [J]" },
+	{ RAPL_RAM_ENERGY,       "RAPL_RAM [J]"  },
+	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 };
 }
 
