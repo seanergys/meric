@@ -84,11 +84,7 @@ std::string NVML::getCounterLabel(std::string counter)
  **/
 std::string NVML::getSummaryCounterName()
 {
-//const std::string NVML_SUM_ENERGY  = "NVML Energy consumption [J]";
-	if (getGPUsPerNode() > 0)
-		return "NVML Energy consumption [J]";
-	else
-		return "";
+	return "NVML Energy consumption [J]";
 }
 
 /**
