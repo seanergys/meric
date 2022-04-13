@@ -45,13 +45,27 @@ MERIC allows to set selected system parameters for the whole application run or 
 
 ### CPU core frequency ###
 MERIC provides several ways how to change the CPU core frequency:
- *  Intel CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`. Prefered interface for Intel CPUs.
- *  Intel CPU using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
- *  AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/).
- *  AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
- *  Any CPU with userspace scaling driver using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
- *  Any CPU with userspace scaling driver using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
 
+##### Intel #####
+Support for frequency scaling under `Intel Hardware Performance State (HWP)`, `intel_pstate` scaling driver, or `userspace` scaling driver
+
+Under `HWP` requires additional write acess to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq`. 
+
+Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+
+- Using write to MSRs - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). **Prefered interface for Intel CPUs, the only interface that supports tuning under HWP.**
+- Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).
+- Using [geopm](https://geopm.github.io/).
+
+##### AMD #####
+
+- AMD 17h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
+- AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
+
+##### Any (other) CPU with userspace scaling driver #####
+
+- Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
+- Using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
 
 ### Intel CPU uncore frequency ###
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
