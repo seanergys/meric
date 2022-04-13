@@ -169,15 +169,18 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 #ifdef _INTEL_
 	std::string status;
 	HWP = meric::Environment::isHWPactive(status);
-	if (status != "")
-		std::cout << "\tHardware controlled P-State: " << status << std::endl;
+	std::cout << "\tHardware controlled P-State: " << status << std::endl;
 #endif
 	
 	if (!meric::Environment::isDVFSpossible())
 	{
 		std::cout << "\n\tCPU core frequency scaling (DVFS) NOT available\n";
 		if (HWP)
-			std::cout << "\t\tBecause Hardware Controlled P-Stated is activated in the BIOS\n";
+		{
+			std::cout << "\t\t grant write access to:\n"
+					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq\n";
+		}
 		else
 		{
 #if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) 

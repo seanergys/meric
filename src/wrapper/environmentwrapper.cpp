@@ -523,20 +523,25 @@ bool Environment::isHWPactive(std::string &status)
 
 /**
  * tests if the CPU core frequency scaling is possible
- * returns possitive number if yes, otherwise zero
+ * returns value from DVFS_WAY which give us information how the frequency can be scaled
  **/
 DVFS_WAY Environment::isDVFSpossible()
 {
 #ifdef _INTEL_
 	std::string status;
-	if (isHWPactive(status))
-		return NO_DVFS;
+	if (isHWPactive(status)
+	{
+		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0 && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", W_OK) == 0)
+			return HWP;
+		else
+			return NO_DVFS;
 #elif defined _AMD_ 
 	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
 		//has not been tested for scaling driver requirement TODO !!!
 		return OTHER;
 	#endif
 #endif
+	}
 
 	// scalingGovernor is not set if neither readSystemDefaultSettings() nor readRestoreFile() have been called
 	// may happen if used from "outside" or if the restoreFile is empty
@@ -595,9 +600,9 @@ DVFS_WAY Environment::isDVFSpossible()
 }
 
 /**
- * activates DVFS on the system
- * if the way of DVFS using (DVFS_WAY enum) is know, can be passed as argument
- * returns true in success, otherwise false
+ * activates frequency scaling on the system according the DVFS_WAY value
+ * if the input DVFS_WAY is unknown (NO_DVFS), it gets the information
+ * returns NO_DVFS if scaling not possible otherwise the way it used to activate frequency scaling
  **/
 DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 {
@@ -1644,8 +1649,42 @@ void Environment::frequency(uint64_t freq, int socket)
 		socket_min = 0;
 		socket_max = SOCKETS_PER_NODE-1;
 	}
+
+#if defined _INTEL_	
+	if (activatedDVFS == HWP)
+	{
+		std::ofstream coreFile;
+		for (int soc=socket_min; soc<=socket_max; soc++)
+		{
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
+				if (coreFile.is_open())
+				{
+					coreFile << freq / 1000;
+					coreFile.close();
+				}
+				if(!coreFile)
+					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
+				
+				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_min_freq");
+				if (coreFile.is_open())
+				{
+					coreFile << freq / 1000;
+					coreFile.close();
+				}
+				if(!coreFile)
+					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_min_freq\n";
+			}
+		}
+		clock_gettime(CLOCK_REALTIME, &stop_time);
+		MERIC_INFO << "MERIC CPU core frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+		return;
+	}
+#endif
 	
 #if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_PERF_CTL
+	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
 	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
 	#else
@@ -1658,6 +1697,61 @@ void Environment::frequency(uint64_t freq, int socket)
 			write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
 		}
 	}
+#elif defined HAVE_X86_ADAPT_H
+	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
+	MERIC_INFO << "; using X86ADAPT\n";
+	int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
+	if (adaptHandler < 0)
+	{
+		std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
+		return;
+	}
+
+	for (int soc=socket_min; soc<=socket_max; soc++)
+	{
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
+			if (fd < 0)
+			{
+				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//				exit(2);
+			}
+
+			if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
+			{
+				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+//				exit(3);
+			}
+
+			if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
+				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+		}
+	}
+#elif defined HAVE_GEOPM_H
+	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
+	MERIC_INFO << "; using GEOPM\n";
+	for (int soc=socket_min; soc<=socket_max; soc++)
+	{
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
+		}
+	}
+#elif defined HAVE_CPUFREQ_H
+	//else if (activatedDVFS == USRSPACE_LIB)
+	MERIC_INFO << "; using CPUFREQ\n";
+	for (int soc=socket_min; soc<=socket_max; soc++)
+	{
+		for (int cpu : mapCoresToSocket[soc])
+		{
+			if(cpufreq_set_frequency(cpu,freq) != 0)
+			{
+				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+			}
+		}
+	}
+	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
 #elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
 /**
  * AMD CPU cores are grouped into Core Complexes (CCXes), all cores grouped into 
@@ -1668,6 +1762,7 @@ void Environment::frequency(uint64_t freq, int socket)
  * requested frequency. If the specified boost limit frequency of a core is not 
  * supported, then the processor selects the next lower supported frequency.
  **/
+	//else if (activatedDVFS == OTHER)
 	MERIC_INFO << "; using ESMI\n";
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
@@ -1677,6 +1772,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		}
 	}
 #elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
+	//else if (activatedDVFS == OTHER)
 	MERIC_INFO << "; using MSR_SAFE\n";
 	if (defaultSettings.availableCoreFreq.empty())
 	{
@@ -1713,59 +1809,8 @@ void Environment::frequency(uint64_t freq, int socket)
 			}
 		}
 	}
-#elif defined HAVE_X86_ADAPT_H
-	MERIC_INFO << "; using X86ADAPT\n";
-	int adaptHandler = x86_adapt_lookup_ci_name(X86_ADAPT_CPU, "Intel_Target_PState");
-	if (adaptHandler < 0)
-	{
-		std::cerr << "X86ADAPT ERROR: frequency settings not allowed\n";
-		return;
-	}
-
-	for (int soc=socket_min; soc<=socket_max; soc++)
-	{
-		for (int cpu : mapCoresToSocket[soc])
-		{
-			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-			if (fd < 0)
-			{
-				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//				exit(2);
-			}
-
-			if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
-			{
-				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-//				exit(3);
-			}
-
-			if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
-		}
-	}
-#elif defined HAVE_CPUFREQ_H
-	MERIC_INFO << "; using CPUFREQ\n";
-	for (int soc=socket_min; soc<=socket_max; soc++)
-	{
-		for (int cpu : mapCoresToSocket[soc])
-		{
-			if(cpufreq_set_frequency(cpu,freq) != 0)
-			{
-				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
-			}
-		}
-	}
-	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
-#elif defined HAVE_GEOPM_H
-	MERIC_INFO << "; using GEOPM\n";
-	for (int soc=socket_min; soc<=socket_max; soc++)
-	{
-		for (int cpu : mapCoresToSocket[soc])
-		{
-			pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
-		}
-	}
 #else
+	//else if (activatedDVFS == USRSPACE_FILE)
 	std::ofstream coreFile;
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
