@@ -1000,34 +1000,23 @@ int main(int argc, char **argv)
 	}
 
 	MODE status = USING_NONE;
-	#ifdef HAVE_MSR_CORE_H
+	#ifdef HAVE_MSR_SAFE
 	status = USING_MSR;
-	if (init_msr())
-	{
-		std::cerr << "LIBMSR ERROR: Unable to initialize\n";
-	#else
-	{
-	#endif
-		#ifdef HAVE_X86_ADAPT_H
-		status = USING_ADAPT;
-		if (x86_adapt_init())
-		{
-			std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
-		}
-		else
+		#ifdef HAVE_MSR_CORE_H
+		if (init_msr())
+			std::cerr << "LIBMSR ERROR: Unable to initialize\n";
 		#endif
-		{
-			#ifdef HAVE_GEOPM_H
-			status = USING_GEOPM;
-			#endif
-		}
-	}
+	#elif defined HAVE_X86_ADAPT_H
+	status = USING_ADAPT;
+	if (x86_adapt_init())
+		std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
+	#elif defined HAVE_GEOPM_H
+	status = USING_GEOPM;
+	#endif
 	
 	#ifdef HAVE_E_SMI_E_SMI_H
 	if (esmi_init() != ESMI_SUCCESS)
-	{
 		std::cerr << "ESMI ERROR: Unable to initialize\n";
-	}
 	#endif
 	
 	#ifdef HAVE_NVML_H
