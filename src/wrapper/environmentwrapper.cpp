@@ -1650,7 +1650,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		socket_max = SOCKETS_PER_NODE-1;
 	}
 
-#if defined _INTEL_	
+#if defined _INTEL_	&& defined HAVE_MSR_SAFE //only when having MSR_SAFE the Environment::isHWPactive() method may return true
 	if (activatedDVFS == HWP)
 	{
 		std::ofstream coreFile;
