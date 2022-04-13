@@ -1,4 +1,4 @@
-# MERIC #
+# MERIC energy-efficient runtime system #
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
@@ -7,6 +7,11 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
+<!-->
+	README format notes
+	- only Heading level 1, 2 and 5 are used
+<!-->
+
 <!--> master branch links 
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
@@ -43,8 +48,8 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the tools/ directory).
 
 
-### CPU core frequency ###
-MERIC provides several ways how to change the CPU core frequency:
+## CPU core frequency ##
+MERIC provides several ways how to control the CPU core frequency, which highy depends on CPU vendor and available scaling driver.
 
 ##### Intel #####
 Support for frequency scaling under `Intel Hardware Performance State (HWP)`, `intel_pstate` scaling driver, or `userspace` scaling driver
@@ -67,13 +72,13 @@ Under `intel_pstate` scaling driver requires additional write acess to `/sys/dev
 - Using cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower).
 - Using direct write to the `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
 
-### Intel CPU uncore frequency ###
+## Intel CPU uncore frequency ##
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
 
 MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
 
 
-### Power capping ###
+## Power capping ##
 Available for Intel and AMD CPUs.
 
 ##### Intel #####
@@ -88,24 +93,24 @@ AMD EPYC CPUs from Zen3 (19h) architecture provides [EPYC System Management Soft
 
 
 
-### Number of active OMP threads ###
+## Number of active OMP threads ##
 Using OpenMP API.
 
 
-### Nvidia GPU streaming multiprocessors frequency ###
+## Nvidia GPU streaming multiprocessors frequency ##
 Some Nvidia GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
 To tune the SM frequency, MERIC requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-### Nvidia GPU memory frequency ###
+## Nvidia GPU memory frequency ##
 Nvidia GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-### Nvidia GPU power capping ###
+## Nvidia GPU power capping ##
 Using [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of Nvidia GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
 
 
-### ARM Jetson memory frequency ###
+## ARM Jetson memory frequency ##
 To simplify MERIC's interface, the memory frequency is set the same way as Intel CPU uncore frequency using MERIC_UNCORE_FREQUENCY environment variable.
 
 
@@ -114,7 +119,7 @@ To simplify MERIC's interface, the memory frequency is set the same way as Intel
 --------------------------------------------------------------------------------
 Energy measurement system can be selected using `MERIC_MEASURE` environment variable.
 
-### RAPL ###
+## RAPL ##
 From the Sandy Bridge microarchitecture all Intel processors provide software-based energy meter Runnnig Average Power Limit (RAPL) with sampling frequency 1 kHz of several power domains within the CPU (for server CPUs Package and DRAM power domains). The RAPL does not cover energy consumption of the node itself. From the Zen architecture also AMD CPUs have similar energy consumption measurement system, exposing energy consumption of the Package and each CPU core separatelly.
 
 Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
@@ -125,28 +130,28 @@ Intel RAPL system to limit power consumption of the CPU, it can be controlled by
 MERIC must be compiled and used at a node with [msr-safe](https://github.com/LLNL/msr-safe) to read RAPL counters (works well for both Intel and AMD). In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
 
 
-### HDEEM ###
+## HDEEM ##
 [High Definition Energy Efficiency Monitoring (HDEEM)](https://tu-dresden.de/zih/forschung/projekte/hdeem) is Atos|Bull's stand-alone energy measurement system located on the node itself, with power sampling frequency 1 kHz (blade), 100 Hz (on node components) respectively. HDEEM stores power samples in its internal memory and MERIC can read the energy consumption when a region starts and ends (HDEEM-C mode) with an overhead of the HDEEM system, or when the application execution is over (HDEEM-S mode), without any impact on the application run. When evaluateng the energy consmuption from the power samples (HDEEM-S) it is possible to store the raw samples to the output.
 
 
-### DiG ###
+## DiG ##
 Dwarf in Giant (DiG) is a hardware stand-alone power sampling system that stores the samples, that can be accessed through the [EXAMON](http://projects.eees.dei.unibo.it/monitoring/wordpress/) framework. MERIC does not access these power samples, so it cannot be stored.
 
 To activate possibility of energy measurement provided by DiG system in the MERIC, [REST-client library](https://github.com/mrtazz/restclient-cpp) must be available on the target system. MERIC and the tuned applications must be compiled with the library.
 
 
-### NVML ###
+## NVML ##
 [Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
 
 
-### OCC ###
+## OCC ##
 [On Chip Controller (OCC)](https://github.com/open-power/occ) provides power monitoring of compute nodes power by OpenPOWER CPUs. Available from IBM POWER8 processors. The performance counters are updated every 500 us.
 
-### BSC ARM Jetson ###
+## BSC ARM Jetson ##
 Part of the MERIC repository is a Python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
 
-### BSC ARM ThunderX ###
+## BSC ARM ThunderX ##
 BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
 
 --------------------------------------------------------------------------------
@@ -285,7 +290,7 @@ See tools' help message for more information.
 
 To run the SBI tools it is not only necessary to update LD_LIBRARY_PATH, but also export `DYNINSTAPI_RT_LIB` variable to specify `libdyninstAPI_RT.so` location. This shared library, which does not have a compiler dependency, is the only added dependency to generated binary in compare to manually instrumented application.
 
-### known issues ###
+##### known issues #####
  * Instrumented function with the return command only may lost the return value, you may increase `instlimit` TIMEPROF parameter for skipping such function.
  * If instrumented application is compiled with the same list of modules as the Dyninst tools, sometimes the new binary is corrupted. Can be tested using `ldd` command. If it happens, we suggest to use different set of modules for the application or the Dyninst tool.
 
@@ -296,7 +301,7 @@ It is possible to have a single MERIC compilation for several hardware platforms
 
 MERIC is compiled using [waf build system](https://waf.io/), since the system is not well known, Makefile in the repository root folder is provided. Please, modify libs and include paths according your system paths:
 
-### MERIC used libraries ###
+## MERIC used libraries ##
 * mandatory  - [Python3](https://www.python.org/)
 * mandatory  - [rt](https://man.cx/librt(3))
 * optionally - OpenMP (used in default)
@@ -317,12 +322,12 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
-### TIMEPROF used libraries ###
+## TIMEPROF used libraries ##
 * mandatory  - [rt](https://man.cx/librt(3))
 * optionally - OpenMP
 * optionally - MPI
 
-### SBI tools ###
+## SBI tools ##
 The Static Binary Instrumentation tools use Dyninst library for binary analysis and following modification. The Dyninst can be compiled using GNU compiler only, despite it supports also binary instrumentation generated by others compilers. Due to this limitation the SBI tools are compiled together with MERIC only when using GNU compiler. It is possible to compile SBI tools only when using `make sbi`.
 * mandatory - [Dyninst](https://dyninst.org/)
 * mandatory - [Boost](https://www.boost.org/) - date_time, system, and thread
