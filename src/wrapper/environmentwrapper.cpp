@@ -529,19 +529,19 @@ DVFS_WAY Environment::isDVFSpossible()
 {
 #ifdef _INTEL_
 	std::string status;
-	if (isHWPactive(status)
+	if (isHWPactive(status))
 	{
 		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0 && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", W_OK) == 0)
 			return HWP;
 		else
 			return NO_DVFS;
+	}
 #elif defined _AMD_ 
 	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
 		//has not been tested for scaling driver requirement TODO !!!
 		return OTHER;
 	#endif
 #endif
-	}
 
 	// scalingGovernor is not set if neither readSystemDefaultSettings() nor readRestoreFile() have been called
 	// may happen if used from "outside" or if the restoreFile is empty
