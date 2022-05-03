@@ -69,7 +69,7 @@ struct mutils {
 		if(stat(dir.c_str(), &info ) != 0)
 		{
 			std::stringstream ss;
-			ss << "mkdir -p " + dir;
+			ss << "mkdir -p \"" + dir + "\"";
 			if (std::system(ss.str().c_str()))
 				std::cerr << "MERIC ERROR: directory '"<<dir<<"' cannot be created\n";
 		}

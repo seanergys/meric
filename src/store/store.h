@@ -99,15 +99,10 @@ protected:
 	{
 		_counters.resize(_name.size());
 		_levels.resize(_name.size());
-		timespec time1, time2;
-		clock_gettime(CLOCK_REALTIME, &time1);
-		for (int i=0; i<_name.size(); i++)
+		for (std::string folderName : _name)
 		{
-			std::string folderName = _name[i].c_str();
 			mutils::createDir(outputDir + "/" + folderName);
 		}
-		clock_gettime(CLOCK_REALTIME, &time2);
-		MERIC_INFO << "MERIC open csv files in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 		
 		std::vector<size_t> starts;
 		for (size_t i = 0; i < records.size(); i++)
