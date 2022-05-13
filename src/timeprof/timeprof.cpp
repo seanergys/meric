@@ -15,13 +15,6 @@
 	#include <mpi.h>
 #endif
 
-
-#ifdef DEBUG
-	#define printout std::cout	
-#else
-	#define printout if (false) std::cout	
-#endif
-
 namespace timeprof{
 
 enum TIMEPROF_RANKING {PREV_INIT=-1, POST_FINALIZE=-2, MASTER=0};
@@ -62,10 +55,16 @@ void regionStart(const char * regionName)
 {
 	if (regionName && !regionName[0])
 		return;
-	printout << "T1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
+	MERIC_INFO << "T1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
 	if (TIMEPROF_rank == PREV_INIT)
 	{
-#ifdef HAVE_MPI_H
+#ifdef HAVE_VRUT
+		std::string node = meric::mutils::getenv("TIMEPROF_NODE", std::string("NONE"));
+		char hostname[HOST_NAME_MAX];
+		gethostname(hostname, HOST_NAME_MAX);
+		if (std::string(hostname) == node)
+			TIMEPROF_rank = MASTER;
+#elif defined HAVE_MPI_H
 		int flag;
 		MPI_Initialized(&flag);
 		if (flag)
@@ -110,7 +109,7 @@ double regionStop(const char * regionName)
 	if (regionName && !regionName[0])
 		return 0.0;	
 	double duration = 0.0;
-	printout << "P1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
+	MERIC_INFO << "P1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
 	if (TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
@@ -141,15 +140,16 @@ double regionStop(const char * regionName)
 //void TIMEPROF_evaluate()
 void evaluate()
 {
-	unsigned int timeThreshold = meric::mutils::getenv<unsigned int>("TIMEPROF_TIME", 0);
+	//unsigned int timeThreshold = meric::mutils::getenv<unsigned int>("TIMEPROF_TIME", 0);
+	double timeLimit = meric::mutils::getenv<double>("TIMEPROF_TIME", 0.0); //seconds
 	std::string fileName = meric::mutils::getenv("TIMEPROF_OUTPUT", std::string("TIMEPROF.log"));
 
-	printout << "E1 "<< TIMEPROF_rank << std::endl;
+	MERIC_INFO << "E1 "<< TIMEPROF_rank << std::endl;
 	if (TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
 		{
-			double timeLimit = timeThreshold/1000.0;
+//			double timeLimit = timeThreshold/1000.0;
 			std::ofstream of;
 			if (fileName != "")
 			{
@@ -163,11 +163,11 @@ void evaluate()
 			{
 				if (funcRecord.second.minDuration > timeLimit)
 				{
-					std::cerr << funcRecord.first << "\t"<< ((!timeThreshold) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
-					printout << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
+					std::cerr << funcRecord.first << "\t"<< ((!timeLimit) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
+					MERIC_INFO << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
 				}
 			}
-			printout << "E2 "<<TIMEPROF_rank<< std::endl;
+			MERIC_INFO << "E2 "<<TIMEPROF_rank<< std::endl;
 		}	
 	}
 	TIMEPROF_rank = POST_FINALIZE;
