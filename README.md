@@ -7,12 +7,12 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
 --------------------------------------------------------------------------------
-<!-->
+<!---
 	README format notes
 	- only Heading level 1, 2 and 5 are used
-<!-->
+-->
 
-<!--> master branch links 
+<!--- master branch links 
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
  3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-interface-and-shared-score-pmeric-api)
@@ -25,9 +25,9 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#10-meric-with-a-fortran-code)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
-<!-->
+-->
 
-<!--> dev branch links <!-->
+<!--- dev branch links -->
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
  3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-interface-and-shared-score-pmeric-api)
