@@ -273,6 +273,8 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 			extraSharedLibraries.push_back("libfreeipmi.so");
 			extraSharedLibraries.push_back("libcpufreq.so");
 			extraSharedLibraries.push_back("libcpupower.so");
+			extraSharedLibraries.push_back("libnvidia-ml.so");
+			extraSharedLibraries.push_back("libe_smi64.so");
 //			extraSharedLibraries.push_back("libpthread.so");	//so-far always N/A
 		}
 		else //params.timeprof
