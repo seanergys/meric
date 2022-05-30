@@ -315,7 +315,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = std::stol(freqBound) * 1000;
 		std::cout << "\tMax CPU core frequency:      " << freq/1000 << " kHz\n";
 		if (freq != limits.maxCoreFreq)
+		{
 			ok = false;
+		}
 	}
 #endif
 
@@ -334,7 +336,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = std::stol(freqBound) * 1000;
 		std::cout << "\tMin CPU core frequency:      " << freq/1000 << " kHz\n";
 		if (freq != limits.minCoreFreq)
+		{
 			ok = false;
+		}
 	}
 
 	if (availCF.size() > 0)
@@ -353,7 +357,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		if (!currentWhitelist.count(IA32_ENERGY_PERF_BIAS))
 			meric::read_msr(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
 		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
+		{
 			ok = false;
+		}
 	}
 #endif
 
@@ -366,11 +372,15 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 		std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.maxUncoreFreq)
+		{
 			ok = false;
+		}
 		freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
 		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.minUncoreFreq)
+		{
 			ok = false;
+		}
 	#elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 		int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
@@ -379,7 +389,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = setting * 100000000;
 		std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.maxUncoreFreq)
+		{
 			ok = false;
+		}
 			
 		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
@@ -388,17 +400,23 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = setting * 100000000;
 		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.minUncoreFreq)
+		{
 			ok = false;
+		}
 	#elif defined HAVE_GEOPM_H
 		freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
 		std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.maxUncoreFreq)
+		{
 			ok = false;
+		}
 		
 		freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
 		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.minUncoreFreq)
-			ok = false;	
+		{
+			ok = false;
+		}
 	#else
 		std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n";
 	#endif
@@ -412,7 +430,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = std::stol(freqBound);
 		std::cout << "\tMax memory frequency:        " << freq << " Hz\n";
 		if (freq != limits.maxUncoreFreq)
+		{
 			ok = false;
+		}
 	}
 
 	frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/min");
@@ -424,7 +444,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		freq = std::stol(freqBound);
 		std::cout << "\tMin memory frequency:        " << freq << " Hz\n";
 		if (freq != limits.maxUncoreFreq)
+		{
 			ok = false;
+		}
 	}
 	
 	frequencyBounderyFile.open("/sys/kernel/debug/clock/emc/possible_rates");
@@ -486,7 +508,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			          << "\tDefault streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
 			if (nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_MEM, &freq) == NVML_SUCCESS && freq != freqMem &&
 			    nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freq)  == NVML_SUCCESS && freq != freqSM)
+			{
 				ok = false;
+			}
 		}
 		
 		//nvmlReturn_t nvmlDeviceGetClock ( nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz )
@@ -882,7 +906,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		}
 
 		if (nvmlDeviceGetPowerManagementLimit(deviceHandle, &minPowerLimit) == NVML_SUCCESS && minPowerLimit != maxPowerLimit)
+		{
 			ok = false;
+		}
 	}
 #endif
 
@@ -1034,21 +1060,24 @@ int main(int argc, char **argv)
 	meric::RAPL::initCountersUnits(); //not necessary if meric::Environment::init() would have been called before
 	sysInfoSize(detailedInfo);
 	systemInTheDefaultSettings = sysInfoFrequencies(limits, detailedInfo);
+
 	systemInTheDefaultSettings = sysInfoPowercap(limits) && systemInTheDefaultSettings;
 	sysEnergyMeasurement();
 	
-	if (restore && restoreFile)
+	if (restoreFile)
 	{
-		meric::RegionParameters defaultParameter;
-		meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
-		meric::Environment::restoreSystemSettings(true);
+		if (restore)
+		{
+			meric::RegionParameters defaultParameter;
+			meric::Environment::init(meric::SYS_OTHER, defaultParameter, 0);
+			meric::Environment::restoreSystemSettings(true);
+		}
+		else if (!systemInTheDefaultSettings)
+		{
+			std::cerr << "\n\tWARNING: system not in the default settings!"
+				      << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+		}
 	}
-	else if (!systemInTheDefaultSettings)
-	{
-		std::cerr << "\n\tWARNING: system not in the default settings!"
-		          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
-	}
-
 
 	#ifdef HAVE_NVML_H
 	nvmlShutdown();
