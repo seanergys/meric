@@ -35,9 +35,9 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 		}
 		sumDuration += _buffer[i].duration;
 	}
-	ss << "AVG runtime of function [s]," << sumDuration/this->_size << std::endl
-	   << "MAX runtime of function [s]," << maxDuration << std::endl
-	   << "MIN runtime of function [s]," << minDuration << std::endl;
+	ss << "AVG Runtime of function [s]," << sumDuration/this->_size << std::endl
+	   << "MAX Runtime of function [s]," << maxDuration << std::endl
+	   << "MIN Runtime of function [s]," << minDuration << std::endl;
 
 	double sumStart = 0,
 		   maxStart = 0,

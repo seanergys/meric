@@ -76,7 +76,7 @@ public:
 	{
 		hdeem_stats_reading_t stats;
 		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
-		record["Energy consumption [J]"] = stats.energy_blade_values.value[0];
+		record[SUM_ENERGY_LABEL] = stats.energy_blade_values.value[0];
 		if(detailedMode)
 		{
 			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
@@ -164,7 +164,7 @@ private:
 
 	static void getCounterValues(std::map<std::string, double>& record)
 	{
-		record["Energy consumption [J]"] = HDEEM::energy++;
+		record[SUM_ENERGY_LABEL] = HDEEM::energy++;
 	}
 
 	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)

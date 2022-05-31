@@ -75,7 +75,7 @@ void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
  **/
 std::string NVML::getCounterLabel(std::string counter)
 {
-	return "Energy_GPU_"+counter+" [J]";
+	return "GPU_"+counter+" [J]";
 }
 
 /**
@@ -84,7 +84,7 @@ std::string NVML::getCounterLabel(std::string counter)
  **/
 std::string NVML::getSummaryCounterName()
 {
-	return "NVML Energy consumption [J]";
+	return "Energy consumption [J]";
 }
 
 /**
