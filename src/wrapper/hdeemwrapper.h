@@ -37,28 +37,30 @@ public:
 	static void init(bool detailed = false)
 	{
 		detailedMode = detailed;
-		checkHDEEM(hdeem_init(&bmc), "init");
-		checkHDEEM(hdeem_clear(&bmc), "clear");	//extra clear should not make a problem
+		checkHDEEM(hdeem_init(&bmc), "hdeem_init");
+		checkHDEEM(hdeem_clear(&bmc), "hdeem_clear");	//extra clear should not make a problem
 
 		vrSensorLabel.push_back(bmc.name_blade_sensors[0]);
 		for (int vr = 0; vr < bmc.nb_vr_sensors; vr++)
 			vrSensorLabel.push_back(bmc.name_vr_sensors[vr]);
 	}
 	
-	static void close() { hdeem_close(&bmc); }
+	static void close()
+	{
+		hdeem_close(&bmc); //void
+	}
+	
 	static void start(timespec & time)
 	{
 		MERIC_INFO << "HDEEM START\n";
 		clock_gettime(CLOCK_REALTIME, &time);
-		if (hdeem_start(&bmc))
+		if (checkHDEEM(hdeem_start(&bmc), "hdeem_start"))
 		{
 			//second start according to hdeem reference guide
 			std::cerr << "HDEEM ERROR: function start (1st), trying 2nd start...\n";
-			checkHDEEM(hdeem_clear(&bmc), "clear");
-			int status = hdeem_start(&bmc);
-			if (status)
+			checkHDEEM(hdeem_clear(&bmc), "hdeem_clear");
+			if (checkHDEEM(hdeem_start(&bmc), "hdeem_start (2nd)"))
 			{
-				checkHDEEM(status, "start (2nd)");
 				exit(99);
 			}
 		}
@@ -69,38 +71,38 @@ public:
 		MERIC_INFO << "HDEEM STOP\n";
 		usleep(2e4); //extra 20 blade samples, 2 vr samples
 		clock_gettime(CLOCK_REALTIME, &time);
-		checkHDEEM(hdeem_stop(&bmc), "stop");
+		checkHDEEM(hdeem_stop(&bmc), "hdeem_stop");
 	}
 
 	static void getCounterValues(std::map<std::string, double> & record)	//HDEEM in counter regime - counterstore
 	{
 		hdeem_stats_reading_t stats;
-		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
+		checkHDEEM(hdeem_get_stats(&bmc, &stats), "hdeem_get_stats");
 		record[SUM_ENERGY_LABEL] = stats.energy_blade_values.value[0];
 		if(detailedMode)
 		{
 			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
 				record[vrSensorLabel[sensorID]+" [J]"] = stats.energy_vr_values.value[sensorID-1];
 		}
-		hdeem_stats_free(&stats);
+		hdeem_stats_free(&stats); //void
 	}
 	
 	static void getDetailedCounterValues(std::array<double, PROBE_NUMBER> &energy)		//HDEEM in counter regime - TimeEnergyStore - TODO remove
 	{
 		hdeem_stats_reading_t stats;
-		checkHDEEM(hdeem_get_stats(&bmc, &stats), "get_stats");
+		checkHDEEM(hdeem_get_stats(&bmc, &stats), "hdeem_get_stats");
 		energy[0] = stats.energy_blade_values.value[0];
 		memcpy(energy.data() + 1, stats.energy_vr_values.value, (vrSensorLabel.size() - 1) * sizeof(double));
 		hdeem_stats_free(&stats);
 	}
 
 	static void setTimeAdjustment(timespec start);
-	static void getStatus(hdeem_status_t &status) { checkHDEEM(hdeem_check_status(&bmc, &status), "get_status"); }
+	static void getStatus(hdeem_status_t &status) { checkHDEEM(hdeem_check_status(&bmc, &status), "hdeem_check_status"); }
 	static int getSamples()	// HDEEM in continual regime
 	{
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
-		checkHDEEM(hdeem_get_global(&bmc, &_samples), "get_global");
+		checkHDEEM(hdeem_get_global(&bmc, &_samples), "hdeem_get_global");
 		clock_gettime(CLOCK_REALTIME, &time2);
 		MERIC_INFO << "MERIC GET SAMPLES: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 
@@ -118,7 +120,7 @@ public:
 	{
 		timespec time1, time2;
 		clock_gettime(CLOCK_REALTIME, &time1);
-		hdeem_data_free(&_samples);
+		hdeem_data_free(&_samples); //void
 		clock_gettime(CLOCK_REALTIME, &time2);
 		MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
 	}
@@ -137,11 +139,13 @@ private:
 	static double _startTime;
 	static bool detailedMode;
 
-	static void checkHDEEM(int status, const std::string &function)
+	static int checkHDEEM(int status, const std::string &function)
 	{
-		if (status) {
+		if (status)
+		{
 			std::cerr << "HDEEM ERROR: function " << function << " return status " << std::hex << status << "\n";
 		}
+		return status;
 	}
 };
 
