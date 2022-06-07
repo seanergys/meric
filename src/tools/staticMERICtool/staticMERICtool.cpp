@@ -73,9 +73,11 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		std::cout << "Runtime [s] = " << runtime << std::endl;
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
-			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
+			int cumulative = 0;
+			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, cumulative, iterator->first);
 			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << value << std::endl;
-			summary += value;
+			if (cumulative > 0)
+				summary += value;
 		}
 		if (Tmode::getSummaryCounterName() != "")
 		{
@@ -87,7 +89,10 @@ void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::
 		//TODO what if there is no summary
 		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
 		{
-			summary += Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, iterator->first);
+			int cumulative = 0;
+			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, cumulative, iterator->first);
+			if (cumulative > 0)
+				summary +=value;
 		}
 		std::cout <<  summary + POWER_BASELINE*runtime << std::endl;
 	}

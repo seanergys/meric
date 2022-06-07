@@ -31,7 +31,7 @@ public:
 	static void close();
 	
 	static void getCounterValues(std::map<std::string, uint64_t> & record);
-	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter = "", std::string regionName = "");
+	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int & cumulative, std::string counter = "", std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
@@ -53,7 +53,7 @@ public:
 	static void init() {};
 	static void close() {};
 	static void getCounterValues(std::map<std::string, uint64_t> & record) {};
-	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter = "", std::string regionName = "");
+	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int & cumulative, std::string counter = "", std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);

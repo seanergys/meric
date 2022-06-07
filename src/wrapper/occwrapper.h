@@ -115,7 +115,7 @@ public:
 	};
 	static void getCounterValues(std::map<std::string, uint64_t> & record);
 	static void initMap(std::map<std::string, uint64_t> & dict);
-	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter, std::string regionName = "");
+	static uint64_t getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "");
 	static inline std::string getSummaryCounterName() { return ""; }; //no artifitial counter
 	static  inline std::string getSourceLabel() { return "OCC"; };
 	static std::string getCounterLabel(std::string counter);

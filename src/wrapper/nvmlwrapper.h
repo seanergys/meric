@@ -27,7 +27,7 @@ public:
 	
 	static void getCounterValues(std::map<std::string, unsigned long long> & record);
 	static void initMap(std::map<std::string, unsigned long long> & dict);
-	static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, std::string counter, std::string regionName = "");
+	static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel() {return "NVML";};
 	static std::string getCounterLabel(std::string counter);

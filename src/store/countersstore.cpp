@@ -45,9 +45,11 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	double time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
 	{	 //TODO in case of msrcounters it doesn't make sence share the values since they are not used
-		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, counterIt.first, _name[_records[iStarts].region]);
+		int cumulative = 0; //identifies whether we should store a summary value of the counter, currently one cumulative = 1 is used, but in general there could be several cumulative counters, each with its summary counter label -> such solution requires RType summuary to be an array and TCounter::getSummaryCounterName() must take id of the summary counter as an argument
+		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, cumulative, counterIt.first, _name[_records[iStarts].region]);
 		stats.push_back(value);
-		summary += value;
+		if (cumulative > 0)
+			summary += value;
 	}
 
 	if (TCounter::getSummaryCounterName() != "")
@@ -76,8 +78,10 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 		std::string label = TCounter::getCounterLabel(counterIt.first);
 		if (label != "")
 		{
-			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, counterIt.first, _name[_records[iStarts.back()].region]);
-			summary += value;
+			int cumulative = 0;
+			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, cumulative, counterIt.first, _name[_records[iStarts.back()].region]);
+			if (cumulative > 0)
+				summary += value;
 			ss << label << "," << std::fixed << std::setprecision(5) << value << std::endl;
 		}
 	}

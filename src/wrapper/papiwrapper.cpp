@@ -181,8 +181,9 @@ std::string PAPI::getSummaryCounterName()
 }
 
 // solve counter overflow
-unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName)
+unsigned long long PAPI::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
+	cumulative = 0;
 	if (stopValue < startValue)
 	{
 		MERIC_INFO << "PAPI OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl;

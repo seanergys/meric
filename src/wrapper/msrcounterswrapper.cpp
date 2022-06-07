@@ -71,14 +71,15 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 
 void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios)
 {
+	int cumulative = 0;
 	//frequencies
 	int i = 0;
 	std::string suffix = "_0";
 	while(stop.count(MSR_COUNTERS::APERF + suffix) && stop.count(MSR_COUNTERS::MPERF + suffix))
 	{
 		ratios["CPU_FREQ"+suffix+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_Pstate_PERF(
-			getResultValue(start[MSR_COUNTERS::APERF + suffix], stop[MSR_COUNTERS::APERF + suffix], runtime), 
-			getResultValue(start[MSR_COUNTERS::MPERF + suffix], stop[MSR_COUNTERS::MPERF + suffix], runtime), 
+			getResultValue(start[MSR_COUNTERS::APERF + suffix], stop[MSR_COUNTERS::APERF + suffix], runtime, cumulative), 
+			getResultValue(start[MSR_COUNTERS::MPERF + suffix], stop[MSR_COUNTERS::MPERF + suffix], runtime, cumulative), 
 			nominal_freq);
 		suffix = "_" +std::to_string(++i);
 	}
@@ -87,7 +88,7 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 	while(stop.count(MSR_COUNTERS::UCF_FREQ + suffix))
 	{
 		ratios["CPU_UNCORE_FREQ"+suffix+" [Hz]"] = CountersRates::CPU_UNCORE_FREQUNECY(
-			getResultValue(start[MSR_COUNTERS::UCF_FREQ + suffix], stop[MSR_COUNTERS::UCF_FREQ + suffix], runtime),
+			getResultValue(start[MSR_COUNTERS::UCF_FREQ + suffix], stop[MSR_COUNTERS::UCF_FREQ + suffix], runtime, cumulative),
 			runtime);
 		suffix = "_" + std::to_string(++i);
 	}
@@ -98,7 +99,7 @@ void MSR::getRatios(std::map<std::string, uint64_t>& start, std::map<std::string
 	while(stop.count(MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix))
 	{
 		ratios["RAPL_PKG_ACTIVE_RATIO"+suffix] = CountersRates::RAPL_ACTIVE_RATIO(
-			getResultValue(start[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], stop[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], runtime)* RAPL::getUnit(MSR_COUNTERS::RAPL_PKG_ACTIVE),
+			getResultValue(start[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], stop[MSR_COUNTERS::RAPL_PKG_ACTIVE + suffix], runtime, cumulative)* RAPL::getUnit(MSR_COUNTERS::RAPL_PKG_ACTIVE),
 			runtime);
 		suffix = "_" + std::to_string(++i);
 	}
@@ -140,8 +141,9 @@ std::string MSR::getSummaryCounterName()
 }
 
 // solve counter overflow
-uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter, std::string regionName)
+uint64_t MSR::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
+	cumulative = 0;
 	if (stopValue < startValue)
 	{
 		MERIC_INFO << "MSR OVERFLOW, MAX VALUE: " << COUNTERMAX <<" " <<counter << std::endl

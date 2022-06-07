@@ -48,7 +48,7 @@ public:
 	
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
-	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName = "");
+	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "");
 /**
  * Since RAPL only provides measurement for specific domains, and we are 
  * interested in the overall energy consumption of the node (domains under one 
@@ -60,7 +60,10 @@ public:
 #ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
 #else // _AMD_
-		return "";
+		if (detailedMode)
+			return RAPL_SUM_ENERGY;
+		else
+			return "";
 #endif
 	};
 	static std::string getSourceLabel();
@@ -81,7 +84,7 @@ public:
 	static void close() {};
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
-	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName = "") {return 0;};
+	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "") {return 0;};
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName()
 	{

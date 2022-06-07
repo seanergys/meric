@@ -16,13 +16,22 @@ std::map<std::string, unsigned long long int> RAPL::counters;
  * stopValue and time between these two measurements
  * handles counter overflow
  **/
-double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, std::string counter, std::string regionName)
+double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
 	std::string counterName;
 	if (detailedMode)
 		counterName = counter.substr(0, counter.find_last_of('_'));
 	else
 		counterName = counter;
+
+#ifdef _INTEL_
+	cumulative = 1;
+#else //_AMD_
+	if (counterName == RAPL_PCKG_ENERGY)
+		cumulative = 1;
+	else
+		cumulative = 0;
+#endif
 	
 	if (stopValue < startValue)
 	{	

@@ -30,8 +30,9 @@ void OCC::init(bool detailed)
  * stopValue and time between these two measurements
  * handles counter overflow
  **/
-uint64_t OCC::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, std::string counter, std::string regionName)
+uint64_t OCC::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
+	cumulative = 0;
 	std::string counterName;
 	if (detailedMode && counter != "PWRSYS")
 		counterName = counter.substr(0, counter.find_last_of('_'));

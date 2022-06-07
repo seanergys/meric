@@ -15,8 +15,9 @@ std::map<std::string, unsigned long long> NVML::counters;
  * stopValue and time between these two measurements
  * handles counter overflow
  **/
-double NVML::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, std::string counter, std::string regionName)
+double NVML::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
+	cumulative = 1;
 	if (stopValue < startValue)
 	{	
 		MERIC_INFO << "NVML OVERFLOW, MAX VALUE: " << COUNTERMAX << std::endl;

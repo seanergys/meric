@@ -122,8 +122,9 @@ void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 	}
 }
 
-double HDEEM::getResultValue(double startValue, double stopValue, double runtime, std::string counter, std::string regionName)
+double HDEEM::getResultValue(double startValue, double stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
 {
+	cumulative = 0;
 	double energy = stopValue - startValue;
 
 	if (energy <= 0)
