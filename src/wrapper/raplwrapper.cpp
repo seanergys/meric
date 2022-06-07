@@ -105,11 +105,80 @@ void RAPL::initCountersUnits()
 #endif
 
 
-#ifdef HAVE_X86_ADAPT_H
 /**
  * read values of the counters (std::string) from the input dictionary and store
  * the values into the dictionary (unsigned long long int)
  **/
+#if defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
+{
+	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		record[iterator->first] = 0;
+
+	if (detailedMode)
+	{
+		for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		{
+			uint64_t domainEnergy = 0;
+			std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
+			int die = std::stoi(iterator->first.substr(itemName.length()+1));
+
+#ifdef _AMD_
+			if (itemName == RAPL_CORE_ENERGY)
+			{
+			#ifdef HAVE_MSR_SAFE
+				read_msr(Environment::mapThreadsToCore[die][0], counterDefines[itemName], &domainEnergy);
+			#elif defined HAVE_GEOPM_H
+				domainEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapThreadsToCore[die][0]));
+			#endif
+			}
+			else
+#endif
+			{
+				#ifdef HAVE_MSR_SAFE
+					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &domainEnergy);
+				#elif defined HAVE_GEOPM_H
+					domainEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
+				#endif
+			}
+			record [iterator->first] = (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+		}
+	}else
+	{
+		for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		{
+#ifdef _AMD_
+			if (iterator->first == RAPL_CORE_ENERGY)
+			{
+				for (int die=0; die<Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET; die++)
+				{
+					uint64_t domainEnergy = 0;
+					#ifdef HAVE_MSR_SAFE
+						read_msr(Environment::mapThreadsToCore[die][0], counterDefines[iterator->first], &domainEnergy);
+					#elif defined HAVE_GEOPM_H
+						domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapThreadsToCore[die][0]));
+					#endif
+					record [iterator->first] += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+				}
+			}
+			else
+#endif
+			{
+				for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
+				{
+					uint64_t domainEnergy = 0;
+					#ifdef HAVE_MSR_SAFE
+						read_msr(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &domainEnergy);
+					#elif defined HAVE_GEOPM_H
+						domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
+					#endif
+					record [iterator->first] += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+				}
+			}
+		}	
+	}
+}
+#elif defined _INTEL_ && defined HAVE_X86_ADAPT_H
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -171,50 +240,6 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		}	
 	}
 }
-
-////////////////////////////////////////////////////////////////////////////////
-#elif defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
-void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
-{
-	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-		record[iterator->first] = 0;
-
-	if (detailedMode)
-	{
-		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
-		{
-			uint64_t dieEnergy = 0;
-			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-			{
-				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
-					continue;
-				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
-				#ifdef HAVE_MSR_SAFE
-					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &dieEnergy);
-				#elif defined HAVE_GEOPM_H
-					dieEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
-				#endif
-				record [iterator->first] = (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-			}
-		}
-	}else
-	{
-		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
-		{
-			uint64_t dieEnergy = 0;
-
-			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-			{
-				#ifdef HAVE_MSR_SAFE
-					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &dieEnergy);
-				#elif defined HAVE_GEOPM_H
-					dieEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
-				#endif
-				record [iterator->first] += (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-			}
-		}	
-	}
-}
 #endif
 
 /**
@@ -261,7 +286,10 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 	names.push_back(RAPL_RAM_ENERGY);
 #elif defined _AMD_
 	names.push_back(RAPL_PCKG_ENERGY);
-	names.push_back(RAPL_CORE_ENERGY);
+	if (detailedMode)
+		names.push_back(RAPL_CORE_ENERGY);
+	else
+		counterLabel[RAPL_PCKG_ENERGY] = RAPL_SUM_ENERGY;
 #endif
 
 // in detailed mode RAPL gives us values for each cpu 
@@ -270,6 +298,29 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 // DO NOT EDIT THE REST OF THIS FUNCTION
 	if (detailedMode)
 	{
+#ifdef _AMD_
+		std::vector<std::string>::iterator it = find(names.begin(), names.end(), RAPL_CORE_ENERGY);
+		if (it != names.end())
+		{
+			const int suffixLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE)+1;
+
+			for(int core = 0; core != Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; core++)
+			{
+				std::ostringstream os;
+				os << std::setfill('0') << std::setw(suffixLength) << core;
+				const std::string counterName = RAPL_CORE_ENERGY + suffix + os.str();
+				dict[counterName] = 0;
+				
+				counterLabel[counterName] = counterLabel[RAPL_CORE_ENERGY].substr(0,counterLabel[RAPL_CORE_ENERGY].find(' '))+suffix + os.str() + counterLabel[RAPL_CORE_ENERGY].substr(counterLabel[RAPL_CORE_ENERGY].find(' '));
+
+#ifdef HAVE_MSR_SAFE
+				counterDefines[counterName] = counterDefines[RAPL_CORE_ENERGY];
+#endif
+			}
+			names.erase(it);
+		}
+#endif
+	
 		const int suffixLength = log10(Environment::SOCKETS_PER_NODE)+1;
 		for(int die = 0; die != Environment::SOCKETS_PER_NODE; die++)
 		{

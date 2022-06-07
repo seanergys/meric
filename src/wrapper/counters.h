@@ -151,27 +151,38 @@ static std::map<const std::string, std::string> counterLabel = {
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSR_RAPL_COUNTERS {
 
-const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
-const std::string RAPL_RAM_ENERGY  = "MSR_DRAM_ENERGY_STATUS";
-const std::string RAPL_PLATFORM_ENERGY = "MSR_PLATFORM_ENERGY_COUNTER";
-const std::string RAPL_CORE_ENERGY = "MSR_CORE_ENERGY_STATUS";
-const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
-/*
-const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //not available
-const std::string RAPL_PP1_ENERGY  = "MSR_PP1_ENERGY_STATUS";
-*/
+//not a counter to measure
+// Intel = PCKG+RAM
+// AMD = PCKG
+const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";
 
+#ifdef _INTEL_
+	const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
+	const std::string RAPL_RAM_ENERGY  = "MSR_DRAM_ENERGY_STATUS";
+//	const std::string RAPL_PP0_ENERGY  = "MSR_PP0_ENERGY_STATUS"; //client CPUs only
+//	const std::string RAPL_PP1_ENERGY  = "MSR_PP1_ENERGY_STATUS"; //client CPUs only
+	const std::string RAPL_PLATFORM_ENERGY = "MSR_PLATFORM_ENERGY_COUNTER";
+#else // _AMD_
+	const std::string RAPL_PCKG_ENERGY = "MSR_PKG_ENERGY_STATUS";
+	const std::string RAPL_CORE_ENERGY = "MSR_CORE_ENERGY_STATUS";
+#endif
 
+// TODO _INTEL_
 const std::string RAPL_PCKG_POWER_LIMIT = "MSR_PKG_POWER_LIMIT";
 const std::string RAPL_RAM_POWER_LIMIT  = "MSR_DRAM_POWER_LIMIT";
 const std::string RAPL_PLATFORM_POWER_LIMIT = "MSR_PLATFORM_POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR_RAPL_POWER_UNIT_TIMEWINDOW";
 
 static std::map<const std::string, std::string> counterLabel = {
+#ifdef _INTEL_
 	{ RAPL_PCKG_ENERGY,      "PCKG [J]" },
 	{ RAPL_RAM_ENERGY,       "RAM [J]"  },
+	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
+#else // _AMD_
+	{ RAPL_PCKG_ENERGY,      "PCKG [J]" },
 	{ RAPL_CORE_ENERGY,      "CORE [J]" },
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
+#endif
 };
 
 #ifdef SRC_WRAPPER_MSRS_H_
@@ -181,6 +192,9 @@ static std::map<const std::string, uint64_t> counterDefines = {
 	#endif
 	#ifdef MSR_DRAM_ENERGY_STATUS
 	{ RAPL_RAM_ENERGY,       MSR_DRAM_ENERGY_STATUS },
+	#endif
+	#ifdef MSR_PLATFORM_ENERGY_COUNTER
+	{ RAPL_PLATFORM_ENERGY,  MSR_PLATFORM_ENERGY_COUNTER },
 	#endif
 	#ifdef MSR_CORE_ENERGY_STATUS
 	{ RAPL_CORE_ENERGY,      MSR_CORE_ENERGY_STATUS },

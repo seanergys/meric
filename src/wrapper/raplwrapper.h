@@ -59,7 +59,7 @@ public:
 	{
 #ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
-#else
+#else // _AMD_
 		return "";
 #endif
 	};
@@ -87,7 +87,7 @@ public:
 	{
 #ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
-#else
+#else // _AMD_
 		return "";
 #endif
 	};
