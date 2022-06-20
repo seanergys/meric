@@ -101,7 +101,8 @@ protected:
 		_levels.resize(_name.size());
 		for (std::string folderName : _name)
 		{
-			mutils::createDir(outputDir + "/" + folderName);
+			if (folderName != "")
+				mutils::createDir(outputDir + "/" + folderName);
 		}
 		
 		std::vector<size_t> starts;
@@ -113,6 +114,16 @@ protected:
 //					std::cerr << "MERIC WARNING: region "<< _name[records[i].region] << " is called more than once in one call tree, check the call tree if everything is ok\n";
 				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
+			}
+			else if (_name[records[i].region] == "")	// "record" of an ignored region
+			{
+				_counters[records[i].region]++;
+				for(size_t j=0; j<_levels.size(); j++)
+				{
+					if (_levels[j] > _levels[records[i].region])
+						_counters[j] = 0;
+				}
+				starts.pop_back();
 			}
 			else
 			{
@@ -158,6 +169,16 @@ protected:
 //					std::cerr << "MERIC ERROR: region "<< _name[records[i].region] << " is called more than once in one call tree, check the call tree if everything is ok\n";
 				_levels[records[i].region] = starts.size();
 				starts.push_back(i);
+			}
+			else if (_name[records[i].region] == "")	// "record" of an ignored region
+			{
+				_counters[records[i].region]++;
+				for(size_t j=0; j<_levels.size(); j++)
+				{
+					if (_levels[j] > _levels[records[i].region])
+						_counters[j] = 0;
+				}
+				starts.pop_back();
 			}
 			else
 			{

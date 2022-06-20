@@ -41,7 +41,7 @@ public:
 		MERIC_INFO << "region '" << region << "' started\n";
 	}
 
-	virtual double stop()
+	virtual double stop(const std::string region = "")
 	{
 		//stop should be in opposite order as start
 		//if continual mode is in use (MERIC_HDEEM_SAMPLES), we want to start it first and stop it last
