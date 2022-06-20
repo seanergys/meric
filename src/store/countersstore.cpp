@@ -44,12 +44,15 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	RType value;
 	double time = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	for(auto const &counterIt : _records[iEnd].record)
-	{	 //TODO in case of msrcounters it doesn't make sence share the values since they are not used
+	{
 		int cumulative = 0; //identifies whether we should store a summary value of the counter, currently one cumulative = 1 is used, but in general there could be several cumulative counters, each with its summary counter label -> such solution requires RType summuary to be an array and TCounter::getSummaryCounterName() must take id of the summary counter as an argument
-		value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, cumulative, counterIt.first, _name[_records[iStarts].region]);
-		stats.push_back(value);
-		if (cumulative > 0)
-			summary += value;
+		if (TCounter::getCounterLabel(counterIt.first) != "")
+		{
+			value = TCounter::getResultValue(_records[iStarts].record[counterIt.first], counterIt.second, time, cumulative, counterIt.first, _name[_records[iStarts].region]);
+			stats.push_back(value);
+			if (cumulative > 0)
+				summary += value;
+		}
 	}
 
 	if (TCounter::getSummaryCounterName() != "")
