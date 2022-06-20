@@ -37,6 +37,11 @@ void MERIC_Close()
 
 void MERIC_MeasureStart(const char* name)
 {
+	if (holder == NULL)
+	{
+		std::cerr << "MERIC WARNING: initialization when region '" << name << "' starts\n";
+		MERIC_Init();
+	}
 	holder->start(name);
 }
 
