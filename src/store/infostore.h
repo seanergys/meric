@@ -65,7 +65,7 @@ public:
 	{
 		MERIC_INFO << "Create InfoStore\n";
 	}
-
+	
 	void initStore(	unsigned int & counter,
 					const std::string outputDir,
 					const std::string outputFilename,
@@ -123,7 +123,6 @@ public:
 			{
 				do
 				{
-					struct json_object_element_s* value;
 					if(std::string(data->name->string) == "Execution ID")
 					{
 						measurementInfo.ExecutionID = std::stoul(std::string(((struct json_string_s*)data->value->payload)->string)) + 1;
