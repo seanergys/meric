@@ -263,9 +263,9 @@ std::string RAPL::getSourceLabel()
  * each counter has a label, that will represent this counter in the output file
  * returns a label of the input counter
  **/
-std::string RAPL::getCounterLabel(std::string counter)
+std::string RAPL::getCounterLabel(const std::string counter)
 {
-	std::map<std::string, std::string>::iterator it = counterLabel.find(counter);
+	std::map<const std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
 		return it->second;
 	else

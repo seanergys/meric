@@ -45,7 +45,7 @@ public:
 	{
 		//stop should be in opposite order as start
 		//if continual mode is in use (MERIC_HDEEM_SAMPLES), we want to start it first and stop it last
-		for(int i=-1+_storeList.size();i>=0; i--)
+		for(int i=_storeList.size()-1;i>=0; i--)
 		{
 			if (_storeList[i]->getMPIWrite())
 				_storeList[i]->addEnd(_stack.back());

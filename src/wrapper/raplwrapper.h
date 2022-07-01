@@ -67,7 +67,7 @@ public:
 #endif
 	};
 	static std::string getSourceLabel();
-	static std::string getCounterLabel(std::string counter);
+	static std::string getCounterLabel(const std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
 	static void initCountersUnits();
@@ -95,7 +95,7 @@ public:
 #endif
 	};
 	static std::string getSourceLabel();
-	static std::string getCounterLabel(std::string counter);
+	static std::string getCounterLabel(const std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios) {};
 	static void initCountersUnits() {};
 	static double getUnit(std::string counterName);
