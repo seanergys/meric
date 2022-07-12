@@ -123,7 +123,7 @@ void OCC::getCounterValues(std::map<std::string, uint64_t> & record)
  **/
 std::string OCC::getCounterLabel(std::string counter)
 {
-	std::map<std::string, std::string>::iterator it = counterLabel.find(counter);
+	std::map<const std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
 		return it->second;
 	else

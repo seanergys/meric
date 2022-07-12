@@ -168,7 +168,7 @@ std::string PAPI::getSourceLabel()
 
 std::string PAPI::getCounterLabel(std::string counter)
 {
-	std::map<std::string, std::string>::iterator it = PAPI_COUNTERS::counterLabel.find(counter);
+	std::map<const std::string, std::string>::iterator it = PAPI_COUNTERS::counterLabel.find(counter);
 	if (it != PAPI_COUNTERS::counterLabel.end())
 		return it->second;
 	else
