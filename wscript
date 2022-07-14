@@ -23,18 +23,22 @@ def configure(ctx):
         if ('CXX' in ctx.env):
             ctx.options.cpp=ctx.env['CXX'][0].split('/')[-1]
         elif ('CC' in ctx.env):
-            if (ctx.env['CC'][0].split('/')[-1] == 'icc'):
+            if (ctx.env['CC'][0].split('/')[-1] == 'icc'): # Intel
                 ctx.options.cpp="icpc"
-            elif (ctx.env['CC'][0].split('/')[-1] == 'gcc'):
+            elif (ctx.env['CC'][0].split('/')[-1] == 'gcc'): # GCC
                 ctx.options.cpp="g++"
-            elif (ctx.env['CC'][0].split('/')[-1] == 'clang'):
+            elif (ctx.env['CC'][0].split('/')[-1] == 'clang'): # Clang
                 ctx.options.cpp="clang++"
+            # Cray (cc), Fujitsu (FCC)
         else:
             ctx.options.cpp="g++" # default C++ compiler
     try:
         ctx.load(ctx.options.cpp)
     except:
-        ctx.fatal("C++ compiler not foud, set a correct one by '--cpp=' parameter")
+        if ('CXX' in ctx.env):
+            ctx.load("g++")
+        else:
+            ctx.fatal("C++ compiler not foud, set a correct one by '--cpp=' parameter")
     
     # MPI compiler
     if (ctx.options.mpi == ""):
@@ -48,35 +52,34 @@ def configure(ctx):
     
     if ctx.options.flags:
         ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])                 #no openMP
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
     if (ctx.options.includes):
         for path in ctx.options.includes.split():
-            if len(path) > 2 and path[0:2] == "-I":
+            if path[0] == '-':
                 ctx.env.append_unique("CXXFLAGS",path)
             else:
                 ctx.env.append_unique("CXXFLAGS","-I"+path)
     if (ctx.options.libpaths):
         for path in ctx.options.libpaths.split():
-            if len(path) > 2 and path[0:2] == "-L":
+            if path[0] == '-':
                 ctx.env.append_unique("LINKFLAGS", path)
             else:
                 ctx.env.append_unique("LINKFLAGS", "-L"+path)
     
-    if ctx.options.cpp == "icpc":
-        if not ctx.options.noopenmp:
+    if ctx.options.noopenmp:
+        ctx.env.append_unique("NOOPENMP", "NOOPENMP" ) # without openMP
+    else:
+        ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ]) # with openMP
+        if ctx.options.cpp == "icpc":
             ctx.env.append_unique("CXXFLAGS",  [ "-qopenmp" ])
             ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
-            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
+        elif ctx.options.cpp == "FCC":
+            ctx.env.append_unique("CXXFLAGS",  [ "-Kopenmp" ])
+            ctx.env.append_unique("LINKFLAGS", [ "-Kopenmp" ])
         else:
-            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-    else:
-        if not ctx.options.noopenmp:
             ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
             ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
-            ctx.env.append_unique("DEFINES", [ "HAVE_OMP_H=1" ])                #with openMP
-        else:
-            ctx.env.append_unique("NOOPENMP", "NOOPENMP" )
-    
+
     vendor = getCPUvendor()
     if vendor != "":
         ctx.env.append_unique("DEFINES", [ vendor ])
