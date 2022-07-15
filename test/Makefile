@@ -1,8 +1,10 @@
 ################################################################################
 # MERIC test applications Makefile                                             #
-# reads $CXX, $FC and $MPICXX environment variables                            #
-# if env variables not set, using GNU compiler as default                      #
-# in the second section specify which libraries you use and their paths        #
+# Reads $CXX, $FC, $MPICXX and $CXX_FLAGS environment variables.               #
+# If env variables not set, using GNU compiler as default.                     #
+# In the second section of the Makefile specify which libraries you use and    #
+# their paths                                                                  #
+#                                                                              #
 ################################################################################
 
 ifeq ($(CXX),)
@@ -23,35 +25,35 @@ ifeq ($(MPICXX),)
 	endif
 endif
 
-ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),g++)
-	OPENMP=-fopenmp
-else
+ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),icpc)
 	OPENMP=-qopenmp
+else ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),FCC)
+	OPENMP=-Kopenmp
+else
+	OPENMP=-fopenmp
 endif
 
+
 ################################################################################
-#HDEEM=-L../hdeem -lhdeem -lfreeipmi
-#X86ADAPT=-L/usr/local/lib -lx86_adapt
-#CPUFREQ=-L$(HOME)/cpufrequtils-008/ -lcpufreq
-#CPUFREQ=-L/usr/lib64/ /lib64/libcpupower.so.0
+#HDEEM=-lhdeem -lfreeipmi
+#X86ADAPT=-lx86_adapt
+#CPUFREQ=--lcpufreq
 #CPUFREQ=-L/lib64/ -lcpupower
 #PAPI=-lpapi
-#PAPI=-L/sw/taurus/libraries/papi/5.5.1/lib/ -lpapi
-#PAPI=-L/apps/papi/5.4.3/lib/ -lpapi # PAPI on BSC ARM machines
-#RESTCLIENT=-L$(HOME)/rest-client/libs/ -lrestclient-cpp
+#RESTCLIENT= -lrestclient-cpp
+#NUMA=-lnuma
+#NVML=-lnvidia-ml
+#ESMI=-le_smi64
+#LIBMSR=-lmsr
 ################################################################################
-#if x86_adapt is missing, numa library is required
-ifeq ($(X86ADAPT),)
-	X86ADAPT=-lnuma
-endif
 MERIC=-L../lib -I../include 
-LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT)
+LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
 BINARIES=test test_mpi blasTest samples sleepTest fortTest overHead
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTest
+all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
 
  ######
 sleepTest: sleep_test.cpp
@@ -64,7 +66,7 @@ basicTest: test.cpp
 	$(CXX)    -O0 -g test.cpp -o test -DUSE_MERIC -lmeric $(LIBS)
 
 scorepTest: test.cpp
-	scorep --online-access --user --thread=none $(CXX) -O0 -g test.cpp $(MERIC) -lrt -o test -DUSE_SCOREP_MANUAL
+	scorep --online-access --user --thread=none $(CXX) -O0 -g test.cpp $(MERIC) $(LIBS) -o test -DUSE_SCOREP_MANUAL
 
 overhead: overhead_test.cpp
 	$(CXX)   -g overhead_test.cpp -std=c++11 -DUSE_MERIC -lmeric $(LIBS) -o overHead
@@ -82,6 +84,11 @@ blasTestInfo:
 
 fortTest:
 	$(FC) fort_test.f90 -cpp -lmeric $(LIBS) -o fortTest -DUSE_MERIC
+
+fortTestInfo:
+	$(info )
+	$(info INFO: to compile fort_test.f90 compile MERIC fortran using "make fortran" and compile the test app using "make fortTest" )
+	$(info )
 
 
  ######
