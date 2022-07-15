@@ -29,14 +29,18 @@ def configure(ctx):
                 ctx.options.cpp="g++"
             elif (ctx.env['CC'][0].split('/')[-1] == 'clang'): # Clang
                 ctx.options.cpp="clang++"
-            # Cray (cc), Fujitsu (FCC)
+            # Cray (cc), Fujitsu (FCC), ARM (armclang++)
         else:
             ctx.options.cpp="g++" # default C++ compiler
+
     try:
         ctx.load(ctx.options.cpp)
     except:
         if ('CXX' in ctx.env):
-            ctx.load("g++")
+            if (ctx.env['CXX'][0].endswith('clang++')):
+                ctx.load("clang++")
+            else:
+                ctx.load("g++")
         else:
             ctx.fatal("C++ compiler not foud, set a correct one by '--cpp=' parameter")
     
