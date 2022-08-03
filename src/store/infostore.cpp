@@ -45,8 +45,8 @@ void InfoStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, si
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	ss << "# Job info" << std::endl
 	   << "JOB ID," << _jobID << "."  << _stepID  << std::endl
-	   << "Runtime of function [s],"  << duration << std::endl
-	   << "Function start timestamp," << std::setprecision (15) << mutils::timeToDouble(_records[iStarts.back()].time) << std::endl;
+	   << "Runtime of function [s],"  << std::fixed << std::setprecision  (6) << duration << std::endl
+	   << "Function start timestamp," << std::fixed << std::setprecision (15) << mutils::timeToDouble(_records[iStarts.back()].time) << std::endl;
 }
 
 

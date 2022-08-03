@@ -35,16 +35,16 @@ void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<
 	if (sumEnergy > 0.0)
 	{
 		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade):\n"
-		   << "AVG Energy consumption [J]," << sumEnergy/this->_size << std::endl
-		   << "MAX Energy consumption [J]," << maxEnergy << std::endl
-		   << "MIN Energy consumption [J]," << minEnergy << std::endl
-		   << "SUM Energy consumption [J]," << sumEnergy << std::endl;
+		   << "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << sumEnergy/this->_size << '\n'
+		   << "MAX Energy consumption [J]," << maxEnergy << '\n'
+		   << "MIN Energy consumption [J]," << minEnergy << '\n'
+		   << "SUM Energy consumption [J]," << sumEnergy << '\n';
 	}
 	else
 	{
 		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade):\n"
-		   << "# Blade summary - ERROR" << std::endl
-		   << "SUM Energy consumption [J],0"<< std::endl;
+		   << "# Blade summary - ERROR\n"
+		   << "SUM Energy consumption [J],0\n";
 	}
 
 	for (unsigned int sensorID = 1; sensorID < StoreSamplesType::vrSensorLabel.size(); sensorID++)
@@ -68,10 +68,10 @@ void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<
 
 		if (sumEnergy > 0.0)
 			ss << "# SAMPLES - " << StoreSamplesType::getSourceLabel() << " ("<< StoreSamplesType::vrSensorLabel[sensorID] <<"):\n"
-			   << "AVG Energy consumption [J]," << sumEnergy/this->_size << std::endl
-			   << "MAX Energy consumption [J]," << maxEnergy << std::endl
-			   << "MIN Energy consumption [J]," << minEnergy << std::endl
-			   << "SUM Energy consumption [J]," << sumEnergy << std::endl;
+			   << "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << sumEnergy/this->_size << '\n'
+			   << "MAX Energy consumption [J]," << maxEnergy << '\n'
+			   << "MIN Energy consumption [J]," << minEnergy << '\n'
+			   << "SUM Energy consumption [J]," << sumEnergy << '\n';
 	}
 }
 

@@ -38,7 +38,7 @@ template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedReg
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
 
 	if (msg != "")
-		std::cerr << msg <<  _name[_records[iStarts].region]<< std::endl;
+		std::cerr << msg <<  _name[_records[iStarts].region] << std::endl;
 	
 	// Blade values
 	if(lastBlade > 0 && lastBlade > firstBlade)
@@ -94,8 +94,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	if (msg != "" && msg.find("detailed") == std::string::npos)
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 
-	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: "<< firstBlade << " in time "<< int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
-	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  "<< lastBlade << " in time "<< int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " << int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
+	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade << " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
 	
 	bool staticRegion = false;
 	std::ofstream samplesStream;
@@ -121,24 +121,24 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
 			size_t it = firstBlade;
 			for (size_t i = 0; i < samples.size(); i++)
-				samplesStream << it++ << "," << samples[i] << std::endl;
+				samplesStream << it++ << "," << samples[i] << '\n';
 		}
 		avgWatts = energy[0]/(lastBlade-firstBlade);
 		energyConsumption = duration * avgWatts;
 
 		ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
-		   << TSystem::SUM_ENERGY_LABEL << "," << energyConsumption << std::endl
-		   << "MAX power [W]" << "," << maxWatts[0] << std::endl
-		   << "MIN power [W]" << "," << minWatts[0] << std::endl
-		   << "AVG power [W]" << "," << avgWatts << std::endl
-		   << "ID of first sample" << "," << firstBlade << std::endl
-		   << "ID of last sample" << "," << lastBlade-1 << std::endl;
+		   << TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
+		   << "MAX power [W]" << "," << maxWatts[0] << '\n'
+		   << "MIN power [W]" << "," << minWatts[0] << '\n'
+		   << "AVG power [W]" << "," << avgWatts << '\n'
+		   << "ID of first sample" << "," << firstBlade << '\n'
+		   << "ID of last sample" << "," << lastBlade-1 << '\n';
 	}
 	else
 	{
 		ss << "\n# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
-		   << "# Blade summary - ERROR" << std::endl
-		   << TSystem::SUM_ENERGY_LABEL << ",0" << std::endl;
+		   << "# Blade summary - ERROR\n"
+		   << TSystem::SUM_ENERGY_LABEL << ",0\n";
 	}
 	
 	// Voltage Regulators values
@@ -153,18 +153,18 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 				TSystem::getSamplesList(sensorID, firstVR, lastVR, samples);
 				size_t it = firstVR;
 				for (size_t i = 0; i < samples.size(); i++)
-					samplesStream << it++ << "," << samples[i] << std::endl;
+					samplesStream << it++ << "," << samples[i] << '\n';
 
 			}
 			avgWatts = energy[sensorID]/(lastVR-firstVR);
 			energyConsumption = duration * avgWatts;
 
 		    ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << "):\n"
-		       << TSystem::SUM_ENERGY_LABEL << "," << energyConsumption << std::endl
-		       << "MAX power [W]" << "," << maxWatts[sensorID] << std::endl
-		       << "MIN power [W]" << "," << minWatts[sensorID] << std::endl
-		       << "AVG power [W]" << "," << avgWatts << std::endl
-		       << "ID of first sample" << "," << firstVR << std::endl
+		       << TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
+		       << "MAX power [W]" << "," << maxWatts[sensorID] << '\n'
+		       << "MIN power [W]" << "," << minWatts[sensorID] << '\n'
+		       << "AVG power [W]" << "," << avgWatts << '\n'
+		       << "ID of first sample" << "," << firstVR << '\n'
 		       << "ID of last sample" << "," << lastVR-1 << std::endl;
 		}
 	}

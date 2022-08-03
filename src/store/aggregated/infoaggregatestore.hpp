@@ -17,8 +17,8 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 	}
 
 	ss << "\n# Job info" << std::endl
-	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << std::endl
-	   << "Nodelist," << this->_store->_nodelist << std::endl;
+	   << "JOB ID," << this->_store->_jobID << "." << this->_store->_stepID  << '\n'
+	   << "Nodelist," << this->_store->_nodelist << '\n';
 
 	double sumDuration = 0,
 		   maxDuration = 0,
@@ -35,9 +35,9 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 		}
 		sumDuration += _buffer[i].duration;
 	}
-	ss << "AVG Runtime of function [s]," << sumDuration/this->_size << std::endl
-	   << "MAX Runtime of function [s]," << maxDuration << std::endl
-	   << "MIN Runtime of function [s]," << minDuration << std::endl;
+	ss << "AVG Runtime of function [s]," << std::fixed << std::setprecision (6) << sumDuration/this->_size << '\n'
+	   << "MAX Runtime of function [s]," << maxDuration << '\n'
+	   << "MIN Runtime of function [s]," << minDuration << '\n';
 
 	double sumStart = 0,
 		   maxStart = 0,
@@ -54,8 +54,8 @@ void InfoAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<siz
 		}
 		sumStart += _buffer[i].startTime;
 	}
-	ss << "AVG Function start timestamp," << std::setprecision (15) << sumStart/this->_size << std::endl
-	   << "MAX Function start timestamp," << maxStart << std::endl
+	ss << "AVG Function start timestamp," << std::fixed << std::setprecision (15) << sumStart/this->_size << '\n'
+	   << "MAX Function start timestamp," << maxStart << '\n'
 	   << "MIN Function start timestamp," << minStart << std::endl;	
 }
 

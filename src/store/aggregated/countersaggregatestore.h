@@ -41,11 +41,11 @@ protected:
 				sum += data[i];
 			}
 			T avg = sum/(dataSize/stride);
-			ss << "AVG "<< description << "," << std::fixed << std::setprecision(5) << avg << std::endl
-			   << "MAX "<< description << "," << std::fixed << std::setprecision(5) << max << std::endl
-			   << "MIN "<< description << "," << std::fixed << std::setprecision(5) << min << std::endl;
+			ss << "AVG "<< description << "," << std::fixed << std::setprecision(6) << avg << std::endl
+			   << "MAX "<< description << "," << max << std::endl
+			   << "MIN "<< description << "," << min << std::endl;
 			if (storeSum)
-				ss << "SUM "<< description << "," << std::fixed << std::setprecision(5) << sum << std::endl;
+				ss << "SUM "<< description << "," << sum << std::endl;
 		}
 	}
 	

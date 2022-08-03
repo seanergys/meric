@@ -75,7 +75,7 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 
 	RType summary = 0;
 	RType value;
-	ss << "# COUNTERS - "<< TCounter::getSourceLabel() <<":\n";
+	ss << "# COUNTERS - "<< TCounter::getSourceLabel() << ":\n";
 	for(auto const &counterIt : _records[iEnd].record)
 	{
 		std::string label = TCounter::getCounterLabel(counterIt.first);
@@ -85,13 +85,13 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 			value = TCounter::getResultValue(_records[iStarts.back()].record[counterIt.first], counterIt.second, runtime, cumulative, counterIt.first, _name[_records[iStarts.back()].region]);
 			if (cumulative > 0)
 				summary += value;
-			ss << label << "," << std::fixed << std::setprecision(5) << value << std::endl;
+			ss << label << "," << std::fixed << std::setprecision(6) << value << std::endl;
 		}
 	}
 
 	if (TCounter::getSummaryCounterName() != "")
 	{
-		ss << TCounter::getSummaryCounterName() << "," << std::fixed << std::setprecision(5) << summary << std::endl;
+		ss << TCounter::getSummaryCounterName() << "," << std::fixed << std::setprecision(6) << summary << std::endl;
 	}
 
 	// Counters ratios
@@ -101,7 +101,7 @@ template <class TCounter, typename TType, typename RType> void CountersStore<TCo
 	{
 		ss << "# RATIOS:\n";
 		for(auto const &element : ratios)
-			ss << element.first<<"," << std::fixed << std::setprecision(5) << element.second <<std::endl;
+			ss << element.first << "," << std::fixed << std::setprecision(6) << element.second << std::endl;
 	}
 }
 
