@@ -37,7 +37,7 @@ def configure(ctx):
         ctx.load(ctx.options.cpp)
     except:
         if ('CXX' in ctx.env):
-            if (ctx.env['CXX'][0].endswith('clang++')):
+            if (ctx.env['CXX'][0].endswith('clang++') or ctx.env['CXX'][0] == 'CC'):
                 ctx.load("clang++")
             else:
                 ctx.load("g++")
@@ -152,9 +152,9 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
     
     if ctx.options.noopenmp:
-        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True)
+        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True, msg="Checking for MPI compiler")
     else:
-        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False)
+        ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=False, msg="Checking for MPI compiler")
     
     if ctx.options.scorep:
         ctx.env.CXXFLAGS.insert(0, ctx.env.CXX[0])
