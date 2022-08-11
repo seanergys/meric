@@ -241,7 +241,7 @@ public:
 				if (!_MPIglobalRank)
 					_storeList[i]->initStore(executionID, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
 				else
-					_storeList[i]->initStore(executionID);
+					_storeList[i]->initStore(executionID, Meric::outputFormat);
 			}
 			if (_storeList[i]->getMPIWrite())
 			{

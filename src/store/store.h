@@ -56,10 +56,11 @@ public:
 	bool getMPIWrite() {return MPIProcessWrite;};
 	void setMPIWrite(bool write) {MPIProcessWrite = write;};
 
-	virtual void initStore(	unsigned int & counter)
+	virtual void initStore(	unsigned int & counter, const RegionParameters &outputFormat)
 	{
 		loadSchedulerEnvironment();
 		_initCounter = counter;
+		outputFilenameFormat = outputFormat;
 	};
 	
 	virtual void initStore(	unsigned int & counter,
