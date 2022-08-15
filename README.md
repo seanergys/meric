@@ -1,3 +1,8 @@
+<img
+  src="https://code.it4i.cz/vys0053/meric/uploads/e96a5c46ce9fa0e52d163945d992429c/MERIC_logo_green.png"
+  title="MERIC logo"
+  width="500">
+
 # MERIC energy-efficient runtime system #
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
