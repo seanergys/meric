@@ -502,7 +502,6 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data, json_val
 
 	do
 	{
-	std::cerr << std::string(set->name->string) << "\n";
 		const std::string label = std::string(set->name->string);
 		if ("FREQUENCY" == label)
 		{
