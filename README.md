@@ -69,7 +69,7 @@ Under `intel_pstate` scaling driver requires additional write acess to `/sys/dev
 
 ##### AMD #####
 
-- AMD 17h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
+- AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
 - AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
 
 ##### Any (other) CPU with userspace scaling driver #####
@@ -345,7 +345,7 @@ To use MERIC for Fortran application analysis a Fortran module is provided. The 
 #     7] MERIC input parameters                                                #
 --------------------------------------------------------------------------------
 
-## SET MERIC STATIC PARAMETERS - mandatory parameters ##
+## Static tuning - mandatory parameters ##
 Specify following parameters to zero if you do not want to tune the selected system parameter.
 
 * `export MERIC_FREQUENCY=2400MHz`
@@ -372,7 +372,58 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_PWRCAP_GPU=140000`
 	- GPU power limit in milliwatts.
 
-## SET MERIC MEASUREMENT MODE ##
+## Dynamic tuning ##
+While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/dev#output-filesfolder-name)).
+
+* `export MERIC_REGION_OPTIONS=/path/to/configurationfile.opts`
+	- Specify a MERIC configuration file to be used to tune an application.
+
+The configuration file has a following format:
+- `region name` - mandatory, object, for each region that should have a specified configuration
+   	- `parameter` - mandatory, int/float/string, for each tuned parameter, specified parameter value in the parameter's default unit, the list of parameters must be the same for each specified region except the static region, which may have additional parameters
+- `"@IGNORE"` - optional, object, specify that MERIC should not measure, tune, or store output for regions if any of the following is true
+	- `"@REGIONS"` - optional, list of strings, list of regions that should be ignored by MERIC
+	- `"@RUNTIME"` - optional, float, minimum region runtime [s] to be tracked by MERIC, measured during the first execution of the region
+- `"@RADAR"` - optional, object, information for application behavior visualisation
+	- `"@METRIC"` - mandatory, object, 
+	metrics used for identification of optimal configuration
+   		- `metric` - section in the MERIC output file, mandatory, string, metric of the specified section
+	- `"@BASELINE"` - optional, float, static power baseline [W]
+
+Example MERIC configuration file:
+```
+{
+	"a.out_static" : {
+		"FREQUENCY" : 2100000000,
+		"UNCORE_FREQUENCY" : 2100000000,
+		"NUM_THREADS" : 12
+	},
+	"A" : {
+		"FREQUENCY" : 1200000000,
+		"UNCORE_FREQUENCY" : 1200000000
+	},
+	"C" : { 
+		"FREQUENCY" : 2500000000, 
+		"UNCORE_FREQUENCY" : 2300000000,
+	},
+	"@RADAR" : {
+		"@METRIC" : { 
+			"# COUNTERS - HDEEM:" : "Energy consumption [J]",
+			"# COUNTERS - NVML:" : "Energy consumption [J]"
+			},
+		"@BASELINE" : 0.0
+	},
+	"@IGNORE" : {
+		"@REGIONS" : ["B", "D"],
+		"@RUNTIME" : 0.2
+	}
+}
+
+```
+More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/dev/test/config).
+
+
+## Measurement mode ##
 * `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
 	- NONE    = Default option, no time or energy measurement.
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
@@ -392,7 +443,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- omp  = use OpenMP barriers only
 	- none = do not use barriers
 
-## SET MERIC OUTPUT FORMAT ##
+## Output format ##
 * `export MERIC_AGGREGATE=0`
 	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
@@ -415,7 +466,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- Ignores MERIC_DETAILED input parameter and evaluates all the voltage regulators.
 	- Only for measurement check - there can be larger overhead because of two types of data processing performed simultaneously.
 
-## SET OUTPUT FILES/FOLDERS NAME ##
+## Output files/folder name ##
 * `export MERIC_OUTPUT_DIR="hdeemMeasurement"`
 	- Default name is mericMeasurement.
 
@@ -433,38 +484,6 @@ Specify following parameters to zero if you do not want to tune the selected sys
 * `export MERIC_OUTPUT_FILENAME="log"`
 	- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
 
-## ADVANCED SETTINGS ##
-Settings through the exported environment variable should fulfill your needs when manually searching for the optimal settings. To set more complex settings the configuration file must be define.
-In the configuration file one can specify settings for each region separately, different settings can be applied for each node and also socket. It is also possible to provide list of regions to ignore (the settings for these regions are applied but no consumptions are measured), and size of change in settings, that should be ignored, because it is too small to apply.
-	
-To use the extended options, configuration file must be written in JSON format as follows and `export MERIC_REGION_OPTIONS=/path/to/regionoptions.json`.
-
-The basic settings via configuration file is HW settings for regions. In this case each region has an object with parameters. Parameters names are the same as exported environment variables, but without the "MERIC_" prefix.
-	
-In case of per node or per socket settings specification, the objects of region settings are wrapped in another object. Per node settings starts the JSON object with keyword "@NODE" (as well as per socket settings use "@SOCKET"), where the value is an object, that has as a keys ids of the nodes (or sockets), and the value of this object specify the settings for each region.
-
-It is also possible to specify the settings for a socket on a specific node, in this case into "@NODE" object insert "@SOCKET" object, that contains required region settings. If the "@NODE" and "@SOCKET" settings are set in separated objects, the settings for a node has higher priority than settings for a socket. If any region of your code or any parameter is missing, the default setting is set.
-
-	"@SOCKET" : {
-		"0" : {
-			"A" : {
-				"FREQUENCY" : "1300MHz",
-				"UNCORE_FREQUENCY" : "1400MHz"
-			}
-		}
-	}
-	
-To define ignore settings, write a object with the keyword "@IGNORE", and value is another object, that might contain "@REGIONS" with an array of regions' names to ignore, and "@CHANGE" with key object that contains settings with values, that specify how large the change might be to ignore it.
-
-	"@IGNORE" : {
-		"@REGIONS" : ["A", "B", "C"],
-		"@CHANGE" : {
-			"PWRCAP_POWER" : 10000,
-			"NUM_THREADS" : 2
-		}
-	}
-
-Examples of region.options files are in test/config directory. The region.options.extra contain all supported settings.
 
 --------------------------------------------------------------------------------
 #     8] Content of test folder and example application run                    #

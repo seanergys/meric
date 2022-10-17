@@ -32,6 +32,10 @@
   - new option MERIC_OUTPUT_FORMAT
   - RAPL power limit time window description changed from Twindow to CPUPWRtw
   - (power) samples are stored juts once in a separate directory
+  - simplified MERIC configuration file
+		- removed socket-/node-specific tuning
+		- removed configuration change threshold
+		+ added minimum region runtime filtering
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation
