@@ -445,6 +445,7 @@ void Meric::readRegionOptions()
 				ignore = ignore->next;
 			}while(ignore != NULL);
 		}
+/*		// This feature has been dropped, see #28
 		else if(std::string(data->name->string) == "@NODE")
 		{
 			MERIC_INFO << data->name->string <<"\n";
@@ -497,6 +498,7 @@ void Meric::readRegionOptions()
 				socket = socket->next;
 			}while(socket != NULL);
 		}
+*/
 		data = data->next;
 
 	}while(data != NULL);
