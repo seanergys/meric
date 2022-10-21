@@ -32,19 +32,19 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 -->
 
-<!--- dev branch links -->
- 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
- 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
- 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-interface-and-shared-score-pmeric-api)
- 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
- 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
- 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
- 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#7-meric-input-parameters)
- 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#8-content-of-test-folder-and-example-application-run)
- 9. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#9-code-dynamism-investigation)
-10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
-12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
+<!--- wrapper branch links -->
+ 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning)
+ 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/wrapper#2-supported-energy-measurement-systems)
+ 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/wrapper#3-meric-interface-and-shared-score-pmeric-api)
+ 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/wrapper#4-timeprof-library)
+ 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/wrapper#5-meric-binary-instrumentation)
+ 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/wrapper#6-compilation)
+ 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/wrapper#7-meric-input-parameters)
+ 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/wrapper#8-content-of-test-folder-and-example-application-run)
+ 9. [Code dynamism investigation, energy-efficiency optimisation](https://code.it4i.cz/vys0053/meric/tree/wrapper#9-code-dynamism-investigation-energy-efficiency-optimisation)
+10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/wrapper#10-meric-with-a-fortran-code)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/wrapper#12-acknowledgement)
 
 
 --------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ From the Sandy Bridge microarchitecture all Intel processors provide software-ba
 
 Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
 
-Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning).
+Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
 
 	
 MERIC must be compiled and used at a node with [msr-safe](https://github.com/LLNL/msr-safe) to read RAPL counters (works well for both Intel and AMD). In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
@@ -373,7 +373,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- GPU power limit in milliwatts.
 
 ## Dynamic tuning ##
-While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/dev#output-filesfolder-name)).
+While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/wrapper#output-filesfolder-name)).
 
 * `export MERIC_REGION_OPTIONS=/path/to/configurationfile.opts`
 	- Specify a MERIC configuration file to be used to tune an application.
@@ -420,7 +420,7 @@ Example MERIC configuration file:
 }
 
 ```
-More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/dev/test/config).
+More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/wrapper/test/config).
 
 
 ## Measurement mode ##
@@ -542,18 +542,19 @@ export MERIC_MEASURE=TIME        # time measurement only
 ```
 
 --------------------------------------------------------------------------------
-#      9] Code dynamism investigation                                          #
+#      9] Code dynamism investigation, energy-efficiency optimisation          #
 --------------------------------------------------------------------------------
 MERIC's output is stored in the directory in default named `mericMeasurement` that contains result files in folders with names of the regions. To change output folder name export MERIC_OUTPUT_DIR="NEW_NAME".
-Each csv file carry 3 types of data:
- *  CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
- *  Section label (e.g. '# Job info') - determines a "category" of following data in a file7
- *  Data - tuples (mostly pairs) structured like a hash map: key, value
+Each output csv file carry 3 types of information:
+ *  CALLTREE - the first line of every csv file, it's a call stack, so we can see, the regions nesting
+ *  Section label (e.g. '# Job info') - determines a "category" of data that follows
+ *  Data - tuples of: key, value
 
-To find the best settings for each region, you should run your code with several possible settings. The content of the MERIC's output directories, can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
+To identify the optimal parameters configuration of each region of the instrumented application, user may execute the application in various configurations and analyse the output files. This can be done manually, or automatically using `MERICwrapper` tool, that provides several algorithms for state-space-search, and optimal configuration configuration identification. For more details see its [README](https://code.it4i.cz/vys0053/meric/-/blob/wrapper/src/tools/wrapper/README.md) file.
 
-## Run an application in several configurations you want to test ##
-In test directory are provided example scripts `run.sh` or `run-mpi.sh`
+MERIC output presenting application dynamic behavior can be visualised using [RADAR](https://code.it4i.cz/vys0053/SGS18-READEX) tool.
+
+## Manual state-space-search example ##
 ```
 export MERIC_MEASURE=RAPL,HDEEM
 export MERIC_PWRCAP_POWER=0
@@ -561,6 +562,7 @@ export MERIC_PWRCAP_TIME=0
 export MERIC_GPU_FREQUENCY=0
 export MERIC_GPU_MEM_FREQUENCY=0
 export MERIC_PWRCAP_GPU=0
+export MERIC_OUTPUT_FORMAT="CF_UnCF_thrds" # optional parameter
 
 for thread in {24..1..1}
 do
@@ -573,26 +575,12 @@ do
 				export MERIC_NUM_THREADS=$thread
 				export MERIC_FREQUENCY=${cpu_freq}00MHz
 				export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-				./test
+				./a.out
 			done
 		done
 	done
 done
 ```
-	
-Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information about the measurement.
-```
-{
-	"Execution ID": "0",
-	"Timestamp"   : "Thu Dec  6 15:37:23 2018",
-	"System"      : "IT4I Salomon",
-	"DataFormat"  : "CF_UnCF_thrds",
-	"Note"        : ""
-}
-```
-
-## Process the results using RADAR tools ##
-We have implemented a PyQt5 tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI](https://code.it4i.cz/vys0053/SGS18-READEX).
 
 --------------------------------------------------------------------------------
 #      10] MERIC with a Fortran code                                           #
