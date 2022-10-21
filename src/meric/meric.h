@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <ctime>
 #include <cmath>
+#include <float.h>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
@@ -133,7 +134,7 @@ public:
 protected:
 
 	static void readRegionOptions();
-	static RegionParameters getRegionSettings(json_object_element_s * data, json_value_s* root);
+	static int getRegionSettings(json_object_element_s * data, json_value_s* root, RegionParameters & param);
 	static int getDefaultParameters();
 	
 	/**

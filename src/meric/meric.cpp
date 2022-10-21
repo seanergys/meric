@@ -34,7 +34,6 @@ std::string Meric::outputFilenameInfo = "";
 std::string Meric::OUTPUT_FILENAME = "";
 std::vector <mode> Meric::MONITORS;
 
-
 void Meric::readRegionParameters()
 {
 	if (getDefaultParameters())
@@ -394,11 +393,34 @@ void Meric::readRegionOptions()
 	struct json_object_element_s* node;
 	struct json_object_element_s* socket;
 	
+	int configurationSize = 0;
 	do
 	{
 		if (data->name->string[0] != '@')	//region
 		{
-			parameter[std::string(data->name->string)][std::make_pair(-1, -1)] = getRegionSettings(data, root);
+			std::string regionName = std::string(data->name->string);
+			RegionParameters param = {};
+			int size = getRegionSettings(data, root, param);
+			if (size < 0)
+			{
+				
+				free(root);
+				parameter.clear();
+				return;
+			}
+			else if (regionName.substr(regionName.size()-std::string("_static").size()) != "_static")
+			{
+				if (configurationSize == 0)
+					configurationSize = size;
+				else if (configurationSize != size)
+				{
+					std::cerr << "MERIC error: invalid MERIC configuration file, all regions except the static region must have the same number of parameters specified\n";
+					free(root);
+					parameter.clear();
+					return;
+				}
+			}
+			parameter[regionName][std::make_pair(-1, -1)] = param;
 		}
 		else if (std::string(data->name->string) == "@IGNORE")
 		{
@@ -418,7 +440,7 @@ void Meric::readRegionOptions()
 				}
 				else if (std::string(ignore->name->string) == "@CHANGE")
 				{
-					ignoreSettings = getRegionSettings(ignore, root);
+					getRegionSettings(ignore, root, ignoreSettings);					
 				}
 				ignore = ignore->next;
 			}while(ignore != NULL);
@@ -439,7 +461,9 @@ void Meric::readRegionOptions()
 							//list of regions
 							region = ((struct json_object_s*)socket->value->payload)->start;
 							do{
-								parameter[std::string(region->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), std::stoi(std::string(socket->name->string)))] = getRegionSettings(region, root);
+								RegionParameters param = {};
+								getRegionSettings(region, root, param);
+								parameter[std::string(region->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), std::stoi(std::string(socket->name->string)))] = param;
 								region = region->next;
 							}while (region != NULL);
 							socket = socket->next;
@@ -447,7 +471,9 @@ void Meric::readRegionOptions()
 					}
 					else	//list of regions
 					{
-						parameter[std::string(socketOrRegion->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), -1)] = getRegionSettings(socketOrRegion, root);
+						RegionParameters param = {};
+						getRegionSettings(socketOrRegion, root, param);
+						parameter[std::string(socketOrRegion->name->string)][std::make_pair(std::stoi(std::string(node->name->string)), -1)] = param;
 					}
 					socketOrRegion = socketOrRegion->next;
 				}while (socketOrRegion != NULL);
@@ -463,7 +489,9 @@ void Meric::readRegionOptions()
 				//list of regions
 				region = ((struct json_object_s*)socket->value->payload)->start;
 				do{
-					parameter[std::string(region->name->string)][std::make_pair(-1, std::stoi(std::string(socket->name->string)))] = getRegionSettings(region, root);
+					RegionParameters param = {};
+					getRegionSettings(region, root, param);
+					parameter[std::string(region->name->string)][std::make_pair(-1, std::stoi(std::string(socket->name->string)))] = param;
 					region = region->next;
 				}while (region != NULL);
 				socket = socket->next;
@@ -488,7 +516,7 @@ void Meric::readRegionOptions()
 	free(root);
 }
 
-RegionParameters Meric::getRegionSettings(json_object_element_s * data, json_value_s* root)
+int Meric::getRegionSettings(json_object_element_s * data, json_value_s* root, RegionParameters & param)
 {
 	if (data->value->type != json_type_object)
 	{
@@ -497,8 +525,8 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data, json_val
 		exit(1);
 	}
 
-	RegionParameters param = {};
 	struct json_object_element_s* set = ((struct json_object_s*)data->value->payload)->start;
+	int configurationSize = 0;
 
 	do
 	{
@@ -506,47 +534,74 @@ RegionParameters Meric::getRegionSettings(json_object_element_s * data, json_val
 		if ("FREQUENCY" == label)
 		{
 			if (defaultParameter.frequency != 0)
+			{
 				param.frequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("UNCORE_FREQUENCY" == label)
 		{
 			if (defaultParameter.uncoreFrequency != 0)
+			{
 				param.uncoreFrequency = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("NUM_THREADS" == label)
 		{
 			if (defaultParameter.nthreads != 0)
+			{
 				param.nthreads = std::stoi(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("PWRCAP_POWER" == label)
 		{
 			if (defaultParameter.powerCapPKG != 0)
+			{
 				param.powerCapPKG = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("PWRCAP_TIME" == label)
 		{
 			if (defaultParameter.powerCapPKGtime != 0)
+			{
 				param.powerCapPKGtime = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("GPU_FREQUENCY" == label)
 		{
 			if (defaultParameter.frequencyGPU != 0)
+			{
 				param.frequencyGPU = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("GPU_MEM_FREQUENCY" == label)
 		{
 			if (defaultParameter.frequencyGPUmem != 0)
+			{
 				param.frequencyGPUmem = mutils::frequencyToHz(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else if ("PWRCAP_GPU" == label)
 		{
 			if (defaultParameter.powerCapGPU != 0)
+			{
 				param.powerCapGPU = std::stol(std::string(((struct json_string_s*)set->value->payload)->string));
+				configurationSize++;
+			}
 		}
 		else
+		{
 			std::cerr << "MERIC ERROR: invalid region options key - " << set->name->string << std::endl;
+			return -1;
+		}
 		set = set->next;
 	}while (set != NULL);
 	
-	return param;
+	return configurationSize;
 }
