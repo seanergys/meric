@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <ctime>
 #include <cmath>
-#include <float.h>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
@@ -497,6 +496,7 @@ protected:
 	static bool OMPbarriers;
 	static std::string outputFilenameInfo;
 	static RegionParameters outputFormat;
+	static double timeThreshold;
 
 	static bool DETAILED;
 	static bool AGGREGATE;

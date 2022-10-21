@@ -97,6 +97,8 @@ public:
 			{
 				regionRuntime = Meric::stop();
 				_stack.pop_back();
+				if (Meric::timeThreshold > regionRuntime)
+					ignoreRegions.push_back(regionName);
 			}
 		}
 		if (OMPbarriers)
@@ -146,7 +148,11 @@ public:
 		#pragma omp master
 		{
 			if (!ignoreRegion(stopRegionName))
+			{
 				regionRuntime = Meric::stop();
+				if (Meric::timeThreshold > regionRuntime)
+					ignoreRegions.push_back(stopRegionName);
+			}
 			_stack.pop_back();
 
 			if (!ignoreRegion(startRegionName))

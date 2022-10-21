@@ -33,6 +33,7 @@ bool Meric::OMPbarriers = true;
 std::string Meric::outputFilenameInfo = "";
 std::string Meric::OUTPUT_FILENAME = "";
 std::vector <mode> Meric::MONITORS;
+double Meric::timeThreshold = 0.0;
 
 void Meric::readRegionParameters()
 {
@@ -441,6 +442,10 @@ void Meric::readRegionOptions()
 				else if (std::string(ignore->name->string) == "@CHANGE")
 				{
 					getRegionSettings(ignore, root, ignoreSettings);					
+				}
+				else if (std::string(ignore->name->string) == "@RUNTIME")
+				{
+					timeThreshold = std::stod(std::string(((struct json_string_s*)ignore->value->payload)->string));
 				}
 				ignore = ignore->next;
 			}while(ignore != NULL);
