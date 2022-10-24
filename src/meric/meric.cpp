@@ -409,7 +409,7 @@ void Meric::readRegionOptions()
 				parameter.clear();
 				return;
 			}
-			else if (regionName.substr(regionName.size()-std::string("_static").size()) != "_static")
+			else if (regionName.size() <= std::string("_static").size() || regionName.substr(regionName.size()-std::string("_static").size()) != "_static")
 			{
 				if (configurationSize == 0)
 					configurationSize = size;
