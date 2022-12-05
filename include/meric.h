@@ -11,13 +11,15 @@ void   MERIC_Close();
 
 void   MERIC_MeasureStart(const char* region);
 double MERIC_MeasureStop();
-double MERIC_MeasureStopStart(const char* region);
+double MERIC_MeasureStopStart(const char* startRegion);
 
 void   MERIC_IgnoreStart();
 void   MERIC_IgnoreStop();
 
 //void MERIC_CaptureScope(const char * region);
 //RAII scope measurement - it does not return time
+//GNU and Clang compiler only
+#if defined __clang__ || ( defined __GNUC__ && !defined __INTEL_COMPILER )
 static void MERIC_ScopeEnd(const char ** region)
 {
     MERIC_MeasureStop();
@@ -25,6 +27,7 @@ static void MERIC_ScopeEnd(const char ** region)
 #define MERIC_CaptureScope( region ) \
 	MERIC_MeasureStart( region ); \
 	const char * tmp __attribute__((cleanup(MERIC_ScopeEnd))) = region;
+#endif /* RAII */
 
 #ifdef __cplusplus
 }
