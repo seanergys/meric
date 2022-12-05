@@ -32,22 +32,24 @@ public:
 			#pragma omp barrier
 		}
 		
-		#pragma omp single nowait //does not work with _stack, so it does not have to be master thread
+		#pragma omp master
 		{
 			MERIC_INFO << "region '" << region << "' starting\n";
 			clock_gettime(CLOCK_REALTIME, &spectime1);
+
 			SocketsRegionParameters change = regionValue(currentState, region);
 			setRegionEnvironment(change);
+
 			clock_gettime(CLOCK_REALTIME, &spectime2);
 			MERIC_INFO << "MERIC settings changed in " << mutils::timeToDouble(spectime2 - spectime1)*1000 << " ms\n";
-		}
-		#pragma omp master
-		{
+
 			Meric::start(region);
 			_stack.push_back(getRegionID(region));
+
 			clock_gettime(CLOCK_REALTIME, &spectime1);
 			MERIC_INFO << "MERIC status recorded in " << mutils::timeToDouble(spectime1 - spectime2)*1000 << " ms\n";
 		}
+		
 		if (OMPbarriers)
 		{
 			#pragma omp barrier

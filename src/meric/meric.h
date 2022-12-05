@@ -150,7 +150,7 @@ protected:
 	}
 	
 	/**
-	 * current settings to test if there is a change in values
+	 * current settings to test if there is a change in values, updates the settings
 	 * region name
 	 * id of a node for the settings is searching
 	 **/

@@ -21,7 +21,6 @@ public:
 
 	void start(const std::string &region)
 	{
-
 		if (Meric::IGNORE)
 			return;
 		if (ignoreRegion(region))
@@ -38,7 +37,8 @@ public:
 		{
 			#pragma omp barrier
 		}
-		#pragma omp single nowait //does not work with _stack, so it does not have to be master thread
+		
+		#pragma omp master
 		{
 			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
@@ -48,12 +48,10 @@ public:
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
-		}
-		#pragma omp master
-		{
 			Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
+		
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
