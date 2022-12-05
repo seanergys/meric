@@ -60,57 +60,55 @@ public:
 		}
 	}
 	
-	double stop(const std::string region = "")
+	double stop(const std::string region)
 	{
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
 			return 0.0;
-		std::string regionName = getRegionName(_stack.size(), _stack.back());
-		if (region != "" && region != regionName)
-		{
-			#pragma omp single nowait
-				std::cerr << "MERIC WARNING: probably corrupted instrumentation\n";
-		}
-		if (ignoreRegion(regionName))
+
+		if (ignoreRegion(region))
 		{
 			#pragma omp master
 			{
-				MERIC_INFO << "region '" + regionName + "' IGNORE stop" << std::endl;
+				MERIC_INFO << "region '" + region + "' IGNORE stop" << std::endl;
 				_stack.pop_back();
 			}
 			return 0.0;
 		}
-
+		
+		#pragma omp master	//only master thread is allowed to work with the _stack
+		{
+			if (!_stack.size() || region != getRegionName(_stack.size(), _stack.back()))
+			{
+				std::cerr << "MERIC ERROR: corrupted instrumentation\n";
+				regionRuntime = -1.0;
+			}
+		}
+		
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
 		}
+		if (regionRuntime < 0.0)
+			return regionRuntime;
+		
 		#pragma omp master
 		{
 			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
-				MERIC_INFO << "region '" << regionName << "' stopping"<< std::endl;
+				MERIC_INFO << "region '" << region << "' stopping"<< std::endl;
 			}
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			if (MPIbarriers)
 				MPI_Barrier(_currentNode);
 			setRegionEnvironment(change, !_MPInodeRank);
+
+			regionRuntime = Meric::stop(region+" - "+std::to_string(_MPInodeRank));
+			_stack.pop_back();
+			if (Meric::timeThreshold > regionRuntime)
+				ignoreRegions.push_back(region);
 		}
-		#pragma omp master
-		{
-			if (!_stack.size())
-			{
-				std::cerr << "MERIC ERROR: Incorrect regions. There are more 'ends' than 'starts'!\n";
-				regionRuntime = -1.0;
-			}
-			else
-			{
-				regionRuntime = Meric::stop(regionName+" - "+std::to_string(_MPInodeRank));
-				_stack.pop_back();
-				if (Meric::timeThreshold > regionRuntime)
-					ignoreRegions.push_back(regionName);
-			}
-		}
+		
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
@@ -119,17 +117,28 @@ public:
 		return regionRuntime;
 	}
 
-	double stopStart(const std::string &startRegionName)
+	double stopStart(const std::string &stopRegionName, const std::string &startRegionName)
 	{
+		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
 			return 0.0;
 		
-		double regionRuntime = 0.0;
-		const std::string stopRegionName = getRegionName(_stack.size(), _stack.back());
+		#pragma omp master	//only master thread is allowed to work with the _stack
+		{
+			if (!_stack.size() || stopRegionName != getRegionName(_stack.size(), _stack.back()))
+			{
+				std::cerr << "MERIC ERROR: corrupted instrumentation\n";
+				regionRuntime = -1.0;
+			}
+		}
+		
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
 		}
+		if (regionRuntime < 0.0)
+			return regionRuntime;
+		
 		#pragma omp master
 		{
 			if (!ignoreRegion(startRegionName))
@@ -191,8 +200,8 @@ public:
 	}	
 
 	void save()
-	{
-		stop(); //applicationMainRegion
+	{		
+		stop(_mainRegion); //applicationMainRegion
 		
 		if (MPIbarriers)
 			MPI_Barrier(_currentNode);

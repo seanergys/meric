@@ -478,6 +478,19 @@ protected:
 		}
 		return pos;
 	}
+	
+	void setMainRegionName()
+	{
+		_mainRegion = std::string(program_invocation_name);
+		size_t n = _mainRegion.find_last_of("/");
+		if (n != std::string::npos)
+			_mainRegion = _mainRegion.substr(n+1);
+		n = _mainRegion.find_first_of(".");
+		if (n != std::string::npos)
+			_mainRegion = _mainRegion.substr(0,n);
+		_mainRegion +="_static";
+	}
+
 
 	//              region_name                     node socket       settings
 	static std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > parameter;

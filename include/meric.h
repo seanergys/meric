@@ -10,8 +10,8 @@ void   MERIC_Init();
 void   MERIC_Close();
 
 void   MERIC_MeasureStart(const char* region);
-double MERIC_MeasureStop();
-double MERIC_MeasureStopStart(const char* startRegion);
+double MERIC_MeasureStop(const char* region);
+double MERIC_MeasureStopStart(const char* stopRegion, const char* startRegion);
 
 void   MERIC_IgnoreStart();
 void   MERIC_IgnoreStop();
@@ -22,7 +22,7 @@ void   MERIC_IgnoreStop();
 #if defined __clang__ || ( defined __GNUC__ && !defined __INTEL_COMPILER )
 static void MERIC_ScopeEnd(const char ** region)
 {
-    MERIC_MeasureStop();
+    MERIC_MeasureStop(*region);
 }
 #define MERIC_CaptureScope( region ) \
 	MERIC_MeasureStart( region ); \

@@ -602,10 +602,9 @@ void insertRegionStartStopInstrumentation(BPatch_binaryEdit *appBin, BPatch_imag
 		//BPatch_snippet* param = new BPatch_constExpr(funcName.demangled.c_str());
 				//TODO this solves problem of maximum file name size, however may result into duplicit regionName
 		BPatch_snippet* param = new BPatch_constExpr(funcName.mangled.length() > 255 ? funcName.mangled.substr(0,255).c_str() : funcName.mangled.c_str());
-		startArgs.push_back(param);					
+		startArgs.push_back(param);
+		stopArgs.push_back(param);
 
-		if (params.timeprof)
-			stopArgs.push_back(param);
 		if (insertFunction<BPatch_binaryEdit>(appBin, appImage, startFuncs, startArgs, funcName.mangled.c_str(), BPatch_entry))
 			//TODO end execution in case of function call insertion fail
 			insertFunction<BPatch_binaryEdit>(appBin, appImage,  stopFuncs,  stopArgs, funcName.mangled.c_str(), BPatch_exit);
