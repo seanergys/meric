@@ -180,12 +180,12 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 	Starting measurement of a reagion.
 	Please, do not use `#` and `@` in names of regions.
 
- *	`double MERIC_MeasureStop()`
+ *	`MERIC_MeasureStop(const char * region)`
 
 	End of the measurement of the last started region.
 	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
- *	`double MERIC_MeasureStopStart(const char * regionName)`
+ *	`double MERIC_MeasureStopStart(const char * stopRegion, const char * startRegion)`
 
 	End of the measurement of the last started region and start of a new region.
 	Removes environment switching to configuration of the region the application is nested in.
@@ -212,18 +212,18 @@ There is one more restriction in placing probes into the code. In current versio
 ```
 MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in this example
 	MERIC_MeasureStart("A")	//first call of region A
-	MERIC_MeasureStop()
+	MERIC_MeasureStop("A")
 
 	MERIC_MeasureStart("B")
 		MERIC_MeasureStart("A")	//region A called at higher nested level
-		MERIC_MeasureStop()
-	MERIC_MeasureStop()
+		MERIC_MeasureStop("A")
+	MERIC_MeasureStop("B")
 
 	MERIC_MeasureStart("A")	//next region A call at the same nested level as the first one
 		MERIC_MeasureStart("C")	//the problem is here, when region A has another nested region
-		MERIC_MeasureStop()	//region C will cause defect in its call tree
-	MERIC_MeasureStop()
-MERIC_MeasureStop()
+		MERIC_MeasureStop("C")	//region C will cause defect in its call tree
+	MERIC_MeasureStop("A")
+MERIC_MeasureStop("X")
 ```
 
 ## Shared MERIC/Score-P interface ##
@@ -238,10 +238,10 @@ Used parameters has the same datatype as Score-P functions: struct SCOREP_User_R
 | READEX_PHASE_REGION_DEFINE(handle)        |                          | SCOREP_USER_REGION_DEFINE(handle)              |
 | READEX_SIGNIFICANT_REGION_DEFINE(handle)* |                          | SCOREP_USER_REGION_DEFINE(handle)              |
 | READEX_REGION_START(handle, name, type)   | MERIC_MeasureStart(name) | SCOREP_USER_REGION_BEGIN(handle, name, type)   |
-| READEX_REGION_STOP(handle)                | MERIC_MeasureStop()      | SCOREP_USER_REGION_END(handle)                 |
-| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart (start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN (start_handle, start_name, start_type) |
+| READEX_REGION_STOP(handle)                | MERIC_MeasureStop(name)  | SCOREP_USER_REGION_END(handle)                 |
+| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart (stop_name, start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN (start_handle, start_name, start_type) |
 | READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
-| READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop()      | SCOREP_USER_OA_PHASE_END(handle)               |
+| READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop(name)  | SCOREP_USER_OA_PHASE_END(handle)               |
 | READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |
 | READEX_IGNORE_STOP()                      | MERIC_IgnoreStop()       | SCOREP_RECORDING_ON()                          |
     *  Defines region handle except of phase region

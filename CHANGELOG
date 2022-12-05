@@ -1,4 +1,5 @@
 ### XX.XX.XXXX #################################################################
+  - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop
   - MERIC_MODE and MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options
   - removed MERIC_ITERATION input parameter, it is generated automatically
   - support for Intel CPU core frequency scaling under Intel Hardware Performance State (HWP)
