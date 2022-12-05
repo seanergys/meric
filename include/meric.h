@@ -27,6 +27,8 @@ static void MERIC_ScopeEnd(const char ** region)
 #define MERIC_CaptureScope( region ) \
 	MERIC_MeasureStart( region ); \
 	const char * tmp __attribute__((cleanup(MERIC_ScopeEnd))) = region;
+#else
+#define MERIC_CaptureScope( region ) 
 #endif /* RAII */
 
 #ifdef __cplusplus
