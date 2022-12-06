@@ -20,7 +20,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 <!--- master branch links 
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
- 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-interface-and-shared-score-pmeric-api)
+ 3. [MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-api)
  4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric#4-timeprof-library)
  5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric#5-meric-binary-instrumentation)
  6. [Compilation](https://code.it4i.cz/vys0053/meric#6-compilation)
@@ -35,7 +35,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 <!--- dev branch links -->
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
- 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-interface-and-shared-score-pmeric-api)
+ 3. [MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-api)
  4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
  5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
  6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
@@ -160,7 +160,7 @@ Part of the MERIC repository is a Python power measurement script that runs on n
 BSC's ThunderX energy measurement system doesn't effects the CPUs, however it measures energy consumed by all available nodes (one must allocate all four nodes), and its energy measurement samples frequency is approximately 4 samples per second.
 
 --------------------------------------------------------------------------------
-#     3] MERIC interface and Shared Score-P/MERIC API                          #
+#     3] MERIC API                                                             #
 --------------------------------------------------------------------------------
 ## MERIC interface ##
 If you want to use MERIC with a parallel application, keep in mind, that all processes and all running threads must call every inserted MERIC function, otherwise MERIC behavior is undefined. It is not possible to set runtime environment for each process separately, because MERIC does environment changes that effects whole node (or socket). To guarantee that selected settings is applied for selected region, each measurement start and stop begins with an MPI and OpenMP barrier. MERIC interface is defined in `include/meric.h`.
@@ -226,28 +226,11 @@ MERIC_MeasureStart("X") //region X wraps others, this region is not necessary in
 MERIC_MeasureStop("X")
 ```
 
-## Shared MERIC/Score-P interface ##
-Into include folder the C header file `readex.h` and Fortran `readex.inc` were added. Instead of previously presented MERIC API you may use following functions, that provides shared instrumentation for MERIC and Score-P. To use selected library for measurement, compile your code with -DUSE_MERIC or -DUSE_SCOREP for compiler annotated code (phase region only) or -DUSE_SCOREP_MANUAL for manually annotated code. It is not possible to use MERIC and Score-P simultaneously. As an example of the API use, test.cpp and fort_test.f90 example codes use this interface.
-
-Used parameters has the same datatype as Score-P functions: struct SCOREP_User_Region* handle, const char* name, uint32_t type.
-
-| Shared API                                | MERIC function           | Score-P function                               |
-| ----------------------------------------- | ------------------------ | ---------------------------------------------- |
-| READEX_INIT()                             | MERIC_Init()             |                                                |
-| READEX_CLOSE()                            | MERIC_Close()            |                                                |
-| READEX_PHASE_REGION_DEFINE(handle)        |                          | SCOREP_USER_REGION_DEFINE(handle)              |
-| READEX_SIGNIFICANT_REGION_DEFINE(handle)* |                          | SCOREP_USER_REGION_DEFINE(handle)              |
-| READEX_REGION_START(handle, name, type)   | MERIC_MeasureStart(name) | SCOREP_USER_REGION_BEGIN(handle, name, type)   |
-| READEX_REGION_STOP(handle)                | MERIC_MeasureStop(name)  | SCOREP_USER_REGION_END(handle)                 |
-| READEX_REGION_STOP_START(stop_handle, start_handle, start_name, start_type) | MERIC_MeasureStopStart (stop_name, start_name) | SCOREP_USER_REGION_END(stop_handle) SCOREP_USER_REGION_BEGIN (start_handle, start_name, start_type) |
-| READEX_PHASE_START(handle, name, type)    | MERIC_MeasureStart(name) | SCOREP_USER_OA_PHASE_BEGIN(handle, name, type) |
-| READEX_PHASE_STOP(handle)                 | MERIC_MeasureStop(name)  | SCOREP_USER_OA_PHASE_END(handle)               |
-| READEX_IGNORE_START()                     | MERIC_IgnoreStart()      | SCOREP_RECORDING_OFF()                         |
-| READEX_IGNORE_STOP()                      | MERIC_IgnoreStop()       | SCOREP_RECORDING_ON()                          |
-    *  Defines region handle except of phase region
-
-READEX interface doesn't contain all Score-P API functions, because there is no support for these in MERIC. For the rest functionality user may use usual Score-P API, the functions will be ignored if the code will be compiled without Score-P.
-
+<!---
+## Advanced manual instrumentation ##
+To instrument an application manually we recommend to use [Instrument API](https://code.it4i.cz/energy-efficiency/instrumentapi) instead of MERIC API. The Instrument API provides unified interface of the most common open-source HPC tools for application behavior analysis. 
+The API is using preprocessor directives, which allows user to select at the compilation time which tool's instrumentation should be used, as well as it is possible remove the instrumentation at all.
+-->
 
 --------------------------------------------------------------------------------
 #     4] TIMEPROF library                                                      #
@@ -491,11 +474,10 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 * source codes
 	* test.cpp
 		* One region, with two another regions inside.
-		* This test uses shared Score-P/MERIC API. See section 3 of this README.
 	* test_mpi.cpp
 		* Same test as test.c, only extended with MPI.
 	* fort_test.f90
-		* Fortran version of test.cpp to show the MERIC and READEX Fortran interface.
+		* Fortran version of test.cpp to show the MERIC Fortran interface.
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.

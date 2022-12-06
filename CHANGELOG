@@ -33,6 +33,7 @@
   - new option MERIC_OUTPUT_FORMAT
   - RAPL power limit time window description changed from Twindow to CPUPWRtw
   - (power) samples are stored juts once in a separate directory
+  - readex.h dropped from the MERIC repository, the feature of multi-tools instrumentation provides Instrument API, testcases now use MERIC API only
   - simplified MERIC configuration file
 		- removed socket-/node-specific tuning
 		- removed configuration change threshold
