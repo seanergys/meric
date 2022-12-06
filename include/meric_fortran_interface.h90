@@ -25,9 +25,18 @@ INTERFACE
         CHARACTER(KIND=C_CHAR) :: reg_name(*)
         END SUBROUTINE MERIC_MeasureStart
 
-        SUBROUTINE MERIC_MeasureStop() &
+        SUBROUTINE MERIC_MeasureStop(reg_name) &
                 BIND(c,NAME='MERIC_MeasureStop')
+                IMPORT C_CHAR
+        CHARACTER(KIND=C_CHAR) :: reg_name(*)
         END SUBROUTINE MERIC_MeasureStop
+
+        SUBROUTINE MERIC_MeasureStopStart(stopRegion, startRegion) &
+                BIND(c,NAME='MERIC_MeasureStopStart')
+                IMPORT C_CHAR
+        CHARACTER(KIND=C_CHAR) :: stopRegion(*)
+        CHARACTER(KIND=C_CHAR) :: startRegion(*)
+        END SUBROUTINE MERIC_MeasureStopStart
 
 END INTERFACE
 
