@@ -1,12 +1,12 @@
-// module load intel mkl
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <mkl.h>
+
+#include <meric.h>
 
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "mkl.h"
-#include <time.h>
-#include <meric.h>
 
 double timespec2double(timespec time) 
 {
@@ -23,7 +23,6 @@ int main()
     struct timeval stime, etime, diff;
 //-------------------------------------------------------------------
 MERIC_Init();
-MERIC_MeasureStart("main");
 //-------------------------------------------------------------------
 /*
     printf("LARGE MATRICES\n\n");
@@ -55,7 +54,7 @@ MERIC_MeasureStart("malloc");
 
     v = (double *)mkl_malloc( vMatN*sizeof( double ), 64 );
     vOut = (double *)mkl_malloc( vMatN*sizeof( double ), 64 );
-MERIC_MeasureStop();
+MERIC_MeasureStop("malloc");
     if (A == NULL || B == NULL || C == NULL || v == NULL || vOut == NULL) {
       printf( "\n ERROR: Can't allocate memory. Aborting... \n\n");
       mkl_free(A);
@@ -90,7 +89,7 @@ MERIC_MeasureStart("init");
         v[i] = (double)i;
         vOut[i] = 0.0;
     }
-MERIC_MeasureStop();
+MERIC_MeasureStop("init");
 /*
     printf("\n dgemm input: \n");
     printf("\n Matrix A:\n");
@@ -123,7 +122,7 @@ MERIC_MeasureStart("DGEMM");
     for(int i=0;i<loopDGEMM;i++)
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
                     m, n, k, alpha, A, k, B, n, beta, C, n);
-MERIC_MeasureStop();
+MERIC_MeasureStop("DGEMM");
 
     clock_gettime(CLOCK_REALTIME, &timeEnd);
     printf(" >>> DGEMM TIME: %lf\n", timespec2double(timeEnd)-timespec2double(timeStart));
@@ -173,7 +172,7 @@ MERIC_MeasureStart("DGEMV");
     for(int i=0;i<loopDGEMV;i++)
         cblas_dgemv(CblasRowMajor, CblasNoTrans, 
                     vMatN, vMatN, alpha, Vmat, vMatN, v, 1, beta, vOut, 1);
-MERIC_MeasureStop();
+MERIC_MeasureStop("DGEMV");
     clock_gettime(CLOCK_REALTIME, &timeEnd);
     printf(" >>> DGEMV TIME: %lf\n", timespec2double(timeEnd)-timespec2double(timeStart));
 
@@ -189,7 +188,6 @@ MERIC_MeasureStop();
     mkl_free(A);
     mkl_free(B);
     mkl_free(C);
-MERIC_MeasureStop();
 MERIC_Close();
     return 0;
 }

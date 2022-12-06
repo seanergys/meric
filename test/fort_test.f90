@@ -9,17 +9,17 @@ program fort_test
 
   call MERIC_MeasureStart("B"//char(0))
   call sleep(1)
-  call MERIC_MeasureStop()
+  call MERIC_MeasureStop("B"//char(0))
 
   call MERIC_MeasureStart("C"//char(0))
   call sleep(1)
-  call MERIC_MeasureStop()
+  call MERIC_MeasureStop("C"//char(0))
 
   call MERIC_MeasureStart("B"//char(0))
   call sleep(2)
-  call MERIC_MeasureStop()
+  call MERIC_MeasureStop("B"//char(0))
 
-  call MERIC_MeasureStop()
+  call MERIC_MeasureStop("A"//char(0))
 
   call MERIC_Close()
 

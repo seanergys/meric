@@ -2,8 +2,6 @@
  * in this test we watch how much time is necessary to change from the region A settings to settings for region B
  * one must specify region.options for region A and B to switch 
  **/
-#include <readex.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
@@ -12,6 +10,9 @@
 #include <cmath>
 #include <chrono>
 #include <ctime>
+
+#include <meric.h>
+#include "work.h"
 
 void doSomeJobForMe(double random)
 {
@@ -26,44 +27,31 @@ void doSomeJobForMe(double random)
 
 }
 
-double timespec2double(timespec time) 
-{
-	return time.tv_sec + (double)time.tv_nsec/1e6;
-}
 
 int main(int argc, char **argv)
 {
 	timespec spectime1, spectime2;
-	
-	READEX_INIT();
-
-	READEX_REGION_DEFINE(A);
-        READEX_REGION_DEFINE(B);
-
+	MERIC_Init();
 	srand (time(NULL));
 
 	for (int i=0; i<100; i++)
 	{
 		double random = (double)rand() / RAND_MAX;
-		READEX_REGION_START(A, "A", SCOREP_USER_REGION_TYPE_COMMON);
+		MERIC_MeasureStart("A");
 			doSomeJobForMe(random);
 			clock_gettime(CLOCK_REALTIME, &spectime1);
-			READEX_REGION_START(B, "B", SCOREP_USER_REGION_TYPE_COMMON);
+			MERIC_MeasureStart("B");
 				clock_gettime(CLOCK_REALTIME, &spectime2);
 				std::cout << "MERIC start time " << (timespec2double(spectime2)-timespec2double(spectime1)) << " ms\n";
 				doSomeJobForMe(random);
 				clock_gettime(CLOCK_REALTIME, &spectime1);
-			READEX_REGION_STOP(B);
+			MERIC_MeasureStop("B");
 			clock_gettime(CLOCK_REALTIME, &spectime2);
 			std::cout << "MERIC stop time " << (timespec2double(spectime2)-timespec2double(spectime1)) << " ms\n";
-		READEX_REGION_STOP(A);
+		MERIC_MeasureStop("A");
 		doSomeJobForMe(random);
 	}
 
-	READEX_CLOSE();
+	MERIC_Close();
 	return 0;
 }
-
-
-
-

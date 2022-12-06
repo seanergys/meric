@@ -25,7 +25,7 @@ ifeq ($(MPICXX),)
 	endif
 endif
 
-ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),icpc)
+ifeq ($(shell echo ${CXX} | awk '{n=split($$1,0A,"/"); print A[n]}'),icpc)
 	OPENMP=-qopenmp
 else ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),FCC)
 	OPENMP=-Kopenmp
@@ -44,11 +44,13 @@ endif
 #NUMA=-lnuma
 #NVML=-lnvidia-ml
 #ESMI=-le_smi64
-#LIBMSR=-lmsr
+#LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
 MERIC=-L../lib -I../include 
 LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
 BINARIES=test test_mpi blasTest samples sleepTest fortTest overHead
+################################################################################
+MKL_PATHS=
 ################################################################################
 
 default: all
@@ -57,33 +59,30 @@ all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
 
  ######
 sleepTest: sleep_test.cpp
-	$(CXX) -O0 -g sleep_test.cpp -lmeric $(LIBS) -o sleepTest -DUSE_MERIC
+	$(CXX) -O0 -g sleep_test.cpp -lmeric $(LIBS) -o sleepTest
 	
 mpiTest: test_mpi.cpp
-	$(MPICXX) -O0 -g test_mpi.cpp -lmericmpi $(LIBS) -o test_mpi -DUSE_MERIC
+	$(MPICXX) -O0 -g test_mpi.cpp -lmericmpi $(LIBS) -o test_mpi
 
 basicTest: test.cpp
-	$(CXX)    -O0 -g test.cpp -o test -DUSE_MERIC -lmeric $(LIBS)
-
-scorepTest: test.cpp
-	scorep --online-access --user --thread=none $(CXX) -O0 -g test.cpp $(MERIC) $(LIBS) -o test -DUSE_SCOREP_MANUAL
+	$(CXX)  -O0 -g test.cpp -o test -lmeric $(LIBS)
 
 overhead: overhead_test.cpp
-	$(CXX)   -g overhead_test.cpp -std=c++11 -DUSE_MERIC -lmeric $(LIBS) -o overHead
+	$(CXX)   -g overhead_test.cpp -std=c++11 -lmeric $(LIBS) -o overHead
 
 samplesTest: samples_test.cpp
 	$(CXX)    -O0 -g samples_test.cpp -lmeric $(LIBS) -o samples
 
 blasTest: blas_test.c
-	$(CXX) -O3 -g blas_test.c -lmeric -mkl $(LIBS) -o blasTest
+	$(CXX) -O3 -g blas_test.c -lmeric -mkl $(MKL_PATHS) $(LIBS) -o blasTest
 
 blasTestInfo:
 	$(info )
-	$(info INFO: to compile blas_test.c load mkl module and compile using "make blasTest" )
+	$(info INFO: to compile blas_test.c set MKL include and lib paths and compile using "make blasTest" )
 	$(info )
 
 fortTest:
-	$(FC) fort_test.f90 -cpp -lmeric $(LIBS) -o fortTest -DUSE_MERIC
+	$(FC) fort_test.f90 -cpp -lmeric $(LIBS) -o fortTest
 
 fortTestInfo:
 	$(info )
@@ -92,7 +91,7 @@ fortTestInfo:
 
 
  ######
-MeasurementDIRS=hdeemMeasurement* mericMeasurement* TEST* TESTMPI*
+MeasurementDIRS=mericMeasurement* TEST* TESTMPI*
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub

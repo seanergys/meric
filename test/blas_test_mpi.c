@@ -1,13 +1,13 @@
-// module load intel mkl
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <mkl.h>
+#include <mpi.h>
+
+#include <meric.h>
 
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "mkl.h"
-#include <time.h>
-#include <meric.h>
-#include <mpi.h>
 
 int main(int argc, char **argv)
 {
@@ -23,7 +23,6 @@ MPI_Comm_size(MPI_COMM_WORLD, &size);
     int loopDGEMM, loopDGEMV;
 //-------------------------------------------------------------------
 MERIC_Init();
-MERIC_MeasureStart("main");
 //-------------------------------------------------------------------
 /*
     printf("LARGE MATRICES\n\n");
@@ -116,7 +115,7 @@ MERIC_MeasureStart("DGEMM");
     for(int i=0;i<loopDGEMM;i++)
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
                     m, n, k, alpha, A, k, B, n, beta, C, n);
-MERIC_MeasureStop();
+MERIC_MeasureStop("DGEMM");
     regionTime = time(NULL) - regionTime;
     printf(" >>> DGEMM TIME: %ld\n", regionTime);
 }
@@ -163,7 +162,7 @@ MERIC_MeasureStart("DGEMV");
     for(int i=0;i<loopDGEMV;i++)
         cblas_dgemv(CblasRowMajor, CblasNoTrans, 
                     vMatN, vMatN, alpha, Vmat, vMatN, v, 1, beta, vOut, 1);
-MERIC_MeasureStop();
+MERIC_MeasureStop("DGEMV");
     regionTime = time(NULL) - regionTime;
     printf(" >>> DGEMV TIME: %ld\n", regionTime);
 
@@ -180,7 +179,7 @@ MERIC_MeasureStop();
     mkl_free(A);
     mkl_free(B);
     mkl_free(C);
-MERIC_MeasureStop();
+
 MERIC_Close();
 
 MPI_Finalize();

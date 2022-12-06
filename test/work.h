@@ -1,4 +1,3 @@
-
 #include <sys/time.h>
 #define REPS 100000
 
