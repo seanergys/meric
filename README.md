@@ -501,7 +501,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* File that sets exact settings for regions inside your code.
 		* In default it is set for blas_test.
 	* region.options.extra
-		* Configuration file, that shows all available ways how to specify MERIC settings.
+		* Configuration file, that shows advanced MERIC settings.
 * run.sh and run-mpi.sh
 	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
 * run-jetson.sh

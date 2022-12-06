@@ -1,11 +1,11 @@
 {
 	"A" : {
-		"PWRCAP_POWER" : 150,
-		"PWRCAP_TIME" : 10
+		"PWRCAP_POWER" : 150000,
+		"PWRCAP_TIME" : 100
 	}
 	,
 	"B" : {
-		"PWRCAP_POWER" : 70,
-		"PWRCAP_TIME" : 10
+		"PWRCAP_POWER" : 110000,
+		"PWRCAP_TIME" : 100
 	}
 }

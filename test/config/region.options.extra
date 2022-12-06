@@ -9,75 +9,6 @@
 		"FREQUENCY" : 2500000000, 
 		"UNCORE_FREQUENCY" : 2500000000
 	},
-	
-	"@SOCKET" : {
-		"0" : {
-			"A" : {
-				"FREQUENCY" : 1300000000,
-				"UNCORE_FREQUENCY" : 1300000000
-			},
-			"B":{ 
-				"FREQUENCY" : 2400000000, 
-				"UNCORE_FREQUENCY" : 2400000000
-			}
-		},
-		"1" : {
-			"A" : {
-				"FREQUENCY" : 1800000000,
-				"UNCORE_FREQUENCY" : 1800000000
-			},
-			"B":{ 
-				"FREQUENCY" : 1900000000, 
-				"UNCORE_FREQUENCY" : 1900000000
-			}
-		}
-	},
-	
-	"@NODE" : {
-		"0" : {
-			"A" : {
-				"FREQUENCY" : 1300000000,
-				"UNCORE_FREQUENCY" : 1300000000
-			},
-			"B":{ 
-				"FREQUENCY" : 2400000000, 
-				"UNCORE_FREQUENCY" : 2400000000
-			},
-			
-			"@SOCKET" : {
-				"0" : {
-					"A" : {
-						"FREQUENCY" : 1300000000,
-						"UNCORE_FREQUENCY" : 1300000000
-					},
-					"B":{ 
-						"FREQUENCY" : 2400000000, 
-						"UNCORE_FREQUENCY" : 2400000000
-					}
-				},
-				"1" : {
-					"A" : {
-						"FREQUENCY" : 1800000000,
-						"UNCORE_FREQUENCY" : 1800000000
-					},
-					"B":{ 
-						"FREQUENCY" : 1900000000, 
-						"UNCORE_FREQUENCY" : 1900000000
-					}
-				}
-			}
-		},
-		"1" : {
-			"A" : {
-				"FREQUENCY" : 1500000000,
-				"UNCORE_FREQUENCY" : 1500000000
-			},
-			"B":{ 
-				"FREQUENCY" : 1600000000, 
-				"UNCORE_FREQUENCY" : 1600000000
-			}
-		}
-	},
 
 	"@IGNORE" : {
 		"@REGIONS" : ["A", "B", "C"],
@@ -85,6 +16,7 @@
 			"FREQUENCY" : 200MHz,
 			"UNCORE_FREQUENCY" : 200MHz,
 			"NUM_THREADS" : 2
-		}
+		},
+		"@RUNTIME" : 0.1
 	}
 }
