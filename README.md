@@ -407,7 +407,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 
 
 ## Measurement mode ##
-* `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
+* `export MERIC_MEASURE=RAPL,HDEEM-S`
 	- NONE    = Default option, no time or energy measurement.
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
