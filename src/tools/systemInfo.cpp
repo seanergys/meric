@@ -293,13 +293,24 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			std::cout << turboRatio[i]*100000 << "(" << turboCoresRange[i]<<") ";
 			i++;
 		}
-		std::cout << "kHz(#cores)\n";
+		if (i > 0)
+		{
+			std::cout << "kHz(#cores)\n";
+		}
+		else
+		{
+			std::cout << "enabled\n";
+		}
 #elif defined HAVE_E_SMI_E_SMI_H
 		freq = meric::Environment::getMaximumTurboFrequency();
 		if (freq > 0)
+		{
 			std::cout << freq/1000 << " kHz\n";
+		}
 		else
+		{
 			std::cout << "enabled\n";
+		}
 #else
 		std::cout << "enabled\n";
 #endif		
@@ -368,18 +379,24 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 		if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))
+		{
 			meric::read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
-		freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-		std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
-		if (ok && freq != limits.maxUncoreFreq)
-		{
-			ok = false;
+			freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+			std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
+			if (ok && freq != limits.maxUncoreFreq)
+			{
+				ok = false;
+			}
+			freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+			std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
+			if (ok && freq != limits.minUncoreFreq)
+			{
+				ok = false;
+			}
 		}
-		freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
-		if (ok && freq != limits.minUncoreFreq)
+		else
 		{
-			ok = false;
+			std::cout << "\tCPU uncore frequency limits: unknown\n";
 		}
 	#elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
