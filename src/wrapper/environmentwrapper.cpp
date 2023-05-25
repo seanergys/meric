@@ -175,7 +175,7 @@ void Environment::getGPUbrandString(std::string & GPUname)
  * else if acpi-cpufreq scaling driver is used returns value from the system file
  * else returns 0
  **/
-#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_INFO
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PLATFORM_INFO
 long Environment::getNominalFrequency()
 {
 	uint64_t MSR_PLATFORM_INFO_bits;
@@ -418,7 +418,7 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 long Environment::getMaximumTurboFrequency()
 {
 	long frequency = 0;
-#if defined HAVE_MSR_SAFE && defined MSR_TURBO_RATIO_LIMIT
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_TURBO_RATIO_LIMIT
 	uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 	read_msr(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
 	MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask;
@@ -505,7 +505,7 @@ bool Environment::isHWPactive(std::string &status)
 	
 	if ((regs[eax] & 0x80) >> 7 )
 	{
-		#if defined HAVE_MSR_SAFE && defined IA32_PM_ENABLE
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_PM_ENABLE
 			uint64_t IA32_PM_ENABLE_bits;
 			read_msr(0, IA32_PM_ENABLE, &IA32_PM_ENABLE_bits);
 			HWP = IA32_PM_ENABLE_bits & IA32_PM_ENABLE_mask;
@@ -558,7 +558,7 @@ DVFS_WAY Environment::isDVFSpossible()
 
 	if (scalingGovernor == "userspace")
 	{
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
 		return USRSPACE_LIB;
 #else
 		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
@@ -577,7 +577,7 @@ DVFS_WAY Environment::isDVFSpossible()
 			if (availGovernor == "userspace")
 			{
 				frequencyBounderyFile.close();
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
 				return USRSPACE_LIB;
 #else
 				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
@@ -590,7 +590,7 @@ DVFS_WAY Environment::isDVFSpossible()
 		frequencyBounderyFile.close();
 	}
 
-#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
 	if (getScalingDriver() == "intel_pstate" && 
 	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
 	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
@@ -675,7 +675,7 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 				}			
 			}
 		}
-#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
 		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
@@ -1193,7 +1193,7 @@ void Environment::readSystemDefaultSettings()
 			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
 		}
 
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	#if defined _INTEL_ && defined IA32_ENERGY_PERF_BIAS
 		read_msr(0, IA32_ENERGY_PERF_BIAS, &defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 	#elif defined _AMD_ && defined MSR_HWCR
@@ -1204,7 +1204,7 @@ void Environment::readSystemDefaultSettings()
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef _INTEL_
-	#ifdef HAVE_MSR_SAFE
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 			read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
@@ -1254,7 +1254,7 @@ void Environment::readSystemDefaultSettings()
 #ifdef _INTEL
 		uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 		uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
-	#ifdef HAVE_MSR_SAFE
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 		#ifdef MSR_PKG_POWER_LIMIT
 		read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
 		#endif
@@ -1519,7 +1519,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		}
 
 //ACTIVATE UFS
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 		if (defaultSettings.defaultUncoreFreq != -1)
 			activatedUFS = true;
 #endif
@@ -1650,7 +1650,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		socket_max = SOCKETS_PER_NODE-1;
 	}
 
-#if defined _INTEL_	&& defined HAVE_MSR_SAFE //only when having MSR_SAFE the Environment::isHWPactive() method may return true
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) //only when having MSR_SAFE the Environment::isHWPactive() method may return true
 	if (activatedDVFS == HWP)
 	{
 		std::ofstream coreFile;
@@ -1683,7 +1683,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 #endif
 	
-#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_PERF_CTL
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_PERF_CTL
 	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
 	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
@@ -1858,7 +1858,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		return;
 	}
 	usedUFS = true;
-	#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq;
 	if (maxFreq != minFreq)
 	{
@@ -1878,7 +1878,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	}
 	#endif
 
-	#if defined HAVE_MSR_SAFE && defined MSR_UNCORE_RATIO_LIMIT
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
 	#else
@@ -1998,7 +1998,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 
 #ifdef _INTEL_
 	uint64_t MSR_PKG_POWER_LIMIT_bits;
-	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 	read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
 	#elif defined HAVE_X86_ADAPT_H
 	int adaptRegisterHandler, fd;
@@ -2021,7 +2021,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / (1000*RAPL::getUnit(RAPL_PCKG_POWER_LIMIT)))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
 
 
-	#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 	if (timeWindow != 0)
 	{
 		/** PKG Time window size equation
@@ -2049,7 +2049,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 
 	for (int die=socket_min; die<=socket_max; die++)
 	{
-		#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 		write_msr(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, MSR_PKG_POWER_LIMIT_bits);
 		#elif defined HAVE_X86_ADAPT_H
 		fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
@@ -2348,7 +2348,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 							defSet << defaultSettings.maxCoreFreq / 1000;
 							defSet.close();
 						}
-#if defined _INTEL_ && defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
 						write_msr(thread, IA32_ENERGY_PERF_BIAS, defaultSettings.IA32_ENERGY_PERF_BIAS_default);
 #endif
 					}
@@ -2384,7 +2384,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 #if defined _INTEL_
 		if (defaultSettings.defaultPowerCapPKG != 0x0)
-	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 		{
 			for (int die=0; die<SOCKETS_PER_NODE; die++)
 				write_msr(mapCoresToSocket[die][0], MSR_PKG_POWER_LIMIT, defaultSettings.defaultPowerCapPKG);
