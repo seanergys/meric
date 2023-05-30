@@ -7,7 +7,7 @@ extern "C" {
 
 void   TIMEPROF_regionStart (const char * regionName);
 double TIMEPROF_regionStop  (const char * regionName);
-void   TIMEPROF_evaluate    (unsigned int timeThrashold = 0, const char * fileName = "");
+void   TIMEPROF_evaluate    ();
 double TIMEPROF_getLastRegionDuration();
 
 //void TIMEPROF_captureScope(const char * regionName);
