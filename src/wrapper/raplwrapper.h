@@ -41,7 +41,7 @@
 namespace meric {
 
 class RAPL {
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 public:
 	static void init(bool detailed);
 	static void close() {};

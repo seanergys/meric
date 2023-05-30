@@ -237,36 +237,37 @@ The API is using preprocessor directives, which allows user to select at the com
 #     4] TIMEPROF library                                                      #
 --------------------------------------------------------------------------------
 
-The TIMEPROF library provides light-weight runtime measurement of the instrumented regions in the code. The library is part of the MERIC repository since its main task is to identify regions for the future instrumentation with MERIC.
+The TIMEPROF library provides light-weight runtime measurement of the instrumented regions in the code. The library is part of the MERIC repository since its main task is to identify regions for future instrumentation with MERIC.
 
-The library produces a list of the regions, which duration is longer than time threshold (export environment variable `TIMEPROF_TIME` [ms]). When no threshold provided, the TIMEPROF will print complete list of measured regions with its minimum runtime. If environment variable `TIMEPROF_OUTPUT` exported, the list of regions is stored to the file, otherwise it is printed to the stdout.
+## TIMEPROF configuration ##
+TIMEPROF can be configured using following environment variables:
+ * `export TIMEPROF_TIME=100`
+ 	- Specification of minimum region runtime in milliseconds to include the region to the output. In default no time threshold.
 
-The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0.
+ * `export TIMEPROF_MASTER=1`
+	- In default `TIMEPROF_MASTER=1` only master thread of MPI_WORLD_COMM rank 0 collects runtimes, otherwise each process traces the application, and moreover checks that the regions have been executed by all processes the same number of times.
 
-
-## TIMEPROF interface ##
+ * `export TIMEPROF_OUTPUT=""`
+	- Specify name of output file, in default `TIMEPROF.log`. `TIMEPROF_OUTPUT=""` cause storing the output to stderr.
+ 
+## TIMEPROF API ##
 The interface is defined in `include/timeprof.h`. 
 
  *	`void TIMEPROF_regionStart(const char * regionName)`
-
-	Start time measurement of region called regionName.
+	- Start time measurement of region called regionName.
 
  *	`double TIMEPROF_regionStop(const char * regionName)`
- 
-	End of the time measurement, returns region duration in seconds.
+	- End of the time measurement, returns region duration in seconds.
 
  *	`void TIMEPROF_evaluate()`
-
-	At the end of the application run should be called this function to evaluate the measurements.
+	- At the end of the application run should be called this function to evaluate the measurements.
 
  *	`void TIMEPROF_captureScope(const char * regionName)`
-
-	[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
-	In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+	- [RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
+	- In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
 
  *	`double TIMEPROF_getLastRegionDuration()`
-
-	Since scope time measurement does not return the time measured, it can be obtained using this function.
+	- Since scope time measurement does not return the time measured, it can be obtained using this function.
 
 --------------------------------------------------------------------------------
 #     5] MERIC binary instrumentation                                          #
@@ -408,7 +409,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 
 
 ## Measurement mode ##
-* `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
+* `export MERIC_MEASURE=RAPL,HDEEM-S`
 	- NONE    = Default option, no time or energy measurement.
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.

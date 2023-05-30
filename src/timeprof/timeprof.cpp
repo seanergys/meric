@@ -1,4 +1,3 @@
-
 #include "timeprof.h"
 #include "../basis/utils.h"
 
@@ -6,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <time.h>
+#include <string.h>
 
 #ifdef HAVE_OMP_H
 	#include <omp.h>
@@ -19,16 +19,18 @@ namespace timeprof{
 
 enum TIMEPROF_RANKING {PREV_INIT=-1, POST_FINALIZE=-2, MASTER=0};
 int TIMEPROF_rank = PREV_INIT;
+bool TIMEPROF_master = true;
 
 
 typedef struct RtnDesc
 {
-	std::string name;
-	double lastStart;	//timestamp
-	double maxDuration;	//runtime
-	double minDuration;	//runtime
+	double lastStart;   //timestamp
+	double maxDuration; //runtime
+	double minDuration; //runtime
+	int    startCNT;    //number of starts
+	int    stopCNT;     //number of stops
 } RTN_DESC;
-std::map<std::string, RtnDesc> funcPROBEDList;
+static std::map<std::string, RtnDesc> funcPROBEDList;
 double lastDuration = 0.0;
 struct outputStream {
 	outputStream(std::streambuf * buf, std::ostream & os) : os(os), old_buf(os.rdbuf(buf)) {}
@@ -39,14 +41,6 @@ struct outputStream {
 };
 
 
-/*
-struct region {
-	region(const char * regionName) : name(std::string(regionName)) {TIMEPROF_regionStart(regionName);}
-	~region() { TIMEPROF_regionStop(name.c_str()); }
-	std::string name;
-};
-*/
-
 /**
  * starts time measurement for region 'regionName'
  **/
@@ -54,48 +48,54 @@ struct region {
 void regionStart(const char * regionName)
 {
 	if (regionName && !regionName[0])
+	{
 		return;
-	MERIC_INFO << "T1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
+	}
+
 	if (TIMEPROF_rank == PREV_INIT)
 	{
-#ifdef HAVE_VRUT
-		std::string node = meric::mutils::getenv("TIMEPROF_NODE", std::string("NONE"));
-		char hostname[HOST_NAME_MAX];
-		gethostname(hostname, HOST_NAME_MAX);
-		if (std::string(hostname) == node)
-			TIMEPROF_rank = MASTER;
-#elif defined HAVE_MPI_H
+		TIMEPROF_master = meric::mutils::getenv<bool>("TIMEPROF_MASTER", true);
+#ifdef HAVE_MPI_H
 		int flag;
 		MPI_Initialized(&flag);
 		if (flag)
+		{
 			MPI_Comm_rank(MPI_COMM_WORLD, &TIMEPROF_rank);
+		}
 #else
 		TIMEPROF_rank = MASTER;
 #endif
 	}
 		
 	
-	if (TIMEPROF_rank == MASTER)
+	if (TIMEPROF_master == false || TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
 		{
 			struct timespec time;
 			clock_gettime(CLOCK_REALTIME, &time);
 			double timestamp = time.tv_sec + time.tv_nsec/1e9;
-
+			
 			std::string funcName = std::string(regionName);
 			if (!funcPROBEDList.count(funcName))
 			{
-				RtnDesc function;
-				function.name = funcName;
-				function.maxDuration = 0.0;
-				function.minDuration = 0.0;
-				function.lastStart = timestamp;
-				funcPROBEDList[funcName]=function;
+				RtnDesc function = {
+					.lastStart   = timestamp,
+					.maxDuration = 0.0,
+					.minDuration = 0.0,
+					.startCNT    = 1,
+					.stopCNT     = 0
+					};
+				funcPROBEDList[funcName] = function;
 			}
 			else
+			{
+				funcPROBEDList[funcName].startCNT++;
 				funcPROBEDList[funcName].lastStart = timestamp;
+			}
 			lastDuration = 0.0;
+			
+			MERIC_INFO << "[" + std::to_string(TIMEPROF_rank) + "] START " + std::string(regionName) + " CNT " +std::to_string(funcPROBEDList[funcName].startCNT)+" / "+std::to_string(funcPROBEDList[funcName].stopCNT)  +"\n";
 		}
 	}
 }
@@ -107,25 +107,42 @@ void regionStart(const char * regionName)
 double regionStop(const char * regionName)
 {
 	if (regionName && !regionName[0])
-		return 0.0;	
+	{
+		return 0.0;
+	}
 	double duration = 0.0;
-	MERIC_INFO << "P1 "<< TIMEPROF_rank <<"\t"<<regionName<<std::endl;
-	if (TIMEPROF_rank == MASTER)
+	
+	if (TIMEPROF_master == false || TIMEPROF_rank == MASTER)
 	{
 		#pragma omp master
 		{
 			std::string funcName = std::string(regionName);
-			if (funcPROBEDList.count(funcName) && funcPROBEDList[funcName].lastStart != 0)
+			if (funcPROBEDList.count(funcName))
 			{
-				struct timespec time;
-				clock_gettime(CLOCK_REALTIME, &time);
-				duration = time.tv_sec + time.tv_nsec/1e9 - funcPROBEDList[funcName].lastStart;
-	
-				if (duration > (funcPROBEDList[funcName].maxDuration))
-					funcPROBEDList[funcName].maxDuration = duration;
-				if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
-					funcPROBEDList[funcName].minDuration = duration;
-				funcPROBEDList[funcName].lastStart=0;
+				funcPROBEDList[funcName].stopCNT++;
+				
+				MERIC_INFO << "[" + std::to_string(TIMEPROF_rank) + "] STOP " + funcName + " CNT " +std::to_string(funcPROBEDList[funcName].startCNT)+" / "+std::to_string(funcPROBEDList[funcName].stopCNT)  +"\n";
+				
+				if (funcPROBEDList[funcName].lastStart != 0)
+				{
+					struct timespec time;
+					clock_gettime(CLOCK_REALTIME, &time);
+					duration = meric::mutils::timeToDouble(time) - funcPROBEDList[funcName].lastStart;
+					
+					if (duration > (funcPROBEDList[funcName].maxDuration))
+					{
+						funcPROBEDList[funcName].maxDuration = duration;
+					}
+					if (duration < funcPROBEDList[funcName].minDuration || funcPROBEDList[funcName].minDuration == 0)
+					{
+						funcPROBEDList[funcName].minDuration = duration;
+					}
+					funcPROBEDList[funcName].lastStart = 0;
+				}
+			}
+			else
+			{
+				MERIC_INFO << "[" + std::to_string(TIMEPROF_rank) + "] warning: STOP " + funcName + " prior START\n";
 			}
 		}
 	}
@@ -134,41 +151,117 @@ double regionStop(const char * regionName)
 }
 
 /**
- * to the file 'fileName' stores a list of regions with a runtime longer than the trashold [ms]
+ * to the file 'fileName' stores a list of regions with a runtime longer than the threshold [ms]
  * if fileName not specified the output will go to the std::cerr
  **/
 //void TIMEPROF_evaluate()
 void evaluate()
 {
-	//unsigned int timeThreshold = meric::mutils::getenv<unsigned int>("TIMEPROF_TIME", 0);
-	double timeLimit = meric::mutils::getenv<double>("TIMEPROF_TIME", 0.0); //seconds
+	double timeLimit = meric::mutils::getenv<int>("TIMEPROF_TIME", 0) / 1e3; //milliseconds to seconds
 	std::string fileName = meric::mutils::getenv("TIMEPROF_OUTPUT", std::string("TIMEPROF.log"));
+	std::string output = "";
 
-	MERIC_INFO << "E1 "<< TIMEPROF_rank << std::endl;
-	if (TIMEPROF_rank == MASTER)
+#ifdef HAVE_MPI_H
+	if (TIMEPROF_master == false)
 	{
 		#pragma omp master
 		{
-//			double timeLimit = timeThreshold/1000.0;
-			std::ofstream of;
-			if (fileName != "")
-			{
-				of.open(fileName);
-			}
-			outputStream raii(of.rdbuf(), std::cerr);
-			if (!of.is_open())
-				raii.~outputStream();
+			unsigned int loopSize = funcPROBEDList.size();
+			MPI_Bcast(&loopSize, 1, MPI_UNSIGNED, MASTER, MPI_COMM_WORLD);
 			
-			for (auto& funcRecord : funcPROBEDList)
+			if (TIMEPROF_rank == MASTER)
 			{
-				if (funcRecord.second.minDuration > timeLimit)
+				for (auto& funcRecord : funcPROBEDList)
 				{
-					std::cerr << funcRecord.first << "\t"<< ((!timeLimit) ? std::to_string(funcRecord.second.minDuration) : "") << std::endl;
-					MERIC_INFO << funcRecord.first << " - " << funcRecord.second.minDuration << std::endl;
+					//master broadcasts region name
+					//processes reply boolean
+						// return (region entered == true && startCNT == stopCNT && region min duration > timeLimit)
+					//if all regions returned true
+						// MPI_Reduce minDuration
+						// MPI_Gather startCNT
+					// if every process has the same startCNT
+						//print add the process to the output
+					
+					int stringSize = funcRecord.first.length()+1;
+					MPI_Bcast(&stringSize, 1, MPI_UNSIGNED, MASTER, MPI_COMM_WORLD);
+					char * regionName = new char [stringSize];
+					strcpy(regionName, funcRecord.first.c_str());
+					MPI_Bcast(regionName, stringSize, MPI_CHAR, MASTER, MPI_COMM_WORLD);
+					delete[] regionName;
+					bool avail = true;
+					MPI_Allreduce(MPI_IN_PLACE, &avail, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
+					
+					if (avail)
+					{
+						double duration;
+						int min, max;
+						MPI_Reduce(&funcRecord.second.minDuration, &duration, 1, MPI_DOUBLE, MPI_MIN, MASTER, MPI_COMM_WORLD);
+						MPI_Reduce(&funcRecord.second.startCNT, &min, 1, MPI_INT, MPI_MIN, MASTER, MPI_COMM_WORLD);
+						MPI_Reduce(&funcRecord.second.startCNT, &max, 1, MPI_INT, MPI_MAX, MASTER, MPI_COMM_WORLD);
+						if (min == max)
+						{
+							output += funcRecord.first + "\t" + ((!timeLimit) ? std::to_string(duration) : "") + "\n";
+						}
+					}
 				}
 			}
-			MERIC_INFO << "E2 "<<TIMEPROF_rank<< std::endl;
-		}	
+			else
+			{
+				for (int i = 0; i<loopSize; i++)
+				{
+					int stringSize;
+					MPI_Bcast(&stringSize, 1, MPI_UNSIGNED, MASTER, MPI_COMM_WORLD);
+					char * regionName = new char [stringSize];
+					MPI_Bcast(regionName, stringSize, MPI_CHAR, MASTER, MPI_COMM_WORLD);
+					
+					bool avail = (funcPROBEDList.count(regionName) && funcPROBEDList[regionName].startCNT == funcPROBEDList[regionName].stopCNT && funcPROBEDList[regionName].minDuration > timeLimit);
+					MPI_Allreduce(MPI_IN_PLACE, &avail, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
+					if (avail)
+					{
+						double duration;
+						int min, max;
+						MPI_Reduce(&funcPROBEDList[regionName].minDuration, &duration, 1, MPI_DOUBLE, MPI_MIN, MASTER, MPI_COMM_WORLD);
+						MPI_Reduce(&funcPROBEDList[regionName].startCNT, &min, 1, MPI_INT, MPI_MIN, MASTER, MPI_COMM_WORLD);
+						MPI_Reduce(&funcPROBEDList[regionName].startCNT, &max, 1, MPI_INT, MPI_MAX, MASTER, MPI_COMM_WORLD);
+					}
+					delete[] regionName;
+				}
+			}
+		}
+	}
+	else
+#endif
+	{
+		if (TIMEPROF_rank == MASTER)
+		{
+			#pragma omp master
+			{
+				for (auto& funcRecord : funcPROBEDList)
+				{
+					if (funcRecord.second.minDuration > timeLimit && funcRecord.second.startCNT == funcRecord.second.stopCNT)
+					{
+						output += funcRecord.first + "\t" + ((!timeLimit) ? std::to_string(funcRecord.second.minDuration) : "") + "\n";
+					}
+				}
+			}
+		}
+	}
+	
+	#pragma omp master
+	if (TIMEPROF_rank == MASTER)
+	{
+		std::ofstream of;
+		if (fileName != "")
+		{
+			of.open(fileName);
+		}
+		outputStream raii(of.rdbuf(), std::cerr);
+		if (!of.is_open())
+		{
+			raii.~outputStream();
+		}
+		
+		std::cerr << output;
 	}
 	TIMEPROF_rank = POST_FINALIZE;
 }

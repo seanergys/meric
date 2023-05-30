@@ -48,7 +48,7 @@ int Meric::getDefaultParameters()
 {
 	int ret=0;
 //OBLIGATORY SECTION
-#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	defaultParameter.frequency = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
 	if (defaultParameter.frequency < 0)
 	{
@@ -63,7 +63,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.frequency = 0;
 #endif
 
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
 	if (defaultParameter.uncoreFrequency < 0)
 	{
@@ -94,7 +94,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.nthreads = 0;
 #endif
 
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	defaultParameter.powerCapPKG     = mutils::getenv("MERIC_PWRCAP_POWER", -1);
 	defaultParameter.powerCapPKGtime = mutils::getenv("MERIC_PWRCAP_TIME", -1);
 	if (defaultParameter.powerCapPKG < 0 || defaultParameter.powerCapPKGtime < 0)
@@ -294,7 +294,7 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 			#endif
-			#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
+			#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
 				if (modeString[token] == MODE_RAPL)
 				{
 					std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";

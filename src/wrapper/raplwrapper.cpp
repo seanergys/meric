@@ -8,7 +8,7 @@ bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 std::map<std::string, double> RAPL::units;
 
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 std::map<std::string, unsigned long long int> RAPL::counters;
 
 /**
@@ -66,7 +66,7 @@ void RAPL::initCountersUnits()
 	if (units.size())
 		return; //already initialized
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
-#if defined HAVE_MSR_SAFE && defined MSR_RAPL_POWER_UNIT
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_RAPL_POWER_UNIT
 	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
 #elif defined HAVE_X86_ADAPT_H
 	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
@@ -87,7 +87,7 @@ void RAPL::initCountersUnits()
 		//power
 		units[RAPL_PCKG_POWER_LIMIT] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
 		units[RAPL_RAM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 		units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 #endif
 		//energy
@@ -118,7 +118,7 @@ void RAPL::initCountersUnits()
  * read values of the counters (std::string) from the input dictionary and store
  * the values into the dictionary (unsigned long long int)
  **/
-#if defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -144,7 +144,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			else
 #endif
 			{
-				#ifdef HAVE_MSR_SAFE
+				#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &domainEnergy);
 				#elif defined HAVE_GEOPM_H
 					domainEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
@@ -176,7 +176,7 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 				{
 					uint64_t domainEnergy = 0;
-					#ifdef HAVE_MSR_SAFE
+					#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 						read_msr(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &domainEnergy);
 					#elif defined HAVE_GEOPM_H
 						domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
@@ -342,7 +342,7 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 				
 				counterLabel[counterName] = counterLabel[*it].substr(0,counterLabel[*it].find(' '))+suffix + os.str() + counterLabel[*it].substr(counterLabel[*it].find(' '));
 
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 				counterDefines[counterName] = counterDefines[*it];
 #endif
 			}
