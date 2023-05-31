@@ -181,7 +181,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 	Starting measurement of a reagion.
 	Please, do not use `#` and `@` in names of regions.
 
- *	`MERIC_MeasureStop(const char * region)`
+ *	`double MERIC_MeasureStop(const char * region)`
 
 	End of the measurement of the last started region.
 	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
