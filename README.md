@@ -245,7 +245,7 @@ TIMEPROF can be configured using following environment variables:
  	- Specification of minimum region runtime in milliseconds to include the region to the output. In default no time threshold.
 
  * `export TIMEPROF_MASTER=1`
-	- In default `TIMEPROF_MASTER=1` only master thread of MPI_WORLD_COMM rank 0 collects runtimes, otherwise each process traces the application, and moreover checks that the regions have been executed by all processes the same number of times.
+	- In default `TIMEPROF_MASTER=0` all processes trace the application, and moreover checks that the regions have been executed by all processes the same number of times. `TIMEPROF_MASTER=0` option causes that only master thread of MPI_WORLD_COMM rank 0 traces the instrumented application.
 
  * `export TIMEPROF_OUTPUT=""`
 	- Specify name of output file, in default `TIMEPROF.log`. `TIMEPROF_OUTPUT=""` cause storing the output to stderr.

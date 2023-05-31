@@ -19,7 +19,7 @@ namespace timeprof{
 
 enum TIMEPROF_RANKING {PREV_INIT=-1, POST_FINALIZE=-2, MASTER=0};
 int TIMEPROF_rank = PREV_INIT;
-bool TIMEPROF_master = true;
+bool TIMEPROF_master = false;
 
 
 typedef struct RtnDesc
@@ -54,7 +54,7 @@ void regionStart(const char * regionName)
 
 	if (TIMEPROF_rank == PREV_INIT)
 	{
-		TIMEPROF_master = meric::mutils::getenv<bool>("TIMEPROF_MASTER", true);
+		TIMEPROF_master = meric::mutils::getenv<bool>("TIMEPROF_MASTER", false);
 #ifdef HAVE_MPI_H
 		int flag;
 		MPI_Initialized(&flag);
