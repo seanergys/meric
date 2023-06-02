@@ -649,7 +649,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
 		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_PKG_POWER_LIMIT))
+			{
 				meric::read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+			}
 		#elif defined HAVE_X86_ADAPT_H
 			int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 			int adaptRegisterHandler;
@@ -661,6 +663,10 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		#endif
 			if (MSR_PKG_POWER_LIMIT_bits != 0x0)
 			{
+				if ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_lock_mask) != 0)
+				{
+					std::cout << "\n\tchanging RAPL PKG power capping limits NOT available - requires system (RAPL LOCK bit) reset\n\n";
+				}
 				std::cout << "\tPKG power limit #1: " 
 					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 					<< " + clamping "
