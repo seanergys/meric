@@ -2,6 +2,7 @@
 #include "../../wrapper/environmentwrapper.h"
 #include "../../wrapper/raplwrapper.h"
 #include "../../wrapper/nvmlwrapper.h"
+#include "../../basis/utils.h"
 #include <limits>
 
 using namespace meric;
@@ -25,6 +26,11 @@ void storeValues(std::map<std::string, unsigned long long int> &record, double t
 {
 	std::remove(OUTPUT_FILE.c_str());
 	std::ofstream ss (OUTPUT_FILE, std::ofstream::out);
+	if (!ss)
+	{
+		std::cerr << "ERROR: cannot create file "<< OUTPUT_FILE <<", `export MERIC_TMP_PATH` to a directory with write permission\n";
+		exit(5);
+	}
 	//store time
 	ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << time << std::endl;
 	//store counters
@@ -159,7 +165,8 @@ int main(int argc, char **argv)
 		std::cerr << "missing machine hostname\n";
 		exit(1);
 	}
-	OUTPUT_FILE = std::string(MERIC_PATH)+"/build/.MERICmeasure-" + std::string(hostname) +".data";
+
+	OUTPUT_FILE = mutils::getenv<std::string>("MERIC_TMP_PATH", std::string(MERIC_PATH)+"/build") + "/.MERICmeasure-" + std::string(hostname) +".data";
 	RegionParameters defaultParameter;
 
 	for (int i = 1; i < argc; ++i)
