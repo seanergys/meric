@@ -490,7 +490,10 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 	if(params.mpi)
 	{
 		if (!initFuncs.empty())
-			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init", BPatch_exit);
+		{
+			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init", BPatch_exit)
+			          && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init_thread", BPatch_exit);
+		}
 		if (!closeFuncs.empty())
 			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, closeFuncs, funcArgs, "MPI_Finalize", BPatch_entry);
 	}
