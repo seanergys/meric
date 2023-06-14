@@ -39,6 +39,7 @@
 		- removed socket-/node-specific tuning
 		- removed configuration change threshold
 		+ added minimum region runtime filtering
+  - utilities are stored into bin/ directory
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation

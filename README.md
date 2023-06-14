@@ -51,7 +51,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 --------------------------------------------------------------------------------
 #     1] System parameters tuning                                              #
 --------------------------------------------------------------------------------
-MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the tools/ directory).
+MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the bin/ directory).
 
 
 ## CPU core frequency ##
@@ -576,11 +576,11 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 --------------------------------------------------------------------------------
 #     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
-MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the tools/ directory.
+MERIC repository also contains utility, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the bin/ directory.
 
 Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
-For a static analysis of a selected application, the directory with the tool contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
+For a static analysis of a selected application, the directory with the utilities contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
 --------------------------------------------------------------------------------
 #     12] Acknowledgement                                                      #
