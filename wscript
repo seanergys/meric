@@ -1,6 +1,6 @@
 
 from waflib import Logs
-import os, shutil, copy, re
+import os, shutil, copy, re, platform
 
 def getCPUvendor():
 	vendor = ""
@@ -12,6 +12,8 @@ def getCPUvendor():
 		vendor = "_INTEL_"
 	elif re.search("AMD",line):
 		vendor = "_AMD_"
+	elif platform.machine().startswith("aarch") || platform.machine().lower().count("arm"):
+		vendor = "_ARM_"
 	return vendor
 	
 def configure(ctx):
