@@ -54,7 +54,6 @@ void regionStart(const char * regionName)
 
 	if (TIMEPROF_rank == PREV_INIT)
 	{
-		TIMEPROF_master = meric::mutils::getenv<bool>("TIMEPROF_MASTER", false);
 #ifdef HAVE_MPI_H
 		int flag;
 		MPI_Initialized(&flag);
@@ -62,9 +61,14 @@ void regionStart(const char * regionName)
 		{
 			MPI_Comm_rank(MPI_COMM_WORLD, &TIMEPROF_rank);
 		}
+		else
+		{
+			return;
+		}
 #else
 		TIMEPROF_rank = MASTER;
 #endif
+		TIMEPROF_master = meric::mutils::getenv<bool>("TIMEPROF_MASTER", false);
 	}
 		
 	
