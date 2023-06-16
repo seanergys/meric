@@ -213,7 +213,6 @@ def build(ctx):
 	ctx.objects(
 		source =
 			ctx.path.ant_glob('src/basis/*.cpp') +
-			ctx.path.ant_glob('src/store/*.cpp') +
 			ctx.path.ant_glob('src/meric/*.cpp') +
 			ctx.path.ant_glob('src/wrapper/*.cpp'),
 		target = "basis"
@@ -280,14 +279,18 @@ def build(ctx):
 	if not ctx.env.NOOPENMP:
 		#MERIC
 		ctx.stlib(
-			source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
+			source       = 
+				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
+				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
 			use          = "basis",
 			install_path = ctx.path.abspath()+"/lib/"
 		)
 		
 		ctx.shlib(
-			source       = ctx.path.ant_glob('src/meric/shared/*.cpp'),
+			source       =
+				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
+				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
 			use          = "basis",
 			install_path = ctx.path.abspath()+"/lib/"
@@ -318,7 +321,9 @@ def build(ctx):
 	ctx.all_envs["mpi"].LINK_CXX = ctx.all_envs["mpi"].CXX
 	
 	ctx.stlib(
-		source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
+		source       =
+			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
+			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
 		use          = "basis",
 		install_path = ctx.path.abspath()+"/lib/",
@@ -326,7 +331,9 @@ def build(ctx):
 	)
 	
 	ctx.shlib(
-		source       = ctx.path.ant_glob('src/meric/distributed/*.cpp'),
+		source       =
+			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
+			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
 		use          = "basis",
 		install_path = ctx.path.abspath()+"/lib/",

@@ -4,6 +4,10 @@
 
 #include "store.h"
 
+#ifdef HAVE_MPI_H
+	#include <mpi.h>
+#endif
+
 namespace meric {
 
 struct InfoRecord {
@@ -153,6 +157,19 @@ public:
 		}
 		
 		_initCounter = measurementInfo.ExecutionID;
+		counter = _initCounter;
+#ifdef HAVE_MPI_H
+		MPI_Bcast(&_initCounter, 1, MPI_UNSIGNED,0, MPI_COMM_WORLD);
+#endif
+	}
+	
+	void initStore(unsigned int & counter, const RegionParameters &outputFormat) override
+	{
+		loadSchedulerEnvironment();
+		outputFilenameFormat = outputFormat;
+#ifdef HAVE_MPI_H
+		MPI_Bcast(&_initCounter, 1, MPI_UNSIGNED,0, MPI_COMM_WORLD);
+#endif
 		counter = _initCounter;
 	}
 
