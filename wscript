@@ -34,7 +34,7 @@ def configure(ctx):
 			# Cray (cc), Fujitsu (FCC), ARM (armclang++)
 		else:
 			ctx.options.cpp="g++" # default C++ compiler
-
+	
 	try:
 		ctx.load(ctx.options.cpp)
 	except:
@@ -85,7 +85,7 @@ def configure(ctx):
 		else:
 			ctx.env.append_unique("CXXFLAGS",  [ "-fopenmp" ])
 			ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
-
+	
 	vendor = getCPUvendor()
 	if vendor != "":
 		ctx.env.append_unique("DEFINES", [ vendor ])
@@ -97,6 +97,7 @@ def configure(ctx):
 	if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
 		MSRSAFEavailable = True
 		ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
+		ctx.check(msg='Checking for module msr_safe', always=True)
 	
 	# check for OCC
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
