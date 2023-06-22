@@ -719,6 +719,41 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 #endif
 
 /**
+ * return true if power limit modification is possible
+ **/
+bool Environment::isPWRCAPpossible()
+{
+#if defined _INTEL_
+	// PKG
+	uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
+	
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
+		read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+	#elif defined HAVE_X86_ADAPT_H
+		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+		int adaptRegisterHandler;
+		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
+		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
+	#elif defined HAVE_GEOPM_H
+		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
+	#endif
+	
+	if (MSR_PKG_POWER_LIMIT_bits != 0x0 && (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_lock_mask) == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+#elif defined _AMD_ //remaining CPU architectures with supported power cap limit tuning
+	return true;
+#else
+	return false;
+#endif
+}
+
+/**
  * parse a list of threads IDs (comma or dash seprarated list) and inserts the ids to the vector vec
  * if lastOnly is true, only id of the very last element of the list is inserted to the vector vec
  * due to avalability of the lastOnly parameter the vecor is in opposite order
@@ -1545,10 +1580,10 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 
 //ACTIVATE POWERCAP
-#if defined _INTEL_ || defined _AMD_
 		if (defaultSettings.defaultPowerCapPKG != 0x0)
-			activatedPWRCAP = true;
-#endif
+		{
+			activatedPWRCAP = isPWRCAPpossible();
+		}
 
 		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);
