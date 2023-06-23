@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, and CSL) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL and ICX) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
