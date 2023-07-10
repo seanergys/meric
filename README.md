@@ -195,7 +195,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
  *	`void MERIC_CaptureScope(const char * regionName)`
 
 	Starts region with this function call, and automatically stops it at the end of the scope. Useful to capture a function that has several return statements.
-	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique, which is supported by GNU and Clang compilers for C++ and C (no support for Fortran) applications. When using another compiler, the MERIC_CaptureScope function will not be inserted. C applications may require compilation with `-fno-exceptions` or `-lstdc++` flag. 
+	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique, which is supported by C++ and C compilers (no support for Fortran) with cleanup attribute (such as GNU or Clang). When using a compiler without the support the MERIC_CaptureScope function will be removed from the code. C applications may require compilation with `-fno-exceptions` or `-lstdc++` flag. 
 
  *	`void MERIC_IgnoreStart()`
 
