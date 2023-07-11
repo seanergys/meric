@@ -59,8 +59,8 @@ void NVML::getCounterValues(std::map<std::string, unsigned long long> & record)
 {
 	for (int i=0; i<getGPUsPerNode(); i++)
 	{
-		unsigned long long energy;
 #ifdef HAVE_NVML_H
+		unsigned long long energy;
 		if (nvmlDeviceGetTotalEnergyConsumption(GPUhandles[i], &energy) == NVML_SUCCESS)
 			record[std::to_string(i)] = energy;
 		else
