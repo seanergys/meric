@@ -26,8 +26,6 @@ int THUNDER::getSamples()					//prejmenovat loadSamples()
 	timespec time;
 	clock_gettime(CLOCK_REALTIME, &time);
 	double currentTime = mutils::timeToDouble(time);
-	double timestamp = 1.0;
-	double prevstamp = 0.0;
 	//stop energy measurement
 	sleep(5); //output file is located at hca-server and it will be moved to the system when the measurement is closed
 	if (system("ssh hca \"pkill -f -INT getYokogawaMeasurements.py\""))
@@ -38,7 +36,6 @@ int THUNDER::getSamples()					//prejmenovat loadSamples()
 	std::ifstream iFile(filename);
 	if(iFile.is_open())
 	{
-		int cnt = 0;
 		std::string data;
 		std::getline(iFile, data);	//header
 	
@@ -123,7 +120,7 @@ std::string THUNDER::getData(double startTime, double duration, size_t *firstBla
 
 	if (*lastBlade == _samples.size())
 	{
-		*lastBlade = -1;
+		*lastBlade = std::numeric_limits<size_t>::max();
 		return "MERIC ERROR: missing ARM samples for region ";
 	}
 
@@ -141,8 +138,8 @@ std::string THUNDER::getData(double startTime, double duration, size_t *firstBla
 		}
 	}else
 	{
-		*firstBlade = -1;
-		*lastBlade  = -1;
+		*firstBlade = std::numeric_limits<size_t>::max();
+		*lastBlade  = std::numeric_limits<size_t>::max();
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	

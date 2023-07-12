@@ -186,7 +186,7 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 
 	if (*lastBlade == _samples.size())
 	{
-		*lastBlade = -1;
+		*lastBlade = std::numeric_limits<size_t>::max();
 		return "MERIC ERROR: missing ARM samples for region ";
 	}
 
@@ -225,8 +225,8 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 		}
 	}else
 	{
-		*firstBlade = -1;
-		*lastBlade  = -1;
+		*firstBlade = std::numeric_limits<size_t>::max();
+		*lastBlade  = std::numeric_limits<size_t>::max();
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	return "";
