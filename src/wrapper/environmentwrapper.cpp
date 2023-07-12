@@ -126,10 +126,40 @@ void Environment::getCPUbrandString(std::string & CPUname)
 				}
 			}
 		}
+		
+		//0x64 is identifier assigned to Fujitsu, which they use as CPU name
+		//https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_identification_method_v1_EN.pdf
+		if (CPUname == "0x46")
+		{
+			CPUname = "Fujitsu";
+
+			CPUinfoFile.clear();
+			CPUinfoFile.seekg(0);
+			
+			while (getline(CPUinfoFile,line))
+			{
+				std::string label = line.substr(0,8);
+				std::for_each(label.begin(), label.end(), [](char & c){ c = ::tolower(c); });
+				if (label == "cpu part")
+				{
+					std::string model = line.substr(line.find(':')+2);
+					char* test;
+					long model_id = strtol(model.c_str(), &test, 16);
+					if (*test == 0 && model_id == 0x1)
+						CPUname += " A64FX";
+					else
+						CPUname += " " + model;
+					break;
+				}
+			}
+		}
+		
 		CPUinfoFile.close();
 	}
 	if (CPUname != "")
+	{
 		return;
+	}
 
 	//internal alternative name of the hardware
 	if (!mapThreadsToCore.size())
@@ -1573,6 +1603,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 	}
 #endif
 */
+	MERIC_INFO << "Environment::init - DONE\n";
 }
 
 /**
@@ -1963,7 +1994,6 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 	if (power == 0)
 		return;
 
-	int socket_min, socket_max;
 #ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "LIBMSR set CPU powercap to: "<< power << " mW";
 #elif defined _INTEL_ && defined HAVE_MSR_SAFE
@@ -1983,6 +2013,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 	}
 	usedPWRCAP = true;
 
+	int socket_min, socket_max;
 	if (socket != -1 && socket < SOCKETS_PER_NODE)
 	{
 		MERIC_INFO << "; socket: " << socket << std::endl;

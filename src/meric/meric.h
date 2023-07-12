@@ -24,6 +24,7 @@
 #include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/occwrapper.h"
 #include "../wrapper/msrcounterswrapper.h"
+#include "../wrapper/a64fxwrapper.h"
 
 namespace meric {
 
@@ -120,12 +121,18 @@ public:
 	virtual void close()
 	{
 		if (COUNTERS == "perfevent")
+		{
 			PERFEVENT::close();
+		}
 		if (COUNTERS == "papi")
+		{
 			PAPI::close();
+		}
 		// close() is not needed for RAPL
-//		if(std::find(MONITORS.begin(), MONITORS.end(), meric::MODE_RAPL) != MONITORS.end())
-//			meric::RAPL::close();
+		if(std::find(MONITORS.begin(), MONITORS.end(), meric::MODE_A64FX) != MONITORS.end())
+		{
+			meric::A64FX::close();
+		}
 	}
 
 	virtual ~Meric() {};
@@ -481,13 +488,17 @@ protected:
 	
 	void setMainRegionName()
 	{
-		_mainRegion = std::string(program_invocation_name);
+		_mainRegion.assign(program_invocation_name);
 		size_t n = _mainRegion.find_last_of("/");
 		if (n != std::string::npos)
+		{
 			_mainRegion = _mainRegion.substr(n+1);
+		}
 		n = _mainRegion.find_first_of(".");
 		if (n != std::string::npos)
+		{
 			_mainRegion = _mainRegion.substr(0,n);
+		}
 		_mainRegion +="_static";
 	}
 
@@ -500,10 +511,10 @@ protected:
 	static RegionParameters defaultParameter;
 	static SocketsRegionParameters currentState;
 
-	static std::vector<int> _stack;
-	static std::vector<std::string> _name;
+	std::vector<int> _stack;
+	std::vector<std::string> _name;
 	std::vector<StoreBase *> _storeList;
-	static std::string _mainRegion;
+	std::string _mainRegion;
 	static timespec _startTime, _stopTime;
 	static bool MPIbarriers;
 	static bool OMPbarriers;

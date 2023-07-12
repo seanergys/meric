@@ -33,6 +33,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 std::map <uint64_t,uint64_t> currentWhitelist;
+std::string CPUname = "";
 int CORES_PER_SOCKET = 0;
 
 enum MODE	//this application keeps this order
@@ -42,13 +43,13 @@ enum MODE	//this application keeps this order
 	USING_GEOPM,
 	USING_NONE
 };
+////////////////////////////////////////////////////////////////////////////////
 
 void sysInfoSize(bool detailed = false)
 {
 	int SOCKETS_PER_NODE, THREADS_PER_CORE;
 	std::vector <int> onlineThreads;
 	meric::Environment::initHWSizes(SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE, onlineThreads);
-	std::string CPUname;
 	meric::Environment::getCPUbrandString(CPUname);
 	std::cout << "# SYSTEM INFORMATION\n"
 	          << "\tCPU name:         " << CPUname << '\n'
@@ -183,7 +184,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		}
 		else
 		{
-#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) 
+#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) && defined(__x86_64__)
 			std::cout << "\t\t install one the following libraries:\n"
 			          << "\t\t - msr_safe+libmsr / msr_safe / x86_adapt / cpufreq\n";
 #endif
@@ -948,6 +949,14 @@ void sysEnergyMeasurement()
 #ifdef HAVE_OCC
 	std::cout << "\tOCC\n";
 	systems++;
+#endif
+
+#if defined __aarch64__ && defined HAVE_LINUX_PERF_EVENT_H
+	if (CPUname == "Fujitsu A64FX")
+	{
+		std::cout << "\tA64FX\n";
+		systems++;
+	}
 #endif
 
 	if (systems == 0)

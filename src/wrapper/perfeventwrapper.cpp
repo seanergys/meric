@@ -187,8 +187,10 @@ unsigned long long PERFEVENT::getResultValue(unsigned long long int startValue, 
 void PERFEVENT::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 //	dict[PERFEVENT_COUNTERS::] = 0;
+#if defined(__x86_64__)
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_AVX_ALL] = 0;
+#endif
 	dict[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] = 0;
 	dict[PERFEVENT_COUNTERS::COUNTER_FREQ] = 0;

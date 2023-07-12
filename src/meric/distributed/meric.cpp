@@ -69,7 +69,9 @@ DistributedMeric::DistributedMeric()
 		    if(Meric::AGGREGATE)
 		    {
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
-			} else {
+			}
+			else
+			{
 				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
@@ -80,7 +82,9 @@ DistributedMeric::DistributedMeric()
 				if (Meric::SAMPLES)
 					std::cerr << "MERIC WARNING: HDEEM power samples are available in non-aggregate mode only\n";
 				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
-			} else {
+			}
+			else
+			{
 				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
@@ -98,7 +102,9 @@ DistributedMeric::DistributedMeric()
 		    if(Meric::AGGREGATE)
 		    {
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
-			} else {
+			}
+			else
+			{
 				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
@@ -122,7 +128,9 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int, double>>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
+		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
@@ -131,7 +139,9 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersAggregateStore<CountersStore<OCC, uint64_t, uint64_t>>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.push_back(new CountersStore<OCC, uint64_t, uint64_t>(!_MPInodeRank));
+		}
 	}
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
@@ -141,7 +151,9 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
+		}
 	}
 		
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
@@ -151,7 +163,9 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new SamplesAggregateStore<SamplesStore<JETSON>>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
+		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
@@ -166,7 +180,25 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new SamplesAggregateStore<SamplesStore<DAVIDE>>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
+		}
+	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore<A64FX, unsigned long long int, double>>(_storingProcs, !_MPInodeRank));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>(!_MPInodeRank));
+		}
+		//because of using perfevent to read energy counters, the performace counters are disabled
+		if (Meric::COUNTERS == "perfevent")
+		{
+			Meric::COUNTERS = "none";
+		}
 	}
 
 	if (Meric::COUNTERS != "none")
@@ -200,7 +232,9 @@ DistributedMeric::DistributedMeric()
 				_storeList.push_back(new CountersAggregateStore<CountersStore<MSR, uint64_t, uint64_t>>(_storingProcs, !_MPInodeRank));
 			}
 			else
+			{
 				_storeList.push_back(new CountersStore<MSR, uint64_t, uint64_t>(!_MPInodeRank));
+			}
 		}
 	}
 	
@@ -211,53 +245,78 @@ DistributedMeric::DistributedMeric()
 			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs, !_MPInodeRank));
 		}
 		else
+		{
 			_storeList.insert(_storeList.begin(), new InfoStore(!_MPInodeRank));
+		}
 	}
 	
 //INIT
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end()) //we do not really need to know, that system is Jetson, we may initialize the env as SYS_OTHER
+	{
 		Environment::init(SYS_JETSON,  defaultParameter, _MPInodeRank); 
+	}
 	else
+	{
 		Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
+	}
 
 	for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
+	{
 		currentState.socket[socket] = defaultParameter;
+	}
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
+		{
 			JETSON::init();
+		}
 		sleep(5);
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
 		if (!_MPIglobalRank)
+		{
 			THUNDER::init();
+		}
 		sleep(5);
 	}
-	
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		if (!_MPInodeRank)
+		{
 			DAVIDE::init();
+		}
 		DAVIDE::start(_startTime);
+	}
+	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end() && !_MPInodeRank)
+	{
+		A64FX::init();
 	}
 	
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")
+	{
 		PERFEVENT::init();
+	}
 	if (Meric::COUNTERS == "papi")
+	{
 		PAPI::init();
+	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	{
 		RAPL::init(Meric::DETAILED);
+	}
 	else if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
 		OCC::init(Meric::DETAILED);
 	}
 	if (Meric::COUNTERS == "msr")
+	{
 		MSR::init();
+	}
 	
 	setMainRegionName();
 	start(_mainRegion.c_str());
@@ -283,7 +342,9 @@ DistributedMeric::~DistributedMeric()
 	MPI_Comm_free(&_worldCopy);
 
 	for(unsigned int i=0; i<_storeList.size(); i++)
+	{
 		delete _storeList[i];
+	}
 	_storeList.clear();
 }
 

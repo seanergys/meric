@@ -19,12 +19,9 @@ std::string Meric::MEASURE        = mutils::getenv<std::string>("MERIC_MEASURE",
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};
 std::vector <std::string> Meric::ignoreRegions;
-std::vector<std::string> Meric::_name;
-std::vector<int> Meric::_stack;
 RegionParameters Meric::defaultParameter;
 SocketsRegionParameters Meric::currentState;
 RegionParameters Meric::outputFormat;
-std::string Meric::_mainRegion;
 timespec Meric::_startTime;
 timespec Meric::_stopTime;
 bool Meric::IGNORE = false;
@@ -322,9 +319,16 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 			#endif
+			#if !defined (__aarch64__) && !defined(HAVE_LINUX_PERF_EVENT_H)
+				if (modeString[token] == MODE_A64FX)
+				{
+					std::cerr << "MERIC WARNING: A64FX power monitoring not available\n";
+					continue;
+				}
+			#endif
 		}
 	}
-		
+	
 	if (Meric::BARRIERS != "all")
 	{
 		if (Meric::BARRIERS == "mpi")

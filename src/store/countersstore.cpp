@@ -9,6 +9,7 @@
 #include "../wrapper/raplwrapper.h"
 #include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/occwrapper.h"
+#include "../wrapper/a64fxwrapper.h"
 
 #ifdef HAVE_MPI_H
 #include <mpi.h>
@@ -112,4 +113,5 @@ template class meric::CountersStore <RAPL, unsigned long long int, double>;
 template class meric::CountersStore <HDEEM, double, double>;
 template class meric::CountersStore <NVML, unsigned long long, double>;
 template class meric::CountersStore <OCC, uint64_t, uint64_t>;
+template class meric::CountersStore <A64FX, unsigned long long int, double>;
 

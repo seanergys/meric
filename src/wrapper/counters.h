@@ -2,6 +2,21 @@
 #ifndef SRC_WRAPPER_COUNTERS_H_
 #define SRC_WRAPPER_COUNTERS_H_
 
+// From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
+/* In case headers aren't new enough to have __NR_perf_event_open */
+#ifndef __NR_perf_event_open
+	#ifdef __powerpc__
+		#define __NR_perf_event_open	319
+	#elif defined(__x86_64__)
+		#define __NR_perf_event_open	298
+	#elif defined(__i386__)
+		#define __NR_perf_event_open	336
+	#elif defined(__arm__) || defined(__aarch64__)
+		#define __NR_perf_event_open	364
+	#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
 /**
  * to add new PAPI counter:
  *	add here counter name
@@ -42,11 +57,34 @@ const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 const std::string COUNTER_FREQ = "PERF_COUNT_HW_CPU_CYCLES";
 
 static std::map<const std::string, std::string> counterLabel = {
+#if defined(__x86_64__)
 	{ COUNTER_AVX,             "COUNTER_AVX"             },
 	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
+#endif
 	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
 	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
 	{ COUNTER_FREQ,            "COUNTER_CPU_CYCLES"      }
+};
+
+}
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * to add new A64FX counter:
+ *	add here counter description
+ *  insert a label for the counter, that will be used in output files
+ *	init new conter inside A64FX::initMap(std::map<std::string, long> & dict)
+ *	add counter name and type inside A64FX::init()
+ **/
+namespace A64FX_COUNTERS {
+
+const std::string ENERGY_CORE = "CORE [J]";
+const std::string ENERGY_L2 = "L2 [J]";
+const std::string ENERGY_MEM = "MEM [J]";
+
+static std::map<const std::string, uint64_t> counterLabel = {
+	{ ENERGY_CORE, 0x01e0 },
+	{ ENERGY_L2,   0x03e0 },
+	{ ENERGY_MEM,  0x03e8 }
 };
 
 }
