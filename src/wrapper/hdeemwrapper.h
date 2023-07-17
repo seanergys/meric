@@ -3,19 +3,19 @@
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
 #include "../basis/utils.h"
+
 #ifdef HAVE_HDEEM_H
 	#include <hdeem.h>
-#else
-	#include "../../hdeem/hdeem.h"
 #endif
+#include <time.h>
+#include <unistd.h>
+
 #include <cstdlib>
 #include <iostream>
-#include <time.h>
 #include <ctime>
 #include <array>
 #include <vector>
 #include <map>
-#include <unistd.h>
 #include <cmath>
 #include <climits>
 
@@ -179,18 +179,6 @@ private:
 		HDEEM::energy++;
 	}
 
-	static void getStatus(hdeem_status_t &status)
-	{
-		status.status = 0;
-		status.total_blade_values = 0;
-		status.total_vr_values = 0;
-		status.pending_blade_values = 0;
-		status.pending_vr_values = 0;
-		clock_gettime(CLOCK_REALTIME, &status.start_time_blade);
-		status.start_time_vr = status.start_time_blade;
-		status.stop_time_blade = status.start_time_blade;
-		status.stop_time_vr = status.start_time_blade;
-	}
 	static int getSamples() {return 0; };
 	static void deleteSamples() {};
 	static void setTimeAdjustment(timespec start) {};
