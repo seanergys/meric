@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL and ICX) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL and ICX) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), and selected ARM systems (e.g. Fujitsu A64FX).
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -32,19 +32,19 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 -->
 
-<!--- wrapper branch links -->
- 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning)
- 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/wrapper#2-supported-energy-measurement-systems)
- 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/wrapper#3-meric-interface-and-shared-score-pmeric-api)
- 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/wrapper#4-timeprof-library)
- 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/wrapper#5-meric-binary-instrumentation)
- 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/wrapper#6-compilation)
- 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/wrapper#7-meric-input-parameters)
- 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/wrapper#8-content-of-test-folder-and-example-application-run)
- 9. [Code dynamism investigation, energy-efficiency optimisation](https://code.it4i.cz/vys0053/meric/tree/wrapper#9-code-dynamism-investigation-energy-efficiency-optimisation)
-10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/wrapper#10-meric-with-a-fortran-code)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#11-tool-for-static-tuning)
-12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/wrapper#12-acknowledgement)
+<!--- dev branch links -->
+ 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
+ 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
+ 3. [MERIC API](https://code.it4i.cz/vys0053/meric/-/tree/dev#3-meric-api)
+ 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
+ 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
+ 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
+ 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#7-meric-input-parameters)
+ 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#8-content-of-test-folder-and-example-application-run)
+ 9. [Code dynamism investigation, energy-efficiency optimisation](https://code.it4i.cz/vys0053/meric/tree/dev#9-code-dynamism-investigation-energy-efficiency-optimisation)
+10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 
 
 
@@ -153,6 +153,11 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 ## OCC ##
 [On Chip Controller (OCC)](https://github.com/open-power/occ) provides power monitoring of compute nodes power by OpenPOWER CPUs. Available from IBM POWER8 processors. The performance counters are updated every 500 us.
 
+
+## Fujisu A64FX ##
+Energy measurement of ARM-based A64FX is provided by performance counters of three power domains (CORE, MEMORY, and L2 cache). MERIC uses perf_event to read them. These events count energy consumption every cycle of the domain, which means high-frequency power sampling when CPU is under a load, however **no energy measurement** is provided when it is idle.
+
+
 ## BSC ARM Jetson ##
 Part of the MERIC repository is a Python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
 
@@ -176,7 +181,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 	Finalization of the library run to store the measurement results. Insert directly before MPI_Finalize().
 	Ends the region that started at the MERIC_Init() time.
 
- *	`void MERIC_MeasureStart(const char * regionName)`
+ *	`void MERIC_MeasureStart(const char * region)`
 
 	Starting measurement of a reagion.
 	Please, do not use `#` and `@` in names of regions.
@@ -192,7 +197,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 	Removes environment switching to configuration of the region the application is nested in.
 	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
- *	`void MERIC_CaptureScope(const char * regionName)`
+ *	`void MERIC_CaptureScope(const char * region)`
 
 	Starts region with this function call, and automatically stops it at the end of the scope. Useful to capture a function that has several return statements.
 	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique, which is supported by C++ and C compilers (no support for Fortran) with cleanup attribute (such as GNU or Clang). When using a compiler without the support the MERIC_CaptureScope function will be removed from the code. C applications may require compilation with `-fno-exceptions` or `-lstdc++` flag. 
@@ -297,8 +302,8 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - OpenMP (used in default)
 * optionally - MPI
 * optionally - [PAPI](http://icl.cs.utk.edu/papi/)
-* optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html)
-* optionally - [msr-safe](https://github.com/LLNL/msr-safe) - required AMD RAPL monitoring, prefered interface for Intel CPUs parameters tuning
+* optionally - [perf_event](http://man7.org/linux/man-pages/man2/perf_event_open.2.html) - required for Fujitsu A64FX energy measurement
+* optionally - [msr-safe](https://github.com/LLNL/msr-safe) - required for AMD RAPL monitoring, prefered interface for Intel CPUs parameters tuning
 * optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
 * optionally - [E-SMI in-band](https://github.com/amd/esmi_ib_library) - prefered interface for AMD 19h CPUs parameters tuning
 * optionally - [HSMP](https://github.com/amd/amd_hsmp) - mandatory for E-SMI in-band library
@@ -417,6 +422,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- RAPL    = Intel RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
+	- A64FX   = Fujitsu A64FX energy measurement.
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
 	- JETSON  = BSC Jetson TX1 energy and power measurement.
 	- THUNDER = BSC ThunderX energy and power measurement.
