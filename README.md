@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, and CSL) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL and ICX) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER8+ CINECA DAVIDE and selected BSC ARM systems.
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -32,25 +32,26 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 -->
 
-<!--- dev branch links -->
- 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
- 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
- 3. [MERIC API](https://code.it4i.cz/vys0053/meric/tree/dev#3-meric-api)
- 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
- 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
- 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
- 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#7-meric-input-parameters)
- 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#8-content-of-test-folder-and-example-application-run)
- 9. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric/tree/dev#9-code-dynamism-investigation)
-10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
-12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
+<!--- wrapper branch links -->
+ 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning)
+ 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/wrapper#2-supported-energy-measurement-systems)
+ 3. [MERIC interface and Shared Score-P/MERIC API](https://code.it4i.cz/vys0053/meric/tree/wrapper#3-meric-interface-and-shared-score-pmeric-api)
+ 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/wrapper#4-timeprof-library)
+ 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/wrapper#5-meric-binary-instrumentation)
+ 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/wrapper#6-compilation)
+ 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/wrapper#7-meric-input-parameters)
+ 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/wrapper#8-content-of-test-folder-and-example-application-run)
+ 9. [Code dynamism investigation, energy-efficiency optimisation](https://code.it4i.cz/vys0053/meric/tree/wrapper#9-code-dynamism-investigation-energy-efficiency-optimisation)
+10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/wrapper#10-meric-with-a-fortran-code)
+11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#11-tool-for-static-tuning)
+12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/wrapper#12-acknowledgement)
+
 
 
 --------------------------------------------------------------------------------
 #     1] System parameters tuning                                              #
 --------------------------------------------------------------------------------
-MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the tools/ directory).
+MERIC allows to set selected system parameters for the whole application run or for each instrumented part of the analyzed application. Following list of the system parameters can be tuned using MERIC. Default and valid values of the following parameters can be read using `systemInfo` utility (part of the MERIC repository, located in the bin/ directory).
 
 
 ## CPU core frequency ##
@@ -129,7 +130,7 @@ From the Sandy Bridge microarchitecture all Intel processors provide software-ba
 
 Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
 
-Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning).
+Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
 
 	
 MERIC must be compiled and used at a node with [msr-safe](https://github.com/LLNL/msr-safe) to read RAPL counters (works well for both Intel and AMD). In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
@@ -180,7 +181,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 	Starting measurement of a reagion.
 	Please, do not use `#` and `@` in names of regions.
 
- *	`MERIC_MeasureStop(const char * region)`
+ *	`double MERIC_MeasureStop(const char * region)`
 
 	End of the measurement of the last started region.
 	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
@@ -194,7 +195,7 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
  *	`void MERIC_CaptureScope(const char * regionName)`
 
 	Starts region with this function call, and automatically stops it at the end of the scope. Useful to capture a function that has several return statements.
-	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique, which is supported by GNU and Clang compilers for C++ and C (no support for Fortran) applications. When using another compiler, the MERIC_CaptureScope function will not be inserted. C applications may require compilation with `-fno-exceptions` or `-lstdc++` flag. 
+	This functionality is based on [RAII](https://en.cppreference.com/w/cpp/language/raii) technique, which is supported by C++ and C compilers (no support for Fortran) with cleanup attribute (such as GNU or Clang). When using a compiler without the support the MERIC_CaptureScope function will be removed from the code. C applications may require compilation with `-fno-exceptions` or `-lstdc++` flag. 
 
  *	`void MERIC_IgnoreStart()`
 
@@ -236,36 +237,37 @@ The API is using preprocessor directives, which allows user to select at the com
 #     4] TIMEPROF library                                                      #
 --------------------------------------------------------------------------------
 
-The TIMEPROF library provides light-weight runtime measurement of the instrumented regions in the code. The library is part of the MERIC repository since its main task is to identify regions for the future instrumentation with MERIC.
+The TIMEPROF library provides light-weight runtime measurement of the instrumented regions in the code. The library is part of the MERIC repository since its main task is to identify regions for future instrumentation with MERIC.
 
-The library produces a list of the regions, which duration is longer than time threshold (export environment variable `TIMEPROF_TIME` [ms]). When no threshold provided, the TIMEPROF will print complete list of measured regions with its minimum runtime. If environment variable `TIMEPROF_OUTPUT` exported, the list of regions is stored to the file, otherwise it is printed to the stdout.
+## TIMEPROF configuration ##
+TIMEPROF can be configured using following environment variables:
+ * `export TIMEPROF_TIME=100`
+ 	- Specification of minimum region runtime in milliseconds to include the region to the output. In default no time threshold.
 
-The time measurement provided by TIMEPROF is done by master thread of the process MPI_WORLD_COMM rank 0.
+ * `export TIMEPROF_MASTER=1`
+	- In default `TIMEPROF_MASTER=0` all processes trace the application, and moreover checks that the regions have been executed by all processes the same number of times. `TIMEPROF_MASTER=0` option causes that only master thread of MPI_WORLD_COMM rank 0 traces the instrumented application.
 
-
-## TIMEPROF interface ##
+ * `export TIMEPROF_OUTPUT=""`
+	- Specify name of output file, in default `TIMEPROF.log`. `TIMEPROF_OUTPUT=""` cause storing the output to stderr.
+ 
+## TIMEPROF API ##
 The interface is defined in `include/timeprof.h`. 
 
  *	`void TIMEPROF_regionStart(const char * regionName)`
-
-	Start time measurement of region called regionName.
+	- Start time measurement of region called regionName.
 
  *	`double TIMEPROF_regionStop(const char * regionName)`
- 
-	End of the time measurement, returns region duration in seconds.
+	- End of the time measurement, returns region duration in seconds.
 
  *	`void TIMEPROF_evaluate()`
-
-	At the end of the application run should be called this function to evaluate the measurements.
+	- At the end of the application run should be called this function to evaluate the measurements.
 
  *	`void TIMEPROF_captureScope(const char * regionName)`
-
-	[RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
-	In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
+	- [RAII](https://en.cppreference.com/w/cpp/language/raii) time measurement of the scope, where specified.
+	- In case of C applications, the application may require compilation with `-fno-exceptions` or `-lstdc++` flag if you want to use this function.
 
  *	`double TIMEPROF_getLastRegionDuration()`
-
-	Since scope time measurement does not return the time measured, it can be obtained using this function.
+	- Since scope time measurement does not return the time measured, it can be obtained using this function.
 
 --------------------------------------------------------------------------------
 #     5] MERIC binary instrumentation                                          #
@@ -356,7 +358,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- GPU power limit in milliwatts.
 
 ## Dynamic tuning ##
-While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/dev#output-filesfolder-name)).
+While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/wrapper#output-filesfolder-name)).
 
 * `export MERIC_REGION_OPTIONS=/path/to/configurationfile.opts`
 	- Specify a MERIC configuration file to be used to tune an application.
@@ -403,11 +405,11 @@ Example MERIC configuration file:
 }
 
 ```
-More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/dev/test/config).
+More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/wrapper/test/config).
 
 
 ## Measurement mode ##
-* `export MERIC_MEASUREMENT=RAPL,HDEEM-S`
+* `export MERIC_MEASURE=RAPL,HDEEM-S`
 	- NONE    = Default option, no time or energy measurement.
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
@@ -524,18 +526,19 @@ export MERIC_MEASURE=TIME        # time measurement only
 ```
 
 --------------------------------------------------------------------------------
-#      9] Code dynamism investigation                                          #
+#      9] Code dynamism investigation, energy-efficiency optimisation          #
 --------------------------------------------------------------------------------
 MERIC's output is stored in the directory in default named `mericMeasurement` that contains result files in folders with names of the regions. To change output folder name export MERIC_OUTPUT_DIR="NEW_NAME".
-Each csv file carry 3 types of data:
- *  CALLTREE - the first line of every CSV file, it's a call stack, so we can see, where is the measured region nested
- *  Section label (e.g. '# Job info') - determines a "category" of following data in a file7
- *  Data - tuples (mostly pairs) structured like a hash map: key, value
+Each output csv file carry 3 types of information:
+ *  CALLTREE - the first line of every csv file, it's a call stack, so we can see, the regions nesting
+ *  Section label (e.g. '# Job info') - determines a "category" of data that follows
+ *  Data - tuples of: key, value
 
-To find the best settings for each region, you should run your code with several possible settings. The content of the MERIC's output directories, can be analysed using our RADAR tool, that generates a MERIC configuration file for production runs of the application and LaTeX report describing the application behavior.
+To identify the optimal parameters configuration of each region of the instrumented application, user may execute the application in various configurations and analyse the output files. This can be done manually, or automatically using `MERICwrapper` tool, that provides several algorithms for state-space-search, and optimal configuration configuration identification. For more details see its [README](https://code.it4i.cz/vys0053/meric/-/blob/wrapper/src/tools/wrapper/README.md) file.
 
-## Run an application in several configurations you want to test ##
-In test directory are provided example scripts `run.sh` or `run-mpi.sh`
+MERIC output presenting application dynamic behavior can be visualised using [RADAR](https://code.it4i.cz/vys0053/SGS18-READEX) tool.
+
+## Manual state-space-search example ##
 ```
 export MERIC_MEASURE=RAPL,HDEEM
 export MERIC_PWRCAP_POWER=0
@@ -543,6 +546,7 @@ export MERIC_PWRCAP_TIME=0
 export MERIC_GPU_FREQUENCY=0
 export MERIC_GPU_MEM_FREQUENCY=0
 export MERIC_PWRCAP_GPU=0
+export MERIC_OUTPUT_FORMAT="CF_UnCF_thrds" # optional parameter
 
 for thread in {24..1..1}
 do
@@ -555,26 +559,12 @@ do
 				export MERIC_NUM_THREADS=$thread
 				export MERIC_FREQUENCY=${cpu_freq}00MHz
 				export MERIC_UNCORE_FREQUENCY=${uncore_freq}00HMz
-				./test
+				./a.out
 			done
 		done
 	done
 done
 ```
-	
-Edit description file `measurementInfo.json` in your output data folder. This step is not compulsory but this file helps you keep information about the measurement.
-```
-{
-	"Execution ID": "0",
-	"Timestamp"   : "Thu Dec  6 15:37:23 2018",
-	"System"      : "IT4I Salomon",
-	"DataFormat"  : "CF_UnCF_thrds",
-	"Note"        : ""
-}
-```
-
-## Process the results using RADAR tools ##
-We have implemented a PyQt5 tools for the MERIC's output data analysis. All the details are descibed in its repository: [RADAR GUI](https://code.it4i.cz/vys0053/SGS18-READEX).
 
 --------------------------------------------------------------------------------
 #      10] MERIC with a Fortran code                                           #
@@ -586,11 +576,11 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 --------------------------------------------------------------------------------
 #     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
-MERIC repository also contain a tool, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the tools/ directory.
+MERIC repository also contains utility, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the bin/ directory.
 
 Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
-For a static analysis of a selected application, the directory with the tool contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
+For a static analysis of a selected application, the directory with the utilities contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
 --------------------------------------------------------------------------------
 #     12] Acknowledgement                                                      #

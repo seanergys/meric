@@ -34,10 +34,12 @@
   - RAPL power limit time window description changed from Twindow to CPUPWRtw
   - (power) samples are stored juts once in a separate directory
   - readex.h dropped from the MERIC repository, the feature of multi-tools instrumentation provides Instrument API, testcases now use MERIC API only
+  - TIMEPROF library now allows to collect runtime of regions by all processes, and checks that the regions have been executed by all processes the same number of times (TIMEPROF_MASTER=0).
   - simplified MERIC configuration file
 		- removed socket-/node-specific tuning
 		- removed configuration change threshold
 		+ added minimum region runtime filtering
+  - utilities are stored into bin/ directory
 
 ### 30.04.2019 #################################################################
   - new Static Binary Instrymentation (SBI) tool for MERIC instrumentation

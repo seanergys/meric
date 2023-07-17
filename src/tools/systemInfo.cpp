@@ -184,7 +184,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		}
 		else
 		{
-#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) && defined(__x86_64__)
+#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) && defined(__x86_64__)
 			std::cout << "\t\t install one the following libraries:\n"
 			          << "\t\t - msr_safe+libmsr / msr_safe / x86_adapt / cpufreq\n";
 #endif
@@ -200,7 +200,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			{	
 				std::cout << "\t\t grant write access to:\n"
 					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
-#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
+#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
 				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
 					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
 #endif
@@ -246,7 +246,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	else if (freq == 1)
 	{
 		std::cout << "\tTurbo CPU core frequencies:  ";
-#if defined HAVE_MSR_SAFE && defined MSR_TURBO_RATIO_LIMIT && defined MSR_TURBO_RATIO_LIMIT_CORES
+#if ( defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H ) && defined MSR_TURBO_RATIO_LIMIT && defined MSR_TURBO_RATIO_LIMIT_CORES
 		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 		if (!currentWhitelist.count(MSR_TURBO_RATIO_LIMIT))
 			meric::read_msr(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
@@ -294,19 +294,30 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			std::cout << turboRatio[i]*100000 << "(" << turboCoresRange[i]<<") ";
 			i++;
 		}
-		std::cout << "kHz(#cores)\n";
+		if (i > 0)
+		{
+			std::cout << "kHz(#cores)\n";
+		}
+		else
+		{
+			std::cout << "enabled\n";
+		}
 #elif defined HAVE_E_SMI_E_SMI_H
 		freq = meric::Environment::getMaximumTurboFrequency();
 		if (freq > 0)
+		{
 			std::cout << freq/1000 << " kHz\n";
+		}
 		else
+		{
 			std::cout << "enabled\n";
+		}
 #else
 		std::cout << "enabled\n";
 #endif		
 	}
 
-#ifndef HAVE_MSR_SAFE
+#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H)
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -351,7 +362,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	}
 	
 // IA32_ENERGY_PERF_BIAS
-#if defined HAVE_MSR_SAFE && defined IA32_ENERGY_PERF_BIAS
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
 	if (ok)
 	{
 		uint64_t IA32_ENERGY_PERF_BIAS_bits = 0x0;
@@ -366,21 +377,27 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
 // UNCORE FREQUENCY
 #ifdef _INTEL_
-	#if defined HAVE_MSR_SAFE && defined MSR_UNCORE_RATIO_LIMIT
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
 		if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))
+		{
 			meric::read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
-		freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
-		std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
-		if (ok && freq != limits.maxUncoreFreq)
-		{
-			ok = false;
+			freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+			std::cout << "\tMax CPU uncore frequency:    " << freq/1000 << " kHz\n";
+			if (ok && freq != limits.maxUncoreFreq)
+			{
+				ok = false;
+			}
+			freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+			std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
+			if (ok && freq != limits.minUncoreFreq)
+			{
+				ok = false;
+			}
 		}
-		freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
-		if (ok && freq != limits.minUncoreFreq)
+		else
 		{
-			ok = false;
+			std::cout << "\tCPU uncore frequency limits: unknown\n";
 		}
 	#elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
@@ -560,7 +577,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	{
 // power capping limits ////////////////////////////////////////////////////////
 		std::cout << "\n# CPU POWER LIMITS\n";	
-	#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_INFO && defined MSR_DRAM_POWER_INFO
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_INFO && defined MSR_DRAM_POWER_INFO
 	// PKG
 		uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
 		if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
@@ -620,7 +637,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		}
 	#endif
 
-	#if defined __x86_64 && !defined HAVE_MSR_SAFE && ! defined HAVE_X86_ADAPT_H //currently supported only intel
+	#if defined __x86_64 && !defined HAVE_MSR_SAFE && !defined HAVE_MSR_CORE_H && ! defined HAVE_X86_ADAPT_H //currently supported only intel
 		std::cout << "\n\tchanging RAPL power capping limits NOT available - install msr_safe+libmsr or msr_safe or x86_adapt\n";
 	#endif
 
@@ -628,12 +645,14 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		std::cout << "\n# DEFAULT CPU POWER LIMITS\n";
 		uint64_t X, Y, Z, F;
 
-	#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 		// PKG
 			uint64_t MSR_PKG_POWER_LIMIT_bits = 0x0;
-		#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_PKG_POWER_LIMIT))
+			{
 				meric::read_msr(0, MSR_PKG_POWER_LIMIT, &MSR_PKG_POWER_LIMIT_bits);
+			}
 		#elif defined HAVE_X86_ADAPT_H
 			int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 			int adaptRegisterHandler;
@@ -645,6 +664,10 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		#endif
 			if (MSR_PKG_POWER_LIMIT_bits != 0x0)
 			{
+				if ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_lock_mask) != 0)
+				{
+					std::cout << "\n\tchanging RAPL PKG power capping limits NOT available - requires system (RAPL LOCK bit) reset\n\n";
+				}
 				std::cout << "\tPKG power limit #1: " 
 					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 					<< " + clamping "
@@ -658,7 +681,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 						  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 
-		#if defined HAVE_MSR_SAFE && defined MSR_PKG_POWER_LIMIT
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 				MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
 		#elif defined HAVE_X86_ADAPT_H
 				adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
@@ -682,7 +705,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 		// DRAM
 			uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
-		#if defined HAVE_MSR_SAFE && defined MSR_DRAM_POWER_LIMIT
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_DRAM_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_DRAM_POWER_LIMIT))
 				meric::read_msr(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
 		#elif defined HAVE_X86_ADAPT_H
@@ -793,7 +816,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 		// PLATFORM
 		uint64_t MSR_PLATFORM_ENERGY_COUNTER_bits = 0x0;
-	#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_ENERGY_COUNTER
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PLATFORM_ENERGY_COUNTER
 		if (!currentWhitelist.count(MSR_PLATFORM_ENERGY_COUNTER))
 		{
 			meric::read_msr(0, MSR_PLATFORM_ENERGY_COUNTER, &MSR_PLATFORM_ENERGY_COUNTER_bits);
@@ -808,7 +831,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		if (MSR_PLATFORM_ENERGY_COUNTER_bits)
 		{
 			uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
-	#if defined HAVE_MSR_SAFE && defined MSR_PLATFORM_POWER_LIMIT
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PLATFORM_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
 				meric::read_msr(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
 			if (MSR_PLATFORM_POWER_LIMIT_bits)
@@ -840,7 +863,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	#endif
 		}
 	}
-#endif 
+#endif // _INTEL_
 
 #ifdef HAVE_E_SMI_E_SMI_H //_AMD_
 	std::cout << "\n# CPU POWER LIMITS\n";
@@ -921,7 +944,7 @@ void sysEnergyMeasurement()
 	int systems = 0;
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 
-#if defined HAVE_MSR_SAFE || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
 #endif
@@ -1035,7 +1058,7 @@ int main(int argc, char **argv)
 	}
 
 	MODE status = USING_NONE;
-	#ifdef HAVE_MSR_SAFE
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	status = USING_MSR;
 		#ifdef HAVE_MSR_CORE_H
 		if (init_msr())

@@ -15,13 +15,13 @@
 	#include <msr_clocks.h>
 	#include <libmsr_error.h>
 #endif
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	#include "msrs.h"
 #endif
 
 namespace meric {
 
-#ifdef HAVE_MSR_SAFE
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 
 class MSR{
 

@@ -20,4 +20,6 @@ tools/dinst_*
 
 include/meric
 
+bin/
+
 test/*

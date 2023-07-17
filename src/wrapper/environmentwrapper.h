@@ -199,6 +199,7 @@ public:
 	static std::string getScalingDriver();
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
+	static bool isPWRCAPpossible();
 #ifdef HAVE_NVML_H
 	static GPU_TUNING_WAY getGPUTuningMethod();
 #endif

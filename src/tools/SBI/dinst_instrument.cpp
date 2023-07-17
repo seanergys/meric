@@ -82,7 +82,11 @@ void printHelp()
 		<< "\t      = input binary name\n"
 		<< "\t --funclist=file\n"
 		<< "\t      = input file with functions to instrument, function name per line\n"
-		<< "\t      for TIMEPROF file can be empty - will instrument all available functons\n"
+		<< "\t      for TIMEPROF usage, the file can be empty = will instrument all available functions\n"
+		<< "\t or\n"
+		<< "\t --mpi=path/to/libmpi.so\n"
+		<< "\t      = instrumentation of MPI library for MERIC/TIMEPROF Init/Close\n"
+		<< "\t      if specified --input and --funclist parameters are not compulsory\n"
 		<< "\n"
 		<< "OPTIONAL PARAMETERS:\n"
 		<< "\t --output=binary\n"
@@ -177,7 +181,9 @@ void handleParameters(int argc, char *argv[])
 		else if (flag[0] == "--instlimit")
 		{
 			if(flag.size() != 2)
+			{
 				printHelp();
+			}
 			try
 			{
 				params.instlimit = std::stoi(flag[1]);
@@ -192,8 +198,10 @@ void handleParameters(int argc, char *argv[])
 		}
 	}
 
-	if (params.input == "" || params.funclist == "" || (params.timeprof == params.meric)) //compulsory
+	if (((params.input == "" || params.funclist == "" ) && params.mpilib == "") || (params.timeprof == params.meric)) //compulsory
+	{
 		printHelp();
+	}
 	
 	if (!params.omplib && !params.mpi)
 	{
@@ -304,7 +312,9 @@ void loadSharedLibs(BPatch_binaryEdit *appBin, BPatch_binaryEdit *MPIBin)
 			std::cerr << "\tOK \t" << libName << std::endl;
 		}
 		else
+		{
 			std::cerr << "\tN/A\t" << libName << std::endl;
+		}
 	}
 }
 
@@ -401,17 +411,13 @@ void readFilterFile(BPatch_image *appImage)
 //----------------------------------------------------------------------------//
 				std::string funcName = (*funcIter)->getDemangledName();
 //				std::string funcName = (*funcIter)->getMangledName();
-				
 
-//				if (inst_cnt > 37)	//ESPRESO
-//					continue;
-
-				if (inst_cnt > params.instlimit && //some small funcs may cause problems to Dyninst
-					funcName.substr (0,5) != "std::" && 
-					funcName.substr (0,5) != "MPI::" && 
-					funcName.substr(0,9) != "thunk to " &&
-					funcName.substr(0,15) != "_GLOBAL__sub_I_" &&
-					funcName != "__static_initialization_and_destruction_0"
+				if (inst_cnt > params.instlimit //some small funcs may cause problems to Dyninst
+					&& funcName.substr (0,5) != "std::"
+					&& funcName.substr (0,5) != "MPI::"
+					&& funcName.substr (0,9) != "thunk to "
+					&& funcName.substr (0,15) != "_GLOBAL__sub_I_"
+					&& funcName != "__static_initialization_and_destruction_0"
 
 					&& funcName.substr(0,8) != "__intel_"
 					&& funcName.substr(0,7) != "_intel_"
@@ -490,7 +496,10 @@ bool insertInitAndClose(BPatch_binaryEdit *appBin, BPatch_image *appImage)
 	if(params.mpi)
 	{
 		if (!initFuncs.empty())
-			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init", BPatch_exit);
+		{
+			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init", BPatch_exit)
+			          && insertFunction<BPatch_binaryEdit>(appBin, appImage, initFuncs, funcArgs, "MPI_Init_thread", BPatch_exit);
+		}
 		if (!closeFuncs.empty())
 			ret = ret && insertFunction<BPatch_binaryEdit>(appBin, appImage, closeFuncs, funcArgs, "MPI_Finalize", BPatch_entry);
 	}
@@ -624,11 +633,13 @@ int instrumentApplication()
 		return EXIT_FAILURE;
 	}
 	
+	// instrument MPI library for MERIC_Init/MERIC_Close
 	BPatch_image *MPIImage;
 	BPatch_binaryEdit *MPIBin;
+	std::string MPILibName = "libmpi";
 	if (params.mpilib != "")
 	{
-		MPIBin = bpatch.openBinary (params.mpilib.c_str(), false);
+		MPIBin = bpatch.openBinary(params.mpilib.c_str(), false);
 		if (MPIBin == NULL)
 		{
 			std::cerr << "<> Failed to open MPI binary" << std::endl;
@@ -636,9 +647,39 @@ int instrumentApplication()
 		}
 		MPIImage = MPIBin->getImage();
 		loadSharedLibs(appBin, MPIBin);
+		
+		if (params.meric)
+		{
+			MPILibName += "_meric.so";
+		}
+		else if (params.timeprof)
+		{
+			MPILibName += "_timeprof.so";
+		}
+		else
+		{
+			MPILibName += ".so";
+		}
+		
+		if (insertInitAndClose(MPIBin, MPIImage))
+		{
+			if (writeBinary(MPIBin, MPILibName.c_str()))
+				return EXIT_FAILURE;
+		}
+		
+		// MPI instrumentation only
+		if(params.input == "")
+		{
+			std::cerr << "<> Static Binary Instrumentation of MPI successfully finished\n"
+			          << "To use instrumented version of MPI, run the application as follows:\n"
+			          << "LD_PRELOAD=$(pwd)/"<< MPILibName <<" mpirun -np $NUMPROC ./"<< params.output <<" [APP_PARAMS]\n\n";
+			return 0;
+		}
 	}
 	else
+	{
 		loadSharedLibs(appBin);
+	}
 
 	// get list of functions to instrument
 	BPatch_image *appImage = appBin->getImage();
@@ -649,20 +690,9 @@ int instrumentApplication()
 		return 1;
 	}
 
-	// instrumentation of the binary
-	if (params.mpi)
-	{
-		if (params.mpilib != "")
-		{
-			if (insertInitAndClose(MPIBin, MPIImage))
-			{
-				if (writeBinary(MPIBin, "libmpi.so"))
-					return EXIT_FAILURE;
-			}
-		}
-	}
-	else
-	{
+	// instrumentation of the binary 1] Init+Close for non-MPI apps
+	if (!params.mpi)
+	{	
 		if (!insertInitAndClose(appBin, appImage))
 		{
 			std::cerr << "FAIL\n";
@@ -670,6 +700,7 @@ int instrumentApplication()
 		}
 	}
 	
+	// instrumentation of the binary 2] regions
 	insertRegionStartStopInstrumentation(appBin, appImage);
 
 	// write the instrumented binary
@@ -678,7 +709,7 @@ int instrumentApplication()
 		std::cerr << "<> Static Binary Instrumentation successfully finished\n";
 		if(params.mpi)
 			std::cerr << "To use instrumented version of MPI, run the application as follows:\n"
-			          << "LD_PRELOAD=$(pwd)/libmpi.so mpirun -n $NUMPROC ./"<< params.output <<" [APP_PARAMS]\n\n";
+			          << "LD_PRELOAD=$(pwd)/"<< MPILibName <<" mpirun -np $NUMPROC ./"<< params.output <<" [APP_PARAMS]\n\n";
 		return 0;
 	}
 	return 1;

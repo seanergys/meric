@@ -171,7 +171,7 @@ protected:
 		{
 			long paramChange = 0;
 			//core frequency
-#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if (next.frequency)
 			{
 				paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency-next.frequency : next.frequency-prev.socket[socket].frequency;
@@ -195,7 +195,7 @@ protected:
 			prev.socket[socket].frequency = 0;
 #endif
 			//uncore frequency
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if(next.uncoreFrequency)
 			{
 				paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency-next.uncoreFrequency : next.uncoreFrequency-prev.socket[socket].uncoreFrequency;
@@ -245,7 +245,7 @@ protected:
 #endif
 			
 			//CPU power cap
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 			if (next.powerCapPKG)
 			{
 				paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG-next.powerCapPKG : next.powerCapPKG-prev.socket[socket].powerCapPKG;

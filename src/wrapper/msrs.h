@@ -1009,11 +1009,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 	written by software.
  * Reserved (bits 62:56)
  * Lock (bit 63):
-	If set, all write attempts to this MSR are ignored until next 
-	RESET.MSR_PKG_ENERGY_STATUS is a read-only MSR. It reports the actual energy 
-	use for the package domain. This MSR is updated every ~1msec. It has 
-	a wraparound time of around 60 secs when power consumption is high, and may 
-	be longer otherwise.
+	If set, all write attempts to this MSR are ignored until next RESET.
  *
  * MSR_DRAM_POWER_LIMIT register **********************************************
  * allows a software agent to define power limitation for the DRAM domain. Power 
