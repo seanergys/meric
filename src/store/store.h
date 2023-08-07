@@ -201,7 +201,7 @@ protected:
 
 	size_t _initCounter;
 	int _jobID;
-	int _stepID;
+	unsigned int _stepID;
 	std::string _nodelist;
 	bool printSamples;
 	bool MPIProcessWrite;
@@ -214,13 +214,13 @@ public:
 	
 	void loadSchedulerEnvironment()
 	{
-		_jobID = mutils::getenv("SLURM_JOBID", -1);
+		_jobID = mutils::getenv("SLURM_JOBID", 0);
 		if (_jobID == -1)
 		{
-			_jobID = mutils::getenv("PBS_JOBID", -1);
+			_jobID = mutils::getenv("PBS_JOBID", 0);
 			if (_jobID != -1)
 			{
-				_stepID = mutils::getenv("PBS_TASKNUM", -1);
+				_stepID = mutils::getenv("PBS_TASKNUM", 0);
 				_nodelist = mutils::getenv("PBS_NODEFILE", std::string(""));
 				if (_nodelist != "")
 				{
@@ -248,7 +248,7 @@ public:
 		}
 		else
 		{
-			_stepID = mutils::getenv("SLURM_STEPID", -1);
+			_stepID = mutils::getenv("SLURM_STEPID", 0);
 			_nodelist = mutils::getenv("SLURM_NODELIST", std::string(""));
 		}
 	}
