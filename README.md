@@ -463,7 +463,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 
 * `export MERIC_OUTPUT_FORMAT="CF_UnCF"`
 	- Underscore separated list of parameters. MERIC automatically determines which parameters are tuned, and compose output filename accordingly. This parameter allows user force MERIC to extend the output files name about parameters that are not tuned. Zero will represent the non-tuned parameter. This parameter does not influence parameters order. Each supported parameter is represent by one of the following strings:
-	  -	`CF` = CPU core frequency
+	  - `CF` = CPU core frequency
 	  - `UnCF` = CPU uncore frequency
 	  - `thrds` = number of threads
 	  - `CPUPWR` = CPU power limit
@@ -582,9 +582,9 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 --------------------------------------------------------------------------------
 #     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
-MERIC repository also contains utility, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the bin/ directory.
+MERIC repository also contains utility, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the `bin/` directory.
 
-Binaries `energyMeasureStart` and `energyMeasureStop` provides RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
+Binaries `energyMeasureStart` and `energyMeasureStop` provide RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
 
 For a static analysis of a selected application, the directory with the utilities contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
 
