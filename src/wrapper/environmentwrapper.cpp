@@ -562,9 +562,13 @@ DVFS_WAY Environment::isDVFSpossible()
 	if (isHWPactive(status))
 	{
 		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0 && access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", W_OK) == 0)
+		{
 			return HWP;
+		}
 		else
+		{
 			return NO_DVFS;
+		}
 	}
 #elif defined _AMD_ 
 	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
@@ -588,15 +592,28 @@ DVFS_WAY Environment::isDVFSpossible()
 
 	if (scalingGovernor == "userspace")
 	{
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
-		return USRSPACE_LIB;
-#else
 		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
+		{
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
+			return USRSPACE_LIB;
+#else
 			return USRSPACE_FILE;
-		else
-			return NO_DVFS;
 #endif
+		}
+		else
+		{
+			return NO_DVFS;
+		}
 	}
+
+#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
+	if (getScalingDriver() == "intel_pstate" &&
+	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
+	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
+	{
+		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the msr_safe whitelist (allowlist)
+	}
+#endif
 	
 	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 	{
@@ -607,25 +624,23 @@ DVFS_WAY Environment::isDVFSpossible()
 			if (availGovernor == "userspace")
 			{
 				frequencyBounderyFile.close();
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
-				return USRSPACE_LIB;
-#else
 				if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", W_OK) == 0)
+				{
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_CPUFREQ_H || defined HAVE_GEOPM_H
+					return USRSPACE_LIB;
+#else
 					return USRSPACE_FILE;
-				else
-					return NO_DVFS;
 #endif
+				}
+				else
+				{
+					return NO_DVFS;
+				}
 			}
 		}
 		frequencyBounderyFile.close();
 	}
 
-#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
-	if (getScalingDriver() == "intel_pstate" && 
-	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
-	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
-		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the msr_safe whitelist (allowlist)
-#endif
 	return NO_DVFS;
 }
 
@@ -637,7 +652,9 @@ DVFS_WAY Environment::isDVFSpossible()
 DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 {
 	if (way == NO_DVFS)
+	{
 		way = isDVFSpossible();
+	}
 
 	if (way == USRSPACE_FILE || way == USRSPACE_LIB)
 	{
@@ -985,6 +1002,10 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 							{
 								defaultSettings.minCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
 							}
+							else if (std::string(dvfs->name->string) == "NOMINAL")
+							{
+								defaultSettings.nominalCoreFreq = std::strtoull(std::string(((struct json_string_s*)dvfs->value->payload)->string).c_str(), NULL, 0);
+							}
 							else if (std::string(dvfs->name->string) == "DEFAULT")
 							{
 								defaultSettings.defaultCoreFreq = std::stol(std::string(((struct json_string_s*)dvfs->value->payload)->string));
@@ -1257,6 +1278,8 @@ void Environment::readSystemDefaultSettings()
 			frequencyBounderyFile.close();
 			defaultSettings.minCoreFreq = std::stol(freqBound) * 1000;
 		}
+		
+		defaultSettings.nominalCoreFreq = getNominalFrequency();
 
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	#if defined _INTEL_ && defined IA32_ENERGY_PERF_BIAS
@@ -1419,6 +1442,7 @@ void Environment::readSystemDefaultSettings()
 #elif defined _AMD_
 				        +  "\t\t\t\"HWCR\" : " + std::to_string(defaultSettings.MSR_HWCR_default) + ",\n"
 #endif
+				        +  "\t\t\t\"NOMINAL\" : " + std::to_string(defaultSettings.nominalCoreFreq) + ",\n"
 				        +  "\t\t\t\"DEFAULT\" : " + std::to_string(defaultSettings.defaultCoreFreq);
 			if (!defaultSettings.availableCoreFreq.empty())
 			{
@@ -1494,6 +1518,7 @@ void Environment::readSystemDefaultSettings()
 		<< "\tTRB " << defaultSettings.maxTurboFreq << std::endl
 		<< "\tMAX " << defaultSettings.maxCoreFreq << std::endl
 		<< "\tMIN " << defaultSettings.minCoreFreq << std::endl
+		<< "\tNOM " << defaultSettings.nominalCoreFreq << std::endl
 		<< "\tDEF " << defaultSettings.defaultCoreFreq << std::endl
 		<< "\tAVA " << defaultSettings.availableCoreFreq.size() << std::endl
 #if defined _INTEL_
@@ -1689,10 +1714,14 @@ void Environment::frequency(uint64_t freq, int socket)
 	clock_gettime(CLOCK_REALTIME, &start_time);
 
 	if (freq == 0)
+	{
 		return;
+	}
 
 	if (activatedDVFS == NO_DVFS && usedDVFS == false) //hard reset sets usedDVFS to true
+	{
 		return;
+	}
 
 	// upper limit is checked only if the information about the turbo frequency is available
 	if (freq < defaultSettings.minCoreFreq || (defaultSettings.maxTurboFreq > 1 && freq > defaultSettings.maxTurboFreq))
@@ -1731,8 +1760,9 @@ void Environment::frequency(uint64_t freq, int socket)
 					coreFile.close();
 				}
 				if(!coreFile)
+				{
 					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
-				
+				}
 				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_min_freq");
 				if (coreFile.is_open())
 				{
@@ -1740,7 +1770,9 @@ void Environment::frequency(uint64_t freq, int socket)
 					coreFile.close();
 				}
 				if(!coreFile)
+				{
 					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_min_freq\n";
+				}
 			}
 		}
 		clock_gettime(CLOCK_REALTIME, &stop_time);
@@ -1748,21 +1780,54 @@ void Environment::frequency(uint64_t freq, int socket)
 		return;
 	}
 #endif
-	
 #if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_PERF_CTL
-	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
 	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
 	#else
 	MERIC_INFO << "; using MSR_SAFE\n";
 	#endif
-	for (int soc=socket_min; soc<=socket_max; soc++)
+
+	if (activatedDVFS == INT_PSTATE || activatedDVFS == HWP)
 	{
-		for (int cpu : mapCoresToSocket[soc])
+		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
-			write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+			}
 		}
 	}
+	else //if (activatedDVFS == USRSPACE_FILE || activatedDVFS == USRSPACE_LIB)
+	{
+		std::ofstream coreFile;
+		for (int soc=socket_min; soc<=socket_max; soc++)
+		{
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
+				if (coreFile.is_open())
+				{
+					coreFile << freq / 1000;
+					coreFile.close();
+				}
+				if(!coreFile)
+				{
+					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+				}
+			}
+		}
+		if (freq > getNominalFrequency())
+		{
+			for (int soc=socket_min; soc<=socket_max; soc++)
+			{
+				for (int cpu : mapCoresToSocket[soc])
+				{
+					write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+				}
+			}
+		}
+	}
+
 #elif defined HAVE_X86_ADAPT_H
 	//else if (activatedDVFS == INT_PSTATE || activatedDVFS == USRSPACE_LIB)
 	MERIC_INFO << "; using X86ADAPT\n";
@@ -1850,7 +1915,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		}
 	}
 
-	if (freq > defaultSettings.availableCoreFreq[0]) //Turbo ON, Pstat 0
+	if (freq > defaultSettings.availableCoreFreq[0]) //Turbo ON, Pstate 0
 	{
 		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
@@ -1865,7 +1930,9 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		int PstateIdx = 0;
 		while (PstateIdx < defaultSettings.availableCoreFreq.size()-1 && freq <= defaultSettings.availableCoreFreq[PstateIdx+1])
+		{
 			PstateIdx++;
+		}
 		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
@@ -1889,7 +1956,9 @@ void Environment::frequency(uint64_t freq, int socket)
 				coreFile.close();
 			}
 			if(!coreFile)
+			{
 				std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+			}
 		}
 	}
 #endif

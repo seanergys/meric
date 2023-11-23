@@ -146,7 +146,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	std::ifstream frequencyBounderyFile;
 	std::string scalingDriver = meric::Environment::getScalingDriver();
 	if (scalingDriver != "")
+	{
 		std::cout << "\tCurrent scaling driver:      " << scalingDriver << std::endl;
+	}
 
 	frequencyBounderyFile.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	if (frequencyBounderyFile.is_open())
@@ -200,10 +202,10 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			{	
 				std::cout << "\t\t grant write access to:\n"
 					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
-#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H)
 				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
+				{
 					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
-#endif
+				}
 			}
 		}
 		std::cout << std::endl;

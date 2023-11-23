@@ -117,6 +117,7 @@ struct systemLimits{	//TODO - switch from long to uint64_t - n/a or not supporte
 	long maxTurboFreq = 0;               //Hz - 0 = disabled, 1 = enabled, >1 = maxTurboFrequency [Hz]
 	long maxCoreFreq = 0;                //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq
 	long defaultCoreFreq = 0;            //Hz - if we tuned the CF, we must set this frequency at the end of the run, otherwise zero
+	long nominalCoreFreq = 0;            //Hz - 0 = no turbo frequencies or unknown
 	long minCoreFreq = 0;                //Hz - /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq
 	std::vector<long> availableCoreFreq; //Hz - /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
 
