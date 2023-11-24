@@ -246,7 +246,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.insert(_storeList.begin(), new InfoStore(!_MPInodeRank));
+			_storeList.insert(_storeList.begin(), new InfoStore(_storingProcs, !_MPInodeRank));
 		}
 	}
 	

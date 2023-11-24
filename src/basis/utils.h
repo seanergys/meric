@@ -19,6 +19,20 @@
 #define ARM_INFO "> /dev/null"
 #endif
 
+#ifdef HAVE_MPI_H
+	#if SIZE_MAX == UCHAR_MAX
+	   #define MPI_SIZE_T MPI_UNSIGNED_CHAR
+	#elif SIZE_MAX == USHRT_MAX
+	   #define MPI_SIZE_T MPI_UNSIGNED_SHORT
+	#elif SIZE_MAX == UINT_MAX
+	   #define MPI_SIZE_T MPI_UNSIGNED
+	#elif SIZE_MAX == ULONG_MAX
+	   #define MPI_SIZE_T MPI_UNSIGNED_LONG
+	#else //SIZE_MAX == ULLONG_MAX
+	   #define MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+	#endif
+#endif
+
 namespace meric {
 
 struct mutils {

@@ -64,11 +64,18 @@ public:
 	{
 		MERIC_INFO << "Create InfoStore\n";
 	}
-	
+
 	InfoStore(bool write = true) : Store(false, write)
 	{
 		MERIC_INFO << "Create InfoStore\n";
 	}
+
+#ifdef HAVE_MPI_H
+	InfoStore(MPI_Comm comm, bool write = true) : _comm(comm), Store(false, write)
+	{
+		MERIC_INFO << "Create InfoStore\n";
+	}
+#endif	
 	
 	void initStore(	unsigned int & counter,
 					const std::string outputDir,
@@ -159,7 +166,7 @@ public:
 		_initCounter = measurementInfo.ExecutionID;
 		counter = _initCounter;
 #ifdef HAVE_MPI_H
-		MPI_Bcast(&_initCounter, 1, MPI_UNSIGNED,0, MPI_COMM_WORLD);
+		MPI_Bcast(&_initCounter, 1, MPI_SIZE_T,0, _comm);
 #endif
 	}
 	
@@ -168,7 +175,7 @@ public:
 		loadSchedulerEnvironment();
 		outputFilenameFormat = outputFormat;
 #ifdef HAVE_MPI_H
-		MPI_Bcast(&_initCounter, 1, MPI_UNSIGNED,0, MPI_COMM_WORLD);
+		MPI_Bcast(&_initCounter, 1, MPI_SIZE_T,0, _comm);
 #endif
 		counter = _initCounter;
 	}
@@ -193,6 +200,9 @@ protected:
 	std::vector<timespec> _timeStack;
 	std::string dataInfoFileName;
 	GeneralInfoRecord measurementInfo;
+#ifdef HAVE_MPI_H
+	MPI_Comm _comm;
+#endif
 };
 
 }
