@@ -242,8 +242,7 @@ DistributedMeric::DistributedMeric()
 	{
 		if(Meric::AGGREGATE)
 		{
-			//_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs, !_MPInodeRank));
-			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(!_MPInodeRank, _storingProcs));
+			_storeList.insert(_storeList.begin(), new InfoAggregateStore<InfoStore>(_storingProcs, !_MPInodeRank));
 		}
 		else
 		{
