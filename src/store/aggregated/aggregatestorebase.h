@@ -18,6 +18,14 @@ public:
 		MPI_Comm_rank(_comm, &_rank);
 		MPI_Comm_size(_comm, &_size);
 	}
+
+	//infostore-specific
+	AggregateStoreBase(bool write, MPI_Comm &comm): StoreBase(false, write), _comm(comm)
+	{
+		_store = new TStore(_comm, write);
+		MPI_Comm_rank(_comm, &_rank);
+		MPI_Comm_size(_comm, &_size);
+	}	
 	
 	void storeMeasurementInfo()
 	{
