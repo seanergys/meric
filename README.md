@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL and ICX) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), and selected ARM systems (e.g. Fujitsu A64FX).
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), and selected ARM systems (e.g. Fujitsu A64FX).
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -17,7 +17,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 	- only Heading level 1, 2 and 5 are used
 -->
 
-<!--- master branch links 
+<!--- master branch links -->
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric#2-supported-energy-measurement-systems)
  3. [MERIC API](https://code.it4i.cz/vys0053/meric#3-meric-api)
@@ -30,9 +30,9 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#10-meric-with-a-fortran-code)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
--->
 
-<!--- dev branch links -->
+
+<!--- dev branch links
  1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
  2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
  3. [MERIC API](https://code.it4i.cz/vys0053/meric/-/tree/dev#3-meric-api)
@@ -45,7 +45,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
-
+-->
 
 
 --------------------------------------------------------------------------------
