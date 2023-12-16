@@ -24,6 +24,8 @@ def configure(ctx):
 		
 		if ('CXX' in ctx.env):
 			ctx.options.cpp=ctx.env['CXX'][0].split('/')[-1]
+			if (ctx.options.cpp == 'icpx'):
+				ctx.options.cpp = 'icpc'
 		elif ('CC' in ctx.env):
 			if (ctx.env['CC'][0].split('/')[-1] == 'icc'): # Intel
 				ctx.options.cpp="icpc"
@@ -94,10 +96,12 @@ def configure(ctx):
 	MSRSAFEavailable = False
 	OCCavailable = False
 	# check for msr_safe
-	if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
-		MSRSAFEavailable = True
-		ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
-		ctx.check(msg='Checking for module msr_safe', always=True)
+	#if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
+	MSRSAFEavailable = True
+	ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
+	ctx.check_cxx(msg='Checking for module msr_safe', always=True)
+	#else:
+	#	print("NO /dev/cpu/0/msr_safe")
 	
 	# check for OCC
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
@@ -106,33 +110,33 @@ def configure(ctx):
 	
 	# check for HW-tuning software
 	if not ctx.options.sbi:
-		if ((not ctx.check_cc(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) and (not ctx.check_cc(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cc(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) and (not ctx.check_cc(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not MSRSAFEavailable)):
+		if ((not ctx.check_cxx(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) and (not ctx.check_cxx(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cxx(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) and (not ctx.check_cxx(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not MSRSAFEavailable)):
 			if ctx.check_cxx(lib="cpufreq", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
-		ctx.check_cc(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", execute=False, mandatory=False)
-		ctx.check_cc(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
-		ctx.check_cc(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
-#		ctx.check_cc(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
+		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
+#		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 		
 		# check for energy measurment systems
-		if (not ctx.check_cc(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False) or not ctx.check_cc(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)):
+		if (not ctx.check_cxx(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False) or not ctx.check_cxx(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)):
 			# missing include <freeipmi/freeipmi.h>
 			ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
-		ctx.check_cc(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 		
 		#check for libs to read performance counters
-		ctx.check_cc(header_name="papi.h", execute=False, mandatory=False)
-		ctx.check_cc(header_name="linux/perf_event.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="papi.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="linux/perf_event.h", execute=False, mandatory=False)
 		
-		ctx.check_cc(header_name="hdf5.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
 	
 	# SBI tool
 	else:
 		SBImandatory = True
 		if ctx.options.cpp !="g++":
 			ctx.fatal("Dyninst (SBI) tools require compilation with GNU compiler, "+ctx.options.cpp+" used instead")
-	if ctx.options.cpp =="g++" and ctx.check_cc(header_name="BPatch.h", lib=["dyninstAPI", "instructionAPI"], uselib_store="dyninst", mandatory=SBImandatory) and ctx.check_cc(header_name="boost/thread.hpp", lib=["boost_thread", "boost_system", "boost_date_time"], uselib_store="boost", mandatory=SBImandatory):
+	if ctx.options.cpp =="g++" and ctx.check_cxx(header_name="BPatch.h", lib=["dyninstAPI", "instructionAPI"], uselib_store="dyninst", mandatory=SBImandatory) and ctx.check_cxx(header_name="boost/thread.hpp", lib=["boost_thread", "boost_system", "boost_date_time"], uselib_store="boost", mandatory=SBImandatory):
 		if ctx.options.sbi:
 			ctx.env.append_unique("SBI", "SBI_ONLY")
 			return
@@ -177,11 +181,7 @@ def configure(ctx):
 	ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
 	if not ctx.env.MPICXX:
 		Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
-	env = ctx.env
-	ctx.setenv('start', env)
-	ctx.env.append_unique("DEFINES", [ "START" ])
-	ctx.setenv('stop', env)
-	ctx.env.append_unique("DEFINES", [ "STOP" ])
+
 #	print(ctx.env.CXX)
 #	print(ctx.options)
 #	print(ctx.env)
