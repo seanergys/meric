@@ -1,144 +1,109 @@
-
 #include "../../wrapper/environmentwrapper.h"
 #include "../../wrapper/raplwrapper.h"
 #include "../../wrapper/nvmlwrapper.h"
+#include "../../wrapper/a64fxwrapper.h"
 #include "../../basis/utils.h"
 #include <limits>
 
 using namespace meric;
 
-std::string OUTPUT_FILE;
 int POWER_BASELINE = 0;
 
-#ifdef START
-template <typename Tmode> void storeValues(std::map<std::string, unsigned long long int> &record, double time);
-#endif
-
-#ifdef STOP
-double readStoredValues(std::map<std::string, unsigned long long int> & oldRecord);
-template <typename Tmode> void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose);
-#endif
-
 //----------------------------------------------------------------------------//
-#ifdef START
+
+std::vector<std::map<std::string, unsigned long long int>> recordEnergy; //TODO change to vector<vectors<unsigned long long int>> with mapping the strings to vector element IDs // TODO double
+std::vector<double> recordTime;
+
 template <typename Tmode>
-void storeValues(std::map<std::string, unsigned long long int> &record, double time)
+void printValues(bool verbose)
 {
-	std::remove(OUTPUT_FILE.c_str());
-	std::ofstream ss (OUTPUT_FILE, std::ofstream::out);
-	if (!ss)
+//	std::cout << "#SAMPLES: " << recordTime.size() << '\n'
+//	          << "START: " << recordTime[0] << '\n'
+//	          << "STOP: " << recordTime.back() << '\n';
+          
+	if (recordTime.size() < 2)
 	{
-		std::cerr << "ERROR: cannot create file "<< OUTPUT_FILE <<", `export MERIC_TMP_PATH` to a directory with write permission\n";
-		exit(5);
-	}
-	//store time
-	ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << time << std::endl;
-	//store counters
-	for(std::map<std::string, unsigned long long int>::iterator iterator = record.begin(); iterator != record.end(); iterator++)
-	{
-		if (Tmode::getSummaryCounterName() == iterator->first)
-			continue;	
-		ss << iterator->first << '\t' << iterator->second << std::endl;
-	}
-	ss.close();
-}
-#endif
-
-#ifdef STOP
-double readStoredValues(std::map<std::string, unsigned long long int> & oldRecord)
-{
-	std::ifstream ss (OUTPUT_FILE);
-	if (!ss)
-	{
-		std::cerr << "ERROR: running energyMeasureStop before energyMeasureStart!\n";
-		exit(5);
+		std::cerr << "ERROR missing samples\n";
+		exit(2);
 	}
 
-	std::string counter;
-	unsigned long long int value;
-	double timeOld;
-	ss >> timeOld;
+	std::map<std::string, double> record;
+	for(std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
+	{
+		record[iterator->first] = 0;
+	}
 	
-	while (ss >> counter >> value)
-	{
-		oldRecord[counter] = value;
-	}
-	ss.close();
-	std::remove(OUTPUT_FILE.c_str());
-	return timeOld;
-}
-
-template <typename Tmode>
-void printValues(std::map<std::string, unsigned long long int> &oldRecord, std::map<std::string, unsigned long long int> &newRecord, double runtime, bool verbose)
-{
-	std::map<std::string, unsigned long long int> record;
 	double summary = 0.0;
+	double runtime = recordTime.back() - recordTime[0];
 	
-	if (verbose)
+	for(int i=1; i<recordEnergy.size(); i++)
 	{
-		std::cout << "Runtime [s] = " << runtime << std::endl;
-		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
+		for(auto iterator = record.begin(); iterator != record.end(); iterator++)
 		{
 			int cumulative = 0;
-			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, cumulative, iterator->first);
-			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << value << std::endl;
+			record[iterator->first] += Tmode::getResultValue(recordEnergy[i-1][iterator->first], recordEnergy[i][iterator->first], recordTime[i-1]-recordTime[i], cumulative, iterator->first);
+			
 			if (cumulative > 0)
-				summary += value;
+			{
+				summary += record[iterator->first];
+			}
+		}
+	}
+	summary += POWER_BASELINE*runtime;
+		
+	if (verbose)
+	{
+		//MPI_Reduce (MAX, runtime, MPI_COMM_WORLD);
+		std::cout << "Runtime [s] = " << runtime << std::endl;
+		
+		//MPI_Gather() //map -> vector
+		for(std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
+		{
+			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << record[iterator->first] << std::endl;
 		}
 		if (Tmode::getSummaryCounterName() != "")
 		{
-			summary += POWER_BASELINE*runtime;
 			std::cout << std::endl << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
 		}
-	}else
+	}
+	else
 	{
+		//MPI_Gather(0, double, summary, 1, COMM_WORLD);
 		//TODO what if there is no summary
-		for(std::map<std::string, unsigned long long int>::iterator iterator = oldRecord.begin(); iterator != oldRecord.end(); iterator++)
-		{
-			int cumulative = 0;
-			double value = Tmode::getResultValue(oldRecord[iterator->first], newRecord[iterator->first], runtime, cumulative, iterator->first);
-			if (cumulative > 0)
-				summary +=value;
-		}
-		std::cout <<  summary + POWER_BASELINE*runtime << std::endl;
+		std::cout <<  summary << std::endl;
 	}
 }
-#endif
 
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
 template <typename Tmode> 
-void measureEnergy(bool verbose)
+void measureEnergy(bool verbose, double timeNow = 0.0)
 {
 	Tmode::init(true);
 
-	struct timespec timeNow;
-	clock_gettime(CLOCK_REALTIME, &timeNow);
-
-	std::map<std::string, unsigned long long int> recordNow;
-	Tmode::getCounterValues(recordNow);
-
-#ifdef START
-	storeValues<Tmode>(recordNow, mutils::timeToDouble(timeNow));
-#endif
-
-#ifdef STOP
-	std::map<std::string, unsigned long long int> recordOld;
-	double timeOld = readStoredValues(recordOld);
-	printValues<Tmode>(recordOld, recordNow, mutils::timeToDouble(timeNow)-timeOld, verbose);
-	Environment::restoreSystemSettings(true);
-#endif
+	if (timeNow == 0.0)
+	{
+		struct timespec timestamp;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
+		timeNow = mutils::timeToDouble(timestamp);
+	}
+	std::map<std::string, unsigned long long int> energyNow;
+	Tmode::getCounterValues(energyNow);
+	recordEnergy.push_back(energyNow);
+	recordTime.push_back(timeNow);
 }
 
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
-	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
-	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
-	          << "\nenergyMeasureStart parameters:\n"
-	          << "\t-e = energy measurement system \"RAPL\" or \"NVML\"\n"
+//TODO	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
+//TODO	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
+//TODO	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
+	          << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
+	          << "\t mericStatic parameters:\n"
+//	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
+	          << "\t-e = one energy measurement systems from supported: RAPL, NVML, or A64FX\n"
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-t = #OpenMP threads\n"
@@ -147,9 +112,7 @@ void printHelp()
 	          << "\t-s = GPU SM frequency [Hz]\n"
 	          << "\t-r = GPU memory frequency [Hz]\n"
 	          << "\t-g = GPU power capping power limit [mW]\n"
-	          << "\nenergyMeasureStop parameters:\n"
-	          << "\t-e = energy measurement system \"RAPL\" or \"NVML\"\n"
-	          << "\t-b = node baseline (static) power consumption [W]\n"
+	          << "\t-b = single node baseline (static) power consumption [W]\n"
 	          << "\t-q = print the overall consumed energy only [J]\n"
 	          << std::endl;
 	exit(1);
@@ -157,22 +120,20 @@ void printHelp()
 
 int main(int argc, char **argv)
 {
-	bool verbose = true; //used only if the STOP is defined
+	bool verbose = true;
 	char hostname[HOST_NAME_MAX];
 	std::string energyMode = "";
+	std::string applicationCommand = "";
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
 		std::cerr << "missing machine hostname\n";
 		exit(1);
 	}
 
-	OUTPUT_FILE = mutils::getenv<std::string>("MERIC_TMP_PATH", std::string(MERIC_PATH)+"/build") + "/.MERICmeasure-" + std::string(hostname) +".data";
 	RegionParameters defaultParameter;
-
 	for (int i = 1; i < argc; ++i)
 	{
 		std::string arg = argv[i];
-#ifdef START
 		if (arg == "-c")
 		{
 			if (i + 1 < argc)
@@ -286,11 +247,7 @@ int main(int argc, char **argv)
 			{
 				printHelp();
 			}
-		}
-
-#elif defined STOP
-
-		if (arg == "-q")
+		}else if (arg == "-q")
 		{
 			verbose = false;
 		}else if (arg == "-b")
@@ -307,16 +264,23 @@ int main(int argc, char **argv)
 			{
 				printHelp();
 			}
-		}
-#endif
-		else if (arg == "-e")
+		}else if (arg == "-e")
 		{
 			if (i + 1 < argc)
 			{
 				energyMode = std::string(argv[++i]);
+				std::transform(energyMode.begin(), energyMode.end(), energyMode.begin(), ::toupper);
 			}else
 			{
 				printHelp();
+			}
+		}
+		else if (arg == "--")
+		{
+			i++;
+			for (; i < argc; i++)
+			{
+				applicationCommand += " " + std::string(argv[i]);
 			}
 		}
 		else
@@ -324,22 +288,116 @@ int main(int argc, char **argv)
 			printHelp();
 		}
 	}
-	if (energyMode == "" || (energyMode != "RAPL" && energyMode != "NVML"))
-		printHelp();
 	
+
+	std::vector <void(*)(bool,double)> measurements;
+	std::vector <void(*)(bool)> prints;
+
+
+	if (energyMode == "")
+	{
+		printHelp();
+	}
+	else
+	{
+		while (energyMode != "")
+		{
+			std::string token;
+			size_t pos = energyMode.find_first_of(',');
+			if(pos != std::string::npos)
+			{
+				token = energyMode.substr(0,pos);
+				energyMode = energyMode.substr(pos+1, energyMode.size()-pos);
+			}
+			else
+			{
+				token = energyMode;
+				energyMode = "";
+			}
+
+			if (token == "RAPL")
+			{
+				measurements.push_back(&measureEnergy<RAPL>);
+				prints.push_back(printValues<RAPL>);
+			}
+			else if (token == "NVML")
+			{
+				measurements.push_back(&measureEnergy<NVML>);
+				prints.push_back(printValues<NVML>);
+			}
+			else if (token == "A64FX")
+			{
+				measurements.push_back(&measureEnergy<A64FX>);
+				prints.push_back(printValues<A64FX>);
+			}
+			else
+			{
+				std::cerr << "ERROR: unknown energy measurement system '"+token+"'\n\n";
+				printHelp();
+			}
+		}
+	}
+
 ////////////////////////////////////////////////////////////////////////////////	
 	Environment::init(SYS_OTHER, defaultParameter, 0);
 	
-	if (energyMode == "RAPL")
+	bool endCondition = true;
+	double endTime = 0.0;
+	struct timespec timestamp;
+
+	#pragma omp parallel num_threads(2) shared(endCondition, endTime) private(timestamp)
 	{
-		measureEnergy<RAPL>(verbose);
-	}
-	else if (energyMode == "NVML")
-	{
-		measureEnergy<NVML>(verbose);
+		int tid = omp_get_thread_num();
+		
+		if (tid == 0)
+		{
+			if (system(applicationCommand.c_str()) != 0)
+			{
+				std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+			}
+			else
+			{
+				clock_gettime(CLOCK_REALTIME, &timestamp);
+				endTime = mutils::timeToDouble(timestamp);
+			}
+			endCondition = false;
+		}
+		else
+		{
+			double waitTime = 0.0;
+			do
+			{
+				clock_gettime(CLOCK_REALTIME, &timestamp);
+				double timeNow = mutils::timeToDouble(timestamp);
+				if (timeNow - waitTime > 60) //TODO application input parameter
+				{
+					for(auto measureEnergyGeneral : measurements)
+					{
+						measureEnergyGeneral(verbose, timeNow);
+					}
+					waitTime = timeNow;
+				}
+				usleep(1000);	//1ms sleep - we must check whether the application has ended
+			}
+			while(endCondition);
+					
+			if (endTime > 0.0)
+			{
+				//final energy measurement stamp
+				for(auto measureEnergyGeneral : measurements)
+				{
+					measureEnergyGeneral(verbose, endTime);
+				}
+				for(auto printGeneral : prints)
+				{
+					printGeneral(verbose);
+				}
+			}
+		}
 	}
 	
+	Environment::restoreSystemSettings(true);	//TODO check if needed
 	Environment::close();
-
+	
 	return 0;
 }

@@ -27,11 +27,12 @@ def configure(ctx):
 			if (ctx.options.cpp == 'icpx'):
 				ctx.options.cpp = 'icpc'
 		elif ('CC' in ctx.env):
-			if (ctx.env['CC'][0].split('/')[-1] == 'icc'): # Intel
+			cc = ctx.env['CC'][0].split('/')[-1]
+			if (cc == 'icc' or cc == 'icx'): # Intel
 				ctx.options.cpp="icpc"
-			elif (ctx.env['CC'][0].split('/')[-1] == 'gcc'): # GCC
+			elif (cc == 'gcc'): # GCC
 				ctx.options.cpp="g++"
-			elif (ctx.env['CC'][0].split('/')[-1] == 'clang'): # Clang
+			elif (cc == 'clang'): # Clang
 				ctx.options.cpp="clang++"
 			# Cray (cc), Fujitsu (FCC), ARM (armclang++)
 		else:
@@ -227,23 +228,10 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
-		target="energyMeasureStart",
+		target="mericStatic",
 		use="msr x86_adapt numa geopm nvml esmi",
-		env=ctx.all_envs['start'].derive(),
-		install_path = ctx.path.abspath()+"/bin/"
-	)
-	ctx.program(
-		source= 
-			ctx.path.ant_glob('src/tools/staticMERICtool/staticMERICtool.cpp') +
-			ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
-			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
-			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
-			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
-			ctx.path.ant_glob('src/basis/json.cpp'),
-		target="energyMeasureStop",
-		use="msr x86_adapt numa geopm nvml esmi",
-		env=ctx.all_envs['stop'].derive(),
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/bin/")
