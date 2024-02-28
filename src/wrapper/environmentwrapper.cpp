@@ -951,11 +951,17 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 		if (jsonFile.is_open())
 		{
 			while (getline(jsonFile,line))
+			{
 				restoreJson += " " + line+"\n";
+			}
 			jsonFile.close();
 		}
 		if (restoreJson == "")
+		{
+			std::cerr << "MERIC WARNING: empty restore file, creating a new one\n";
+			rename(defaultSettingFile.c_str(), (defaultSettingFile+".err").c_str());
 			return false;
+		}
 		
 		const char * json = restoreJson.c_str();
 		struct json_value_s* root = json_parse(json, strlen(json));
@@ -966,18 +972,23 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 			restoreJson = "";
 			return false;
 		}
-
+		
+		//expecting that all CPUs and all GPUs are the same kind
 		std::string CPUname;
 		getCPUbrandString(CPUname);
 #ifdef HAVE_NVML_H
 		std::string GPUname;
 		getGPUbrandString(GPUname);
+		int HWperNode = 2;
+#else
+		int HWperNode = 1;
 #endif
 		struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
 		while(data != NULL)
 		{
 			if (std::string(data->name->string) == CPUname)
 			{
+				HWperNode--;
 				struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
 				while(architectureData != NULL)
 				{
@@ -1082,6 +1093,7 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 #ifdef HAVE_NVML_H
 			else if (std::string(data->name->string) == GPUname)
 			{
+				HWperNode--;
 				struct json_object_element_s* architectureData = ((struct json_object_s*)data->value->payload)->start;
 				while(architectureData != NULL)
 				{
@@ -1142,10 +1154,16 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 				}
 			}
 #endif
+			//information about HW on node loaded from the json
+			if (HWperNode == 0)
+			{
+				free(root);
+				return true;
+			}
 			data = data->next;
 		}
 		free(root);
-		return true;
+		return false;
 	}
 
 	return false;
