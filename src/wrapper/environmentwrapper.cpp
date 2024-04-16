@@ -1610,8 +1610,8 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #ifdef HAVE_NVML_H
 	nvmlInit();
 	activatedGPUtuning = getGPUTuningMethod();
-#endif
 	NVML::init();
+#endif
 	
 	initHWSizes();
 	RAPL::initCountersUnits();
@@ -1653,11 +1653,12 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 
 //ACTIVATE POWERCAP
+#if defined _INTEL_ || defined _AMD_
 		if (defaultSettings.defaultPowerCapPKG != 0x0)
 		{
 			activatedPWRCAP = isPWRCAPpossible();
 		}
-
+#endif
 		//set the settings that user wants to apply for the application
 		frequency(defaultParameter.frequency);
 		uncoreFrequency(defaultParameter.uncoreFrequency, defaultParameter.uncoreFrequency);
