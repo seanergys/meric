@@ -80,7 +80,10 @@ void printValues(bool verbose)
 template <typename Tmode> 
 void measureEnergy(bool verbose, double timeNow = 0.0)
 {
-	Tmode::init(true);
+	if (recordEnergy.empty())
+	{
+		Tmode::init(true);
+	}
 
 	if (timeNow == 0.0)
 	{

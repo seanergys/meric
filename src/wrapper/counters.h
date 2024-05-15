@@ -2,6 +2,8 @@
 #ifndef SRC_WRAPPER_COUNTERS_H_
 #define SRC_WRAPPER_COUNTERS_H_
 
+#include <cstdint>
+
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
 #ifndef __NR_perf_event_open
