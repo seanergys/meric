@@ -318,28 +318,30 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		std::cout << "enabled\n";
 #endif		
 	}
-
-#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H)
-	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-	if (frequencyBounderyFile.is_open())
+	else
 	{
-		std::string freqBound = "";
-		frequencyBounderyFile >> freqBound;
-		frequencyBounderyFile.close();
-		freq = std::stol(freqBound) * 1000;
-		std::cout << "\tMax CPU core frequency:      " << freq/1000 << " kHz\n";
-		if (freq != limits.maxCoreFreq)
+		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+		if (frequencyBounderyFile.is_open())
 		{
-			ok = false;
+			std::string freqBound = "";
+			frequencyBounderyFile >> freqBound;
+			frequencyBounderyFile.close();
+			freq = std::stol(freqBound) * 1000;
+			std::cout << "\tMax CPU core frequency:      " << freq/1000 << " kHz\n";
+			if (limits.maxCoreFreq != 0 && freq != limits.maxCoreFreq)
+			{
+				ok = false;
+			}
 		}
 	}
-#endif
 
 	std::vector<long> availCF;
 	meric::Environment::getAvailableCF(availCF); //may identify nominal frequency
 	unsigned long nominalFreq = meric::Environment::getNominalFrequency();
 	if (nominalFreq > 0)
+	{
 		std::cout << "\tNominal CPU core frequency:  " << nominalFreq/1000 << " kHz\n";
+	}
 
 	frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
 	if (frequencyBounderyFile.is_open())
