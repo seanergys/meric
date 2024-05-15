@@ -58,13 +58,15 @@ MERIC allows to set selected system parameters for the whole application run or 
 MERIC provides several ways how to control the CPU core frequency, which highy depends on CPU vendor and available scaling driver.
 
 ##### Intel #####
-Support for frequency scaling under `Intel Hardware Performance State (HWP)`, `intel_pstate` scaling driver, or `userspace` scaling governor of any scaling driver.
+Support for frequency scaling under `Intel Hardware Performance State (HWP)`, `intel_pstate` scaling driver, `intel_cpufreq` scaling driver, or `userspace` scaling governor of any scaling driver.
 
 Under `HWP` requires additional write acess to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq`. 
 
 Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
 
-If scaling driver allows to specify `userspace` scaling governor (`/sys/devices/system/cpu/cpu*/cpufreq/scaling_available_governors`), MERIC must have right to set the `userspace` governor in `/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor` (if not already set), and have write access to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`.
+Under `intel_cpufreq` requires access to MSRs, or write access to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+
+If scaling driver allows to specify `userspace` scaling governor (`/sys/devices/system/cpu/cpu*/cpufreq/scaling_available_governors`), MERIC must have right to set the `userspace` governor in `/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor` (if not already set), and have write access to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed`. This does not apply in case of `intel_cpufreq` scaling driver which ignores `scaling_setspeed` input.
 
 - Using write to MSRs - require [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr). **Prefered interface for Intel CPUs, the only interface that supports tuning under HWP.**
 - Using [x86_adapt](https://github.com/tud-zih-energy/x86_adapt).

@@ -1,8 +1,9 @@
-### XX.XX.XXXX #################################################################
+### 15.05.2024 #################################################################
   - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop
   - MERIC_MODE and MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options
   - removed MERIC_ITERATION input parameter, it is generated automatically
   - support for Intel CPU core frequency scaling under Intel Hardware Performance State (HWP)
+  - support for Intel CPU core frequency scaling under intel_cpufreq scalig diver
   - support for Nvidia GPUs energy measurement using NVML (MERIC_MEASURE=NVML)
   - support Nvidia GPUs power capping, streaming multiprocessors and memory frequency tuning
   - support for AMD RAPL energy measurement (available from Zen architecture)
