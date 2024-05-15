@@ -78,6 +78,7 @@ enum DVFS_WAY {
 	USRSPACE_FILE, // DVFS possible under userspace scaling driver - writing to ACPI CPUFREQ sysfs
 	USRSPACE_LIB,  // DVFS possible under userspace scaling driver - using a library
 	INT_PSTATE,    // DVFS possible under intel_pstate scaling driver
+	INT_CPUFREQ,   // DVFS possible under intel_cpufreq scaling driver
 	HWP,           // DVFS possible under active Intel Hardware Performance State
 	OTHER          // DVFS possible under another (unknown) scaling driver
 };

@@ -249,9 +249,13 @@ long Environment::getNominalFrequency()
 			frequencyBounderyFile.close();
 			frequency = std::stol(freqBound);
 			if (frequency%10000 == 1000)
+			{
 				frequency = (frequency-1000) * 1000;
+			}
 			else
+			{
 				frequency *= 1000;
+			}
 		}
 	}
 	#ifdef _INTEL_
@@ -270,7 +274,9 @@ long Environment::getNominalFrequency()
 	else	//AMD CPU P0 frequency
 	{
 		if (!defaultSettings.availableCoreFreq.empty())
+		{
 			frequency = defaultSettings.availableCoreFreq[0];
+		}
 		#if defined HAVE_MSR_SAFE && defined MSR_PSTATE_DEF_P0
 		else //else branch cannot call getAvailableCF() because the vector is filled only if esmi not available
 		{
@@ -310,7 +316,9 @@ long Environment::getNominalFrequency()
 void Environment::getAvailableCF(std::vector<long> & values)
 {
 	if (!values.empty())
+	{
 		return;
+	}
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -361,7 +369,9 @@ void Environment::getAvailableCF(std::vector<long> & values)
 #endif
 	//return the frequencies ordered, the highest frequency first
 	if (values.size() > 1 && values[0] < values[1])
+	{
 		std::reverse(values.begin(), values.end());
+	}
 }
 
 /**
@@ -451,25 +461,20 @@ long Environment::getMaximumTurboFrequency()
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_TURBO_RATIO_LIMIT
 	uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 	read_msr(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
-	MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask;
-	frequency = (MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask) * 100000000;
+	if (MSR_TURBO_RATIO_LIMIT_bits != 0x0)
+	{
+		MSR_TURBO_RATIO_LIMIT_bits = MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask;
+		frequency = (MSR_TURBO_RATIO_LIMIT_bits & MSR_TURBO_RATIO_LIMIT_mask) * 100000000;
+	}
 #elif defined HAVE_E_SMI_E_SMI_H
 	uint32_t boostlimit;
 	if (!esmi_core_boostlimit_get(0, &boostlimit))
-		frequency = boostlimit * 1e6;
-#else
-	if (getScalingDriver() == "intel-pstate")
 	{
-		std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-		if (frequencyBounderyFile.is_open())
-		{
-			std::string freqBound;
-			frequencyBounderyFile >> freqBound;
-			frequencyBounderyFile.close();
-			frequency = std::stol(freqBound) * 1000;
-		}
+		frequency = boostlimit * 1e6;
 	}
-	else
+#endif
+
+	if (frequency == 0)
 	{
 		struct stat info;
 		if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_boost_frequencies", &info) == 0)
@@ -487,13 +492,32 @@ long Environment::getMaximumTurboFrequency()
 				frequencyBounderyFile.close();
 
 				if (values.size() > 2 && values[0] < values[1])
+				{
 					frequency = values.back();
+				}
 				else if (values.size())
+				{
 					frequency = values[0];
+				}
+			}
+		}
+		else
+		{
+			std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+			if (frequencyBounderyFile.is_open())
+			{
+				std::string freqBound;
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				frequency = std::stol(freqBound) * 1000;
+				if (frequency-1000000 == getNominalFrequency())
+				{
+					frequency = 0;
+				}
 			}
 		}
 	}
-#endif
+
 	return frequency;
 }
 
@@ -577,6 +601,32 @@ DVFS_WAY Environment::isDVFSpossible()
 	#endif
 #endif
 
+#if defined _INTEL_
+	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS && defined IA32_PERF_CTL
+	if (getScalingDriver() == "intel_pstate" &&
+	    access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
+	    access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
+	{
+		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the msr_safe whitelist (allowlist)
+	}
+	#endif
+	if (getScalingDriver() == "intel_cpufreq")
+	{
+		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_PERF_CTL
+		return INT_CPUFREQ;
+		#else
+		if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
+		{
+			return INT_CPUFREQ;
+		}
+		else
+		{
+			return NO_DVFS;
+		}
+		#endif
+	}
+#endif
+
 	// scalingGovernor is not set if neither readSystemDefaultSettings() nor readRestoreFile() have been called
 	// may happen if used from "outside" or if the restoreFile is empty
 	if (scalingGovernor == "")
@@ -605,15 +655,6 @@ DVFS_WAY Environment::isDVFSpossible()
 			return NO_DVFS;
 		}
 	}
-
-#if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined IA32_ENERGY_PERF_BIAS
-	if (getScalingDriver() == "intel_pstate" &&
-	   access("/sys/devices/system/cpu/intel_pstate/no_turbo", W_OK) == 0 &&
-	   access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", W_OK) == 0)
-	{
-		return INT_PSTATE; //requires also IA32_ENERGY_PERF_BIAS register in the msr_safe whitelist (allowlist)
-	}
-#endif
 	
 	if (access("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", W_OK) == 0)
 	{
@@ -726,8 +767,12 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 		for (int soc=0; soc<SOCKETS_PER_NODE; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
+			{
 				for (int thread : mapThreadsToCore[cpu])
+				{
 					write_msr(thread, IA32_ENERGY_PERF_BIAS, 0);
+				}
+			}
 		}
 #endif
 		//p_state may still rewrite the IA32_PERF_CTL register during a short time period, so we wait
@@ -1753,25 +1798,28 @@ void Environment::frequency(uint64_t freq, int socket)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
-				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_max_freq");
-				if (coreFile.is_open())
+				for (int thrd : mapThreadsToCore[cpu])
 				{
-					coreFile << freq / 1000;
-					coreFile.close();
-				}
-				if(!coreFile)
-				{
-					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_max_freq\n";
-				}
-				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_min_freq");
-				if (coreFile.is_open())
-				{
-					coreFile << freq / 1000;
-					coreFile.close();
-				}
-				if(!coreFile)
-				{
-					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_min_freq\n";
+					coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thrd)+"/cpufreq/scaling_max_freq");
+					if (coreFile.is_open())
+					{
+						coreFile << freq / 1000;
+						coreFile.close();
+					}
+					if(!coreFile)
+					{
+						std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<thrd<<"/cpufreq/scaling_max_freq\n";
+					}
+					coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thrd)+"/cpufreq/scaling_min_freq");
+					if (coreFile.is_open())
+					{
+						coreFile << freq / 1000;
+						coreFile.close();
+					}
+					if(!coreFile)
+					{
+						std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<thrd<<"/cpufreq/scaling_min_freq\n";
+					}
 				}
 			}
 		}
@@ -1787,13 +1835,16 @@ void Environment::frequency(uint64_t freq, int socket)
 	MERIC_INFO << "; using MSR_SAFE\n";
 	#endif
 
-	if (activatedDVFS == INT_PSTATE || activatedDVFS == HWP)
+	if (activatedDVFS == INT_PSTATE || activatedDVFS == HWP || activatedDVFS == INT_CPUFREQ)
 	{
 		for (int soc=socket_min; soc<=socket_max; soc++)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
-				write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+				for (int thrd : mapThreadsToCore[cpu])
+				{
+					write_msr(thrd, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+				}
 			}
 		}
 	}
@@ -1804,15 +1855,18 @@ void Environment::frequency(uint64_t freq, int socket)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
-				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
-				if (coreFile.is_open())
+				for (int thrd : mapThreadsToCore[cpu])
 				{
-					coreFile << freq / 1000;
-					coreFile.close();
-				}
-				if(!coreFile)
-				{
-					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+					coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thrd)+"/cpufreq/scaling_setspeed");
+					if (coreFile.is_open())
+					{
+						coreFile << freq / 1000;
+						coreFile.close();
+					}
+					if(!coreFile)
+					{
+						std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<thrd<<"/cpufreq/scaling_setspeed\n";
+					}
 				}
 			}
 		}
@@ -1822,7 +1876,10 @@ void Environment::frequency(uint64_t freq, int socket)
 			{
 				for (int cpu : mapCoresToSocket[soc])
 				{
-					write_msr(cpu, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+					for (int thrd : mapThreadsToCore[cpu])
+					{
+						write_msr(thrd, IA32_PERF_CTL, (freq/100000000) << IA32_PERF_CTL_shift);
+					}
 				}
 			}
 		}
@@ -1842,21 +1899,26 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
-			int fd = x86_adapt_get_device(X86_ADAPT_CPU, cpu);
-			if (fd < 0)
+			for (int thrd : mapThreadsToCore[cpu])
 			{
-				std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
-//				exit(2);
-			}
+				int fd = x86_adapt_get_device(X86_ADAPT_CPU, thrd);
+				if (fd < 0)
+				{
+					std::cerr << "X86ADAPT ERROR: error while accessing file descriptor\n";
+//					exit(2);
+				}
 
-			if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
-			{
-				std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
-//				exit(3);
-			}
+				if(x86_adapt_set_setting(fd, adaptHandler, (freq/100000000) << IA32_PERF_CTL_shift) != 8)
+				{
+					std::cerr << "X86ADAPT ERROR: error while setting core frequecy\n";
+//					exit(3);
+				}
 
-			if (x86_adapt_put_device(X86_ADAPT_CPU, cpu))
-				std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+				if (x86_adapt_put_device(X86_ADAPT_CPU, thrd))
+				{
+					std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
+				}
+			}
 		}
 	}
 #elif defined HAVE_GEOPM_H
@@ -1866,7 +1928,10 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
-			pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), cpu, freq);
+			for (int thrd : mapThreadsToCore[cpu])
+			{
+				pio.write_control("FREQUENCY", pio.control_domain_type("FREQUENCY"), thrd, freq);
+			}
 		}
 	}
 #elif defined HAVE_CPUFREQ_H
@@ -1876,9 +1941,12 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
-			if(cpufreq_set_frequency(cpu,freq) != 0)
+			for (int thrd : mapThreadsToCore[cpu])
 			{
-				std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< cpu << std::endl;
+				if(cpufreq_set_frequency(thrd,freq) != 0)
+				{
+					std::cerr << "CPUFREQ ERROR: failed to set frequency for cpu "<< thrd << std::endl;
+				}
 			}
 		}
 	}
@@ -1899,6 +1967,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
+			//test TODO for (int thrd : mapThreadsToCore[cpu])
 			esmi_core_boostlimit_set(cpu, freq/1e6);
 		}
 	}
@@ -1921,6 +1990,7 @@ void Environment::frequency(uint64_t freq, int socket)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
+				//test TODO for (int thrd : mapThreadsToCore[cpu])
 				write_msr(cpu, MSR_HWCR, defaultSettings.MSR_HWCR_default & (0xFFFFFFFFFFFFFFFF ^ MSR_HWCR_boost_disable_mask));
 				write_msr(cpu, MSR_PSTATE_CTL, 0x0); //P0
 			}
@@ -1937,27 +2007,41 @@ void Environment::frequency(uint64_t freq, int socket)
 		{
 			for (int cpu : mapCoresToSocket[soc])
 			{
+				//test TODO for (int thrd : mapThreadsToCore[cpu])
 				write_msr(cpu, MSR_HWCR, defaultSettings.MSR_HWCR_default | MSR_HWCR_boost_disable_mask);
 				write_msr(cpu, MSR_PSTATE_CTL, PstateIdx); //P-idx
 			}
 		}
 	}
 #else
-	//else if (activatedDVFS == USRSPACE_FILE)
+	//using sysfs
+	std::string scalingFile = "";
+	if (activatedDVFS == USRSPACE_FILE)
+	{
+		scalingFile = "scaling_setspeed";
+	}
+	else if (activatedDVFS == INT_CPUFREQ)
+	{
+		scalingFile = "scaling_max_freq";
+	}
+	
 	std::ofstream coreFile;
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
 		for (int cpu : mapCoresToSocket[soc])
 		{
-			coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpufreq/scaling_setspeed");
-			if (coreFile.is_open())
+			for (int thrd : mapThreadsToCore[cpu])
 			{
-				coreFile << freq / 1000;
-				coreFile.close();
-			}
-			if(!coreFile)
-			{
-				std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<cpu<<"/cpufreq/scaling_setspeed\n";
+				coreFile.open ("/sys/devices/system/cpu/cpu"+std::to_string(thrd)+"/cpufreq/"+scalingFile);
+				if (coreFile.is_open())
+				{
+					coreFile << freq / 1000;
+					coreFile.close();
+				}
+				if(!coreFile)
+				{
+					std::cerr << "MERIC ERROR: failed to write to /sys/devices/system/cpu/cpu"<<thrd<<"/cpufreq/"+scalingFile+"\n";
+				}
 			}
 		}
 	}
