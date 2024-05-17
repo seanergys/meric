@@ -97,12 +97,10 @@ def configure(ctx):
 	MSRSAFEavailable = False
 	OCCavailable = False
 	# check for msr_safe
-	#if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
-	MSRSAFEavailable = True
-	ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
-	ctx.check_cxx(msg='Checking for module msr_safe', always=True)
-	#else:
-	#	print("NO /dev/cpu/0/msr_safe")
+	if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
+		MSRSAFEavailable = True
+		ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
+		ctx.check_cxx(msg='Checking for module msr_safe', always=True)
 	
 	# check for OCC
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
