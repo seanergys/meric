@@ -1969,7 +1969,8 @@ void Environment::frequency(uint64_t freq, int socket)
 			}
 		}
 	}
-	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(nodeSize-1) << std::endl;
+
+	MERIC_INFO << "CPUFREQ: core frequency is " << cpufreq_get_freq_kernel(mapThreadsToCore[mapCoresToSocket[socket_min].front()].front()) << std::endl;
 #elif defined _AMD_ && defined HAVE_E_SMI_E_SMI_H
 /**
  * AMD CPU cores are grouped into Core Complexes (CCXes), all cores grouped into 
