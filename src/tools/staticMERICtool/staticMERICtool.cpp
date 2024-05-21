@@ -348,6 +348,12 @@ int main(int argc, char **argv)
 	double endTime = 0.0;
 	struct timespec timestamp;
 
+	double timeNow = mutils::timeToDouble(timestamp);
+	for(auto measureEnergyGeneral : measurements)
+	{
+		measureEnergyGeneral(verbose, timeNow);
+	}
+
 	#pragma omp parallel num_threads(2) shared(endCondition, endTime) private(timestamp)
 	{
 		int tid = omp_get_thread_num();
@@ -367,11 +373,11 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			double waitTime = 0.0;
+			double waitTime = timeNow;
 			do
 			{
 				clock_gettime(CLOCK_REALTIME, &timestamp);
-				double timeNow = mutils::timeToDouble(timestamp);
+				timeNow = mutils::timeToDouble(timestamp);
 				if (timeNow - waitTime > 60) //TODO application input parameter
 				{
 					for(auto measureEnergyGeneral : measurements)
