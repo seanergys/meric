@@ -114,7 +114,8 @@ def configure(ctx):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False):
-			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", execute=False, mandatory=False)
+			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
+			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
 		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
