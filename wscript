@@ -113,8 +113,7 @@ def configure(ctx):
 			if ctx.check_cxx(lib="cpufreq", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUFREQ=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
-			else:
-				ctx.check_cxx(lib="cpupower", mandatory=False)
+			elif ctx.check_cxx(lib="cpupower", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
