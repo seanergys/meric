@@ -111,8 +111,12 @@ def configure(ctx):
 	if not ctx.options.sbi:
 		if ((not ctx.check_cxx(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) and (not ctx.check_cxx(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cxx(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) and (not ctx.check_cxx(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not MSRSAFEavailable)):
 			if ctx.check_cxx(lib="cpufreq", mandatory=False):
-				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1" ])
+				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUFREQ=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
+			else:
+				ctx.check_cxx(lib="cpupower", mandatory=False)
+				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
+				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
 			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
 			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
