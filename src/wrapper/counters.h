@@ -79,11 +79,17 @@ static std::map<const std::string, std::string> counterLabel = {
  **/
 namespace A64FX_COUNTERS {
 
-const std::string ENERGY_CORE = "CORE [J]";
-const std::string ENERGY_L2 = "L2 [J]";
-const std::string ENERGY_MEM = "MEM [J]";
+const std::string ENERGY_CORE = "EA_CORE";
+const std::string ENERGY_L2 = "EA_L2";
+const std::string ENERGY_MEM = "EA_MEM";
 
-static std::map<const std::string, uint64_t> counterLabel = {
+static std::map<const std::string, std::string> counterLabel = {
+	{ ENERGY_CORE, "CORE [J]" },
+	{ ENERGY_L2,   "L2 [J]" },
+	{ ENERGY_MEM,  "MEM [J]" }
+};
+
+static std::map<const std::string, const uint64_t> counterDefines = {
 	{ ENERGY_CORE, 0x01e0 },
 	{ ENERGY_L2,   0x03e0 },
 	{ ENERGY_MEM,  0x03e8 }

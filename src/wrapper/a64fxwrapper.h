@@ -37,7 +37,6 @@ public:
 	static void close();
 	
 	static void getCounterValues(std::map<std::string, unsigned long long> & record);
-	static void initMap(std::map<std::string, unsigned long long> & dict);
 	static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel() {return "A64FX";};
@@ -49,9 +48,9 @@ public:
 private:
 	static void initCountersUnits();
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
-	static long openCounter(perf_event_attr attr);
+	static long openCounter(perf_event_attr attr, int cpu);
 #endif
-	static std::map<std::string, unsigned long long int> counters;
+	static std::map<const std::string, long> countersFd;
 	static unsigned long long int COUNTERMAX;
 	static std::map<std::string, double> units;
 };
