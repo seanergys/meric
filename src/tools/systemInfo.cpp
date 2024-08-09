@@ -533,15 +533,23 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			{
 				ok = false;
 			}
+			if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, &freqSM) == NVML_SUCCESS)
+			{
+				std::cout << "\tNominal streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
+			}
 		}
 		
 		//nvmlReturn_t nvmlDeviceGetClock ( nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz )
 		
 		//NVML_CLOCK_MEM, NVML_CLOCK_SM
 		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqMem)
+		{
 			std::cout << "\tCurrent memory frequency: " << freq*1000 << " kHz\n";
+		}
 		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqSM)
+		{
 			std::cout << "\tCurrent streaming multiprocessor frequency: " << freq*1000 << " kHz\n";
+		}
 	}
 
 	const unsigned int driverVersionLength = 256;
@@ -932,9 +940,10 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		{
 			std::cout << "\tGPU default power limit: " << maxPowerLimit/1000 << " W\n";
 		}
-
+		
 		if (nvmlDeviceGetPowerManagementLimit(deviceHandle, &minPowerLimit) == NVML_SUCCESS && minPowerLimit != maxPowerLimit)
 		{
+			std::cout << "\tGPU power limit:         " << minPowerLimit/1000 << " W\n";
 			ok = false;
 		}
 	}
