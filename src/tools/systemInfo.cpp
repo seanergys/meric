@@ -490,6 +490,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		uint gpuFreqCount = 0;
 		uint * memFreq = NULL;
 		uint * gpuFreq = NULL;
+		unsigned int freqSMmax = 0;
 
 		if(nvmlDeviceGetSupportedMemoryClocks(deviceHandle, &memFreqCount, memFreq) == NVML_ERROR_INSUFFICIENT_SIZE)
 		{
@@ -506,6 +507,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 						if(nvmlDeviceGetSupportedGraphicsClocks(deviceHandle, memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
 						{
 							std::cout << "\tMemory: " << memFreq[i]*1000 << " kHz\tSM: " <<  gpuFreq[0]*1000 << " - " << gpuFreq[gpuFreqCount-1]*1000 << " kHz (" << gpuFreqCount<< " steps)\n";
+							freqSMmax = gpuFreq[0];
 							if (detailed)
 							{
 								std::cout << "\t\t";
@@ -527,28 +529,21 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		   nvmlDeviceGetDefaultApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freqSM)   == NVML_SUCCESS)
 		{
 			std::cout << "\tDefault memory frequency: " << freqMem*1000 << " kHz\n"
-			          << "\tDefault streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
+			          << "\tNominal streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
 			if (nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_MEM, &freq) == NVML_SUCCESS && freq != freqMem &&
 			    nvmlDeviceGetApplicationsClock(deviceHandle, NVML_CLOCK_SM, &freq)  == NVML_SUCCESS && freq != freqSM)
 			{
 				ok = false;
 			}
-			if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_DEFAULT, &freqSM) == NVML_SUCCESS)
-			{
-				std::cout << "\tNominal streaming multiprocessor frequency: " << freqSM*1000 << " kHz\n";
-			}
 		}
 		
-		//nvmlReturn_t nvmlDeviceGetClock ( nvmlDevice_t device, nvmlClockType_t clockType, nvmlClockId_t clockId, unsigned int* clockMHz )
-		
-		//NVML_CLOCK_MEM, NVML_CLOCK_SM
 		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqMem)
 		{
 			std::cout << "\tCurrent memory frequency: " << freq*1000 << " kHz\n";
 		}
-		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqSM)
+		if (nvmlDeviceGetClock(deviceHandle, NVML_CLOCK_SM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &freq) == NVML_SUCCESS && freq != freqSMmax)
 		{
-			std::cout << "\tCurrent streaming multiprocessor frequency: " << freq*1000 << " kHz\n";
+			std::cout << "\tStreaming multiprocessor frequency limit:   " << freq*1000 << " kHz\n";
 		}
 	}
 
