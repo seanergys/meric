@@ -45,20 +45,23 @@ int Meric::getDefaultParameters()
 {
 	int ret=0;
 //OBLIGATORY SECTION
-#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	defaultParameter.frequency = mutils::frequencyToHz(mutils::getenv("MERIC_FREQUENCY", std::string("")));
+#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	if (defaultParameter.frequency < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_FREQUENCY [Hz]\n";
 		ret = 1;
 	}
+#else
+	if (defaultParameter.frequency < 0)
+	{
+		defaultParameter.frequency = 0;
+	}
+#endif
 	else if (defaultParameter.frequency != 0)
 	{
 		Meric::outputFormat.frequency = int(true);
 	}
-#else
-	defaultParameter.frequency = 0;
-#endif
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 	defaultParameter.uncoreFrequency = mutils::frequencyToHz(mutils::getenv("MERIC_UNCORE_FREQUENCY", std::string("")));
