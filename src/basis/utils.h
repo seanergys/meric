@@ -19,6 +19,11 @@
 #define ARM_INFO "> /dev/null"
 #endif
 
+#ifndef MERIC_TMP_PATH
+	#define MERIC_TMP_PATH MERIC_PATH
+#endif
+
+
 #ifdef HAVE_MPI_H
 	#if SIZE_MAX == UCHAR_MAX
 	   #define MPI_SIZE_T MPI_UNSIGNED_CHAR

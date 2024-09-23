@@ -985,7 +985,7 @@ void Environment::initHWSizes()
 bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTime)
 {
 	restoreJson = "";
-	std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+	std::string defaultSettingFile = std::string(MERIC_TMP_PATH)+"/systemDefault.json";
 	
 	struct stat info;
 	if(stat(defaultSettingFile.c_str(), &info) == 0)
@@ -1476,7 +1476,7 @@ void Environment::readSystemDefaultSettings()
 #endif
 
 // store the configuration to the file ---------------------------------------//
-		std::string defaultSettingFile = std::string(MERIC_PATH)+"/build/systemDefault.json";
+		std::string defaultSettingFile = std::string(MERIC_TMP_PATH)+"/systemDefault.json";
 		//test if the file has been modified since we tried to read it
 		if (stat(defaultSettingFile.c_str(), &info ) != 0 || modifTime == info.st_mtim)
 		{
