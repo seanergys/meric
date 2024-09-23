@@ -1,3 +1,6 @@
+### XX.XX.XXXX #################################################################
+  - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
+
 ### 15.05.2024 #################################################################
   - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop
   - MERIC_MODE and MERIC_CONTINUAL options have been replaced by MERIC_MEASURE, comma separated list of measurement options

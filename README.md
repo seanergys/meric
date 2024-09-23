@@ -321,6 +321,8 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
+During runtime MERIC create one or a few temporary files. `MERIC_TMP_PATH` must be defined in the configuration stage to specify location where to store these files, otherwise these files are created in the MERIC root directory.
+
 ## TIMEPROF used libraries ##
 * mandatory  - [rt](https://man.cx/librt(3))
 * optionally - OpenMP
