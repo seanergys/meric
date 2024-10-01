@@ -920,11 +920,21 @@ void Environment::initHWSizes()
 		mapThreadsToCore[threadSiblings.back()] = threadSiblings;
 		
 		if (threadSiblings.size() > THREADS_PER_CORE)
+		{
 			THREADS_PER_CORE = threadSiblings.size();
-		
+		}
 		for(int thrd : threadSiblings)
+		{
 			onlineThreads.erase(std::remove(onlineThreads.begin(), onlineThreads.end(), thrd), onlineThreads.end());
+		}
 	}
+	
+	// /sys/devices/system/cpu/cpu * /topology/physical_package_id
+	// physical package id of cpuX. Typically corresponds to a physical socket number, 
+	// but the actual value is architecture and platform dependent.
+
+	// converting the IDs to numbering starting from zero
+	std::map <unsigned int, unsigned int> package2socket;
 	
 	for (const auto &core : mapThreadsToCore)
 	{
@@ -936,16 +946,26 @@ void Environment::initHWSizes()
 			topoFile.close();
 		}
 		
-		const int soc = std::stoi(topoStr);
+		int soc = std::stoi(topoStr);
+		if (package2socket.find(soc) == package2socket.end())
+		{
+			package2socket[soc] = package2socket.size();
+		}
+		
+		soc = package2socket[soc];
 		
 		if (mapCoresToSocket.count(soc))
 		{
 			mapCoresToSocket[soc].push_back(core.first);
 			if (CORES_PER_SOCKET < mapCoresToSocket[soc].size())
+			{
 				CORES_PER_SOCKET++;
+			}
 		}
 		else
+		{
 			mapCoresToSocket[soc] = {core.first};
+		}
 	}
 	SOCKETS_PER_NODE = mapCoresToSocket.size();
 	
@@ -1674,7 +1694,9 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 //ACTIVATE UFS
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 		if (defaultSettings.defaultUncoreFreq != -1)
+		{
 			activatedUFS = true;
+		}
 #endif
 #ifdef __arm__
 		if (systemType == SYS_JETSON)
@@ -2035,6 +2057,7 @@ void Environment::frequency(uint64_t freq, int socket)
 	}
 #else
 	//using sysfs
+	MERIC_INFO << "; using SYSFS\n";
 	std::string scalingFile = "";
 	if (activatedDVFS == USRSPACE_FILE)
 	{
