@@ -119,6 +119,7 @@ def configure(ctx):
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
 			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
 			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
+		ctx.check_cxx(header_name="rocm_smi.h", lib="librocm_smi64.so", uselib_store="rocm", execute=False, mandatory=False)
 		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
@@ -230,11 +231,12 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
-		use="msr x86_adapt numa geopm nvml esmi",
+		use="msr x86_adapt numa geopm nvml rocm esmi",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/bin/")
@@ -247,6 +249,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hdeemwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/thunderwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
@@ -254,7 +257,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
-		use="msr x86_adapt numa geopm nvml hdeem freeipmi esmi",
+		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	
@@ -265,9 +268,10 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/environmentwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
-		use="msr x86_adapt numa geopm nvml esmi",
+		use="msr x86_adapt numa geopm nvml rocm esmi",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	
