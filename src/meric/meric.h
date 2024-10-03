@@ -22,6 +22,7 @@
 #include "../wrapper/papiwrapper.h"
 #include "../wrapper/raplwrapper.h"
 #include "../wrapper/nvmlwrapper.h"
+#include "../wrapper/rocmwrapper.h"
 #include "../wrapper/occwrapper.h"
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
