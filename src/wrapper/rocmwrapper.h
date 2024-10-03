@@ -20,30 +20,30 @@ namespace meric {
 class ROCM {
 
 public:
-    static void init(bool detailed = true);
-    static void close() { /*rsmi_shut_down();*/ };
-    
-    static void getCounterValues(std::map<std::string, unsigned long long> &record);
-    static void initMap(std::map<std::string, unsigned long long> &dict);
-    static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "");
-    static std::string getSummaryCounterName();
-    static std::string getSourceLabel() { return "ROCMSMI"; };
-    static std::string getCounterLabel(std::string counter);
-    static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> &ratios) {};
+	static void init(bool detailed = true);
+	static void close() { /*rsmi_shut_down();*/ };
+	
+	static void getCounterValues(std::map<std::string, uint64_t> &record);
+	static void initMap(std::map<std::string, uint64_t> &dict);
+	static double getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "");
+	static std::string getSummaryCounterName();
+	static std::string getSourceLabel() { return "ROCMSMI"; };
+	static std::string getCounterLabel(std::string counter);
+	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> &ratios) {};
 
-    static inline double getUnit(std::string counterName) { return unit; };
+	static inline double getUnit(std::string counterName) { return unit; };
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-    static size_t getGPUsPerNode() { return GPUindices.size(); };
+	static size_t getGPUsPerNode() { return GPUindices.size(); };
 #else
 	static size_t getGPUsPerNode() { return 0; };
 #endif
 
 private:
-    // Map of counters
-    static std::map<std::string, unsigned long long> counters;
-    static uint64_t COUNTERMAX;
+	// Map of counters
+	static std::map<std::string, uint64_t> counters;
+	static uint64_t COUNTERMAX;
 	static double unit;
-    static std::vector<uint32_t> GPUindices;
+	static std::vector<uint32_t> GPUindices;
 };
 
 }

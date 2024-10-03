@@ -4,7 +4,7 @@
 using namespace meric;
 
 uint64_t ROCM::COUNTERMAX = __UINT64_MAX__;
-std::map<std::string, unsigned long long> ROCM::counters;
+std::map<std::string, uint64_t> ROCM::counters;
 std::vector<uint32_t> ROCM::GPUindices;
 double ROCM::unit = 1.0;
 
@@ -54,7 +54,7 @@ void ROCM::init(bool detailed)
  * For ROCm prior 6.2 it is neccessary to init and shut down with every energy reading
  * https://github.com/ROCm/rocm_smi_lib/issues/180
  **/
-void ROCM::getCounterValues(std::map<std::string, unsigned long long> &record)
+void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 {
 	if (GPUindices.empty())
 	{
@@ -86,7 +86,7 @@ void ROCM::getCounterValues(std::map<std::string, unsigned long long> &record)
 	#endif
 }
 
-void ROCM::initMap(std::map<std::string, unsigned long long> &dict)
+void ROCM::initMap(std::map<std::string, uint64_t> &dict)
 {
 	for (size_t i = 0; i < GPUindices.size(); i++)
 	{
@@ -94,7 +94,7 @@ void ROCM::initMap(std::map<std::string, unsigned long long> &dict)
 	}
 }
 
-double ROCM::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int &cumulative, std::string counter, std::string regionName)
+double ROCM::getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	cumulative = 1;
 	if (stopValue < startValue)
