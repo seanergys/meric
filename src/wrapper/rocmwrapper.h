@@ -1,5 +1,5 @@
-#ifndef ROCM_WRAPPER_H_
-#define ROCM_WRAPPER_H_
+#ifndef SRC_WRAPPER_ROCMWRAPPER_H_
+#define SRC_WRAPPER_ROCMWRAPPER_H_
 
 #include "../basis/utils.h"
 #include <cstdlib>
@@ -31,25 +31,22 @@ public:
     static std::string getCounterLabel(std::string counter);
     static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> &ratios) {};
 
-    static inline double getUnit(std::string counterName) { return ROCM::resolution; };
-
+    static inline double getUnit(std::string counterName) { return unit; };
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
     static size_t getGPUsPerNode() { return GPUindices.size(); };
 #else
 	static size_t getGPUsPerNode() { return 0; };
 #endif
 
-
-
 private:
     // Map of counters
     static std::map<std::string, unsigned long long> counters;
-    static unsigned long long COUNTERMAX;
-	static double resolution;
+    static uint64_t COUNTERMAX;
+	static double unit;
     static std::vector<uint32_t> GPUindices;
 };
 
 }
 
-#endif // ROCM_SMI_WRAPPER_H_
+#endif // SRC_WRAPPER_ROCMWRAPPER_H_
 
