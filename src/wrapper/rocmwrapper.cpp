@@ -33,7 +33,7 @@ void ROCM::init(bool detailed) {
 	uint64_t timestamp;
 	ret = rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		ROCM::resolution = precision;
+		ROCM::resolution = precision * 1e-6;
 	}
 
     // Populate GPUindices
