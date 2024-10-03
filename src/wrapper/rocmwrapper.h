@@ -33,6 +33,14 @@ public:
 
     static inline double getUnit(std::string counterName) { return ROCM::resolution; };
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+    static size_t getGPUsPerNode() { return GPUindices.size(); };
+#else
+	static size_t getGPUsPerNode() { return 0; };
+#endif
+
+
+
 private:
     // Map of counters
     static std::map<std::string, unsigned long long> counters;
