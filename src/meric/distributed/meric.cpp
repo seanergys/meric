@@ -155,6 +155,18 @@ DistributedMeric::DistributedMeric()
 			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
 		}
 	}
+	
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore<ROCM, uint64_t, double>>(_storingProcs, !_MPInodeRank));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<ROCM, uint64_t, double>(!_MPInodeRank));
+		}
+	}
 		
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{

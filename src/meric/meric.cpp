@@ -308,6 +308,13 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 			#endif
+			#ifndef HAVE_ROCM_SMI_ROCM_SMI_H
+				if (modeString[token] == MODE_ROCM)
+				{
+					std::cerr << "MERIC WARNING: ROCM power monitoring not available\n";
+					continue;
+				}
+			#endif
 			#ifndef HAVE_OCC
 				if (modeString[token] == MODE_OCC)
 				{

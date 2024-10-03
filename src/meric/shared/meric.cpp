@@ -47,6 +47,10 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
 	}
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
+	{
+		_storeList.push_back(new CountersStore<ROCM, uint64_t, double>());
+	}
 	
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{

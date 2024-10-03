@@ -54,7 +54,7 @@
 
 namespace meric {
 
-enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_OCC, MODE_A64FX};
+enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_ROCM, MODE_OCC, MODE_A64FX};
 
 static std::map <const std::string, mode> modeString = {
 	{"NONE", MODE_RUN},
@@ -67,6 +67,7 @@ static std::map <const std::string, mode> modeString = {
 	{"THUNDER", MODE_THUNDER},
 	{"DAVIDE", MODE_DAVIDE},
 	{"NVML", MODE_NVML},
+	{"ROCM", MODE_ROCM},
 	{"OCC", MODE_OCC},
 	{"A64FX", MODE_A64FX}
 };

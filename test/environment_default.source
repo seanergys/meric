@@ -49,7 +49,7 @@ export MERIC_GPU_FREQUENCY=0     # [Hz] no GPU streaming multiprocessors frequen
 export MERIC_GPU_MEM_FREQUENCY=0 # [Hz] no GPU memory frequency tuning
 export MERIC_PWRCAP_GPU=0        # [mW] default GPU power capping
 
-export MERIC_MEASURE=NONE   # comma separated list of {HDEEM-S, HDEEM-C, RAPL, NVML, DAVIDE, JETSON, THUNDER, TIME, OCC, A64FX, NONE}
+export MERIC_MEASURE=NONE   # comma separated list of {HDEEM-S, HDEEM-C, RAPL, NVML, ROCM, DAVIDE, JETSON, THUNDER, TIME, OCC, A64FX, NONE}
 export MERIC_AGGREGATE=1    # aggregated data from all the nodes
 # export MERIC_COUNTERS=msr # perfevent, papi, msr
 # export MERIC_DETAILED=1   # detailed information about the system
