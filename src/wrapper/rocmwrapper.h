@@ -13,6 +13,7 @@
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	#include <rocm_smi/rocm_smi.h>
+	#include <hip/hip_version.h>
 #endif
 
 namespace meric {
@@ -21,7 +22,7 @@ class ROCM {
 
 public:
 	static void init(bool detailed = true);
-	static void close() { /*rsmi_shut_down();*/ };
+	static void close();
 	
 	static void getCounterValues(std::map<std::string, uint64_t> &record);
 	static void initMap(std::map<std::string, uint64_t> &dict);
@@ -40,6 +41,7 @@ public:
 
 private:
 	// Map of counters
+	static bool HIP_PRIOR_6_2;
 	static std::map<std::string, uint64_t> counters;
 	static uint64_t COUNTERMAX;
 	static double unit;

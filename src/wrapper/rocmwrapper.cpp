@@ -8,6 +8,12 @@ std::map<std::string, uint64_t> ROCM::counters;
 std::vector<uint32_t> ROCM::GPUindices;
 double ROCM::unit = 1.0;
 
+#if defined HAVE_ROCM_SMI_ROCM_SMI_H && HIP_VERSION_MAJOR <= 6 && HIP_VERSION_MINOR < 2
+bool HIP_PRIOR_6_2 = true;
+#else
+bool HIP_PRIOR_6_2 = false;
+#endif
+
 void ROCM::init(bool detailed)
 {
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
@@ -44,10 +50,24 @@ void ROCM::init(bool detailed)
 	{
 		GPUindices.push_back(i);
 	}
-	rsmi_shut_down();
+	
+	if (HIP_PRIOR_6_2)
+	{
+		rsmi_shut_down();
+	}
 	// Initialize the counter map
 	initMap(counters);
 	#endif
+}
+
+void ROCM::close()
+{
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	if (HIP_PRIOR_6_2)
+	{
+		rsmi_shut_down();
+	}
+#endif
 }
 
 /**
@@ -62,7 +82,7 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 	}
 	
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	if (HIP_PRIOR_6_2 && rsmi_init(0) != RSMI_STATUS_SUCCESS)
 	{
 		std::cerr << "MERIC ERROR: ROCm SMI initialization failed!\n";
 		return;
@@ -82,7 +102,10 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 			std::cerr << "MERIC ERROR: ROCm SMI failed to read energy consumption of GPU "+std::to_string(i)+"\n";
 		}
 	}
-	rsmi_shut_down();
+	if (HIP_PRIOR_6_2)
+	{
+		rsmi_shut_down();
+	}
 	#endif
 }
 
