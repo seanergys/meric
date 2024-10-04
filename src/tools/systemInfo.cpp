@@ -30,6 +30,10 @@
 	#include <nvml.h>
 #endif
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	#include <rocm_smi/rocm_smi.h>
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 std::map <uint64_t,uint64_t> currentWhitelist;
@@ -134,6 +138,24 @@ void sysInfoSize(bool detailed = false)
 		
 		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the GPUs\n";
 	}
+#endif
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_status_t status;
+	rsmi_num_monitor_devices(&GPUdeviceCount);
+	if (GPUdeviceCount > 0) {
+		const int GPU_NAME_LENGTH = 50;
+        char GPUname[50];
+
+        status = rsmi_dev_name_get(0, GPUname, GPU_NAME_LENGTH);
+        std::cout << "\tGPU name:         " << GPUname << '\n';
+
+        std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
+    }
+#else
+
+	//MISSING IMPLEMENTATION - obtain AMD GPU info without the compilation using rocm_smi64 if possible
+
 #endif
 }
 
@@ -559,6 +581,43 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	}
 #endif
 
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_frequencies_t *sysFreqs = new rsmi_frequencies[1];
+	rsmi_frequencies_t *socFreqs = new rsmi_frequencies[1];
+	rsmi_frequencies_t *memFreqs = new rsmi_frequencies[1];
+	rsmi_status_t ret;
+	
+	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SYS, sysFreqs);
+	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SOC, socFreqs);
+	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_MEM, memFreqs);
+
+
+	std::cout << "\n# GPU FREQUENCIES\n";
+
+	std::cout << "\tAvailable CU frequencies (" << sysFreqs->num_supported << " steps):\n";
+	std::cout << "\t\t";
+	for(uint32_t i = 0; i < sysFreqs->num_supported; i++){
+		std::cout << sysFreqs->frequency[i] / 1e6  << " ";
+	}
+	std::cout << "MHz\n";
+
+	std::cout << "\tAvailable SOC (System on Chip) frequencies (" << socFreqs->num_supported << " steps):\n";
+	std::cout << "\t\t";
+	for(uint32_t i = 0; i < socFreqs->num_supported; i++){
+		std::cout << socFreqs->frequency[i] / 1e6  << " ";
+	}
+	std::cout << "MHz\n";
+
+	std::cout << "\tAvailable memory frequencies: (" << memFreqs->num_supported << " steps):\n";
+	std::cout << "\t\t";
+	for(uint32_t i = 0; i < memFreqs->num_supported; i++){
+		std::cout << memFreqs->frequency[i] / 1e6  << " ";
+	}
+	std::cout << "MHz\n";
+
+#endif
+
 	return ok;
 }
 
@@ -944,6 +1003,16 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	}
 #endif
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+
+//TO BE IMPLEMENTED
+
+
+#endif
+
+
+
+
 	return ok;
 }
 
@@ -1069,8 +1138,8 @@ int main(int argc, char **argv)
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	status = USING_MSR;
 		#ifdef HAVE_MSR_CORE_H
-		if (init_msr())
-			std::cerr << "LIBMSR ERROR: Unable to initialize\n";
+		//if (init_msr())
+		//	std::cerr << "LIBMSR ERROR: Unable to initialize\n";
 		#endif
 	#elif defined HAVE_X86_ADAPT_H
 	status = USING_ADAPT;
@@ -1089,8 +1158,13 @@ int main(int argc, char **argv)
 	nvmlInit();
 	#endif
 	
-	if (status == USING_MSR)
-		checkMsrWhitelist();
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_init(0);
+	#endif
+
+
+	//if (status == USING_MSR)
+	//	checkMsrWhitelist();
 
 	bool systemInTheDefaultSettings = true;
 	timespec modifTime;
@@ -1122,7 +1196,11 @@ int main(int argc, char **argv)
 	#ifdef HAVE_NVML_H
 	nvmlShutdown();
 	#endif
-	
+
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_shut_down();
+	#endif	
+
 	#ifdef HAVE_E_SMI_E_SMI_H
 	esmi_exit();
 	#endif
