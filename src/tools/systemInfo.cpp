@@ -1005,8 +1005,25 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 
-//TO BE IMPLEMENTED
+	uint64_t min_power_limit, max_power_limit, current_power_limit, default_power_limit;
+	rsmi_status_t ret;
+	// Get power limit constraints (min and max)
+	ret = rsmi_dev_power_cap_range_get(0, 0, &max_power_limit, &min_power_limit);
+	if (ret == RSMI_STATUS_SUCCESS) {
+		printf("\n# GPU POWER LIMITS\n");
+		printf("\tGPU max power limit:     %llu W\n", max_power_limit / 1000000); // Convert from µW to W
+		printf("\tGPU min power limit:     %llu W\n", min_power_limit / 1000000); // Convert from µW to W
+	}
 
+	ret = rsmi_dev_power_cap_default_get(0, &default_power_limit);
+	if (ret == RSMI_STATUS_SUCCESS) {
+		printf("\tGPU default power limit: %llu W\n", default_power_limit / 1000000); // Convert from µW to W
+	}
+
+	ret = rsmi_dev_power_cap_get(0, 0, &current_power_limit);
+	if (ret == RSMI_STATUS_SUCCESS) {
+		printf("\tGPU current power limit: %llu W\n", current_power_limit / 1000000); // Convert from µW to W
+	}
 
 #endif
 
