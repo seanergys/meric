@@ -9,13 +9,15 @@ std::vector<uint32_t> ROCM::GPUindices;
 double ROCM::unit = 1.0;
 
 #if defined HAVE_ROCM_SMI_ROCM_SMI_H && HIP_VERSION_MAJOR <= 6 && HIP_VERSION_MINOR < 2
-bool HIP_PRIOR_6_2 = true;
+bool ROCM::HIP_PRIOR_6_2 = true;
 #else
-bool HIP_PRIOR_6_2 = false;
+bool ROCM::HIP_PRIOR_6_2 = false;
 #endif
 
 void ROCM::init(bool detailed)
 {
+
+
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	uint32_t deviceCount = 0;
 	rsmi_status_t ret;
@@ -80,7 +82,7 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 	{
 		return;
 	}
-	
+
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	if (HIP_PRIOR_6_2 && rsmi_init(0) != RSMI_STATUS_SUCCESS)
 	{

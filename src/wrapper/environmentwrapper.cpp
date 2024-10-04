@@ -1,6 +1,7 @@
 #include "environmentwrapper.h"
 #include "raplwrapper.h"
 #include "nvmlwrapper.h"
+#include "rocmwrapper.h"
 
 using namespace meric;
 
@@ -1676,6 +1677,10 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 	nvmlInit();
 	activatedGPUtuning = getGPUTuningMethod();
 	NVML::init();
+#endif
+	
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	ROCM::init();
 #endif
 	
 	initHWSizes();

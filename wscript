@@ -119,7 +119,8 @@ def configure(ctx):
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
 			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
 			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
-		ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False)
+		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
+			ctx.env.append_unique("LINKFLAGS", [ "-lrocm_smi64" ])
 		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
