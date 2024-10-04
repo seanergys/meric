@@ -1138,8 +1138,8 @@ int main(int argc, char **argv)
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 	status = USING_MSR;
 		#ifdef HAVE_MSR_CORE_H
-		//if (init_msr())
-		//	std::cerr << "LIBMSR ERROR: Unable to initialize\n";
+		if (init_msr())
+			std::cerr << "LIBMSR ERROR: Unable to initialize\n";
 		#endif
 	#elif defined HAVE_X86_ADAPT_H
 	status = USING_ADAPT;
@@ -1163,8 +1163,8 @@ int main(int argc, char **argv)
 	#endif
 
 
-	//if (status == USING_MSR)
-	//	checkMsrWhitelist();
+	if (status == USING_MSR)
+		checkMsrWhitelist();
 
 	bool systemInTheDefaultSettings = true;
 	timespec modifTime;
