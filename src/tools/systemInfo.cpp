@@ -586,38 +586,47 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	rsmi_frequencies_t sysFreqs;
 	rsmi_frequencies_t socFreqs;
 	rsmi_frequencies_t memFreqs;
-	rsmi_status_t ret;
+	rsmi_status_t ret_sys, ret_soc, ret_mem;
 	
-	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SYS, &sysFreqs);
-	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SOC, &socFreqs);
-	rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_MEM, &memFreqs);
-
+	ret_sys = rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SYS, &sysFreqs);
+	ret_soc = rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SOC, &socFreqs);
+	ret_mem = rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_MEM, &memFreqs);
+	
 
 	std::cout << "\n# GPU FREQUENCIES\n";
 
-	std::cout << "\tAvailable system frequencies (" << sysFreqs.num_supported << " steps):\n";
-	std::cout << "\t\t";
-	for(uint32_t i = 0; i < sysFreqs.num_supported; i++){
-		std::cout << sysFreqs.frequency[i] / 1e6  << " ";
+ 	if(ret_sys == RSMI_STATUS_SUCCESS){
+		std::cout << "\tAvailable system frequencies (" << sysFreqs.num_supported << " steps):\n";
+		std::cout << "\t\t";
+		for(uint32_t i = 0; i < sysFreqs.num_supported; i++){
+			std::cout << sysFreqs.frequency[i] / 1e6  << " ";
+		}
+		std::cout << "MHz\n";
 	}
-	std::cout << "MHz\n";
 
-	std::cout << "\tAvailable SOC (System on Chip) frequencies (" << socFreqs.num_supported << " steps):\n";
-	std::cout << "\t\t";
-	for(uint32_t i = 0; i < socFreqs.num_supported; i++){
-		std::cout << socFreqs.frequency[i] / 1e6  << " ";
+	if(ret_soc == RSMI_STATUS_SUCCESS){
+		std::cout << "\tAvailable SOC (System on Chip) frequencies (" << socFreqs.num_supported << " steps):\n";
+		std::cout << "\t\t";
+		for(uint32_t i = 0; i < socFreqs.num_supported; i++){
+			std::cout << socFreqs.frequency[i] / 1e6  << " ";
+		}
+		std::cout << "MHz\n";
 	}
-	std::cout << "MHz\n";
 
-	std::cout << "\tAvailable memory frequencies: (" << memFreqs.num_supported << " steps):\n";
-	std::cout << "\t\t";
-	for(uint32_t i = 0; i < memFreqs.num_supported; i++){
-		std::cout << memFreqs.frequency[i] / 1e6  << " ";
+	if(ret_mem == RSMI_STATUS_SUCCESS){
+		std::cout << "\tAvailable memory frequencies: (" << memFreqs.num_supported << " steps):\n";
+		std::cout << "\t\t";
+		for(uint32_t i = 0; i < memFreqs.num_supported; i++){
+			std::cout << memFreqs.frequency[i] / 1e6  << " ";
+		}
+		std::cout << "MHz\n";
+
+		std::cout << "\tDefault memory frequency: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000  << " kHz \n";
+		std::cout << "\tCurrent memory frequency: " << memFreqs.frequency[memFreqs.current] / 1000  << " kHz \n";
 	}
-	std::cout << "MHz\n";
 
-	std::cout << "\tCurrent memory frequency: " << memFreqs.frequency[memFreqs.current] / 1000  << " kHz \n";
-	std::cout << "\tSystem frequency limit:   " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " kHz\n";	
+	if(ret_sys == RSMI_STATUS_SUCCESS)
+		std::cout << "\tSystem frequency limit:   " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " kHz\n";	
 
 
 #endif
@@ -1011,22 +1020,22 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 	uint64_t min_power_limit, max_power_limit, current_power_limit, default_power_limit;
 	rsmi_status_t ret;
-	// Get power limit constraints (min and max)
+
 	ret = rsmi_dev_power_cap_range_get(0, 0, &max_power_limit, &min_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
 		std::cout << "\n# GPU POWER LIMITS\n";
-		std::cout << "\tGPU max power limit:     " <<  max_power_limit / 1000000 << " W\n"; // Convert from µW to W
-		std::cout << "\tGPU min power limit:     " << min_power_limit / 1000000 << " W\n" ; // Convert from µW to W
+		std::cout << "\tGPU max power limit:     " <<  max_power_limit / 1000000 << " W\n";
+		std::cout << "\tGPU min power limit:     " << min_power_limit / 1000000 << " W\n" ;
 	}
 
 	ret = rsmi_dev_power_cap_default_get(0, &default_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		std::cout << "\tGPU default power limit: " <<  default_power_limit / 1000000 << " W\n"; // Convert from µW to W
+		std::cout << "\tGPU default power limit: " <<  default_power_limit / 1000000 << " W\n";
 	}
 
 	ret = rsmi_dev_power_cap_get(0, 0, &current_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		std::cout << "\tGPU power limit:         " << current_power_limit / 1000000 << " W\n"; // Convert from µW to W
+		std::cout << "\tGPU power limit:         " << current_power_limit / 1000000 << " W\n";
 	}
 
 #endif
