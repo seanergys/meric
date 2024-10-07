@@ -595,7 +595,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
 	std::cout << "\n# GPU FREQUENCIES\n";
 
-	std::cout << "\tAvailable CU frequencies (" << sysFreqs.num_supported << " steps):\n";
+	std::cout << "\tAvailable system frequencies (" << sysFreqs.num_supported << " steps):\n";
 	std::cout << "\t\t";
 	for(uint32_t i = 0; i < sysFreqs.num_supported; i++){
 		std::cout << sysFreqs.frequency[i] / 1e6  << " ";
@@ -615,6 +615,10 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		std::cout << memFreqs.frequency[i] / 1e6  << " ";
 	}
 	std::cout << "MHz\n";
+
+	std::cout << "\tCurrent memory frequency: " << memFreqs.frequency[memFreqs.current] / 1000  << " kHz \n";
+	std::cout << "\tSystem frequency limit:   " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " kHz\n";	
+
 
 #endif
 
@@ -1010,19 +1014,19 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	// Get power limit constraints (min and max)
 	ret = rsmi_dev_power_cap_range_get(0, 0, &max_power_limit, &min_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		printf("\n# GPU POWER LIMITS\n");
-		printf("\tGPU max power limit:     %llu W\n", max_power_limit / 1000000); // Convert from µW to W
-		printf("\tGPU min power limit:     %llu W\n", min_power_limit / 1000000); // Convert from µW to W
+		std::cout << "\n# GPU POWER LIMITS\n";
+		std::cout << "\tGPU max power limit:     " <<  max_power_limit / 1000000 << " W\n"; // Convert from µW to W
+		std::cout << "\tGPU min power limit:     " << min_power_limit / 1000000 << " W\n" ; // Convert from µW to W
 	}
 
 	ret = rsmi_dev_power_cap_default_get(0, &default_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		printf("\tGPU default power limit: %llu W\n", default_power_limit / 1000000); // Convert from µW to W
+		std::cout << "\tGPU default power limit: " <<  default_power_limit / 1000000 << " W\n"; // Convert from µW to W
 	}
 
 	ret = rsmi_dev_power_cap_get(0, 0, &current_power_limit);
 	if (ret == RSMI_STATUS_SUCCESS) {
-		printf("\tGPU current power limit: %llu W\n", current_power_limit / 1000000); // Convert from µW to W
+		std::cout << "\tGPU power limit:         " << current_power_limit / 1000000 << " W\n"; // Convert from µW to W
 	}
 
 #endif
