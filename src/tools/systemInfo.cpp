@@ -596,31 +596,42 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	std::cout << "\n# GPU FREQUENCIES\n";
 
  	if(ret_sys == RSMI_STATUS_SUCCESS){
-		std::cout << "\tAvailable system frequencies (" << sysFreqs.num_supported << " steps):\n";
-		std::cout << "\t\t";
-		for(uint32_t i = 0; i < sysFreqs.num_supported; i++){
-			std::cout << sysFreqs.frequency[i] / 1e6  << " ";
+		std::cout << "\tAvailable system frequencies:               " << sysFreqs.frequency[0] / 1000 << " - " <<   sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000  << " kHz (" << sysFreqs.num_supported << " steps)\n";
+		if(detailed || sysFreqs.num_supported <= 7){
+			std::cout << "\t\t";		
+			for(uint32_t i = 0; i < sysFreqs.num_supported; i++){
+				std::cout << sysFreqs.frequency[i] / 1e6  << " ";
+			}
+			std::cout << "MHz\n";
 		}
-		std::cout << "MHz\n";
 	}
 
 	if(ret_soc == RSMI_STATUS_SUCCESS){
-		std::cout << "\tAvailable SOC (System on Chip) frequencies (" << socFreqs.num_supported << " steps):\n";
-		std::cout << "\t\t";
-		for(uint32_t i = 0; i < socFreqs.num_supported; i++){
-			std::cout << socFreqs.frequency[i] / 1e6  << " ";
-		}
-		std::cout << "MHz\n";
+		if(socFreqs.num_supported > 1){
+			std::cout << "\tAvailable SOC (System on Chip) frequencies: " << socFreqs.frequency[0] / 1000 << " - " <<   socFreqs.frequency[socFreqs.num_supported - 1] / 1000  << " kHz (" << socFreqs.num_supported << " steps)\n";
+			if(detailed || socFreqs.num_supported <= 7){
+				std::cout << "\t\t";
+				for(uint32_t i = 0; i < socFreqs.num_supported; i++){
+					std::cout << socFreqs.frequency[i] / 1e6  << " ";
+				}
+				std::cout << "MHz\n";
+			}
+		}else{
+			std::cout << "\tSOC (System on Chip) frequency:             " << socFreqs.frequency[0] / 1000 << " kHz\n";
+		}	
 	}
 
 	if(ret_mem == RSMI_STATUS_SUCCESS){
-		std::cout << "\tAvailable memory frequencies: (" << memFreqs.num_supported << " steps):\n";
-		std::cout << "\t\t";
-		for(uint32_t i = 0; i < memFreqs.num_supported; i++){
-			std::cout << memFreqs.frequency[i] / 1e6  << " ";
+		if(memFreqs.num_supported > 1){
+			std::cout << "\tAvailable memory frequencies:               " << memFreqs.frequency[0] / 1000 << " - " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000  << " kHz (" << memFreqs.num_supported << " steps)\n";
+			if(detailed || memFreqs.num_supported <= 7){
+				std::cout << "\t\t";
+				for(uint32_t i = 0; i < memFreqs.num_supported; i++){
+					std::cout << memFreqs.frequency[i] / 1e6  << " ";
+				}
+				std::cout << "MHz\n";
+			}
 		}
-		std::cout << "MHz\n";
-
 		std::cout << "\tDefault memory frequency: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000  << " kHz \n";
 		std::cout << "\tCurrent memory frequency: " << memFreqs.frequency[memFreqs.current] / 1000  << " kHz \n";
 	}
