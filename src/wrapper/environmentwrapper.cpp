@@ -899,7 +899,7 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 	}
 
 	if(!manualLevelSet){
-		system("sudo rocm-smi --setperflevel AUTO 2> /dev/null > /dev/null \n");
+		system("sudo rocm-smi --setperflevel MANUAL 2> /dev/null > /dev/null \n");
 		manualLevelSet = true;
 	}
 	return ROCM_SMI_UTIL;
