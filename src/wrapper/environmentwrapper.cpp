@@ -31,6 +31,9 @@ uint Environment::currentGPUMemFreq = 0;
 uint Environment::currentGPUSMFreq = 0;
 #endif
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+bool Environment::manualLevelSet = false;
+#endif
 
 #ifdef __x86_64
 /**
@@ -884,10 +887,22 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 	if (activatedGPUtuning != NO_TUNING)
 		return activatedGPUtuning;
 	
-	if (geteuid() == 0)
-		return ROCM_SMI_UTIL;
+	if (geteuid() == 0){
+		if(!manualLevelSet){
+			for(int id = 0; id < ROCM::getGPUsPerNode(); id++){
+				if(rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_MANUAL) != RSMI_STATUS_SUCCESS)
+					std::cerr << "RSMI ERROR: failed to enable GPU frequency tunning\n";
+			}
+			manualLevelSet = true;	
+		}
+		return ROCM_SMI_API;
+	}
 
-	return ROCM_SMI_API;
+	if(!manualLevelSet){
+		system("sudo rocm-smi --setperflevel AUTO 2> /dev/null > /dev/null \n");
+		manualLevelSet = true;
+	}
+	return ROCM_SMI_UTIL;
 }
 #endif
 
@@ -1783,8 +1798,8 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 	
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	activatedGPUtuning = getGPUTuningMethod();
 	ROCM::init();
+	activatedGPUtuning = getGPUTuningMethod();
 #endif
 	
 	initHWSizes();

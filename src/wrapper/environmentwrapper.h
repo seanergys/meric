@@ -87,7 +87,9 @@ enum DVFS_WAY {
 enum GPU_TUNING_WAY {
 	NO_TUNING = 0, //
 	NVML_API,      // 
-	NVIDIA_SMI     // sudo rights provided via /etc/sudoers
+	NVIDIA_SMI,     // sudo rights provided via /etc/sudoers
+	ROCM_SMI_API,
+	ROCM_SMI_UTIL
 };
 
 #ifdef __x86_64	// CPUID instruction reading
@@ -203,7 +205,7 @@ public:
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	static bool isPWRCAPpossible();
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	static GPU_TUNING_WAY getGPUTuningMethod();
 #endif
 	
@@ -234,11 +236,15 @@ private:
 			  "d" (regs[3]));  // in EDX
 	};
 #endif
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	static void getGPUbrandString(std::string & GPUname);
 	static void getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values);
 	static uint currentGPUMemFreq; //Hz
 	static uint currentGPUSMFreq;  //Hz
+#endif
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI
+	static bool manualLevelEnabled;
 #endif
 
 	static systemLimits defaultSettings;
