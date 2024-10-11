@@ -26,7 +26,7 @@ DVFS_WAY Environment::activatedDVFS = NO_DVFS;
 bool Environment::activatedUFS = false;
 bool Environment::activatedPWRCAP = false;
 GPU_TUNING_WAY Environment::activatedGPUtuning = NO_TUNING;
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 uint Environment::currentGPUMemFreq = 0;
 uint Environment::currentGPUSMFreq = 0;
 #endif
@@ -190,14 +190,40 @@ void Environment::getCPUbrandString(std::string & CPUname)
  **/
 void Environment::getGPUbrandString(std::string & GPUname)
 {
+	//TODO - add checks for the ROCm version
+	rsmi_init(0);
 	const int GPU_NAME_LENGTH = 50;
 	char name [GPU_NAME_LENGTH];
 	if (NVML::getGPUsPerNode() && nvmlDeviceGetName (NVML::getGPUHandle(0), name, GPU_NAME_LENGTH) == NVML_SUCCESS)
 		GPUname = std::string(name);
 	else
 		GPUname = "";
+
+	rsmi_shut_down();
 }
 #endif
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+/**
+ * Get name of an AMD GPU
+ * The name is an alphanumeric string that denotes a particular product.
+ * It will not exceed 256 characters in length (including the null terminator).
+ **/
+void Environment::getGPUbrandString(std::string & GPUname)
+{
+	const int GPU_NAME_LENGTH = 256;
+	char name [GPU_NAME_LENGTH];
+	if(rsmi_dev_name_get(0, name, GPU_NAME_LENGTH) == RSMI_STATUS_SUCCESS)
+		GPUname = std::string(name);
+	else
+		GPUname = "";
+}
+#endif
+
+
+
+
+
 
 /**
  * returns nominal CPU core frequency in Hz
@@ -390,7 +416,7 @@ void Environment::getAvailableUCF(std::vector<long> & values)
 
 #ifdef HAVE_NVML_H
 /**
- * reads available GPU memory and corresponding streaming multiprocessor frequencies
+ * reads available CUDA GPU memory and corresponding streaming multiprocessor frequencies
  **/
 void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values)
 {
@@ -449,6 +475,44 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 	return;
 }
 #endif
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+/**
+ * reads available AMD GPU memory and corresponding streaming multiprocessor frequencies
+ **/
+void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values)
+{
+
+	//TO-DO: check GPU count and immediately return in case of having zero GPUs
+
+	rsmi_frequencies_t sysFreqs;
+	rsmi_frequencies_t memFreqs;
+
+	if(rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SYS, &memFreqs) == RSMI_STATUS_SUCCESS)
+	{
+		if(rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SYS, &sysFreqs) == RSMI_STATUS_SUCCESS)
+		{
+			//the same thing here - incompatible uints
+			std::vector<uint> SMfreq(sysFreqs.num_supported);
+			for(int i = 0; i < sysFreqs.num_supported; i++)
+				SMfreq[i] = sysFreqs.frequency[i] * 1e6;
+			std::reverse(SMfreq.begin(),SMfreq.end());
+			for(int i = 0; i < memFreqs.num_supported; i++){
+				values[memFreqs.frequency[i]] = SMfreq;
+			}
+		}
+		else
+		{
+			std::cerr << "ROCM SMI ERROR: cannot read available GPU frequencies\n";
+		}
+	}
+	else
+	{
+		std::cerr << "ROCM SMI ERROR: cannot read available GPU frequencies\n";
+	}
+}
+#endif
+
 
 /**
  * returns maximum available non-AVX turbo CPU core frequency in Hz
@@ -811,6 +875,22 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 }
 #endif
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+/**
+ * ROCm SMI does not expose any options to raise the rights to change the frequency levels
+**/
+GPU_TUNING_WAY Environment::getGPUTuningMethod()
+{
+	if (activatedGPUtuning != NO_TUNING)
+		return activatedGPUtuning;
+	
+	if (geteuid() == 0)
+		return ROCM_SMI_UTIL;
+
+	return ROCM_SMI_API;
+}
+#endif
+
 /**
  * return true if power limit modification is possible
  **/
@@ -1042,7 +1122,7 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 		//expecting that all CPUs and all GPUs are the same kind
 		std::string CPUname;
 		getCPUbrandString(CPUname);
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 		std::string GPUname;
 		getGPUbrandString(GPUname);
 		int HWperNode = 2;
@@ -1156,7 +1236,7 @@ bool Environment::readRestoreFile(std::string & restoreJson, timespec & modifTim
 					architectureData = architectureData->next;
 				}
 			}
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 			else if (std::string(data->name->string) == GPUname)
 			{
 				HWperNode--;
@@ -1496,6 +1576,29 @@ void Environment::readSystemDefaultSettings()
 		getAvailableGPUfrequencies(defaultSettings.availableGPUFreq);
 #endif
 
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+		if (ROCM::getGPUsPerNode() > 0){
+			defaultSettings.defaultGPUSMFreq = 0;
+			defaultSettings.defaultGPUMemFreq = 0;
+			uint64_t maxPowerCapGPU, minPowerCapGPU, defaultPowerCapGPU;
+			if (rsmi_dev_power_cap_range_get(0, 0, &maxPowerCapGPU, &minPowerCapGPU) != RSMI_STATUS_SUCCESS) {
+				defaultSettings.minPowerCapGPU = 0;
+				defaultSettings.maxPowerCapGPU = 0;
+			}else{
+				defaultSettings.minPowerCapGPU = static_cast<unsigned int>(minPowerCapGPU / 1e6);
+				defaultSettings.maxPowerCapGPU = static_cast<unsigned int>(maxPowerCapGPU / 1e6);
+			}
+			if (rsmi_dev_power_cap_default_get(0, &defaultPowerCapGPU) != RSMI_STATUS_SUCCESS){
+				defaultSettings.defaultPowerCapGPU = 0;
+			}else
+				defaultSettings.defaultPowerCapGPU = static_cast<unsigned int>(defaultPowerCapGPU / 1e6);
+		}
+		getAvailableGPUfrequencies(defaultSettings.availableGPUFreq);
+#endif
+
+
+
 // store the configuration to the file ---------------------------------------//
 		std::string defaultSettingFile = std::string(MERIC_TMP_PATH)+"/systemDefault.json";
 		//test if the file has been modified since we tried to read it
@@ -1555,9 +1658,7 @@ void Environment::readSystemDefaultSettings()
 			restoreJson += "\n\t}";
 
 			//GPU
-#ifndef HAVE_NVML_H
-			restoreJson += "\n";
-#else
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 			std::string GPUname;
 			getGPUbrandString(GPUname);
 			restoreJson += ",\n\t\""+GPUname+"\": {\n"
@@ -1585,6 +1686,8 @@ void Environment::readSystemDefaultSettings()
 					        +  "\t\t\t\"MAX\" : "+std::to_string(defaultSettings.maxPowerCapGPU) + ",\n"
 					        +  "\t\t\t\"MIN\" : "+std::to_string(defaultSettings.minPowerCapGPU) + "\n\t\t}"
 					        +  "\n\t}\n";
+#else
+			restoreJson += "\n";
 #endif
 			restoreJson += "}\n";
 			if (defaultRestoreFile.is_open())
@@ -1680,6 +1783,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 	
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	activatedGPUtuning = getGPUTuningMethod();
 	ROCM::init();
 #endif
 	
@@ -2366,23 +2470,33 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
  **/
 void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 {
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H
 	if (activatedGPUtuning == NVML_API)
 		MERIC_INFO << "NVML set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
 	else if (activatedGPUtuning == NVIDIA_SMI)
 		MERIC_INFO << "NVIDIA-SMI set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
 	else
 		return;
+#elif defined HAVE_ROCM_SMI_ROCM_SMI_H
+	if (activatedGPUtuning == ROCM_SMI_API)
+		MERIC_INFO << "ROCM SMI API set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+		MERIC_INFO << "ROCM SMI UTIL set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	else
+		return;
 #else
 	return;
 #endif
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	if (freqMEM == 0 && freqSM == 0)
 		return;
 
 	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
 	std::map<uint, std::vector<uint>>::iterator MEMit;
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	size_t SMIndex, memIndex;
+	#endif
 	if (freqMEM == 0)
 	{
 		if (currentGPUMemFreq == 0)
@@ -2398,8 +2512,12 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 			return;
 		}
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
-		if (MEMit == defaultSettings.availableGPUFreq.end())
+		if (MEMit == defaultSettings.availableGPUFreq.end()){
 			MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
+			#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+			memIndex = std::distance(defaultSettings.availableGPUFreq.begin(), MEMit);
+			#endif
+		}
 		freqMEM = MEMit->first;
 	}
 	
@@ -2419,6 +2537,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	if(SMit == MEMit->second.end())
 	{
 		SMit = std::upper_bound(MEMit->second.begin(), MEMit->second.end(), freqSM);
+		#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+		SMIndex = std::distance(MEMit->second.begin(), SMit);
+		#endif
 	}
 	freqSM = *SMit;
 	
@@ -2430,19 +2551,26 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	}
 	else
 	{
-		if (NVML::getGPUsPerNode() <= gpu)
+		if (NVML::getGPUsPerNode() <= gpu || ROCM::getGPUsPerNode() <= gpu)
 		{
 			std::cerr << "MERIC ERROR: specifying frequency of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
 			return;
 		}
-		
 		min = gpu;
 		max = gpu+1;
 	}
 
+	#ifdef HAVE_NVML_H
 	MERIC_INFO << "NVML set GPU frequency MEM: " << freqMEM << "\tSM: " << freqSM << std::endl;
+	#endif
+
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	MERIC_INFO << "RSMI set GPU frequency MEM: " << freqMEM << "\tSM: " << freqSM << std::endl;
+	#endif
+
 	usedGPUDVFS = true;
 	
+	#ifdef HAVE_NVML_H
 	if (activatedGPUtuning == NVML_API)
 	{
 		for (int id=min; id<max; id++)
@@ -2459,9 +2587,34 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 			system((command+" -i "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
 		}
 	}
+	#endif
+
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	if (activatedGPUtuning == ROCM_SMI_API)
+	{
+		for (int id=min; id<max; id++)
+		{
+			if(rsmi_dev_gpu_clk_freq_set(id, RSMI_CLK_TYPE_SYS, 0b1 << SMIndex) != RSMI_STATUS_SUCCESS)
+				std::cerr << "RSMI ERROR: failed to set GPU SM frequency\n";
+			if(rsmi_dev_gpu_clk_freq_set(id, RSMI_CLK_TYPE_MEM, 0b1 << memIndex) != RSMI_STATUS_SUCCESS)
+				std::cerr << "RSMI ERROR: failed to set GPU Memory frequency\n";
+		}
+	}
+	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+	{
+		const std::string sm_command = "sudo rocm-smi --setsclk " + std::to_string(SMIndex);
+		const std::string mem_command = "sudo rocm_smi --setmclk " + std::to_string(memIndex);
+		for (int id=min; id<max; id++)
+		{
+			system((sm_command+" -d "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
+			system((mem_command+" -d "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
+		}
+	}
+	#endif
 	currentGPUMemFreq = freqMEM;
 	currentGPUSMFreq  = freqSM;
 #endif
+
 }
 
 /**
@@ -2533,6 +2686,31 @@ void Environment::GPUpowercap(uint power, int gpu)
 		}
 	}
 #endif
+
+
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	usedGPUPWRCAP = true;
+	if (activatedGPUtuning == ROCM_SMI_API)
+	{
+		for (int id=min; id<max; id++)
+		{
+			if (rsmi_dev_power_cap_set(id, 0, power) != RSMI_STATUS_SUCCESS)
+			{
+				std::cerr << "RSMI ERROR setting power limit failed\n";
+			}
+		}
+	}
+	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+	{
+		const std::string command = "sudo rocm-smi --setpoweroverdrive "+std::to_string(power / 1e6);
+		for (int id=min; id<max; id++)
+		{
+			system((command+" -d "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
+		}
+	}
+
+#endif
+
 }
 
 
@@ -2731,6 +2909,32 @@ void Environment::restoreSystemSettings(bool hardReset)
 	}
 #endif
 	
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	//GPU frequencies
+	if (usedGPUDVFS)
+	{
+		if (activatedGPUtuning == ROCM_SMI_API)
+		{
+			for (int id=0; id<NVML::getGPUsPerNode(); id++)
+			{
+				if (rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_AUTO) != RSMI_STATUS_SUCCESS)
+					std::cerr << "RSMI ERROR: failed to reset GPU frequency\n";
+			}
+		}
+		else if (activatedGPUtuning == ROCM_SMI_UTIL)
+		{
+			system("sudo rocm-smi --setperflevel AUTO 2> /dev/null > /dev/null \n");
+		}
+	}
+	
+	//GPU power capping limit
+	if (usedGPUPWRCAP)
+	{
+		GPUpowercap(defaultSettings.defaultPowerCapGPU);
+	}
+
+
+#endif 
 }
 
 /**
