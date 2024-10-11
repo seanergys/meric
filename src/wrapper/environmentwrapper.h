@@ -243,8 +243,8 @@ private:
 	static uint currentGPUSMFreq;  //Hz
 #endif
 
-#ifdef HAVE_ROCM_SMI_ROCM_SMI
-	static bool manualLevelEnabled;
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	static bool manualLevelSet;
 #endif
 
 	static systemLimits defaultSettings;
