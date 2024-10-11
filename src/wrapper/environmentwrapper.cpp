@@ -2642,11 +2642,18 @@ void Environment::GPUpowercap(uint power, int gpu)
 	if (power == 0)
 		return;
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H
 	if (activatedGPUtuning == NVML_API)
 		MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW\n";
 	else if (activatedGPUtuning == NVIDIA_SMI)
 		MERIC_INFO << "NVIDIA-SMI set GPU powercap to: "<< power << " mW\n";
+	else
+		return;
+#elif defined HAVE_ROCM_SMI_ROCM_SMI_H
+	if (activatedGPUtuning == ROCM_SMI_API)
+		MERIC_INFO << "ROCM SMI API set GPU powercap to: "<< power << " mW\n";
+	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+		MERIC_INFO << "ROCM SMI UTIL set GPU powercap to: "<< power << " mW\n";
 	else
 		return;
 #else
@@ -2709,7 +2716,7 @@ void Environment::GPUpowercap(uint power, int gpu)
 	{
 		for (int id=min; id<max; id++)
 		{
-			if (rsmi_dev_power_cap_set(id, 0, power) != RSMI_STATUS_SUCCESS)
+			if (rsmi_dev_power_cap_set(id, 0, power * 1e3) != RSMI_STATUS_SUCCESS)
 			{
 				std::cerr << "RSMI ERROR setting power limit failed\n";
 			}
@@ -2717,7 +2724,7 @@ void Environment::GPUpowercap(uint power, int gpu)
 	}
 	else if (activatedGPUtuning == ROCM_SMI_UTIL)
 	{
-		const std::string command = "sudo rocm-smi --setpoweroverdrive "+std::to_string(power / 1e6);
+		const std::string command = "sudo rocm-smi --setpoweroverdrive "+std::to_string(power / 1e3);
 		for (int id=min; id<max; id++)
 		{
 			system((command+" -d "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
