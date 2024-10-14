@@ -145,7 +145,7 @@ void sysInfoSize(bool detailed = false)
 	rsmi_num_monitor_devices(&GPUdeviceCount);
 	if (GPUdeviceCount > 0)
 	{
-		const int GPU_NAME_LENGTH = 50;
+		const int GPU_NAME_LENGTH = 256;
 		char GPUname[GPU_NAME_LENGTH];
 
 		status = rsmi_dev_name_get(0, GPUname, GPU_NAME_LENGTH);
@@ -155,7 +155,7 @@ void sysInfoSize(bool detailed = false)
 	}
 #else
 
-	//MISSING IMPLEMENTATION - obtain AMD GPU info without the compilation using rocm_smi64 if possible
+	//TODO MISSING IMPLEMENTATION - obtain AMD GPU info without the compilation using rocm_smi64 if possible
 
 #endif
 }
