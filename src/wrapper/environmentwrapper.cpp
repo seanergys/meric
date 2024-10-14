@@ -217,9 +217,13 @@ void Environment::getGPUbrandString(std::string & GPUname)
 	const int GPU_NAME_LENGTH = 256;
 	char name [GPU_NAME_LENGTH];
 	if(rsmi_dev_name_get(0, name, GPU_NAME_LENGTH) == RSMI_STATUS_SUCCESS)
+	{
 		GPUname = std::string(name);
+	}
 	else
+	{
 		GPUname = "";
+	}
 }
 #endif
 
@@ -424,8 +428,9 @@ void Environment::getAvailableUCF(std::vector<long> & values)
 void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values)
 {
 	if (NVML::getGPUsPerNode() == 0)
+	{
 		return;
-	
+	}
 	uint memFreqCount = 0;
 	uint gpuFreqCount = 0;
 	uint *memFreq = NULL;
@@ -451,7 +456,7 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 					}
 					else
 					{
-						std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+						std::cerr << "MERIC ERROR: NVML cannot read available GPU frequencies\n";
 						return;
 					}
 					free(gpuFreq);
@@ -459,21 +464,21 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 				}
 				else
 				{
-					std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+					std::cerr << "MERIC ERROR: NVML cannot read available GPU frequencies\n";
 					return;
 				}
 			}
 		}
 		else
 		{
-			std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+			std::cerr << "MERIC ERROR: NVML cannot read available GPU frequencies\n";
 			return;
 		}
 		free(memFreq);
 	}
 	else
 	{
-		std::cerr << "NVML ERROR: cannot read available GPU frequencies\n";
+		std::cerr << "MERIC ERROR: NVML cannot read available GPU frequencies\n";
 	}
 	return;
 }
@@ -481,13 +486,14 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 /**
- * reads available AMD GPU memory and corresponding streaming multiprocessor frequencies
+ * reads available AMD GPU memory and streaming multiprocessor frequencies
  **/
 void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values)
 {
-
-	//TO-DO: check GPU count and immediately return in case of having zero GPUs
-
+	if (ROCM::getGPUsPerNode() == 0)
+	{
+		return;
+	}
 	rsmi_frequencies_t sysFreqs;
 	rsmi_frequencies_t memFreqs;
 
@@ -498,20 +504,23 @@ void Environment::getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> &
 			//the same thing here - incompatible uints
 			std::vector<uint> SMfreq(sysFreqs.num_supported);
 			for(int i = 0; i < sysFreqs.num_supported; i++)
+			{
 				SMfreq[i] = sysFreqs.frequency[i] * 1e6;
+			}
 			std::reverse(SMfreq.begin(),SMfreq.end());
-			for(int i = 0; i < memFreqs.num_supported; i++){
+			for(int i = 0; i < memFreqs.num_supported; i++)
+			{
 				values[memFreqs.frequency[i]] = SMfreq;
 			}
 		}
 		else
 		{
-			std::cerr << "ROCM SMI ERROR: cannot read available GPU frequencies\n";
+			std::cerr << "MERIC ERROR: RSMI cannot read available GPU frequencies\n";
 		}
 	}
 	else
 	{
-		std::cerr << "ROCM SMI ERROR: cannot read available GPU frequencies\n";
+		std::cerr << "MERIC ERROR: RSMI cannot read available GPU frequencies\n";
 	}
 }
 #endif
@@ -881,24 +890,32 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 /**
  * ROCm SMI does not expose any options to raise the rights to change the frequency levels
-**/
+ **/
 GPU_TUNING_WAY Environment::getGPUTuningMethod()
 {
 	if (activatedGPUtuning != NO_TUNING)
+	{
 		return activatedGPUtuning;
+	}
 	
-	if (geteuid() == 0){
-		if(!manualLevelSet){
-			for(int id = 0; id < ROCM::getGPUsPerNode(); id++){
+	if (geteuid() == 0)
+	{
+		if(!manualLevelSet)
+		{
+			for(int id = 0; id < ROCM::getGPUsPerNode(); id++)
+			{
 				if(rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_MANUAL) != RSMI_STATUS_SUCCESS)
-					std::cerr << "RSMI ERROR: failed to enable GPU frequency tunning\n";
+				{
+					std::cerr << "MERIC ERROR: RSMI failed to enable GPU frequency tunning\n";
+				}
 			}
 			manualLevelSet = true;	
 		}
 		return ROCM_SMI_API;
 	}
 
-	if(!manualLevelSet){
+	if(!manualLevelSet)
+	{
 		system("sudo rocm-smi --setperflevel MANUAL 2> /dev/null > /dev/null \n");
 		manualLevelSet = true;
 	}
@@ -1593,21 +1610,30 @@ void Environment::readSystemDefaultSettings()
 
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-		if (ROCM::getGPUsPerNode() > 0){
+		if (ROCM::getGPUsPerNode() > 0)
+		{
 			defaultSettings.defaultGPUSMFreq = 0;
 			defaultSettings.defaultGPUMemFreq = 0;
 			uint64_t maxPowerCapGPU, minPowerCapGPU, defaultPowerCapGPU;
-			if (rsmi_dev_power_cap_range_get(0, 0, &maxPowerCapGPU, &minPowerCapGPU) != RSMI_STATUS_SUCCESS) {
+			if (rsmi_dev_power_cap_range_get(0, 0, &maxPowerCapGPU, &minPowerCapGPU) != RSMI_STATUS_SUCCESS)
+			{
 				defaultSettings.minPowerCapGPU = 0;
 				defaultSettings.maxPowerCapGPU = 0;
-			}else{
+			}
+			else
+			{
 				defaultSettings.minPowerCapGPU = static_cast<unsigned int>(minPowerCapGPU / 1e6);
 				defaultSettings.maxPowerCapGPU = static_cast<unsigned int>(maxPowerCapGPU / 1e6);
 			}
-			if (rsmi_dev_power_cap_default_get(0, &defaultPowerCapGPU) != RSMI_STATUS_SUCCESS){
+			
+			if (rsmi_dev_power_cap_default_get(0, &defaultPowerCapGPU) != RSMI_STATUS_SUCCESS)
+			{
 				defaultSettings.defaultPowerCapGPU = 0;
-			}else
+			}
+			else
+			{
 				defaultSettings.defaultPowerCapGPU = static_cast<unsigned int>(defaultPowerCapGPU / 1e6);
+			}
 		}
 		getAvailableGPUfrequencies(defaultSettings.availableGPUFreq);
 #endif
@@ -2487,25 +2513,39 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 {
 #if defined HAVE_NVML_H
 	if (activatedGPUtuning == NVML_API)
+	{
 		MERIC_INFO << "NVML set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
+	{
 		MERIC_INFO << "NVIDIA-SMI set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	}
 	else
+	{
 		return;
+	}
 #elif defined HAVE_ROCM_SMI_ROCM_SMI_H
 	if (activatedGPUtuning == ROCM_SMI_API)
+	{
 		MERIC_INFO << "ROCM SMI API set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	}
 	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+	{
 		MERIC_INFO << "ROCM SMI UTIL set GPU frequency to: "<< freqMEM/1000 << "," << freqSM/1000 << " kHz\n";
+	}
 	else
+	{
 		return;
+	}
 #else
 	return;
 #endif
 
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	if (freqMEM == 0 && freqSM == 0)
+	{
 		return;
+	}
 
 	//find out the nearest available memory frequency and nearest available frequency of the streaming multiprocessors
 	std::map<uint, std::vector<uint>>::iterator MEMit;
@@ -2515,7 +2555,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	if (freqMEM == 0)
 	{
 		if (currentGPUMemFreq == 0)
+		{
 			currentGPUMemFreq = defaultSettings.defaultGPUMemFreq;
+		}
 		freqMEM = currentGPUMemFreq;
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
 	}
@@ -2523,11 +2565,12 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	{
 		if (freqMEM < defaultSettings.availableGPUFreq.begin()->first || freqMEM > defaultSettings.availableGPUFreq.rbegin()->first)
 		{
-			std::cerr << "GPU memory frequency has not changed to invalid value: " << freqMEM << " Hz\n";
+			std::cerr << "MERIC ERROR: GPU memory frequency has not changed to invalid value: " << freqMEM << " Hz\n";
 			return;
 		}
 		MEMit = defaultSettings.availableGPUFreq.find(freqMEM);
-		if (MEMit == defaultSettings.availableGPUFreq.end()){
+		if (MEMit == defaultSettings.availableGPUFreq.end())
+		{
 			MEMit = defaultSettings.availableGPUFreq.upper_bound(freqMEM);
 			#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 			memIndex = std::distance(defaultSettings.availableGPUFreq.begin(), MEMit);
@@ -2539,13 +2582,15 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	if (freqSM == 0)
 	{
 		if (currentGPUSMFreq == 0)
+		{
 			currentGPUSMFreq = defaultSettings.defaultGPUSMFreq;
+		}
 		freqSM = currentGPUSMFreq;
 	}
 	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
 	if (freqSM < MEMit->second.front() || freqSM > MEMit->second.back())
 	{
-		std::cerr << "GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << " Hz\n";
+		std::cerr << "MERIC ERROR: GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << " Hz\n";
 		return;
 	}
 	std::vector<uint>::iterator SMit = std::find(MEMit->second.begin(), MEMit->second.end(), freqSM);
@@ -2591,7 +2636,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		for (int id=min; id<max; id++)
 		{
 			if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM/1e6, freqSM/1e6) != NVML_SUCCESS)
-				std::cerr << "NVML ERROR: failed to set GPU frequency\n";
+			{
+				std::cerr << "MERIC ERROR: NVML failed to set GPU frequency\n";
+			}
 		}
 	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
@@ -2610,9 +2657,13 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		for (int id=min; id<max; id++)
 		{
 			if(rsmi_dev_gpu_clk_freq_set(id, RSMI_CLK_TYPE_SYS, 0b1 << SMIndex) != RSMI_STATUS_SUCCESS)
-				std::cerr << "RSMI ERROR: failed to set GPU SM frequency\n";
+			{
+				std::cerr << "MERIC ERROR: RSMI failed to set GPU SM frequency\n";
+			}
 			if(rsmi_dev_gpu_clk_freq_set(id, RSMI_CLK_TYPE_MEM, 0b1 << memIndex) != RSMI_STATUS_SUCCESS)
-				std::cerr << "RSMI ERROR: failed to set GPU Memory frequency\n";
+			{
+				std::cerr << "MERIC ERROR: RSMI failed to set GPU Memory frequency\n";
+			}
 		}
 	}
 	else if (activatedGPUtuning == ROCM_SMI_UTIL)
@@ -2640,29 +2691,42 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 void Environment::GPUpowercap(uint power, int gpu)
 {
 	if (power == 0)
+	{
 		return;
-
+	}
 #if defined HAVE_NVML_H
 	if (activatedGPUtuning == NVML_API)
+	{
 		MERIC_INFO << "NVML set GPU powercap to: "<< power << " mW\n";
+	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
+	{
 		MERIC_INFO << "NVIDIA-SMI set GPU powercap to: "<< power << " mW\n";
+	}
 	else
+	{
 		return;
+	}
 #elif defined HAVE_ROCM_SMI_ROCM_SMI_H
 	if (activatedGPUtuning == ROCM_SMI_API)
+	{
 		MERIC_INFO << "ROCM SMI API set GPU powercap to: "<< power << " mW\n";
+	}
 	else if (activatedGPUtuning == ROCM_SMI_UTIL)
+	{
 		MERIC_INFO << "ROCM SMI UTIL set GPU powercap to: "<< power << " mW\n";
+	}
 	else
+	{
 		return;
+	}
 #else
 	return;
 #endif
 
 	if (power < defaultSettings.minPowerCapGPU || power > defaultSettings.maxPowerCapGPU)
 	{
-		std::cerr << "GPU power limit has not changed to invalid value: " << power << std::endl;
+		std::cerr << "MERIC ERROR: GPU power limit has not changed to invalid value: " << power << std::endl;
 		MERIC_INFO << defaultSettings.maxPowerCapGPU << " - " << defaultSettings.minPowerCapGPU << std::endl;
 		return;
 	}
@@ -2679,7 +2743,7 @@ void Environment::GPUpowercap(uint power, int gpu)
 	{
 		if (NVML::getGPUsPerNode() <= gpu)
 		{
-			std::cerr << "MERIC ERROR: specifying power limit (" << power/1000.0 << "W) of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
+			std::cerr << "MERIC ERROR: NVML specifying power limit (" << power/1000.0 << "W) of GPU id " << gpu << " from 0-" << NVML::getGPUsPerNode() << std::endl;
 			return;
 		}
 		
@@ -2695,7 +2759,7 @@ void Environment::GPUpowercap(uint power, int gpu)
 		{
 			if (nvmlDeviceSetPowerManagementLimit(NVML::getGPUHandle(id), power) != NVML_SUCCESS)
 			{
-				std::cerr << "NVML ERROR setting power limit failed\n";
+				std::cerr << "MERIC ERROR: NVML setting power limit failed\n";
 			}
 		}
 	}
@@ -2718,7 +2782,7 @@ void Environment::GPUpowercap(uint power, int gpu)
 		{
 			if (rsmi_dev_power_cap_set(id, 0, power * 1e3) != RSMI_STATUS_SUCCESS)
 			{
-				std::cerr << "RSMI ERROR setting power limit failed\n";
+				std::cerr << "MERIC ERROR: RSMI setting power limit failed\n";
 			}
 		}
 	}
@@ -2730,7 +2794,6 @@ void Environment::GPUpowercap(uint power, int gpu)
 			system((command+" -d "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
 		}
 	}
-
 #endif
 
 }
@@ -2915,7 +2978,9 @@ void Environment::restoreSystemSettings(bool hardReset)
 			for (int id=0; id<NVML::getGPUsPerNode(); id++)
 			{
 				if (nvmlDeviceResetApplicationsClocks(NVML::getGPUHandle(id)) != NVML_SUCCESS)
-					std::cerr << "NVML ERROR: failed to reset GPU frequency\n";
+				{
+					std::cerr << "MERIC ERROR: NVML failed to reset GPU frequency\n";
+				}
 			}
 		}
 		else if (activatedGPUtuning == NVIDIA_SMI)
@@ -2940,7 +3005,9 @@ void Environment::restoreSystemSettings(bool hardReset)
 			for (int id=0; id<NVML::getGPUsPerNode(); id++)
 			{
 				if (rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_AUTO) != RSMI_STATUS_SUCCESS)
-					std::cerr << "RSMI ERROR: failed to reset GPU frequency\n";
+				{
+					std::cerr << "MERIC ERROR: RSMI failed to reset GPU frequency\n";
+				}
 			}
 		}
 		else if (activatedGPUtuning == ROCM_SMI_UTIL)
@@ -2954,8 +3021,6 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 		GPUpowercap(defaultSettings.defaultPowerCapGPU);
 	}
-
-
 #endif 
 }
 

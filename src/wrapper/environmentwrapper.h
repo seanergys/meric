@@ -87,9 +87,9 @@ enum DVFS_WAY {
 enum GPU_TUNING_WAY {
 	NO_TUNING = 0, //
 	NVML_API,      // 
-	NVIDIA_SMI,     // sudo rights provided via /etc/sudoers
-	ROCM_SMI_API,
-	ROCM_SMI_UTIL
+	NVIDIA_SMI,    // sudo rights provided via /etc/sudoers
+	ROCM_SMI_API,  //
+	ROCM_SMI_UTIL  //
 };
 
 #ifdef __x86_64	// CPUID instruction reading

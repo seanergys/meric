@@ -95,7 +95,7 @@ void sysInfoSize(bool detailed = false)
 		if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS)
 		{
 			// The name is an alphanumeric string that denotes a particular product, e.g. Tesla C2070. It will not exceed 50 characters in length (including the null terminator).
-			const int GPU_NAME_LENGTH = 50;
+			const int GPU_NAME_LENGTH = 256;
 			char GPUname [GPU_NAME_LENGTH];
 			ret = nvmlDeviceGetName (deviceHandle, GPUname, GPU_NAME_LENGTH);
 			std::cout << "\tGPU name:         " << GPUname << '\n';
@@ -143,15 +143,16 @@ void sysInfoSize(bool detailed = false)
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	rsmi_status_t status;
 	rsmi_num_monitor_devices(&GPUdeviceCount);
-	if (GPUdeviceCount > 0) {
+	if (GPUdeviceCount > 0)
+	{
 		const int GPU_NAME_LENGTH = 50;
-        char GPUname[50];
+		char GPUname[GPU_NAME_LENGTH];
 
-        status = rsmi_dev_name_get(0, GPUname, GPU_NAME_LENGTH);
-        std::cout << "\tGPU name:         " << GPUname << '\n';
+		status = rsmi_dev_name_get(0, GPUname, GPU_NAME_LENGTH);
+		std::cout << "\tGPU name:         " << GPUname << '\n';
 
-        std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
-    }
+		std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
+	}
 #else
 
 	//MISSING IMPLEMENTATION - obtain AMD GPU info without the compilation using rocm_smi64 if possible
@@ -223,7 +224,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", &info) == 0)
 			{	
 				std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";			          
+					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";
 				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
 				{
 					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
@@ -592,40 +593,50 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	ret_soc = rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_SOC, &socFreqs);
 	ret_mem = rsmi_dev_gpu_clk_freq_get(0, RSMI_CLK_TYPE_MEM, &memFreqs);
 	
-
+	const int MAX_FREQS_PER_COMPACT_OUTPUT = 7;
 	std::cout << "\n# GPU FREQUENCIES\n";
 
- 	if(ret_sys == RSMI_STATUS_SUCCESS){
-		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " - " <<   sysFreqs.frequency[0] / 1000  << " kHz (" << sysFreqs.num_supported << " steps)\n";
-		if(detailed || sysFreqs.num_supported <= 7){
+ 	if(ret_sys == RSMI_STATUS_SUCCESS)
+ 	{
+		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1e3 << " - " <<   sysFreqs.frequency[0] / 1e3  << " kHz (" << sysFreqs.num_supported << " steps)\n";
+		if(detailed || sysFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
+		{
 			std::cout << "\t\t";		
-			for(int i = sysFreqs.num_supported - 1; i > -1; i--){
+			for(int i = sysFreqs.num_supported - 1; i > -1; i--)
+			{
 				std::cout << sysFreqs.frequency[i] / 1e6  << " ";
 			}
 			std::cout << "MHz\n";
 		}
 	}
 
-	if(ret_mem == RSMI_STATUS_SUCCESS){
-		if(memFreqs.num_supported > 1){
-			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000 << " - " << memFreqs.frequency[0] / 1000  << " kHz (" << memFreqs.num_supported << " steps)\n";
-			if(detailed || memFreqs.num_supported <= 7){
+	if(ret_mem == RSMI_STATUS_SUCCESS)
+	{
+		if(memFreqs.num_supported > 1)
+		{
+			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1e3 << " - " << memFreqs.frequency[0] / 1e3  << " kHz (" << memFreqs.num_supported << " steps)\n";
+			if(detailed || memFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
+			{
 				std::cout << "\t\t";
-				for(int i = memFreqs.num_supported - 1; i >= 0; i--){
+				for(int i = memFreqs.num_supported - 1; i >= 0; i--)
+				{
 					std::cout << memFreqs.frequency[i] / 1e6  << " ";
 				}
 				std::cout << "MHz\n";
 			}
-		
-        }
-    }
- 
-	if(ret_soc == RSMI_STATUS_SUCCESS){
-		if(socFreqs.num_supported > 1){
-			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1000 << " - " <<   socFreqs.frequency[0] / 1000  << " kHz (" << socFreqs.num_supported << " steps)\n";
-			if(detailed || socFreqs.num_supported <= 7){
+		}
+	}
+
+	if(ret_soc == RSMI_STATUS_SUCCESS)
+	{
+		if(socFreqs.num_supported > 1)
+		{
+			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1e3 << " - " <<   socFreqs.frequency[0] / 1e3  << " kHz (" << socFreqs.num_supported << " steps)\n";
+			if(detailed || socFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
+			{
 				std::cout << "\t\t";
-				for(int i = socFreqs.num_supported - 1; i >= 0; i--){
+				for(int i = socFreqs.num_supported - 1; i >= 0; i--)
+				{
 					std::cout << socFreqs.frequency[i] / 1e6  << " ";
 				}
 				std::cout << "MHz\n";
@@ -633,16 +644,19 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		}
 	}
 
-    if(ret_mem == RSMI_STATUS_SUCCESS){
-        std::cout << "\tSM frequency:     " << sysFreqs.frequency[sysFreqs.current] / 1000 << " kHz\n";
+	if(ret_mem == RSMI_STATUS_SUCCESS)
+	{
+		std::cout << "\tSM frequency:     " << sysFreqs.frequency[sysFreqs.current] / 1e3 << " kHz\n";
 	}
 
-    if(ret_mem == RSMI_STATUS_SUCCESS){
-        std::cout << "\tMemory frequency: " << memFreqs.frequency[memFreqs.current] / 1000 << " kHz\n";
+	if(ret_mem == RSMI_STATUS_SUCCESS)
+	{
+		std::cout << "\tMemory frequency: " << memFreqs.frequency[memFreqs.current] / 1e3 << " kHz\n";
 	}
 
-    if(ret_mem == RSMI_STATUS_SUCCESS){
-        std::cout << "\tSoC frequency:    " << socFreqs.frequency[socFreqs.current] / 1000 << " kHz\n";
+	if(ret_mem == RSMI_STATUS_SUCCESS)
+	{
+		std::cout << "\tSoC frequency:    " << socFreqs.frequency[socFreqs.current] / 1e3 << " kHz\n";
 	}
 #endif
 
@@ -1014,18 +1028,18 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		uint minPowerLimit, maxPowerLimit;
 		if (nvmlDeviceGetPowerManagementLimitConstraints(deviceHandle, &minPowerLimit, &maxPowerLimit) == NVML_SUCCESS)
 		{
-			std::cout << "\tGPU max power limit:     " << maxPowerLimit/1000 << " W\n"
-			          << "\tGPU min power limit:     " << minPowerLimit/1000 << " W\n";
+			std::cout << "\tGPU max power limit:     " << maxPowerLimit/1e3 << " W\n"
+			          << "\tGPU min power limit:     " << minPowerLimit/1e3 << " W\n";
 		}
 		
 		if (nvmlDeviceGetPowerManagementDefaultLimit(deviceHandle, &maxPowerLimit) == NVML_SUCCESS)
 		{
-			std::cout << "\tGPU default power limit: " << maxPowerLimit/1000 << " W\n";
+			std::cout << "\tGPU default power limit: " << maxPowerLimit/1e3 << " W\n";
 		}
 		
 		if (nvmlDeviceGetPowerManagementLimit(deviceHandle, &minPowerLimit) == NVML_SUCCESS && minPowerLimit != maxPowerLimit)
 		{
-			std::cout << "\tGPU power limit:         " << minPowerLimit/1000 << " W\n";
+			std::cout << "\tGPU power limit:         " << minPowerLimit/1e3 << " W\n";
 			ok = false;
 		}
 	}
@@ -1037,20 +1051,23 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	rsmi_status_t ret;
 
 	ret = rsmi_dev_power_cap_range_get(0, 0, &max_power_limit, &min_power_limit);
-	if (ret == RSMI_STATUS_SUCCESS) {
+	if (ret == RSMI_STATUS_SUCCESS)
+	{
 		std::cout << "\n# GPU POWER LIMITS\n";
-		std::cout << "\tGPU max power limit:     " <<  max_power_limit / 1000000 << " W\n";
-		std::cout << "\tGPU min power limit:     " << min_power_limit / 1000000 << " W\n" ;
+		std::cout << "\tGPU max power limit:     " << max_power_limit / 1e6 << " W\n";
+		std::cout << "\tGPU min power limit:     " << min_power_limit / 1e6 << " W\n" ;
 	}
 
 	ret = rsmi_dev_power_cap_default_get(0, &default_power_limit);
-	if (ret == RSMI_STATUS_SUCCESS) {
-		std::cout << "\tGPU default power limit: " <<  default_power_limit / 1000000 << " W\n";
+	if (ret == RSMI_STATUS_SUCCESS)
+	{
+		std::cout << "\tGPU default power limit: " << default_power_limit / 1e6 << " W\n";
 	}
 
 	ret = rsmi_dev_power_cap_get(0, 0, &current_power_limit);
-	if (ret == RSMI_STATUS_SUCCESS) {
-		std::cout << "\tGPU power limit:         " << current_power_limit / 1000000 << " W\n";
+	if (ret == RSMI_STATUS_SUCCESS)
+	{
+		std::cout << "\tGPU power limit:         " << current_power_limit / 1e6 << " W\n";
 	}
 
 #endif
@@ -1095,13 +1112,12 @@ void sysEnergyMeasurement()
 	uint64_t energy;
 	float precision;
 	uint64_t timestamp;
-	if(rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS){
+	if(rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
+	{
 		std::cout << "\tROCM\n";
 		systems++;
 	}
 #endif
-
-
 
 #ifdef HAVE_OCC
 	std::cout << "\tOCC\n";
@@ -1117,7 +1133,9 @@ void sysEnergyMeasurement()
 #endif
 
 	if (systems == 0)
+	{
 		std::cout << "\tNONE\n";
+	}
 }
 
 void checkMsrWhitelist()
