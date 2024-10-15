@@ -49,6 +49,33 @@ enum MODE	//this application keeps this order
 };
 ////////////////////////////////////////////////////////////////////////////////
 
+
+std::string readFile(const std::string &filePath)
+{
+    std::ifstream file(filePath);
+    std::string content;
+    if (file.is_open())
+    {
+        std::getline(file, content);
+        file.close();
+    }
+    return content;
+}
+
+std::string getAMDGPUName(const std::string hex){
+	std::string name;
+	if(hex == "0x738C")
+			name = "Mi100";
+	else if(hex == "0x740C")
+			name = "Mi250/Mi250X";
+	else if(hex == "0x7408")
+			name = "Mi250/Mi250X";
+	else
+			name = "Unknown GPU type";
+	return name;
+}
+
+
 void sysInfoSize(bool detailed = false)
 {
 	int SOCKETS_PER_NODE, THREADS_PER_CORE;
@@ -136,7 +163,7 @@ void sysInfoSize(bool detailed = false)
 		if (GPUdeviceCount)
 			std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
 		
-		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the GPUs\n";
+		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the CUDA GPUs\n";
 	}
 #endif
 
@@ -154,8 +181,37 @@ void sysInfoSize(bool detailed = false)
 		std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
 	}
 #else
+	DIR *dir2;
+	if ((dir2 = opendir("/sys/class/drm/")) != NULL)
+	{
+		struct dirent *ent;
+		int GPUDeviceCount = 0;
+		std::string modelName;
+		while ((ent = readdir(dir2)) != NULL)
+		{
+			std::string deviceName = std::string(ent->d_name);
+			if (deviceName.find("card") == 0)
+			{
+				std::string cardPath = "/sys/class/drm/" + deviceName + "/device/";
+				
+				std::string vendorID = readFile(cardPath + "vendor");
+				if (vendorID == "0x1002"){
+					GPUDeviceCount++;
+					
+					std::string pciDeviceID = readFile(cardPath + "device");
+					modelName = getAMDGPUName(pciDeviceID);
+				}
+			}
+		}
+        if (modelName != "")
+            std::cout << "\tGPU name:         " << modelName << '\n';
+        if (GPUDeviceCount){
+            std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n';
+			std::cout << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
+		}
+		closedir(dir2);
+	}
 
-	//TODO MISSING IMPLEMENTATION - obtain AMD GPU info without the compilation using rocm_smi64 if possible
 
 #endif
 }
