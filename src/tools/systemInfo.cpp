@@ -64,9 +64,9 @@ std::string readFile(const std::string &filePath)
 
 std::string getAMDGPUName(const std::string hex){
 	std::string name;
-	if(hex == "0x738C")
+	if(hex == "0x738c")
 			name = "Mi100";
-	else if(hex == "0x740C")
+	else if(hex == "0x740c")
 			name = "Mi250/Mi250X";
 	else if(hex == "0x7408")
 			name = "Mi250/Mi250X";
