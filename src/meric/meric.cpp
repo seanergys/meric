@@ -120,7 +120,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.powerCapPKGtime = 0;
 #endif
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	defaultParameter.frequencyGPU = mutils::frequencyToHz(mutils::getenv("MERIC_GPU_FREQUENCY", std::string("")));
 	if (defaultParameter.frequencyGPU < 0)
 	{
@@ -135,7 +135,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.frequencyGPU = 0;
 #endif
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	defaultParameter.frequencyGPUmem = mutils::frequencyToHz(mutils::getenv("MERIC_GPU_MEM_FREQUENCY", std::string("")));
 	if (defaultParameter.frequencyGPUmem < 0)
 	{
@@ -150,7 +150,7 @@ int Meric::getDefaultParameters()
 	defaultParameter.frequencyGPUmem = 0;
 #endif
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	defaultParameter.powerCapGPU = mutils::getenv("MERIC_PWRCAP_GPU", -1);
 	if (defaultParameter.powerCapGPU < 0)
 	{

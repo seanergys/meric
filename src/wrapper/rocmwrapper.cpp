@@ -56,6 +56,7 @@ void ROCM::init(bool detailed)
 	if (HIP_PRIOR_6_2)
 	{
 		rsmi_shut_down();
+		ret = rsmi_init(0);
 	}
 	// Initialize the counter map
 	initMap(counters);
@@ -107,6 +108,7 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 	if (HIP_PRIOR_6_2)
 	{
 		rsmi_shut_down();
+		rsmi_init(0);
 	}
 	#endif
 }
