@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include <thread>
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	#include <rocm_smi/rocm_smi.h>
@@ -23,6 +24,9 @@ class ROCM {
 public:
 	static void init(bool detailed = true);
 	static void close();
+
+	static void start(unsigned int sampling_frequency);
+	static void stop();
 	
 	static void getCounterValues(std::map<std::string, uint64_t> &record);
 	static void initMap(std::map<std::string, uint64_t> &dict);
@@ -46,6 +50,11 @@ private:
 	static double unit;
 	static std::vector<uint32_t> GPUindices;
 	static bool HIP_PRIOR_6_2;
+
+	static std::vector <std::vector<double>> samples;
+	static std::thread samplingThread;
+
+	static void collectSamples(unsigned int frequency);
 };
 
 }

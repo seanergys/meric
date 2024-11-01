@@ -6,7 +6,11 @@ using namespace meric;
 uint64_t ROCM::COUNTERMAX = __UINT64_MAX__;
 std::map<std::string, uint64_t> ROCM::counters;
 std::vector<uint32_t> ROCM::GPUindices;
+std::vector <std::vector<double>> ROCM::samples = {};
+std::thread ROCM::samplingThread;
+
 double ROCM::unit = 1.0;
+bool rsmiSamplingRunning = true;
 
 #if defined HAVE_ROCM_SMI_ROCM_SMI_H && HIP_VERSION_MAJOR <= 6 && HIP_VERSION_MINOR < 2
 bool ROCM::HIP_PRIOR_6_2 = true;
@@ -63,6 +67,60 @@ void ROCM::init(bool detailed)
 	#endif
 }
 
+
+void ROCM::start(unsigned int sampling_frequency){
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	samples.resize(GPUindices.size(), std::vector<double>());
+	samplingThread = std::thread{ [sampling_frequency]() { collectSamples(sampling_frequency); } };
+#endif	
+}
+
+
+
+void ROCM::stop(){
+    rsmiSamplingRunning = false;
+    samplingThread.join();
+	for(int i = 0 ; i < GPUindices.size(); i++)
+	{
+		MERIC_INFO << "GPU index: " << i << " power samples: " << std::endl;
+		for(int j = 0 ; j < samples[i].size(); j++)
+		{
+			MERIC_INFO << samples[i][j] << " [W]\n";
+		}
+	}
+
+}
+
+
+
+void ROCM::collectSamples(unsigned int sampling_frequency){
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	while(rsmiSamplingRunning)
+	{
+		if(HIP_PRIOR_6_2)
+		{
+			rsmi_init(0);
+		}
+		for(int i = 0; i < GPUindices.size(); i++)
+		{
+			uint64_t power;
+			if(rsmi_dev_power_ave_get(i, 0, &power) == RSMI_STATUS_SUCCESS)
+			{			
+				samples[i].push_back(static_cast<double>(power) / 1e6);
+				std::cout << "Power on gpu[" << i << "]: "  << power << std::endl;
+			}
+		}
+		if(HIP_PRIOR_6_2)
+		{
+			rsmi_shut_down();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(sampling_frequency));
+	}
+#endif
+}
+
+
+
 void ROCM::close()
 {
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
@@ -70,6 +128,7 @@ void ROCM::close()
 	{
 		rsmi_shut_down();
 	}
+
 #endif
 }
 
