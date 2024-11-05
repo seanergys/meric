@@ -24,10 +24,10 @@ class NVML {
 
 public:
 	static void init(bool detailed = true);
-	static void close();
+	static void close() {};
 
-    static void start(unsigned int frequency);
-    static void stop();
+	static void start(unsigned int frequency);
+	static void stop();
 	
 	static void getCounterValues(std::map<std::string, unsigned long long> & record);
 	static void initMap(std::map<std::string, unsigned long long> & dict);
@@ -49,10 +49,10 @@ private:
 		//list of counters
 	static std::map<std::string, unsigned long long> counters;
 	static unsigned long long COUNTERMAX;
-    static std::thread samplingThread;
-    static void collectSamples(unsigned int frequency);
-    static unsigned long long sampleBeginTimestamp;
-    static std::vector<std::vector<double>> samples;    
+	static std::thread samplingThread;
+	static void collectSamples(unsigned int frequency);
+	static unsigned long long sampleBeginTimestamp;
+	static std::vector<std::vector<double>> samples;
 #ifdef HAVE_NVML_H
 	static std::vector <nvmlDevice_t> GPUhandles;
 #endif

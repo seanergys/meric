@@ -20,8 +20,6 @@ bool ROCM::HIP_PRIOR_6_2 = false;
 
 void ROCM::init(bool detailed)
 {
-
-
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	uint32_t deviceCount = 0;
 	rsmi_status_t ret;
@@ -68,7 +66,8 @@ void ROCM::init(bool detailed)
 }
 
 
-void ROCM::start(unsigned int sampling_frequency){
+void ROCM::start(unsigned int sampling_frequency)
+{
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	samples.resize(GPUindices.size(), std::vector<double>());
 	samplingThread = std::thread{ [sampling_frequency]() { collectSamples(sampling_frequency); } };
@@ -77,9 +76,10 @@ void ROCM::start(unsigned int sampling_frequency){
 
 
 
-void ROCM::stop(){
-    rsmiSamplingRunning = false;
-    samplingThread.join();
+void ROCM::stop()
+{
+	rsmiSamplingRunning = false;
+	samplingThread.join();
 	for(int i = 0 ; i < GPUindices.size(); i++)
 	{
 		MERIC_INFO << "GPU index: " << i << " power samples: " << std::endl;
@@ -91,9 +91,8 @@ void ROCM::stop(){
 
 }
 
-
-
-void ROCM::collectSamples(unsigned int sampling_frequency){
+void ROCM::collectSamples(unsigned int sampling_frequency)
+{
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	while(rsmiSamplingRunning)
 	{
@@ -128,7 +127,6 @@ void ROCM::close()
 	{
 		rsmi_shut_down();
 	}
-
 #endif
 }
 

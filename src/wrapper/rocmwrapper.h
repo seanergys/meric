@@ -42,7 +42,7 @@ public:
 #else
 	static size_t getGPUsPerNode() { return 0; };
 #endif
-    
+
 private:
 	// Map of counters
 	static std::map<std::string, uint64_t> counters;
