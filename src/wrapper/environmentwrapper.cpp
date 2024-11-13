@@ -185,29 +185,9 @@ void Environment::getCPUbrandString(std::string & CPUname)
 #endif
 
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 /**
- * Get name of an Nvidia GPU
- * The name is an alphanumeric string that denotes a particular product.
- * It will not exceed 50 characters in length (including the null terminator).
- **/
-void Environment::getGPUbrandString(std::string & GPUname)
-{
-	rsmi_init(0);
-	const int GPU_NAME_LENGTH = 50;
-	char name [GPU_NAME_LENGTH];
-	if (NVML::getGPUsPerNode() && nvmlDeviceGetName (NVML::getGPUHandle(0), name, GPU_NAME_LENGTH) == NVML_SUCCESS)
-		GPUname = std::string(name);
-	else
-		GPUname = "";
-
-	rsmi_shut_down();
-}
-#endif
-
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-/**
- * Get name of an AMD GPU
+ * Get name of an Nvidia or AMD GPU
  * The name is an alphanumeric string that denotes a particular product.
  * It will not exceed 256 characters in length (including the null terminator).
  **/
@@ -215,7 +195,13 @@ void Environment::getGPUbrandString(std::string & GPUname)
 {
 	const int GPU_NAME_LENGTH = 256;
 	char name [GPU_NAME_LENGTH];
+	
+	#ifdef HAVE_NVML_H
+	if (NVML::getGPUsPerNode() && nvmlDeviceGetName (NVML::getGPUHandle(0), name, GPU_NAME_LENGTH) == NVML_SUCCESS)
+	#elif defined HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_init(0);
 	if(rsmi_dev_name_get(0, name, GPU_NAME_LENGTH) == RSMI_STATUS_SUCCESS)
+	#endif
 	{
 		GPUname = std::string(name);
 	}
@@ -223,12 +209,11 @@ void Environment::getGPUbrandString(std::string & GPUname)
 	{
 		GPUname = "";
 	}
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	rsmi_shut_down();
+	#endif
 }
 #endif
-
-
-
-
 
 
 /**
@@ -645,8 +630,9 @@ bool Environment::isHWPactive(std::string &status)
 		#endif
 	}
 	else
+	{
 		status = "not available";
-
+	}
 	return HWP;
 }
 #endif
@@ -2604,9 +2590,9 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		SMit = std::upper_bound(MEMit->second.begin(), MEMit->second.end(), freqSM);
 	}
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-		SMIndex = std::distance(SMit, MEMit->second.end()) - 1;
-	#endif
+	SMIndex = std::distance(SMit, MEMit->second.end()) - 1;
 	MERIC_INFO << "SM index: " << SMIndex << " MEM index: " << memIndex << std::endl;
+	#endif
 	freqSM = *SMit;
 	
 	int min, max;
