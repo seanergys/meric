@@ -87,7 +87,7 @@ std::string getAMDGPUName(const std::string hex)
 		name = "Mi300X VF";
 	else
 		name = "Unknown GPU type";
-    return name;	
+	return name;	
 }
 
 
