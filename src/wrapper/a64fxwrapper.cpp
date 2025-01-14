@@ -38,17 +38,17 @@ void A64FX::init(bool detailed)
 			countersFd[A64FX_COUNTERS::ENERGY_L2 + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_L2], i);
 			countersFd[A64FX_COUNTERS::ENERGY_MEM + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_MEM], i);
 		}
-		
-		for(std::map<std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+	}
+
+	for(std::map<std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+	{
+		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
 		{
-			if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
-			{
-				std::cerr << "PREFEVENT error when reseting counter\n";
-			}
-			if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) != 0)
-			{
-				std::cerr << "PREFEVENT error when starting counting\n";
-			}
+			std::cerr << "PREFEVENT error when reseting counter\n";
+		}
+		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) != 0)
+		{
+			std::cerr << "PREFEVENT error when starting counting\n";
 		}
 	}
 	
