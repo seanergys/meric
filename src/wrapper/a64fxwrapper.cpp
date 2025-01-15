@@ -20,6 +20,7 @@ void A64FX::init(bool detailed)
 		attr.inherit = 1;
 		attr.type = type;
 		attr.config = config;
+		attr.disabled = 1;
 
 		return openCounter(attr, cpu);
 	};
