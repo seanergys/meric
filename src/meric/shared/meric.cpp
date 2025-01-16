@@ -67,11 +67,6 @@ SharedMeric::SharedMeric()
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>());
-		//because of using perfevent to read energy counters, the performace counters are disabled
-		if (Meric::COUNTERS == "perfevent")
-		{
-			Meric::COUNTERS = "none";
-		}
 	}
 	
 	if (Meric::COUNTERS != "none")

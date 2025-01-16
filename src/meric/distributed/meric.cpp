@@ -206,11 +206,6 @@ DistributedMeric::DistributedMeric()
 		{
 			_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>(!_MPInodeRank));
 		}
-		//because of using perfevent to read energy counters, the performace counters are disabled
-		if (Meric::COUNTERS == "perfevent")
-		{
-			Meric::COUNTERS = "none";
-		}
 	}
 
 	if (Meric::COUNTERS != "none")
