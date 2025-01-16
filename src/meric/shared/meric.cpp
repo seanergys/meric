@@ -113,7 +113,7 @@ SharedMeric::SharedMeric()
 	//RAPL + MSR wrappers expects that environment::init() was already called
 	if (Meric::COUNTERS == "perfevent")
 	{
-		PERFEVENT::init();
+		PERFEVENT::init(Meric::DETAILED);
 	}
 	if (Meric::COUNTERS == "papi")
 	{

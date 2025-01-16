@@ -219,11 +219,11 @@ DistributedMeric::DistributedMeric()
 		{
 			if (Meric::AGGREGATE)
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>>(_worldCopy, true));
+				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>>(_storingProcs, !_MPInodeRank));
 			}
 			else
 			{
-				_storeList.push_back(new CountersAggregateStore<CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>>(_currentNode, true));
+				_storeList.push_back(new CountersStore<PERFEVENT, unsigned long long int, unsigned long long int>(!_MPInodeRank));
 			}
 		}
 		else if (Meric::COUNTERS == "papi")
@@ -309,9 +309,9 @@ DistributedMeric::DistributedMeric()
 	
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called
-	if (Meric::COUNTERS == "perfevent")
+	if (Meric::COUNTERS == "perfevent" && !_MPInodeRank)
 	{
-		PERFEVENT::init();
+		PERFEVENT::init(Meric::DETAILED);
 	}
 	if (Meric::COUNTERS == "papi")
 	{

@@ -52,20 +52,20 @@ static std::map<const std::string, std::string> counterLabel = {
  **/
 namespace PERFEVENT_COUNTERS {
 
-const std::string COUNTER_AVX = "COUNTER_AVX";
-const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
-const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
-const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
-const std::string COUNTER_FREQ = "PERF_COUNT_HW_CPU_CYCLES";
+//const std::string COUNTER_AVX = "COUNTER_AVX";
+//const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
+//const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
+//const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
+const std::string COUNTER_CPU_CYCLES = "HW_CPU_CYCLES";
 
 static std::map<const std::string, std::string> counterLabel = {
-#if defined(__x86_64__)
-	{ COUNTER_AVX,             "COUNTER_AVX"             },
-	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
-#endif
-	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
-	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
-	{ COUNTER_FREQ,            "COUNTER_CPU_CYCLES"      }
+//#if defined(__x86_64__)
+//	{ COUNTER_AVX,             "COUNTER_AVX"             },
+//	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
+//#endif
+//	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
+//	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
+	{ COUNTER_CPU_CYCLES,      "CPU_CYCLES"              }
 };
 
 }
