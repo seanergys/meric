@@ -110,13 +110,13 @@ def configure(ctx):
 	# check for HW-tuning software
 	if not ctx.options.sbi:
 		if ((not ctx.check_cxx(header_name="variorum.h", lib="variorum", uselib_store="variorum", mandatory=False)) and (not ctx.check_cxx(header_name="msr_core.h", lib="msr", uselib_store="msr", mandatory=False)) and (not ctx.check_cxx(header_name="geopm.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False)) and (not ctx.check_cxx(header_name="x86_adapt.h", lib="x86_adapt", uselib_store="x86_adapt", execute=False, mandatory=False)) and (not MSRSAFEavailable)):
-			if ctx.check_cxx(lib="cpufreq", mandatory=False):
+			if ctx.check_cxx(lib="cpufreq", uselib_store="cpufreq", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUFREQ=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpufreq" ])
-			elif ctx.check_cxx(lib="cpupower", mandatory=False):
+			elif ctx.check_cxx(lib="cpupower", uselib_store="cpupower", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
-		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
+		if ctx.check_cxx(lib="nvidia-ml", uselib_store="nvml", mandatory=False, execute=True):
 			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
 			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
@@ -237,7 +237,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
-		use="msr x86_adapt numa geopm nvml rocm esmi",
+		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/bin/")
@@ -258,7 +258,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
-		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi",
+		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	
@@ -272,7 +272,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
-		use="msr x86_adapt numa geopm nvml rocm esmi",
+		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
 	
