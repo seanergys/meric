@@ -51,6 +51,7 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC256_PD + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC256_PD], i);
 		countersFd[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC512_PS + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC512_PS], i);
 		countersFd[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC512_PD + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_VEC512_PD], i);
+		//countersFd[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY], i);
 		#endif
 	}
 
@@ -190,6 +191,11 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		ratios["CPU_INSTRUCTION_VEC256_RATIO"+suffix] = instructionsAll ? instructionsVec256/(double)instructionsAll : 0;
 		ratios["CPU_INSTRUCTION_VEC512_RATIO"+suffix] = instructionsAll ? instructionsVec512/(double)instructionsAll : 0;
 		ratios["CPU_INSTRUCTION_VECTORIZATION_RATIO"+suffix] = instructionsAll ? instructionsVector/(double)instructionsAll : 0;
+
+		//unsigned long long int cyclesAMXBusy = getResultValue(start[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY + suffix],
+		//							stop[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY + suffix], runtime, cumulative);
+		
+		//ratios["CPU_AMX_ACTIVE"+suffix] = cyclesAMXBusy/cycles;
 		#endif
 
 		suffix = "_" + std::to_string(++i);

@@ -54,6 +54,7 @@ namespace PERFEVENT_COUNTERS {
 
 const std::string COUNTER_CPU_CYCLES = "PERF_HW_CPU_CYCLES";
 #ifdef _INTEL_
+const std::string COUNTER_CYCLES_AMX_BUSY = "AMX_BUSY";
 const std::string COUNTER_INSTS_RET_SCALAR = "INST_RETIRED_SCALAR";
 const std::string COUNTER_INSTS_RET_VEC128_PS = "INST_RETIRED_128B_PACKED_SINGLE";
 const std::string COUNTER_INSTS_RET_VEC128_PD = "INST_RETIRED_128B_PACKED_DOUBLE";
@@ -65,6 +66,7 @@ const std::string COUNTER_INSTS_RET_VEC512_PD = "INST_RETIRED_512B_PACKED_DOUBLE
 
 static std::map<const std::string, std::string> counterLabel = {
 	#ifdef _INTEL_
+	{ COUNTER_CYCLES_AMX_BUSY    , "CPU_CYCLES_AMX_BUSY"            },
 	{ COUNTER_INSTS_RET_SCALAR   , "CPU_INSTRUCTIONS_SCALAR"        },
 	{ COUNTER_INSTS_RET_VEC128_PS, "CPU_INSTRUCTIONS_VEC128_SINGLE" },
 	{ COUNTER_INSTS_RET_VEC128_PD, "CPU_INSTRUCTIONS_VEC128_DOUBLE" },
@@ -78,6 +80,7 @@ static std::map<const std::string, std::string> counterLabel = {
 
 static std::map<const std::string, const uint64_t> counterDefines = {
 	#ifdef _INTEL_
+	{ COUNTER_CYCLES_AMX_BUSY    , 0x02b7 }
 	{ COUNTER_INSTS_RET_SCALAR   , 0x03c7 },
 	{ COUNTER_INSTS_RET_VEC128_PS, 0x08c7 },
 	{ COUNTER_INSTS_RET_VEC128_PD, 0x04c7 },
