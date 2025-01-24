@@ -80,7 +80,7 @@ static std::map<const std::string, std::string> counterLabel = {
 
 static std::map<const std::string, const uint64_t> counterDefines = {
 	#ifdef _INTEL_
-	{ COUNTER_CYCLES_AMX_BUSY    , 0x02b7 }
+	{ COUNTER_CYCLES_AMX_BUSY    , 0x02b7 },
 	{ COUNTER_INSTS_RET_SCALAR   , 0x03c7 },
 	{ COUNTER_INSTS_RET_VEC128_PS, 0x08c7 },
 	{ COUNTER_INSTS_RET_VEC128_PD, 0x04c7 },
