@@ -37,12 +37,6 @@ void PERFEVENT::init(bool detailed)
 		return openCounter(attr, cpu);
 	};
 	
-	//counters[PERFEVENT_COUNTERS::COUNTER_AVX] = setCounter(PERF_TYPE_RAW, 0x04C6); //0x04C6 == AVX_INSTS.CALC
-	//counters[PERFEVENT_COUNTERS::COUNTER_AVX_ALL] = setCounter(PERF_TYPE_RAW, 0x07C6); //0x07C6 == AVX_INSTS.ALL
-	//counters[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
-	//counters[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-	//counters[PERFEVENT_COUNTERS::COUNTER_FREQ] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
-
 	for (int i=0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);
@@ -147,32 +141,6 @@ void PERFEVENT::getCounterValues(std::map<std::string, unsigned long long int> &
 
 void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios)
 {
-	//if (stop.count(PERFEVENT_COUNTERS::COUNTER_AVX))
-	//{
-	//	ratios["Performance [GFLOPs]"] = CountersRates::FLOPS(
-	//		stop[PERFEVENT_COUNTERS::COUNTER_AVX] - 
-	//		start[PERFEVENT_COUNTERS::COUNTER_AVX], 
-	//		runtime
-	//		);			
-	//}
-	//if (stop.count(PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES) && stop.count(PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS))
-	//{
-	//	ratios["Computational Intensity"] = CountersRates::computationalIntensity(
-	//			stop[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] - 
-	//			start[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS], 
-	//			stop[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] - 
-	//			start[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES]
-	//		);
-	//}
-	//if (stop.count(PERFEVENT_COUNTERS::COUNTER_FREQ))
-	//{
-	//	ratios["CPU frequency [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(
-	//			stop[PERFEVENT_COUNTERS::COUNTER_FREQ] -
-	//			start[PERFEVENT_COUNTERS::COUNTER_FREQ],
-	//			runtime
-	//		);
-	//}
-
 	int cumulative = 0;
 
 	int i = 0;
@@ -278,15 +246,6 @@ unsigned long long PERFEVENT::getResultValue(unsigned long long int startValue, 
 
 void PERFEVENT::initMap(std::map<std::string, unsigned long long int> & dict)
 {
-//	dict[PERFEVENT_COUNTERS::] = 0;
-//#if defined(__x86_64__)
-//	dict[PERFEVENT_COUNTERS::COUNTER_AVX] = 0;
-//	dict[PERFEVENT_COUNTERS::COUNTER_AVX_ALL] = 0;
-//#endif
-//	dict[PERFEVENT_COUNTERS::COUNTER_CACHE_MISSES] = 0;
-//	dict[PERFEVENT_COUNTERS::COUNTER_HW_INSTRUCTIONS] = 0;
-//	dict[PERFEVENT_COUNTERS::COUNTER_FREQ] = 0;
-
 	for (int i=0; i < Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);

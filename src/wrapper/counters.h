@@ -52,10 +52,6 @@ static std::map<const std::string, std::string> counterLabel = {
  **/
 namespace PERFEVENT_COUNTERS {
 
-//const std::string COUNTER_AVX = "COUNTER_AVX";
-//const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
-//const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
-//const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
 const std::string COUNTER_CPU_CYCLES = "PERF_HW_CPU_CYCLES";
 #ifdef _INTEL_
 const std::string COUNTER_INSTS_RET_SCALAR = "INST_RETIRED_SCALAR";
@@ -68,12 +64,6 @@ const std::string COUNTER_INSTS_RET_VEC512_PD = "INST_RETIRED_512B_PACKED_DOUBLE
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
-//#if defined(__x86_64__)
-//	{ COUNTER_AVX,             "COUNTER_AVX"             },
-//	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
-//#endif
-//	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
-//	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
 	#ifdef _INTEL_
 	{ COUNTER_INSTS_RET_SCALAR   , "CPU_INSTRUCTIONS_SCALAR"        },
 	{ COUNTER_INSTS_RET_VEC128_PS, "CPU_INSTRUCTIONS_VEC128_SINGLE" },
