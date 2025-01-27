@@ -162,7 +162,7 @@ void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains)
     {
         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
-            printf("Domain %u is enabled.\n", domain);
+            printf("Domain %s is enabled.\n", midlib_printDomainName(domain));
 
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
@@ -179,7 +179,7 @@ void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains)
     {
         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
-            printf("Domain %u is enabled.\n", domain);
+            printf("Domain %s is enabled.\n", midlib_printDomainName(domain));
 
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
@@ -187,5 +187,36 @@ void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains)
                 enabled_domains->printMeasurementFns[index](true);
             }
         }
+    }
+}
+// Function to print the corresponding enum name based on the value
+const char* midlib_printDomainName(unsigned int value)
+{
+    switch(value)
+    {
+        case MidlibEnergyDomains::A64FX:
+            return "A64FX";
+            break;
+        case MidlibEnergyDomains::RAPL:
+            return "RAPL";
+            break;
+        case MidlibEnergyDomains::NVML:
+            return "NVML";
+            break;
+        case MidlibEnergyDomains::ROCM:
+            return "ROCM";
+            break;
+        case MidlibEnergyDomains::HDEEM:
+            return "HDEEM";
+            break;
+        case MidlibEnergyDomains::END:
+            return "END";
+            break;
+        case MidlibEnergyDomains::NO_SELECTION:
+            return "NO_SELECTION";
+            break;
+        default:
+            return "Unknown Domain";
+            break;
     }
 }

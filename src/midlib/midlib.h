@@ -39,6 +39,7 @@ typedef struct MidlibEnergyDomains
 EXTERNC void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed);
 EXTERNC void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains);
 EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains);
+EXTERNC const char* midlib_printDomainName(unsigned int value);
 
 // ******** DO WE NEED THESE??? ********
 // EXTERNC void midlib_getCounterValues(unsigned long long *record);
