@@ -22,10 +22,11 @@
 
 
 #define POWER_BASELINE 0
-std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
-std::vector<double> recordTime;
+static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
+static std::vector<double> recordTime;
+
 template <typename Tmode>
-void measureEnergy(bool verbose, double timeNow = 0.0)
+static void measureEnergy(bool verbose, double timeNow = 0.0)
 {
     if (recordEnergy.empty())
     {
@@ -45,15 +46,29 @@ void measureEnergy(bool verbose, double timeNow = 0.0)
     recordEnergy.push_back(energyNow);
     recordTime.push_back(timeNow);
 }
-
 template void measureEnergy<meric::A64FX>(bool, double);
-// template void measureEnergy<meric::RAPL>(bool, double);
-// template void measureEnergy<meric::NVML>(bool, double);
+template void measureEnergy<meric::RAPL>(bool, double);
+template void measureEnergy<meric::NVML>(bool, double);
 // template void measureEnergy<meric::ROCM>(bool, double);
 // template void measureEnergy<meric::HDEEM>(bool, double);
 
+
+
 template <typename Tmode>
-void printValues(bool verbose)
+static void close()
+{
+    Tmode::close();
+}
+template void close<meric::A64FX>();
+template void close<meric::RAPL>();
+template void close<meric::NVML>();
+// template void close<meric::ROCM>();
+// template void close<meric::HDEEM>();
+
+
+
+template <typename Tmode>
+static void printValues(bool verbose)
 {
     if (recordTime.size() < 2)
     {
@@ -106,6 +121,12 @@ void printValues(bool verbose)
         std::cout << std::fixed << std::setprecision(3) << summary << std::endl;
     }
 }
+template void printValues<meric::A64FX>(bool);
+template void printValues<meric::RAPL>(bool);
+template void printValues<meric::NVML>(bool);
+// template void printValues<meric::ROCM>(bool);
+// template void printValues<meric::HDEEM>(bool);
+
 
 void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
 {
@@ -122,6 +143,7 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = NULL;
         enabled_domains->printMeasurementFns[index] = NULL;
+        enabled_domains->closeFns[index] = NULL;
     }
 
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::A64FX)))
@@ -129,31 +151,54 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::A64FX); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::A64FX>;
+        enabled_domains->closeFns[index] = close<meric::A64FX>;
     }
-    // if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::RAPL)))
-    // {
-    //     int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::RAPL); // Get index of the enabled domain
-    //     enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
-    //     enabled_domains->printMeasurementFns[index] = printValues<meric::RAPL>;
-    // }
-    // if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::NVML)))
-    // {
-    //     int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::NVML); // Get index of the enabled domain
-    //     enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
-    //     enabled_domains->printMeasurementFns[index] = printValues<meric::NVML>;
-    // }
-    // if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::ROCM)))
-    // {
-    //     int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::ROCM); // Get index of the enabled domain
-    //     enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
-    //     enabled_domains->printMeasurementFns[index] = printValues<meric::ROCM>;
-    // }
-    // if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::HDEEM)))
-    // {
-    //     int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::HDEEM); // Get index of the enabled domain
-    //     enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
-    //     enabled_domains->printMeasurementFns[index] = printValues<meric::HDEEM>;
-    // }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::RAPL)))
+    {
+        int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::RAPL); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
+        enabled_domains->printMeasurementFns[index] = printValues<meric::RAPL>;
+        enabled_domains->closeFns[index] = close<meric::RAPL>;
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::NVML)))
+    {
+        int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::NVML); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
+        enabled_domains->printMeasurementFns[index] = printValues<meric::NVML>;
+        enabled_domains->closeFns[index] = close<meric::NVML>;
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::ROCM)))
+    {
+        perror("ROCM Has not yet been implemented\n!");        
+        // int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::ROCM); // Get index of the enabled domain
+        // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
+        // enabled_domains->printMeasurementFns[index] = printValues<meric::ROCM>;
+        // enabled_domains->closeFns[index] = close<meric::ROCM>;
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::HDEEM)))
+    {
+        perror("HDEEM Has not yet been implemented\n!");        
+        // int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::HDEEM); // Get index of the enabled domain
+        // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
+        // enabled_domains->printMeasurementFns[index] = printValues<meric::HDEEM>;
+        // enabled_domains->closeFns[index] = close<meric::HDEEM>;
+    }
+} 
+
+void midlib_close(MidlibEnergyDomains *enabled_domains)
+{
+    for (unsigned int domain = 1; domain < MidlibEnergyDomains::END; domain <<= 1)
+    {
+        if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        {
+            int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
+            if (enabled_domains->closeFns[index])
+            {
+                enabled_domains->closeFns[index]();
+                printf("Domain %s is closed.\n", midlib_printDomainName(domain));
+            }
+        }
+    }
 }
 
 void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains)
@@ -179,8 +224,6 @@ void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains)
     {
         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
-            printf("Domain %s is enabled.\n", midlib_printDomainName(domain));
-
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
             {
