@@ -20,12 +20,6 @@
 #include "../basis/utils.h"
 #include "../basis/cpu_optimisations.h"
 
-#ifdef __cplusplus
-#define EXTERNC extern "C"
-#else
-#define EXTERNC
-#endif
-
 typedef struct MidlibEnergyDomains
 {
     enum Domains
@@ -42,8 +36,8 @@ typedef struct MidlibEnergyDomains
 
     typedef void (*EnergyMeasurementFn)(bool, double);
     typedef void (*PrintMeasurementFn)(bool);
-    EnergyMeasurementFn energyMeasurementFns[5]; // Corresponds to 5 domains
-    PrintMeasurementFn printMeasurementFns[5];   // Corresponds to 5 domains
+    EnergyMeasurementFn energyMeasurementFns[5]; // Corresponds to 5 domains (starting from 1,2,4,8...) 
+    PrintMeasurementFn printMeasurementFns[5];   // Corresponds to 5 domains (starting from 1,2,4,8...)
 
 } MidlibEnergyDomains;
 
@@ -53,15 +47,24 @@ typedef struct MidlibEnergyDomains
 #define MIDLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
 #define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == MidlibEnergyDomains::NO_SELECTION)
 
+
+#ifdef __cplusplus
+#define EXTERNC extern "C"
+#else
+#define EXTERNC
+#endif
+
 EXTERNC void midlib_init(MidlibEnergyDomains *enabled_domains,bool is_detailed);
 EXTERNC void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains);
 EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains);
+
 EXTERNC void midlib_getCounterValues(unsigned long long *record);
 EXTERNC void midlib_getNumberOfCounters(unsigned int *num);
 EXTERNC void midlib_getCounterLabel(int id, char *label);
 EXTERNC double midlib_getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, int counterID);
 EXTERNC void midlib_close();
 
-// no need externc afterwards
+// undef region
 #undef EXTERNC
-#endif // COUNTDOWN_MERIC_H
+
+#endif // SRC_MIDLIB_MIDLIB_H_
