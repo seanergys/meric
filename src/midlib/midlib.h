@@ -1,24 +1,10 @@
 #ifndef SRC_MIDLIB_MIDLIB_H_
 #define SRC_MIDLIB_MIDLIB_H_
 
-#include <limits>
-#include <vector>
-#include <map>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-#include <cstdlib>
-#include <omp.h>
+#include <stdio.h>
 #include <stdbool.h>
-#include "../wrapper/environmentwrapper.h"
-#include "../wrapper/a64fxwrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/nvmlwrapper.h"
-#include "../wrapper/rocmwrapper.h"
-#include "../wrapper/hdeemwrapper.h"
-#include "../basis/utils.h"
-#include "../basis/cpu_optimisations.h"
+
+static int countTrailingZeros(unsigned int x);
 
 typedef struct MidlibEnergyDomains
 {
@@ -32,12 +18,10 @@ typedef struct MidlibEnergyDomains
         HDEEM = 1 << 4,   // 010000
         END = 1 << 5      // 100000
     };
-    unsigned int value = NO_SELECTION;
+    unsigned int value;
 
-    typedef void (*EnergyMeasurementFn)(bool, double);
-    typedef void (*PrintMeasurementFn)(bool);
-    EnergyMeasurementFn energyMeasurementFns[5]; // Corresponds to 5 domains (starting from 1,2,4,8...) 
-    PrintMeasurementFn printMeasurementFns[5];   // Corresponds to 5 domains (starting from 1,2,4,8...)
+    void (*energyMeasurementFns[5])(bool, double); // Function pointers for energy measurements
+    void (*printMeasurementFns[5])(bool);          // Function pointers for printing measurements
 
 } MidlibEnergyDomains;
 
@@ -47,22 +31,22 @@ typedef struct MidlibEnergyDomains
 #define MIDLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
 #define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == MidlibEnergyDomains::NO_SELECTION)
 
-
 #ifdef __cplusplus
 #define EXTERNC extern "C"
 #else
 #define EXTERNC
 #endif
 
-EXTERNC void midlib_init(MidlibEnergyDomains *enabled_domains,bool is_detailed);
+EXTERNC void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed);
 EXTERNC void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains);
 EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains);
 
-EXTERNC void midlib_getCounterValues(unsigned long long *record);
-EXTERNC void midlib_getNumberOfCounters(unsigned int *num);
-EXTERNC void midlib_getCounterLabel(int id, char *label);
-EXTERNC double midlib_getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, int counterID);
-EXTERNC void midlib_close();
+// ******** DO WE NEED THESE??? ********
+// EXTERNC void midlib_getCounterValues(unsigned long long *record);
+// EXTERNC void midlib_getNumberOfCounters(unsigned int *num);
+// EXTERNC void midlib_getCounterLabel(int id, char *label);
+// EXTERNC double midlib_getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, int counterID);
+// EXTERNC void midlib_close();
 
 // undef region
 #undef EXTERNC

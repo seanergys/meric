@@ -1,7 +1,7 @@
 #ifndef SRC_BASIS_CPU_OPTIMISATIONS_H_
 #define SRC_BASIS_CPU_OPTIMISATIONS_H_
 
-// all macros start with OPT_ prefix.
+// optimisation macros start with OPT_ prefix.
 
 
 #ifdef __GNUC__ 

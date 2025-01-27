@@ -11,6 +11,12 @@ ifeq ($(CXX),)
 	CXX=g++
 endif
 
+ifeq ($(CC),)
+	CC=gcc
+endif
+
+
+
 ifeq ($(FC),)
 	FC=gfortran
 	ifeq (, $(shell which ${FC}))
@@ -58,6 +64,13 @@ default: all
 all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
 
  ######
+
+midlib_test: midlib_test.c
+	$(CC) -O0 -g midlib_test.c -L.. -la64fx_meric -o midlibTest
+
+midlib_work_meric_test: midlib_work_meric_test.cpp
+	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) -o midlib_work_meric_test
+
 sleepTest: sleep_test.cpp
 	$(CXX) -O0 -g sleep_test.cpp -lmeric $(LIBS) -o sleepTest
 	
