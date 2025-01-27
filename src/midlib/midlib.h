@@ -1,7 +1,6 @@
 #ifndef SRC_MIDLIB_MIDLIB_H_
 #define SRC_MIDLIB_MIDLIB_H_
-
-#include <stdio.h>
+ 
 #include <stdbool.h>
 
 static int countTrailingZeros(unsigned int x);
@@ -20,8 +19,8 @@ typedef struct MidlibEnergyDomains
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[5])(bool, double); // Function pointers for energy measurements
-    void (*printMeasurementFns[5])(bool);          // Function pointers for printing measurements
+    void (*energyMeasurementFns[5])(bool, double); // Function pointers to energy measurements for enabled domains
+    void (*printMeasurementFns[5])(bool);          // Function pointers to printing measurements for enabled domains
 
 } MidlibEnergyDomains;
 
@@ -47,6 +46,31 @@ EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domai
 // EXTERNC void midlib_getCounterLabel(int id, char *label);
 // EXTERNC double midlib_getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, int counterID);
 // EXTERNC void midlib_close();
+
+static int countTrailingZeros(unsigned int x)
+{
+    if (x == 0)
+    {
+        return 0; // Or handle the zero case as needed
+    }
+
+#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+    return __builtin_ctz(x);
+#elif defined(_MSC_VER)
+    unsigned long index;
+    _BitScanForward(&index, x);
+    return index;
+#else
+    // Portable implementation (less efficient)
+    int count = 0;
+    while ((x & 1) == 0)
+    {
+        x >>= 1;
+        count++;
+    }
+    return count;
+#endif
+}
 
 // undef region
 #undef EXTERNC

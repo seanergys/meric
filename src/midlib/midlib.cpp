@@ -1,5 +1,3 @@
-#include "midlib.h"
-
 #include <vector>
 #include <map>
 #include <string>
@@ -10,6 +8,9 @@
 #include <omp.h>
 #include <stdbool.h>
 
+
+#include "midlib.h"
+#include "../basis/utils.h"
 #include "../basis/cpu_optimisations.h"
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/a64fxwrapper.h"
