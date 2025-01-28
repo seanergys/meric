@@ -46,11 +46,11 @@ EXTERNC void midlib_close(MidlibEnergyDomains *enabled_domains);
 
 EXTERNC void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains);
 EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains);
-EXTERNC const char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
+EXTERNC char *midlib_get_counter_label(MidlibEnergyDomains *enabled_domains, const char *counter);
+EXTERNC char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
 
 // ******** DO WE NEED THESE??? ********
 // EXTERNC double midlib_get_result_value(MidlibEnergyDomains *enabled_domains, unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *counter);
-// EXTERNC void midlib_get_counter_label(MidlibEnergyDomains *enabled_domains, const char *counter);
 // EXTERNC void midlib_get_counter_values(unsigned long long *record);
 // EXTERNC void midlib_get_number_of_counters(unsigned int *num);
 

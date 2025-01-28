@@ -61,7 +61,6 @@ template void close<meric::NVML>();
 // template void close<meric::ROCM>();
 // template void close<meric::HDEEM>();
 
-
 // template <typename Tmode>
 // static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter)
 // {
@@ -73,24 +72,6 @@ template void close<meric::NVML>();
 // template double getResultValue<meric::NVML>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
 // template double getResultValue<meric::ROCM>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
 // template double getResultValue<meric::HDEEM>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
-
-
-// template <typename Tmode>
-// static char *getCounterLabel(const char *counter)
-// {
-//     std::string str_counter{counter};
-//     std::string result = Tmode::getCounterLabel(str_counter);
-//     char *c_str = new char[result.size() + 1]; // +1 for null terminator
-//     std::copy(result.begin(), result.end(), c_str);
-//     c_str[result.size()] = '\0'; // Null-terminate the string
-//     return c_str;
-// }
-
-// template char *getCounterLabel<meric::A64FX>(const char *counter);
-// template char *getCounterLabel<meric::RAPL>(const char *counter);
-// template char *getCounterLabel<meric::NVML>(const char *counter);
-// template std::string getCounterLabel<meric::ROCM>(const char* counter);
-// template std::string getCounterLabel<meric::HDEEM>(const char* counter);
 
 template <typename Tmode>
 static void printValues(bool verbose)
@@ -152,6 +133,22 @@ template void printValues<meric::NVML>(bool);
 // template void printValues<meric::ROCM>(bool);
 // template void printValues<meric::HDEEM>(bool);
 
+template <typename Tmode>
+static char *getCounterLabel(const char *counter)
+{
+    std::string str_counter{counter};
+    std::string result = Tmode::getCounterLabel(str_counter);
+    char *c_str = new char[result.size() + 1]; // +1 for null terminator
+    std::copy(result.begin(), result.end(), c_str);
+    c_str[result.size()] = '\0'; // Null-terminate the string
+    return c_str;
+}
+template char *getCounterLabel<meric::A64FX>(const char *counter);
+template char *getCounterLabel<meric::RAPL>(const char *counter);
+template char *getCounterLabel<meric::NVML>(const char *counter);
+// template std::string getCounterLabel<meric::ROCM>(const char* counter);
+// template std::string getCounterLabel<meric::HDEEM>(const char* counter);
+
 void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
@@ -168,7 +165,7 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = NULL;
         enabled_domains->printMeasurementFns[index] = NULL;
         enabled_domains->closeFns[index] = NULL;
-        // enabled_domains->counterLabelFNs[index] = NULL;
+        enabled_domains->counterLabelFNs[index] = NULL;
         // enabled_domains->getResultValueFNs[index] = NULL;
     }
 
@@ -178,7 +175,7 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::A64FX>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
-        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::A64FX>;
+        enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::A64FX>;
         // enabled_domains->getResultValueFNs[index] = getResultValue<meric::A64FX>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::RAPL)))
@@ -187,7 +184,7 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::RAPL>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
-        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::RAPL>;
+        enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::RAPL>;
         // enabled_domains->getResultValueFNs[index] = getResultValue<meric::RAPL>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::NVML)))
@@ -196,7 +193,7 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::NVML>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
-        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::NVML>
+        enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::NVML>;
         // enabled_domains->getResultValueFNs[index] = getResultValue<meric::NVML>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::ROCM)))
@@ -250,6 +247,43 @@ static const char *printDomainName(unsigned int value)
         return "Unknown Domain";
         break;
     }
+}
+
+char *midlib_get_counter_label(MidlibEnergyDomains *enabled_domains, const char *counter)
+{
+    // use string for ease of use, copy to heap allocated char array at the end.
+    std::string buffer = "";
+
+    for (unsigned int domain = 1; domain < MidlibEnergyDomains::END; domain <<= 1)
+    {
+        if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        {
+            int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
+            if (enabled_domains->counterLabelFNs[index])
+            {
+                char *result = enabled_domains->counterLabelFNs[index](counter);
+
+                // Append the result to the buffer
+                buffer += result;
+                buffer += ", ";
+
+                // Free the dynamically allocated memory
+                delete[] result;
+            }
+        }
+    }
+
+    // Remove the trailing ", " if present
+    if (!buffer.empty() && buffer.back() == ' ')
+    {
+        buffer.pop_back(); // Remove the last space
+        buffer.pop_back(); // Remove the last comma
+    }
+
+    char *c_str = (char *)malloc(buffer.size() + 1); // +1 for null terminator
+    std::copy(buffer.begin(), buffer.end(), c_str);
+    c_str[buffer.size()] = '\0'; // Null-terminate the string
+    return c_str;
 }
 
 void midlib_close(MidlibEnergyDomains *enabled_domains)
@@ -315,13 +349,10 @@ void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains)
 //     }
 // }
 
-const char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains)
+char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains)
 {
-    // Static buffer that persists across function calls
-    static std::string buffer;
-
-    // Clear the buffer for the new result
-    buffer.clear();
+    // use string for ease of use, copy to heap allocated char array at the end.
+    std::string buffer = "";
 
     // Check if no domains are selected
     if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
@@ -359,6 +390,8 @@ const char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains
         buffer.pop_back(); // Remove the last comma
     }
 
-    // Return a C-compatible char* pointer
-    return buffer.c_str();
+    char *c_str = (char *)malloc(buffer.size() + 1); // +1 for null terminator
+    std::copy(buffer.begin(), buffer.end(), c_str);
+    c_str[buffer.size()] = '\0'; // Null-terminate the string
+    return c_str;
 }
