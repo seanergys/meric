@@ -8,7 +8,6 @@
 #include <omp.h>
 #include <stdbool.h>
 
-
 #include "midlib.h"
 #include "../basis/utils.h"
 #include "../basis/cpu_optimisations.h"
@@ -19,7 +18,6 @@
 #include "../wrapper/rocmwrapper.h"
 #include "../wrapper/hdeemwrapper.h"
 #include "../basis/cpu_optimisations.h"
-
 
 #define POWER_BASELINE 0
 static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
@@ -52,8 +50,6 @@ template void measureEnergy<meric::NVML>(bool, double);
 // template void measureEnergy<meric::ROCM>(bool, double);
 // template void measureEnergy<meric::HDEEM>(bool, double);
 
-
-
 template <typename Tmode>
 static void close()
 {
@@ -66,6 +62,35 @@ template void close<meric::NVML>();
 // template void close<meric::HDEEM>();
 
 
+// template <typename Tmode>
+// static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter)
+// {
+//     std::string counter{c_counter};
+//     return Tmode::getResultValue(startValue, stopValue, runtime, *cumulative, counter);
+// }
+// template double getResultValue<meric::A64FX>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
+// template double getResultValue<meric::RAPL>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
+// template double getResultValue<meric::NVML>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
+// template double getResultValue<meric::ROCM>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
+// template double getResultValue<meric::HDEEM>(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *c_counter);
+
+
+// template <typename Tmode>
+// static char *getCounterLabel(const char *counter)
+// {
+//     std::string str_counter{counter};
+//     std::string result = Tmode::getCounterLabel(str_counter);
+//     char *c_str = new char[result.size() + 1]; // +1 for null terminator
+//     std::copy(result.begin(), result.end(), c_str);
+//     c_str[result.size()] = '\0'; // Null-terminate the string
+//     return c_str;
+// }
+
+// template char *getCounterLabel<meric::A64FX>(const char *counter);
+// template char *getCounterLabel<meric::RAPL>(const char *counter);
+// template char *getCounterLabel<meric::NVML>(const char *counter);
+// template std::string getCounterLabel<meric::ROCM>(const char* counter);
+// template std::string getCounterLabel<meric::HDEEM>(const char* counter);
 
 template <typename Tmode>
 static void printValues(bool verbose)
@@ -127,7 +152,6 @@ template void printValues<meric::NVML>(bool);
 // template void printValues<meric::ROCM>(bool);
 // template void printValues<meric::HDEEM>(bool);
 
-
 void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
@@ -144,6 +168,8 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = NULL;
         enabled_domains->printMeasurementFns[index] = NULL;
         enabled_domains->closeFns[index] = NULL;
+        // enabled_domains->counterLabelFNs[index] = NULL;
+        // enabled_domains->getResultValueFNs[index] = NULL;
     }
 
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::A64FX)))
@@ -152,6 +178,8 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::A64FX>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
+        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::A64FX>;
+        // enabled_domains->getResultValueFNs[index] = getResultValue<meric::A64FX>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::RAPL)))
     {
@@ -159,6 +187,8 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::RAPL>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
+        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::RAPL>;
+        // enabled_domains->getResultValueFNs[index] = getResultValue<meric::RAPL>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::NVML)))
     {
@@ -166,24 +196,61 @@ void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
         enabled_domains->printMeasurementFns[index] = printValues<meric::NVML>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
+        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::NVML>
+        // enabled_domains->getResultValueFNs[index] = getResultValue<meric::NVML>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::ROCM)))
     {
-        perror("ROCM Has not yet been implemented\n!");        
+        perror("ROCM Has not yet been implemented\n!");
         // int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::ROCM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
         // enabled_domains->printMeasurementFns[index] = printValues<meric::ROCM>;
         // enabled_domains->closeFns[index] = close<meric::ROCM>;
+        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::ROCM>;
+        // enabled_domains->getResultValueFNs[index] = getResultValue<meric::ROCM>;
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::HDEEM)))
     {
-        perror("HDEEM Has not yet been implemented\n!");        
+        perror("HDEEM Has not yet been implemented\n!");
         // int index = meric::mutils::countTrailingZeros(MidlibEnergyDomains::HDEEM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
         // enabled_domains->printMeasurementFns[index] = printValues<meric::HDEEM>;
         // enabled_domains->closeFns[index] = close<meric::HDEEM>;
+        // enabled_domains->counterLabelFNs[index] = getCounterLabel<meric::HDEEM>;
+        // enabled_domains->getResultValueFNs[index] = getResultValue<meric::HDEEM>;
     }
-} 
+}
+
+static const char *printDomainName(unsigned int value)
+{
+    switch (value)
+    {
+    case MidlibEnergyDomains::A64FX:
+        return "A64FX";
+        break;
+    case MidlibEnergyDomains::RAPL:
+        return "RAPL";
+        break;
+    case MidlibEnergyDomains::NVML:
+        return "NVML";
+        break;
+    case MidlibEnergyDomains::ROCM:
+        return "ROCM";
+        break;
+    case MidlibEnergyDomains::HDEEM:
+        return "HDEEM";
+        break;
+    case MidlibEnergyDomains::END:
+        return "END";
+        break;
+    case MidlibEnergyDomains::NO_SELECTION:
+        return "NO_SELECTION";
+        break;
+    default:
+        return "Unknown Domain";
+        break;
+    }
+}
 
 void midlib_close(MidlibEnergyDomains *enabled_domains)
 {
@@ -195,7 +262,7 @@ void midlib_close(MidlibEnergyDomains *enabled_domains)
             if (enabled_domains->closeFns[index])
             {
                 enabled_domains->closeFns[index]();
-                printf("Domain %s is closed.\n", midlib_printDomainName(domain));
+                printf("Domain %s is closed.\n", printDomainName(domain));
             }
         }
     }
@@ -207,7 +274,7 @@ void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains)
     {
         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
-            printf("Domain %s is enabled.\n", midlib_printDomainName(domain));
+            printf("Domain %s is enabled.\n", printDomainName(domain));
 
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
@@ -232,34 +299,66 @@ void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains)
         }
     }
 }
-// Function to print the corresponding enum name based on the value
-const char* midlib_printDomainName(unsigned int value)
+
+// double midlib_get_result_value(MidlibEnergyDomains *enabled_domains, unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *counter)
+// {
+//     for (unsigned int domain = 1; domain < MidlibEnergyDomains::END; domain <<= 1)
+//     {
+//         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+//         {
+//             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
+//             if (enabled_domains->energyMeasurementFns[index])
+//             {
+//                 return enabled_domains->getResultValueFNs[index](startValue, stopValue, runtime, cumulative, counter);
+//             }
+//         }
+//     }
+// }
+
+const char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains)
 {
-    switch(value)
+    // Static buffer that persists across function calls
+    static std::string buffer;
+
+    // Clear the buffer for the new result
+    buffer.clear();
+
+    // Check if no domains are selected
+    if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
-        case MidlibEnergyDomains::A64FX:
-            return "A64FX";
-            break;
-        case MidlibEnergyDomains::RAPL:
-            return "RAPL";
-            break;
-        case MidlibEnergyDomains::NVML:
-            return "NVML";
-            break;
-        case MidlibEnergyDomains::ROCM:
-            return "ROCM";
-            break;
-        case MidlibEnergyDomains::HDEEM:
-            return "HDEEM";
-            break;
-        case MidlibEnergyDomains::END:
-            return "END";
-            break;
-        case MidlibEnergyDomains::NO_SELECTION:
-            return "NO_SELECTION";
-            break;
-        default:
-            return "Unknown Domain";
-            break;
+        buffer = "NO_SELECTION";
+        return const_cast<char *>(buffer.c_str());
     }
+
+    // Append domain names for matches
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::A64FX)))
+    {
+        buffer += "A64FX, ";
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::RAPL)))
+    {
+        buffer += "RAPL, ";
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::NVML)))
+    {
+        buffer += "NVML, ";
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::ROCM)))
+    {
+        buffer += "ROCM, ";
+    }
+    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergyDomains::HDEEM)))
+    {
+        buffer += "HDEEM, ";
+    }
+
+    // Remove the trailing ", " if present
+    if (!buffer.empty() && buffer.back() == ' ')
+    {
+        buffer.pop_back(); // Remove the last space
+        buffer.pop_back(); // Remove the last comma
+    }
+
+    // Return a C-compatible char* pointer
+    return buffer.c_str();
 }

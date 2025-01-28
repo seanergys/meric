@@ -1,6 +1,6 @@
 #ifndef SRC_MIDLIB_MIDLIB_H_
 #define SRC_MIDLIB_MIDLIB_H_
- 
+
 #include <stdbool.h>
 
 typedef struct MidlibEnergyDomains
@@ -17,9 +17,11 @@ typedef struct MidlibEnergyDomains
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[5])(bool, double); // Function pointers to energy measurements for enabled domains
-    void (*printMeasurementFns[5])(bool);          // Function pointers to printing measurements for enabled domains
-    void (*closeFns[5])();                         // Close enabled domains
+    void (*energyMeasurementFns[5])(bool, double);                                                           // Function pointers to energy measurements for enabled domains
+    void (*printMeasurementFns[5])(bool);                                                                    // Function pointers to printing measurements for enabled domains
+    void (*closeFns[5])();                                                                                   // Close enabled domains
+    char *(*counterLabelFNs[5])(const char *);                                                               // Get counter labels for enabled domains
+    // double (*getResultValueFNs[5])(unsigned long long, unsigned long long, double, int *, const char *); // Get counter labels for enabled domains
 
 } MidlibEnergyDomains;
 
@@ -27,7 +29,11 @@ typedef struct MidlibEnergyDomains
 #define MIDLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
 #define MIDLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
 #define MIDLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
+#ifdef __cplusplus
 #define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == MidlibEnergyDomains::NO_SELECTION)
+#else
+#define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == NO_SELECTION)
+#endif
 
 #ifdef __cplusplus
 #define EXTERNC extern "C"
@@ -36,17 +42,17 @@ typedef struct MidlibEnergyDomains
 #endif
 
 EXTERNC void midlib_init(MidlibEnergyDomains *enabled_domains, bool is_detailed);
-EXTERNC void midlib_close(MidlibEnergyDomains *enabled_domains); 
+EXTERNC void midlib_close(MidlibEnergyDomains *enabled_domains);
 
 EXTERNC void midlib_read_energy_measurements(MidlibEnergyDomains *enabled_domains);
 EXTERNC void midlib_print_energy_measurements(MidlibEnergyDomains *enabled_domains);
-EXTERNC const char* midlib_printDomainName(unsigned int value);
+EXTERNC const char *midlib_get_enabled_domain_names(MidlibEnergyDomains *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
 
 // ******** DO WE NEED THESE??? ********
-// EXTERNC void midlib_getCounterValues(unsigned long long *record);
-// EXTERNC void midlib_getCounterLabel(int id, char *label);
-// EXTERNC void midlib_getNumberOfCounters(unsigned int *num);
-// EXTERNC double midlib_getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, int counterID);
+// EXTERNC double midlib_get_result_value(MidlibEnergyDomains *enabled_domains, unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *counter);
+// EXTERNC void midlib_get_counter_label(MidlibEnergyDomains *enabled_domains, const char *counter);
+// EXTERNC void midlib_get_counter_values(unsigned long long *record);
+// EXTERNC void midlib_get_number_of_counters(unsigned int *num);
 
 // undef region
 #undef EXTERNC
