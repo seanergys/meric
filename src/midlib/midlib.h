@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>  // Include this header for uint64_t
 
-
 /*
     Return timestemp per call,
     add c++ methods to calculate (subtract) 2 timestemp provided to return the actual value, thus it will be supported for nasted versions.
@@ -14,12 +13,21 @@
 // return this timestamp upon calling for an energy reading.
 struct MidlibEnergyTimeStamp
 {
-    // energy domains
-    uint64_t a64fx;
-    uint64_t rapl;
-    uint64_t nvml;
-    uint64_t rocm;
-    uint64_t hdeem;
+    double id;
+    uint64_t* a64fx;  // pointers for an array.    
+    size_t a64fx_arr_size;
+
+    uint64_t* rapl;   // pointers for an array.
+    size_t rapl_arr_size;
+
+    uint64_t* nvml;   // pointers for an array.
+    size_t nvml_arr_size;
+
+    uint64_t* rocm;   // pointers for an array.
+    size_t rocm_arr_size;
+
+    uint64_t* hdeem;  // pointers for an array.    
+    size_t hdeem_arr_size;
 };
 
 typedef struct MidlibEnergy
@@ -36,7 +44,7 @@ typedef struct MidlibEnergy
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[5])(bool, double); // Function pointers to energy measurements for enabled domains
+    uint64_t* (*energyMeasurementFns[5])(size_t*, double); // Function pointers to energy measurements for enabled domains
     void (*printMeasurementFns[5])(bool);          // Function pointers to printing measurements for enabled domains
     void (*closeFns[5])();                         // Close enabled domains
     char *(*counterLabelFNs[5])(const char *);     // Get counter labels for enabled domains
@@ -63,7 +71,9 @@ typedef struct MidlibEnergy
 EXTERNC void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed);
 EXTERNC void midlib_close(MidlibEnergy *enabled_domains);
 
-EXTERNC MidlibEnergyTimeStamp midlib_read_energy_measurements(MidlibEnergy *enabled_domains);
+EXTERNC struct MidlibEnergyTimeStamp* midlib_read_energy_measurements(MidlibEnergy *enabled_domains);
+EXTERNC void midlib_print_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit);
+EXTERNC void midlib_free_timestamp(struct MidlibEnergyTimeStamp *timestamp);
 
 EXTERNC void midlib_print_energy_measurements(MidlibEnergy *enabled_domains);
 EXTERNC char *midlib_get_counter_label(MidlibEnergy *enabled_domains, const char *counter);

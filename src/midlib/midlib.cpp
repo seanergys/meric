@@ -24,12 +24,13 @@ static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
 static std::vector<double> recordTime;
 
 template <typename Tmode>
-static void measureEnergy(bool verbose, double timeNow = 0.0)
+static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0)
 {
     if (recordEnergy.empty())
     {
         printf("Initializing energy counters...\n");
         Tmode::init(true);
+        printf("Initializing energy counters [OK]\n");
     }
 
     if (timeNow == 0.0)
@@ -40,15 +41,30 @@ static void measureEnergy(bool verbose, double timeNow = 0.0)
     }
     std::map<std::string, unsigned long long int> energyNow;
     Tmode::getCounterValues(energyNow);
-
     recordEnergy.push_back(energyNow);
     recordTime.push_back(timeNow);
+
+    for (const auto &entry : energyNow)
+    {
+        std::cout << entry.first << " --> " << entry.second << "\n";
+    }
+
+    *size = energyNow.size();
+    uint64_t *result = (uint64_t *)malloc(energyNow.size() * sizeof(uint64_t));
+    int i = 0;
+    for (const auto &entry : energyNow)
+    {
+        result[i] = entry.second; // Store the value (unsigned long long)
+        i++;
+    }
+    return result;
 }
-template void measureEnergy<meric::A64FX>(bool, double);
-template void measureEnergy<meric::RAPL>(bool, double);
-template void measureEnergy<meric::NVML>(bool, double);
-// template void measureEnergy<meric::ROCM>(bool, double);
-// template void measureEnergy<meric::HDEEM>(bool, double);
+
+template uint64_t *measureEnergy<meric::A64FX>(size_t *, double);
+template uint64_t *measureEnergy<meric::RAPL>(size_t *, double);
+template uint64_t *measureEnergy<meric::NVML>(size_t *, double);
+// template uint64_t* measureEnergy<meric::ROCM>(size_t*, double);
+// template uint64_t* measureEnergy<meric::HDEEM>(size_t*, double);
 
 template <typename Tmode>
 static void close()
@@ -153,7 +169,7 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
-        perror("Midlib No Domain Selected!");
+        perror("Midlib No Domain Selected!\n");
         return;
     }
 
@@ -198,7 +214,7 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
     {
-        perror("ROCM Has not yet been implemented\n!");
+        perror("ROCM Has not yet been implemented!\n");
         // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
         // enabled_domains->printMeasurementFns[index] = printValues<meric::ROCM>;
@@ -208,7 +224,7 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
     {
-        perror("HDEEM Has not yet been implemented\n!");
+        perror("HDEEM Has not yet been implemented!\n");
         // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
         // enabled_domains->printMeasurementFns[index] = printValues<meric::HDEEM>;
@@ -295,51 +311,130 @@ void midlib_close(MidlibEnergy *enabled_domains)
             if (enabled_domains->closeFns[index])
             {
                 enabled_domains->closeFns[index]();
-                printf("Domain %s is closed.\n", printDomainName(domain));
+                printf("Domain %s is closed [OK]\n", printDomainName(domain));
             }
         }
     }
 }
 
-MidlibEnergyTimeStamp midlib_read_energy_measurements(MidlibEnergy *enabled_domains)
+MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_domains)
 {
-    MidlibEnergyTimeStamp timestamp;
+    struct MidlibEnergyTimeStamp *timestamp = (struct MidlibEnergyTimeStamp *)malloc(sizeof(struct MidlibEnergyTimeStamp));
+    memset(timestamp, 0, sizeof(struct MidlibEnergyTimeStamp)); // Correct: clears struct fields
+    struct timespec tt;
+    clock_gettime(CLOCK_REALTIME, &tt);
+    timestamp->id = meric::mutils::timeToDouble(tt);
+
     for (unsigned int domain = 1; domain < MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
         if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
-            printf("Domain %s is enabled.\n", printDomainName(domain));
-
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
             {
-                enabled_domains->energyMeasurementFns[index](true, 0.0);
-                
-                // uint64_t energy_value = enabled_domains->energyMeasurementFns[index](true, 0.0);
-                // switch (domain)
-                // {
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
-                //     timestamp.a64fx = energy_value;
-                //     break;
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
-                //     timestamp.rapl = energy_value;
-                //     break;
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
-                //     timestamp.nvml = energy_value;
-                //     break;
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
-                //     timestamp.rocm = energy_value;
-                //     break;
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
-                //     timestamp.hdeem = energy_value;
-                //     break;
-                // default:
-                //     break;
-                // }
+                size_t arr_size;
+                uint64_t *energy_value = enabled_domains->energyMeasurementFns[index](&arr_size, 0.0);
+                switch (domain)
+                {
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
+                    timestamp->a64fx = energy_value;
+                    timestamp->a64fx_arr_size = arr_size;
+                    printf("size is:%d\n", arr_size);
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
+                    timestamp->rapl = energy_value;
+                    timestamp->rapl_arr_size = arr_size;
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
+                    timestamp->nvml = energy_value;
+                    timestamp->nvml_arr_size = arr_size;
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
+                    timestamp->rocm = energy_value;
+                    timestamp->rocm_arr_size = arr_size;
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
+                    timestamp->hdeem = energy_value;
+                    timestamp->hdeem_arr_size = arr_size;
+                    break;
+                default:
+                    break;
+                }
             }
+
+            printf("Energy is read from Domain %s [OK]\n", printDomainName(domain));
         }
     }
     return timestamp;
+}
+
+// Helper function to print an array with a limit on the number of elements printed
+static void print_array(const char *name, uint64_t *arr, size_t size, size_t print_limit)
+{
+    printf("| %-15s (size: %zu): ", name, size);
+
+    if (arr == NULL || size == 0)
+    {
+        printf("NULL or empty array\n");
+        return;
+    }
+
+    printf("[");
+
+    print_limit = print_limit == -1 ? size : print_limit;
+    for (size_t i = 0; i < size && i < print_limit; ++i)
+    {
+        printf("%lu", arr[i]);
+        if (i < size - 1 && i < print_limit - 1)
+        {
+            printf(", ");
+        }
+    }
+
+    if (size > print_limit)
+    {
+        printf(", ..."); // Indicate that there are more elements
+    }
+
+    printf("]\n");
+}
+
+void midlib_print_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit)
+{
+    if (OPT_UNLIKELY(timestamp == NULL))
+    {
+        perror("Error: NULL timestamp\n");
+        return;
+    }
+    // Print pointer addresses and array sizes
+    printf("------- MidlibEnergyTimeStamp (id: %.4f) -------\n", timestamp->id);
+
+    print_array("a64fx", timestamp->a64fx, timestamp->a64fx_arr_size, print_limit);
+    print_array("rapl", timestamp->rapl, timestamp->rapl_arr_size, print_limit);
+    print_array("nvml", timestamp->nvml, timestamp->nvml_arr_size, print_limit);
+    print_array("rocm", timestamp->rocm, timestamp->rocm_arr_size, print_limit);
+    print_array("hdeem", timestamp->hdeem, timestamp->hdeem_arr_size, print_limit);
+
+    printf("-----------------------------------\n");
+}
+
+void midlib_free_timestamp(struct MidlibEnergyTimeStamp *timestamp)
+{
+    if (OPT_UNLIKELY(timestamp == NULL))
+        return;
+
+    if (OPT_LIKELY(timestamp->a64fx != NULL))
+        free(timestamp->a64fx);
+    if (OPT_LIKELY(timestamp->rapl != NULL))
+        free(timestamp->rapl);
+    if (OPT_LIKELY(timestamp->nvml != NULL))
+        free(timestamp->nvml);
+    if (OPT_LIKELY(timestamp->rocm != NULL))
+        free(timestamp->rocm);
+    if (OPT_LIKELY(timestamp->hdeem != NULL))
+        free(timestamp->hdeem);
+
+    memset(timestamp, 0, sizeof(struct MidlibEnergyTimeStamp)); // Correct: clears struct fields
 }
 
 void midlib_print_energy_measurements(MidlibEnergy *enabled_domains)
