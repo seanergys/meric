@@ -10,10 +10,15 @@
 
 */
 
+#define MIDLIB_NUM_DOMAINS 5
 // return this timestamp upon calling for an energy reading.
 struct MidlibEnergyTimeStamp
 {
     double id;
+
+    // TODO: convert these to a structure of an array, get size from MIDLIB_NUM_DOMAINS, use countTrailingZeros(domain) to get the corresponding index.
+    // TODO: this will simplify the free_timestamp drastically, also simplify midlib_calc_energy_consumption.. 
+    
     size_t a64fx_arr_size;            // same for each array below.
     char **a64fx_counter_name;        // counter names
     uint64_t *a64fx_counter_value;    // counter values (need to be converted to joules)
@@ -46,7 +51,7 @@ struct MidlibEnergyTimeStamp
 
     double energy_total;
 };
-
+ 
 typedef struct MidlibEnergy
 {
     enum Domains
@@ -60,9 +65,9 @@ typedef struct MidlibEnergy
         MIDLIB_ENERGY_DOMAIN_END = 1 << 5      // 100000 END of Domains.
     };
     unsigned int value;
-    
-    void (*energyMeasurementFns[5])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[5])();                                            // Close enabled domains
+
+    void (*energyMeasurementFns[MIDLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[MIDLIB_NUM_DOMAINS])();                                            // Close enabled domains
 
 } MidlibEnergy;
 
