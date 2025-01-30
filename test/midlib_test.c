@@ -12,8 +12,7 @@ int main(int argc, char **argv)
     MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_A64FX);
     MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
  
-    // MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, NVML);
-    // printf("enabled domains: %s\n",midlib_get_enabled_domain_names(&energy_domains));
+    printf("enabled domains: %s\n",midlib_get_enabled_domain_names(&energy_domains));
 
     midlib_init(&energy_domains, true);
 
@@ -26,19 +25,26 @@ int main(int argc, char **argv)
     // return 0;
 
     struct MidlibEnergyTimeStamp * ts = midlib_read_energy_measurements(&energy_domains);
-    midlib_print_timestamp(ts,5);
-    midlib_free_timestamp(ts);
+    midlib_print_energy_timestamp(ts,5);
+    // midlib_free_energy_timestamp(ts);
 
 
 #pragma omp parallel
     do_work(10.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
-    printf("***** AFTER PARALLEL SESSION ******\n");
+    // printf("***** AFTER PARALLEL SESSION ******\n");
     struct MidlibEnergyTimeStamp * ts2 = midlib_read_energy_measurements(&energy_domains);
-    midlib_print_timestamp(ts2,5);
-    midlib_free_timestamp(ts2);
+    midlib_print_energy_timestamp(ts2,5);
+    // midlib_free_energy_timestamp(ts2);
 
-    // midlib_print_energy_measurements(&energy_domains);
+    struct MidlibEnergyTimeStamp * result = midlib_calc_energy_consumption(ts, ts2);
+    midlib_print_energy_timestamp(result, 5);
+
+
+    midlib_free_energy_timestamp(ts);
+    midlib_free_energy_timestamp(ts2);
+    midlib_free_energy_timestamp(result);
+    
     midlib_close(&energy_domains);
     return 0;
 }

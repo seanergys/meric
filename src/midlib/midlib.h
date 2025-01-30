@@ -2,7 +2,7 @@
 #define SRC_MIDLIB_MIDLIB_H_
 
 #include <stdbool.h>
-#include <stdint.h>  // Include this header for uint64_t
+#include <stdint.h> // Include this header for uint64_t
 
 /*
     Return timestemp per call,
@@ -14,20 +14,37 @@
 struct MidlibEnergyTimeStamp
 {
     double id;
-    uint64_t* a64fx;  // pointers for an array.    
-    size_t a64fx_arr_size;
+    size_t a64fx_arr_size;            // same for each array below.
+    char **a64fx_counter_name;        // counter names
+    uint64_t *a64fx_counter_value;    // counter values (need to be converted to joules)
+    double *a64fx_energy_per_counter; // consumed energy per counter
+    double a64fx_energy_total;        // total energy
 
-    uint64_t* rapl;   // pointers for an array.
-    size_t rapl_arr_size;
+    size_t rapl_arr_size;            // same for each array below.
+    char **rapl_counter_name;        // counter names
+    uint64_t *rapl_counter_value;    // counter values (need to be converted to joules)
+    double *rapl_energy_per_counter; // consumed energy per counter
+    double rapl_energy_total;        // total energy
 
-    uint64_t* nvml;   // pointers for an array.
-    size_t nvml_arr_size;
+    size_t nvml_arr_size;            // same for each array below.
+    char **nvml_counter_name;        // counter names
+    uint64_t *nvml_counter_value;    // counter values (need to be converted to joules)
+    double *nvml_energy_per_counter; // consumed energy per counter
+    double nvml_energy_total;        // total energy
 
-    uint64_t* rocm;   // pointers for an array.
-    size_t rocm_arr_size;
+    size_t rocm_arr_size;            // same for each array below.
+    char **rocm_counter_name;        // counter names
+    uint64_t *rocm_counter_value;    // counter values (need to be converted to joules)
+    double *rocm_energy_per_counter; // consumed energy per counter
+    double rocm_energy_total;        // total energy
 
-    uint64_t* hdeem;  // pointers for an array.    
-    size_t hdeem_arr_size;
+    size_t hdeem_arr_size;            // same for each array below.
+    char **hdeem_counter_name;        // counter names
+    uint64_t *hdeem_counter_value;    // counter values (need to be converted to joules)
+    double *hdeem_energy_per_counter; // consumed energy per counter
+    double hdeem_energy_total;        // total energy
+
+    double energy_total;
 };
 
 typedef struct MidlibEnergy
@@ -43,12 +60,9 @@ typedef struct MidlibEnergy
         MIDLIB_ENERGY_DOMAIN_END = 1 << 5      // 100000 END of Domains.
     };
     unsigned int value;
-
-    uint64_t* (*energyMeasurementFns[5])(size_t*, double); // Function pointers to energy measurements for enabled domains
-    void (*printMeasurementFns[5])(bool);          // Function pointers to printing measurements for enabled domains
-    void (*closeFns[5])();                         // Close enabled domains
-    char *(*counterLabelFNs[5])(const char *);     // Get counter labels for enabled domains
-    // double (*getResultValueFNs[5])(unsigned long long, unsigned long long, double, int *, const char *); // Get counter labels for enabled domains
+    
+    void (*energyMeasurementFns[5])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[5])();                                            // Close enabled domains
 
 } MidlibEnergy;
 
@@ -71,18 +85,13 @@ typedef struct MidlibEnergy
 EXTERNC void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed);
 EXTERNC void midlib_close(MidlibEnergy *enabled_domains);
 
-EXTERNC struct MidlibEnergyTimeStamp* midlib_read_energy_measurements(MidlibEnergy *enabled_domains);
-EXTERNC void midlib_print_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit);
-EXTERNC void midlib_free_timestamp(struct MidlibEnergyTimeStamp *timestamp);
+EXTERNC struct MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_domains);
+EXTERNC void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit);
+EXTERNC void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp);
 
-EXTERNC void midlib_print_energy_measurements(MidlibEnergy *enabled_domains);
-EXTERNC char *midlib_get_counter_label(MidlibEnergy *enabled_domains, const char *counter);
 EXTERNC char *midlib_get_enabled_domain_names(MidlibEnergy *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
 
-
-// EXTERNC double midlib_get_result_value(MidlibEnergy *enabled_domains, unsigned long long startValue, unsigned long long stopValue, double runtime, int *cumulative, const char *counter);
-// EXTERNC void midlib_get_counter_values(unsigned long long *record);
-// EXTERNC void midlib_get_number_of_counters(unsigned int *num);
+EXTERNC struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergyTimeStamp *begin, struct MidlibEnergyTimeStamp *end);
 
 // undef region
 #undef EXTERNC
