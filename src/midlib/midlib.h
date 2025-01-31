@@ -4,54 +4,25 @@
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
 
-/*
-    Return timestemp per call,
-    add c++ methods to calculate (subtract) 2 timestemp provided to return the actual value, thus it will be supported for nasted versions.
-
-*/
-
 #define MIDLIB_NUM_DOMAINS 5
-// return this timestamp upon calling for an energy reading.
 struct MidlibEnergyTimeStamp
 {
-    double id;
+    double id; // Timestamp identifier
 
-    // TODO: convert these to a structure of an array, get size from MIDLIB_NUM_DOMAINS, use countTrailingZeros(domain) to get the corresponding index.
-    // TODO: this will simplify the free_timestamp drastically, also simplify midlib_calc_energy_consumption.. 
-    
-    size_t a64fx_arr_size;            // same for each array below.
-    char **a64fx_counter_name;        // counter names
-    uint64_t *a64fx_counter_value;    // counter values (need to be converted to joules)
-    double *a64fx_energy_per_counter; // consumed energy per counter
-    double a64fx_energy_total;        // total energy
+    // Embedded DomainData structure for each domain (a64fx, rapl, nvml, rocm, hdeem)
+    struct
+    {
+        uint8_t domain_id;             // MIDLIB_ENERGY_DOMAIN_{A64FX, RAPL, NVML, ROCM, HDEEM...}
+        size_t arr_size;               // Number of counters in this domain
+        char **counter_name;           // Array of counter names
+        uint64_t *counter_value;       // Array of raw counter values
+        double *energy_per_counter;    // Energy per counter (joules)
+        double energy_total;           // Total energy for this domain
+    } domain_data[MIDLIB_NUM_DOMAINS]; // Array per domain (indexed by mutils::countTrailingZeros)
 
-    size_t rapl_arr_size;            // same for each array below.
-    char **rapl_counter_name;        // counter names
-    uint64_t *rapl_counter_value;    // counter values (need to be converted to joules)
-    double *rapl_energy_per_counter; // consumed energy per counter
-    double rapl_energy_total;        // total energy
-
-    size_t nvml_arr_size;            // same for each array below.
-    char **nvml_counter_name;        // counter names
-    uint64_t *nvml_counter_value;    // counter values (need to be converted to joules)
-    double *nvml_energy_per_counter; // consumed energy per counter
-    double nvml_energy_total;        // total energy
-
-    size_t rocm_arr_size;            // same for each array below.
-    char **rocm_counter_name;        // counter names
-    uint64_t *rocm_counter_value;    // counter values (need to be converted to joules)
-    double *rocm_energy_per_counter; // consumed energy per counter
-    double rocm_energy_total;        // total energy
-
-    size_t hdeem_arr_size;            // same for each array below.
-    char **hdeem_counter_name;        // counter names
-    uint64_t *hdeem_counter_value;    // counter values (need to be converted to joules)
-    double *hdeem_energy_per_counter; // consumed energy per counter
-    double hdeem_energy_total;        // total energy
-
-    double energy_total;
+    double energy_total; // Combined total energy across all domains
 };
- 
+
 typedef struct MidlibEnergy
 {
     enum Domains

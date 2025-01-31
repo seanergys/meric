@@ -28,15 +28,12 @@
 */
 struct MidlibEnergyTimeStamp *initEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
-static void printArray(const char *name, uint64_t *arr, size_t size, size_t print_limit);
-static void printArray(const char *name, char **arr, size_t size, size_t print_limit);
-static void printArray(const char *name, double *arr, size_t size, size_t print_limit);
 
 template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
 template <typename Tmode> static void close();
+template <typename T> static void printArray(const char *name, T *arr, size_t size, size_t print_limit);
 
 /* --------------------------------------------------------------- */
-
 
 template <typename Tmode>
 static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
@@ -85,6 +82,53 @@ template void close<meric::RAPL>();
 template void close<meric::NVML>();
 // template void close<meric::ROCM>();
 // template void close<meric::HDEEM>();
+
+template <typename T>
+static void printArray(const char *name, T *arr, size_t size, size_t print_limit)
+{
+    printf("| %-15s (size: %zu): ", name, size);
+
+    if (!arr || size == 0)
+    {
+        printf("NULL or empty array\n");
+        return;
+    }
+
+    printf("[");
+
+    print_limit = (print_limit == static_cast<size_t>(-1)) ? size : print_limit;
+    for (size_t i = 0; i < size && i < print_limit; ++i)
+    {
+        if (std::is_same<T, double>::value)
+        {
+            printf("%f", arr[i]); // Special format for doubles
+        }
+        else if (std::is_same<T, uint64_t>::value)
+        {
+            printf("%lu", arr[i]); // Format for uint64_t
+        }
+        else if (std::is_same<T, char*>::value)
+        {
+            printf("%s", arr[i]); // format for char* (string)
+        }
+
+        if (i < size - 1 && i < print_limit - 1)
+        {
+            printf(", ");
+        }
+    }
+
+    if (size > print_limit)
+    {
+        printf(", ..."); // Indicate truncated output
+    }
+
+    printf("]\n");
+}
+
+template void printArray<double>(const char *, double *, size_t, size_t);
+template void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
+template void printArray<char *>(const char *, char **, size_t, size_t);
 
 void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 {
@@ -178,7 +222,6 @@ static const char *printDomainName(unsigned int value)
     }
 }
 
-
 void midlib_close(MidlibEnergy *enabled_domains)
 {
     for (unsigned int domain = 1; domain < MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END; domain <<= 1)
@@ -211,36 +254,10 @@ MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_dom
                 char **counter_label;
                 enabled_domains->energyMeasurementFns[index](&arr_size, &counter_value, &counter_label);
 
-                switch (domain)
-                {
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
-                    timestamp->a64fx_counter_value = counter_value;
-                    timestamp->a64fx_counter_name = counter_label;
-                    timestamp->a64fx_arr_size = arr_size;
-                    break;
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
-                    timestamp->rapl_counter_value = counter_value;
-                    timestamp->rapl_counter_name = counter_label;
-                    timestamp->rapl_arr_size = arr_size;
-                    break;
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
-                    timestamp->nvml_counter_value = counter_value;
-                    timestamp->nvml_counter_name = counter_label;
-                    timestamp->nvml_arr_size = arr_size;
-                    break;
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
-                    timestamp->rocm_counter_value = counter_value;
-                    timestamp->rocm_counter_name = counter_label;
-                    timestamp->rocm_arr_size = arr_size;
-                    break;
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
-                    timestamp->hdeem_counter_value = counter_value;
-                    timestamp->hdeem_counter_name = counter_label;
-                    timestamp->hdeem_arr_size = arr_size;
-                    break;
-                default:
-                    break;
-                }
+                timestamp->domain_data[index].domain_id = domain;
+                timestamp->domain_data[index].arr_size = arr_size;
+                timestamp->domain_data[index].counter_name = counter_label;
+                timestamp->domain_data[index].counter_value = counter_value;
             }
 
             printf("Energy is read from Domain %s [OK]\n", printDomainName(domain));
@@ -249,103 +266,15 @@ MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_dom
     return timestamp;
 }
 
-// Helper function to print an array with a limit on the number of elements printed
-static void printArray(const char *name, uint64_t *arr, size_t size, size_t print_limit)
-{
-    printf("| %-15s (size: %zu): ", name, size);
-
-    if (arr == NULL || size == 0)
-    {
-        printf("NULL or empty array\n");
-        return;
-    }
-
-    printf("[");
-
-    print_limit = print_limit == -1 ? size : print_limit;
-    for (size_t i = 0; i < size && i < print_limit; ++i)
-    {
-        printf("%lu", arr[i]);
-        if (i < size - 1 && i < print_limit - 1)
-        {
-            printf(", ");
-        }
-    }
-
-    if (size > print_limit)
-    {
-        printf(", ..."); // Indicate that there are more elements
-    }
-
-    printf("]\n");
-}
-
-// Helper function to print an array with a limit on the number of elements printed
-static void printArray(const char *name, double *arr, size_t size, size_t print_limit)
-{
-    printf("| %-15s (size: %zu): ", name, size);
-
-    if (arr == NULL || size == 0)
-    {
-        printf("NULL or empty array\n");
-        return;
-    }
-
-    printf("[");
-
-    print_limit = print_limit == -1 ? size : print_limit;
-    for (size_t i = 0; i < size && i < print_limit; ++i)
-    {
-        printf("%f", arr[i]);
-        if (i < size - 1 && i < print_limit - 1)
-        {
-            printf(", ");
-        }
-    }
-
-    if (size > print_limit)
-    {
-        printf(", ..."); // Indicate that there are more elements
-    }
-
-    printf("]\n");
-}
-
-// Helper function to print an array with a limit on the number of elements printed
-static void printArray(const char *name, char **arr, size_t size, size_t print_limit)
-{
-    printf("| %-15s (size: %zu): ", name, size);
-
-    if (arr == NULL || size == 0)
-    {
-        printf("NULL or empty array\n");
-        return;
-    }
-
-    printf("[");
-
-    print_limit = print_limit == -1 ? size : print_limit;
-    for (size_t i = 0; i < size && i < print_limit; ++i)
-    {
-        printf("%s", arr[i]);
-        if (i < size - 1 && i < print_limit - 1)
-        {
-            printf(", ");
-        }
-    }
-
-    if (size > print_limit)
-    {
-        printf(", ..."); // Indicate that there are more elements
-    }
-
-    printf("]\n");
-}
-
-
 struct MidlibEnergyTimeStamp *initEnergyTimeStamp()
 {
     struct MidlibEnergyTimeStamp *energy_timestamp = (struct MidlibEnergyTimeStamp *)malloc(sizeof(struct MidlibEnergyTimeStamp));
+    if (OPT_UNLIKELY(energy_timestamp == NULL))
+    {
+        perror("Failed to allocate memory for the EnergyTimeStamp");
+        exit(EXIT_FAILURE);
+    }
+
     memset(energy_timestamp, 0, sizeof(struct MidlibEnergyTimeStamp)); // Correct: clears struct fields
 
     struct timespec tt;
@@ -354,9 +283,10 @@ struct MidlibEnergyTimeStamp *initEnergyTimeStamp()
     return energy_timestamp;
 }
 
-
 void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit)
 {
+
+#define MAX_DOMAIN_NAME_LENGTH 50 // Adjusted for "NO_SELECTION" and "Unknown Domain"
     if (OPT_UNLIKELY(timestamp == NULL))
     {
         perror("Error: NULL timestamp\n");
@@ -365,120 +295,68 @@ void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size
     // Print pointer addresses and array sizes
     printf("------- MidlibEnergyTimeStamp (id: %.4f) -------\n", timestamp->id);
 
-    printArray("a64fx_counter_name", timestamp->a64fx_counter_name, timestamp->a64fx_arr_size, print_limit);
-    printArray("a64fx_counter_value", timestamp->a64fx_counter_value, timestamp->a64fx_arr_size, print_limit);
-    printArray("a64fx_energy_per_counter", timestamp->a64fx_energy_per_counter, timestamp->a64fx_arr_size, print_limit);
-    printf("| a64fx_total_energy: %lf\n", timestamp->energy_total);
+    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    {
+        char domain_name_buffer[MAX_DOMAIN_NAME_LENGTH];
 
-    printf("|\n");
-    printArray("rapl_counter_name", timestamp->rapl_counter_name, timestamp->rapl_arr_size, print_limit);
-    printArray("rapl_counter_value", timestamp->rapl_counter_value, timestamp->rapl_arr_size, print_limit);
-    printArray("rapl_energy_per_counter", timestamp->rapl_energy_per_counter, timestamp->rapl_arr_size, print_limit);
-    printf("| rapl_total_energy: %lf\n", timestamp->rapl_energy_total);
+        const char *domain_name = printDomainName(timestamp->domain_data[i].domain_id);
 
-    printf("|\n");
-    printArray("nvml_counter_name", timestamp->nvml_counter_name, timestamp->nvml_arr_size, print_limit);
-    printArray("nvml_counter_value", timestamp->nvml_counter_value, timestamp->nvml_arr_size, print_limit);
-    printArray("nvml_energy_per_counter", timestamp->nvml_energy_per_counter, timestamp->nvml_arr_size, print_limit);
-    printf("| nvml_total_energy: %lf\n", timestamp->nvml_energy_total);
+        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_counter_name", domain_name);
+        printArray(domain_name_buffer, timestamp->domain_data[i].counter_name, timestamp->domain_data[i].arr_size, print_limit);
 
-    printf("|\n");
-    printArray("rocm_counter_name", timestamp->rocm_counter_name, timestamp->rocm_arr_size, print_limit);
-    printArray("rocm_counter_value", timestamp->rocm_counter_value, timestamp->rocm_arr_size, print_limit);
-    printArray("rocm_energy_per_counter", timestamp->rocm_energy_per_counter, timestamp->rocm_arr_size, print_limit);
-    printf("| rocm_total_energy: %lf\n", timestamp->rocm_energy_total);
+        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_counter_value", domain_name);
+        printArray(domain_name_buffer, timestamp->domain_data[i].counter_value, timestamp->domain_data[i].arr_size, print_limit);
 
-    printf("|\n");
-    printArray("hdeem_counter_name", timestamp->hdeem_counter_name, timestamp->hdeem_arr_size, print_limit);
-    printArray("hdeem_counter_value", timestamp->hdeem_counter_value, timestamp->hdeem_arr_size, print_limit);
-    printArray("hdeem_energy_per_counter", timestamp->hdeem_energy_per_counter, timestamp->hdeem_arr_size, print_limit);
-    printf("| hdeem_total_energy: %lf\n", timestamp->hdeem_energy_total);
-
-    printf("|\n");
+        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_energy_per_counter", domain_name);
+        printArray(domain_name_buffer, timestamp->domain_data[i].energy_per_counter, timestamp->domain_data[i].arr_size, print_limit);
+        printf("| %s_total_energy: %lf\n", domain_name, timestamp->domain_data[i].energy_total);
+        printf("|\n");
+    }
     printf("| Total_energy consumption: %lf [J]\n", timestamp->energy_total);
-
     printf("-----------------------------------\n");
+
+#undef MAX_DOMAIN_NAME_LENGTH
 }
- 
+
 void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
 {
-    if (OPT_UNLIKELY(timestamp == NULL))
-        return;
 
-    // Free a64fx arrays
-    if (OPT_LIKELY(timestamp->a64fx_counter_value != NULL))
-        free(timestamp->a64fx_counter_value);
-
-    if (OPT_LIKELY(timestamp->a64fx_energy_per_counter != NULL))
-        free(timestamp->a64fx_energy_per_counter);
-
-    if (OPT_LIKELY(timestamp->a64fx_counter_name != NULL))
+    if (timestamp == NULL)
     {
-        for (size_t i = 0; i < timestamp->a64fx_arr_size; i++)
-            free(timestamp->a64fx_counter_name[i]);
-        free(timestamp->a64fx_counter_name);
+        return; // Nothing to free
     }
 
-    // Free rapl arrays
-    if (OPT_LIKELY(timestamp->rapl_counter_value != NULL))
-        free(timestamp->rapl_counter_value);
-
-    if (OPT_LIKELY(timestamp->rapl_energy_per_counter != NULL))
-        free(timestamp->rapl_energy_per_counter);
-
-    if (OPT_LIKELY(timestamp->rapl_counter_name != NULL))
+    // Iterate over each domain
+    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
     {
-        for (size_t i = 0; i < timestamp->rapl_arr_size; i++)
-            free(timestamp->rapl_counter_name[i]);
-        free(timestamp->rapl_counter_name);
+        // Free the counter_name array (array of strings)
+        if (timestamp->domain_data[i].counter_name != NULL)
+        {
+            for (size_t j = 0; j < timestamp->domain_data[i].arr_size; j++)
+            {
+                free(timestamp->domain_data[i].counter_name[j]); // Free each string
+            }
+            free(timestamp->domain_data[i].counter_name); // Free the array of pointers
+        }
+
+        // Free the counter_value array
+        if (timestamp->domain_data[i].counter_value != NULL)
+        {
+            free(timestamp->domain_data[i].counter_value);
+        }
+
+        // Free the energy_per_counter array
+        if (timestamp->domain_data[i].energy_per_counter != NULL)
+        {
+            free(timestamp->domain_data[i].energy_per_counter);
+        }
     }
 
-    // Free nvml arrays
-    if (OPT_LIKELY(timestamp->nvml_counter_value != NULL))
-        free(timestamp->nvml_counter_value);
-
-    if (OPT_LIKELY(timestamp->nvml_energy_per_counter != NULL))
-        free(timestamp->nvml_energy_per_counter);
-
-    if (OPT_LIKELY(timestamp->nvml_counter_name != NULL))
-    {
-        for (size_t i = 0; i < timestamp->nvml_arr_size; i++)
-            free(timestamp->nvml_counter_name[i]);
-        free(timestamp->nvml_counter_name);
-    }
-
-    // Free rocm arrays
-    if (OPT_LIKELY(timestamp->rocm_counter_value != NULL))
-        free(timestamp->rocm_counter_value);
-
-    if (OPT_LIKELY(timestamp->rocm_energy_per_counter != NULL))
-        free(timestamp->rocm_energy_per_counter);
-
-    if (OPT_LIKELY(timestamp->rocm_counter_name != NULL))
-    {
-        for (size_t i = 0; i < timestamp->rocm_arr_size; i++)
-            free(timestamp->rocm_counter_name[i]);
-        free(timestamp->rocm_counter_name);
-    }
-
-    // Free hdeem arrays
-    if (OPT_LIKELY(timestamp->hdeem_counter_value != NULL))
-        free(timestamp->hdeem_counter_value);
-
-    if (OPT_LIKELY(timestamp->hdeem_energy_per_counter != NULL))
-        free(timestamp->hdeem_energy_per_counter);
-
-    if (OPT_LIKELY(timestamp->hdeem_counter_name != NULL))
-    {
-        for (size_t i = 0; i < timestamp->hdeem_arr_size; i++)
-            free(timestamp->hdeem_counter_name[i]);
-        free(timestamp->hdeem_counter_name);
-    }
-
+    // Finally, free the entire timestamp structure
     free(timestamp);
 }
 
-struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(MidlibEnergyTimeStamp *begin, MidlibEnergyTimeStamp *end)
+struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergyTimeStamp *begin, struct MidlibEnergyTimeStamp *end)
 {
     if (OPT_UNLIKELY(begin == NULL))
     {
@@ -491,100 +369,73 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(MidlibEnergyTimeSta
         return NULL;
     }
 
-    // Check if both a64fx arrays are compatible
-    if (OPT_UNLIKELY((begin->a64fx_counter_name == NULL) != (end->a64fx_counter_name == NULL) || (begin->a64fx_counter_value == NULL) != (end->a64fx_counter_value == NULL) || begin->a64fx_arr_size != end->a64fx_arr_size))
+    // Check if all domain arrays are compatible
+    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
     {
-        perror("Error: a64fx arrays are incompatible in A64FX measurements\n");
-        return NULL;
-    }
-
-    // Check if both rapl arrays are compatible
-    if (OPT_UNLIKELY((begin->rapl_counter_name == NULL) != (end->rapl_counter_name == NULL) || (begin->rapl_counter_value == NULL) != (end->rapl_counter_value == NULL) || begin->rapl_arr_size != end->rapl_arr_size))
-    {
-        perror("Error: rapl arrays are incompatible in RAPL measurements\n");
-        return NULL;
-    }
-
-    // Check if both nvml arrays are compatible
-    if (OPT_UNLIKELY((begin->nvml_counter_name == NULL) != (end->nvml_counter_name == NULL) || (begin->nvml_counter_value == NULL) != (end->nvml_counter_value == NULL) || begin->nvml_arr_size != end->nvml_arr_size))
-    {
-        perror("Error: nvml arrays are incompatible in NVML measurements\n");
-        return NULL;
-    }
-
-    // Check if both rocm arrays are compatible
-    if (OPT_UNLIKELY((begin->rocm_counter_name == NULL) != (end->rocm_counter_name == NULL) || (begin->rocm_counter_value == NULL) != (end->rocm_counter_value == NULL) || begin->rocm_arr_size != end->rocm_arr_size))
-    {
-        perror("Error: rocm arrays are incompatible in ROCM measurements\n");
-        return NULL;
-    }
-
-    // Check if both hdeem arrays are compatible
-    if (OPT_UNLIKELY((begin->hdeem_counter_name == NULL) != (end->hdeem_counter_name == NULL) || (begin->hdeem_counter_value == NULL) != (end->hdeem_counter_value == NULL) || begin->hdeem_arr_size != end->hdeem_arr_size))
-    {
-        perror("Error: hdeem arrays are incompatible in HDEEM measurements\n");
-        return NULL;
+        if (OPT_UNLIKELY((begin->domain_data[i].counter_name == NULL) != (end->domain_data[i].counter_name == NULL) ||
+                         (begin->domain_data[i].counter_value == NULL) != (end->domain_data[i].counter_value == NULL) ||
+                         begin->domain_data[i].arr_size != end->domain_data[i].arr_size))
+        {
+            fprintf(stderr, "Error: Arrays for domain %d are incompatible\n", printDomainName(begin->domain_data[i].domain_id));
+            return NULL;
+        }
     }
 
     struct MidlibEnergyTimeStamp *result = initEnergyTimeStamp();
 
-    if (OPT_LIKELY(begin->a64fx_counter_value != NULL && begin->a64fx_counter_name != NULL))
+    // Calculate energy consumption for each domain
+    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
     {
-        int cumulative = 0;
-        result->a64fx_arr_size = begin->a64fx_arr_size;
-        result->a64fx_energy_per_counter = (double *)malloc(begin->a64fx_arr_size * sizeof(double));
-        for (size_t i = 0; i < begin->a64fx_arr_size; i++)
+        if (OPT_LIKELY(begin->domain_data[i].counter_value != NULL && begin->domain_data[i].counter_name != NULL))
         {
-            result->a64fx_energy_per_counter[i] = meric::A64FX::getResultValue(begin->a64fx_counter_value[i], end->a64fx_counter_value[i], (end->id - begin->id), cumulative, begin->a64fx_counter_name[i]);
-            result->a64fx_energy_total += result->a64fx_energy_per_counter[i];
-        }
-    }
-    if (OPT_LIKELY(begin->rapl_counter_value != NULL && begin->rapl_counter_name != NULL))
-    {
-        int cumulative = 0;
-        result->rapl_arr_size = begin->rapl_arr_size;
-        result->rapl_energy_per_counter = (double *)malloc(begin->rapl_arr_size * sizeof(double));
-        for (size_t i = 0; i < begin->rapl_arr_size; i++)
-        {
-            result->rapl_energy_per_counter[i] = meric::RAPL::getResultValue(begin->rapl_counter_value[i], end->rapl_counter_value[i], (end->id - begin->id), cumulative, begin->rapl_counter_name[i]);
-            result->rapl_energy_total += result->rapl_energy_per_counter[i];
-        }
-    }
-    if (OPT_LIKELY(begin->nvml_counter_value != NULL && begin->nvml_counter_name != NULL))
-    {
-        int cumulative = 0;
-        result->nvml_arr_size = begin->nvml_arr_size;
-        result->nvml_energy_per_counter = (double *)malloc(begin->nvml_arr_size * sizeof(double));
-        for (size_t i = 0; i < begin->nvml_arr_size; i++)
-        {
-            result->nvml_energy_per_counter[i] = meric::NVML::getResultValue(begin->nvml_counter_value[i], end->nvml_counter_value[i], (end->id - begin->id), cumulative, begin->nvml_counter_name[i]);
-            result->nvml_energy_total += result->nvml_energy_per_counter[i];
-        }
-    }
-    // if (OPT_LIKELY(begin->rocm_counter_value != NULL && begin->rocm_counter_name != NULL))
-    // {
-    //     int cumulative = 0;
-    //     result->rocm_arr_size = begin->rocm_arr_size;
-    //     result->rocm_energy_per_counter = (double *)malloc(begin->rocm_arr_size * sizeof(double));
-    //     for (size_t i = 0; i < begin->rocm_arr_size; i++)
-    //     {
-    //         result->rocm_energy_per_counter[i] = meric::ROCM::getResultValue(begin->rocm_counter_value[i], end->rocm_counter_value[i], (end->id - begin->id), cumulative, begin->rocm_counter_name[i]);
-    //         result->rocm_energy_total += result->rocm_energy_per_counter[i];
-    //     }
-    // }
-    // if (OPT_LIKELY(begin->hdeem_counter_value != NULL && begin->hdeem_counter_name != NULL))
-    // {
-    //     int cumulative = 0;
-    //     result->hdeem_arr_size = begin->hdeem_arr_size;
-    //     result->hdeem_energy_per_counter = (double *)malloc(begin->hdeem_arr_size * sizeof(double));
-    //     for (size_t i = 0; i < begin->hdeem_arr_size; i++)
-    //     {
-    //         result->hdeem_energy_per_counter[i] = meric::HDEEM::getResultValue(begin->hdeem_counter_value[i], end->hdeem_counter_value[i], (end->id - begin->id), cumulative, begin->hdeem_counter_name[i], "");
-    //         result->hdeem_energy_total += result->hdeem_energy_per_counter[i];
-    //     }
-    // }
+            result->domain_data[i].arr_size = begin->domain_data[i].arr_size;
+            result->domain_data[i].energy_per_counter = (double *)malloc(begin->domain_data[i].arr_size * sizeof(double));
+            if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
+            {
+                perror("Failed to allocate memory for energy_per_counter");
+                midlib_free_energy_timestamp(result); // Free any previously allocated memory
+                return NULL;
+            }
 
-    result->energy_total = result->a64fx_energy_total + result->rapl_energy_total + result->nvml_energy_total + result->rocm_energy_total + result->hdeem_energy_total;
+            int cumulative = 0; // Example value, replace with actual logic
+            for (size_t j = 0; j < begin->domain_data[i].arr_size; j++)
+            {
+                // Call the appropriate energy calculation function based on the domain
+                switch (begin->domain_data[i].domain_id)
+                {
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
+                    result->domain_data[i].energy_per_counter[j] = meric::A64FX::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
+                    result->domain_data[i].energy_per_counter[j] = meric::RAPL::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
+                    result->domain_data[i].energy_per_counter[j] = meric::NVML::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    break;
+                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
+                //     result->domain_data[i].energy_per_counter[j] = meric::ROCM::getResultValue(
+                //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                //     break;
+                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
+                //     result->domain_data[i].energy_per_counter[j] = meric::HDEEM::getResultValue(
+                //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
+                //     break;
+                default:
+                    fprintf(stderr, "Error: Unknown domain ID %d\n", begin->domain_data[i].domain_id);
+                }
+                result->domain_data[i].energy_total += result->domain_data[i].energy_per_counter[j];
+            }
+            result->energy_total += result->domain_data[i].energy_total;
+        }
+    }
 
     return result;
 }
