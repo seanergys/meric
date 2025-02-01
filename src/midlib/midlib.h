@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
 
+#ifdef HAVE_NVML_H
+	#include <nvml.h>
+#endif
+
 #define MIDLIB_NUM_DOMAINS 5
 struct MidlibEnergyTimeStamp
 {

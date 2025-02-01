@@ -13,9 +13,9 @@ int main(int argc, char **argv)
         * Create MidlibEnergy object and set energy domains you want to measure
     */
     MidlibEnergy energy_domains = {0};
-    MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_A64FX);
     MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
-    // MIDLIB_ENERGY_DISABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
+    MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_RAPL);
+    //MIDLIB_ENERGY_DISABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
 
     /*
                     -------------- STEP(2) --------------
@@ -94,6 +94,11 @@ int main(int argc, char **argv)
     struct MidlibEnergyTimeStamp *ts2 = midlib_read_energy_measurements(&energy_domains);
     midlib_print_energy_timestamp(ts2, 5);
 
+
+
+    struct MidlibEnergyTimeStamp *result = midlib_calc_energy_consumption(ts, ts2);
+    midlib_print_energy_timestamp(result, 5);
+    
     /*
      *  Call midlib_calc_energy_consumption(..) to calculate energy consumption
      *  It returns another timeStamp object only consisting the energy consumption values
@@ -130,9 +135,6 @@ int main(int argc, char **argv)
      *   | Total_energy consumption: 1108.238159 [J]
      *   -----------------------------------
      */
-
-    struct MidlibEnergyTimeStamp *result = midlib_calc_energy_consumption(ts, ts2);
-    midlib_print_energy_timestamp(result, 5);
 
     /*
                         -------------- STEP(6) --------------

@@ -31,7 +31,7 @@ static const char *printDomainName(unsigned int value);
 
 template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
 template <typename Tmode> static void close();
-template <typename T> static void printArray(const char *name, T *arr, size_t size, size_t print_limit);
+template <typename Tmode> static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
 /* --------------------------------------------------------------- */
 
@@ -47,7 +47,7 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
 
     if (!(*values) || !(*labels))
     {
-        std::cerr << "Memory allocation failed!\n";
+        std::cerr << "[ERROR]: Memory allocation failed!\n";
         return;
     }
 
@@ -66,25 +66,33 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
     }
 }
 
-template void measureEnergy<meric::A64FX>(size_t *, uint64_t **, char ***);
-template void measureEnergy<meric::RAPL>(size_t *, uint64_t **, char ***);
-template void measureEnergy<meric::NVML>(size_t *, uint64_t **, char ***);
-// template void measureEnergy<meric::ROCM>(size_t*, uint64_t**, char***);
-// template void measureEnergy<meric::HDEEM>(size_t*, uint64_t**, char***);
+template static void measureEnergy<meric::A64FX>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::RAPL>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::NVML>(size_t *, uint64_t **, char ***);
+// template static void measureEnergy<meric::ROCM>(size_t*, uint64_t**, char***);
+// template static void measureEnergy<meric::HDEEM>(size_t*, uint64_t**, char***);
 
 template <typename Tmode>
 static void close()
 {
     Tmode::close();
 }
-template void close<meric::A64FX>();
-template void close<meric::RAPL>();
-template void close<meric::NVML>();
-// template void close<meric::ROCM>();
-// template void close<meric::HDEEM>();
+template static void close<meric::A64FX>();
+template static void close<meric::RAPL>();
 
-template <typename T>
-static void printArray(const char *name, T *arr, size_t size, size_t print_limit)
+template <>
+void close<meric::NVML>()
+{
+#ifdef HAVE_NVML_H
+    nvmlShutdown();
+    meric::NVML::close();
+#endif
+}
+// template static void close<meric::ROCM>();
+// template static void close<meric::HDEEM>();
+
+template <typename Tmode>
+static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
 {
     printf("| %-15s (size: %zu): ", name, size);
 
@@ -99,15 +107,15 @@ static void printArray(const char *name, T *arr, size_t size, size_t print_limit
     print_limit = (print_limit == static_cast<size_t>(-1)) ? size : print_limit;
     for (size_t i = 0; i < size && i < print_limit; ++i)
     {
-        if (std::is_same<T, double>::value)
+        if (std::is_same<Tmode, double>::value)
         {
             printf("%f", arr[i]); // Special format for doubles
         }
-        else if (std::is_same<T, uint64_t>::value)
+        else if (std::is_same<Tmode, uint64_t>::value)
         {
             printf("%lu", arr[i]); // Format for uint64_t
         }
-        else if (std::is_same<T, char*>::value)
+        else if (std::is_same<Tmode, char *>::value)
         {
             printf("%s", arr[i]); // format for char* (string)
         }
@@ -126,15 +134,15 @@ static void printArray(const char *name, T *arr, size_t size, size_t print_limit
     printf("]\n");
 }
 
-template void printArray<double>(const char *, double *, size_t, size_t);
-template void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
-template void printArray<char *>(const char *, char **, size_t, size_t);
+template static void printArray<double>(const char *, double *, size_t, size_t);
+template static void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
+template static void printArray<char *>(const char *, char **, size_t, size_t);
 
 void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
-        perror("Error: No Domain Selected!\n");
+        perror("[ERROR]: No Domain Selected!\n");
         return;
     }
 
@@ -153,23 +161,32 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
-        printf("Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
     {
         meric::RAPL::init(true);
+        meric::RAPL::initCountersUnits();
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
-        printf("Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML)))
     {
+#ifdef HAVE_NVML_H
+        nvmlInit();
         meric::NVML::init(true);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
+        // std::cout << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
+
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
-        printf("Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
+#else
+        perror("[ERROR]: Turning off NVML. It is selected but does NOT exists on this machine!\n");
+        MIDLIB_ENERGY_ENABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML);
+#endif
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
     {
@@ -178,7 +195,7 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
         // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
         // enabled_domains->closeFns[index] = close<meric::ROCM>;
-        // printf("Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
+        // printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
     {
@@ -187,7 +204,7 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
         // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
         // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
         // enabled_domains->closeFns[index] = close<meric::HDEEM>;
-        // printf("Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
+        // printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
     }
 }
 
@@ -232,7 +249,7 @@ void midlib_close(MidlibEnergy *enabled_domains)
             if (enabled_domains->closeFns[index])
             {
                 enabled_domains->closeFns[index]();
-                printf("Domain %s is closed [OK]\n", printDomainName(domain));
+                printf("[INFO]: Domain %s is closed [OK]\n", printDomainName(domain));
             }
         }
     }
@@ -260,7 +277,7 @@ MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_dom
                 timestamp->domain_data[index].counter_value = counter_value;
             }
 
-            printf("Energy is read from Domain %s [OK]\n", printDomainName(domain));
+            printf("[INFO]: Energy is read from Domain %s [OK]\n", printDomainName(domain));
         }
     }
     return timestamp;
@@ -271,11 +288,15 @@ struct MidlibEnergyTimeStamp *initEnergyTimeStamp()
     struct MidlibEnergyTimeStamp *energy_timestamp = (struct MidlibEnergyTimeStamp *)malloc(sizeof(struct MidlibEnergyTimeStamp));
     if (OPT_UNLIKELY(energy_timestamp == NULL))
     {
-        perror("Failed to allocate memory for the EnergyTimeStamp");
+        perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp");
         exit(EXIT_FAILURE);
     }
 
     memset(energy_timestamp, 0, sizeof(struct MidlibEnergyTimeStamp)); // Correct: clears struct fields
+
+    // set domain id, this is important for printing the structure (otherwise no_domain_selected is printed)
+    for (size_t i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+        energy_timestamp->domain_data[i].domain_id = 1 << i;
 
     struct timespec tt;
     clock_gettime(CLOCK_REALTIME, &tt);
@@ -289,7 +310,7 @@ void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size
 #define MAX_DOMAIN_NAME_LENGTH 50 // Adjusted for "NO_SELECTION" and "Unknown Domain"
     if (OPT_UNLIKELY(timestamp == NULL))
     {
-        perror("Error: NULL timestamp\n");
+        perror("[ERROR]:  NULL timestamp\n");
         return;
     }
     // Print pointer addresses and array sizes
@@ -360,12 +381,12 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
 {
     if (OPT_UNLIKELY(begin == NULL))
     {
-        perror("Error: Begin timestamp is NULL \n");
+        perror("[ERROR]:  Begin timestamp is NULL \n");
         return NULL;
     }
     if (OPT_UNLIKELY(end == NULL))
     {
-        perror("Error: End timestamp is NULL\n");
+        perror("[ERROR]:  End timestamp is NULL\n");
         return NULL;
     }
 
@@ -376,7 +397,7 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                          (begin->domain_data[i].counter_value == NULL) != (end->domain_data[i].counter_value == NULL) ||
                          begin->domain_data[i].arr_size != end->domain_data[i].arr_size))
         {
-            fprintf(stderr, "Error: Arrays for domain %d are incompatible\n", printDomainName(begin->domain_data[i].domain_id));
+            fprintf(stderr, "[ERROR]: Arrays for domain %d are incompatible\n", printDomainName(begin->domain_data[i].domain_id));
             return NULL;
         }
     }
@@ -390,46 +411,72 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
         {
             result->domain_data[i].arr_size = begin->domain_data[i].arr_size;
             result->domain_data[i].energy_per_counter = (double *)malloc(begin->domain_data[i].arr_size * sizeof(double));
+            // Allocate memory for the counter_name array
+            result->domain_data[i].counter_name = (char **)malloc(begin->domain_data[i].arr_size * sizeof(char *));
+            if (!result->domain_data[i].counter_name)
+            {
+                perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp.counter_name");
+                exit(EXIT_FAILURE);
+            }
+            for (size_t j = 0; j < begin->domain_data[i].arr_size; j++)
+            {
+                result->domain_data[i].counter_name[j] = strdup(begin->domain_data[i].counter_name[j]);
+                if (!result->domain_data[i].counter_name[j])
+                {
+                    fprintf(stderr, "[ERROR]: Failed to allocate memory for the EnergyTimeStamp.counter_name[%d]", j);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
             if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
             {
-                perror("Failed to allocate memory for energy_per_counter");
+                perror("[ERROR]: Failed to allocate memory for energy_per_counter");
                 midlib_free_energy_timestamp(result); // Free any previously allocated memory
                 return NULL;
             }
 
-            int cumulative = 0; // Example value, replace with actual logic
+            int cumulative = 0;
             for (size_t j = 0; j < begin->domain_data[i].arr_size; j++)
             {
                 // Call the appropriate energy calculation function based on the domain
                 switch (begin->domain_data[i].domain_id)
                 {
+
                 case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
+                    cumulative = 0;
                     result->domain_data[i].energy_per_counter[j] = meric::A64FX::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
+
                 case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
+                    cumulative = 1;
                     result->domain_data[i].energy_per_counter[j] = meric::RAPL::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    printf("filling rapl i:%d -- j:%d -- result: %lf\n",i,j,result->domain_data[i].energy_per_counter[j]);
                     break;
+
                 case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
+                    cumulative = 0;
                     result->domain_data[i].energy_per_counter[j] = meric::NVML::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
+
                 // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
                 //     result->domain_data[i].energy_per_counter[j] = meric::ROCM::getResultValue(
                 //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                 //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                 //     break;
+
                 // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
                 //     result->domain_data[i].energy_per_counter[j] = meric::HDEEM::getResultValue(
                 //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                 //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
                 //     break;
                 default:
-                    fprintf(stderr, "Error: Unknown domain ID %d\n", begin->domain_data[i].domain_id);
+                    fprintf(stderr, "[ERROR]: Unknown domain ID %d\n", begin->domain_data[i].domain_id);
                 }
                 result->domain_data[i].energy_total += result->domain_data[i].energy_per_counter[j];
             }
