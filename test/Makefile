@@ -48,7 +48,7 @@ endif
 #PAPI=-lpapi
 #RESTCLIENT= -lrestclient-cpp
 #NUMA=-lnuma
-NVML=-lnvidia-ml
+#NVML=-lnvidia-ml
 #ESMI=-le_smi64
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
