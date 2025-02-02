@@ -29,16 +29,19 @@
 struct MidlibEnergyTimeStamp *initEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
 
-template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
-template <typename Tmode> static void close();
-template <typename Tmode> static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
+template <typename Tmode>
+static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
+template <typename Tmode>
+static void close();
+template <typename Tmode>
+static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
 /* --------------------------------------------------------------- */
 
-template <typename Tmode>
+template <typename Tmode, typename TmapVal>
 static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
 {
-    std::map<std::string, unsigned long long int> energyNow;
+    std::map<std::string, TmapVal> energyNow;
     Tmode::getCounterValues(energyNow);
 
     *size = energyNow.size();
@@ -66,11 +69,11 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
     }
 }
 
-template static void measureEnergy<meric::A64FX>(size_t *, uint64_t **, char ***);
-template static void measureEnergy<meric::RAPL>(size_t *, uint64_t **, char ***);
-template static void measureEnergy<meric::NVML>(size_t *, uint64_t **, char ***);
-// template static void measureEnergy<meric::ROCM>(size_t*, uint64_t**, char***);
-// template static void measureEnergy<meric::HDEEM>(size_t*, uint64_t**, char***);
+template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::RAPL, unsigned long long int>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, char ***);
 
 template <typename Tmode>
 static void close()
@@ -79,7 +82,8 @@ static void close()
 }
 template static void close<meric::A64FX>();
 template static void close<meric::RAPL>();
-
+template static void close<meric::ROCM>();
+template static void close<meric::HDEEM>();
 template <>
 void close<meric::NVML>()
 {
@@ -88,8 +92,6 @@ void close<meric::NVML>()
     meric::NVML::close();
 #endif
 }
-// template static void close<meric::ROCM>();
-// template static void close<meric::HDEEM>();
 
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
@@ -157,18 +159,18 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX)))
     {
-        meric::A64FX::init(true);
+        meric::A64FX::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
     {
-        meric::RAPL::init(true);
+        meric::RAPL::init(is_detailed);
         meric::RAPL::initCountersUnits();
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
     }
@@ -176,11 +178,11 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
     {
 #ifdef HAVE_NVML_H
         nvmlInit();
-        meric::NVML::init(true);
+        meric::NVML::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
         // std::cout << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
 
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
 #else
@@ -190,21 +192,21 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
     {
-        perror("ROCM Has not yet been implemented!\n");
-        // meric::ROCM::init(true);
-        // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
-        // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM>;
-        // enabled_domains->closeFns[index] = close<meric::ROCM>;
-        // printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
+        // perror("ROCM Has not yet been implemented!\n");
+        meric::ROCM::init(is_detailed);
+        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM, uint64_t>;
+        enabled_domains->closeFns[index] = close<meric::ROCM>;
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
     {
-        perror("HDEEM Has not yet been implemented!\n");
-        // meric::HDEEM::init(true);
-        // int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
-        // enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM>;
-        // enabled_domains->closeFns[index] = close<meric::HDEEM>;
-        // printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
+        // perror("HDEEM Has not yet been implemented!\n");
+        meric::HDEEM::init(is_detailed);
+        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
+        enabled_domains->closeFns[index] = close<meric::HDEEM>;
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
     }
 }
 
@@ -454,7 +456,7 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                     result->domain_data[i].energy_per_counter[j] = meric::RAPL::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
-                    printf("filling rapl i:%d -- j:%d -- result: %lf\n",i,j,result->domain_data[i].energy_per_counter[j]);
+                    printf("filling rapl i:%d -- j:%d -- result: %lf\n", i, j, result->domain_data[i].energy_per_counter[j]);
                     break;
 
                 case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
@@ -464,17 +466,17 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
 
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
-                //     result->domain_data[i].energy_per_counter[j] = meric::ROCM::getResultValue(
-                //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
-                //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
-                //     break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
+                    result->domain_data[i].energy_per_counter[j] = meric::ROCM::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    break;
 
-                // case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
-                //     result->domain_data[i].energy_per_counter[j] = meric::HDEEM::getResultValue(
-                //         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
-                //         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
-                //     break;
+                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
+                    result->domain_data[i].energy_per_counter[j] = meric::HDEEM::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
+                    break;
                 default:
                     fprintf(stderr, "[ERROR]: Unknown domain ID %d\n", begin->domain_data[i].domain_id);
                 }
