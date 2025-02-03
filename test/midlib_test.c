@@ -13,8 +13,9 @@ int main(int argc, char **argv)
         Create MidlibEnergy object and set energy domains you want to measure
     */
     MidlibEnergy energy_domains = {0};
-    MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
+    // MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_A64FX);
     MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_RAPL);
+    MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_NVML);
     // MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_HDEEM);
     // MIDLIB_ENERGY_ENABLE_DOMAIN(energy_domains, MIDLIB_ENERGY_DOMAIN_ROCM);
 
@@ -24,9 +25,9 @@ int main(int argc, char **argv)
         -------------- STEP(2) --------------
         You can checked domains that's enabled
     */
-    char *enabled_domains = midlib_get_enabled_domain_names(&energy_domains);
-    printf("enabled domains: %s\n", enabled_domains);
-    free(enabled_domains);
+    // char *enabled_domains = midlib_get_enabled_domain_names(&energy_domains);
+    // printf("enabled domains: %s\n", enabled_domains);
+    // free(enabled_domains);
 
     /*
         -------------- STEP(3) --------------
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
         Get an EnergyTimeStamp for reference before to begin measuring energy of a code.
      */
     struct MidlibEnergyTimeStamp *ts = midlib_read_energy_measurements(&energy_domains);
-    midlib_print_energy_timestamp(ts, 5);
+    // midlib_print_energy_timestamp(ts, 5);
 
     
     //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
         Get Another Energy reading to measure the span.
      */
     struct MidlibEnergyTimeStamp *ts2 = midlib_read_energy_measurements(&energy_domains);
-    midlib_print_energy_timestamp(ts2, 5);
+    // midlib_print_energy_timestamp(ts2, 5);
 
     /*
         -------------- STEP(6) --------------

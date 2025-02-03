@@ -48,7 +48,7 @@ endif
 #PAPI=-lpapi
 #RESTCLIENT= -lrestclient-cpp
 #NUMA=-lnuma
-#NVML=-lnvidia-ml
+#NVML=-lnvidia-ml -DHAVE_NVML_H
 #ESMI=-le_smi64
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
@@ -66,7 +66,7 @@ all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
  ######
 
 midlib_test: midlib_test.c
-	$(CC) -O0 -g midlib_test.c -L.. -la64fx_meric $(OPENMP) $(NVML) -o midlibTest -DHAVE_NVML_H
+	$(CC) -O0 -g midlib_test.c -L.. -la64fx_meric $(OPENMP) $(NVML) -o midlibTest
 
 midlib_work_meric_test: midlib_work_meric_test.cpp
 	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) -o midlib_work_meric_test

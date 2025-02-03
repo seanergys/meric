@@ -167,12 +167,17 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
     {
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
         meric::RAPL::init(is_detailed);
         meric::RAPL::initCountersUnits();
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
+#else
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
+        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL);
+#endif
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML)))
     {
@@ -186,27 +191,37 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::NVML>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
 #else
-        perror("[ERROR]: Turning off NVML. It is selected but does NOT exists on this machine!\n");
-        MIDLIB_ENERGY_ENABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
+        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML);
 #endif
     }
+
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
     {
-        // perror("ROCM Has not yet been implemented!\n");
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
         meric::ROCM::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM, uint64_t>;
         enabled_domains->closeFns[index] = close<meric::ROCM>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
+#else
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
+        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM);
+
+#endif
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
     {
-        // perror("HDEEM Has not yet been implemented!\n");
+#ifdef HAVE_HDEEM_H
         meric::HDEEM::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
         enabled_domains->closeFns[index] = close<meric::HDEEM>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
+#else
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
+        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM);
+#endif
     }
 }
 
