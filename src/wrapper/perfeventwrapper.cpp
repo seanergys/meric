@@ -42,6 +42,7 @@ void PERFEVENT::init(bool detailed)
 		std::string suffix = "_" + std::to_string(i);
 		
 		countersFd[PERFEVENT_COUNTERS::COUNTER_CPU_CYCLES + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, i);
+		countersFd[PERFEVENT_COUNTERS::COUNTER_INSTRUCTIONS + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
 
 		#ifdef _INTEL_
 		countersFd[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_SCALAR + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::COUNTER_INSTS_RET_SCALAR], i);

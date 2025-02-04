@@ -53,6 +53,8 @@ static std::map<const std::string, std::string> counterLabel = {
 namespace PERFEVENT_COUNTERS {
 
 const std::string COUNTER_CPU_CYCLES = "PERF_HW_CPU_CYCLES";
+const std::string COUNTER_INSTRUCTIONS = "PERF_HW_INSTRUCTIONS";
+
 #ifdef _INTEL_
 const std::string COUNTER_CYCLES_AMX_BUSY = "AMX_BUSY";
 const std::string COUNTER_INSTS_RET_SCALAR = "INST_RETIRED_SCALAR";
@@ -75,7 +77,8 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ COUNTER_INSTS_RET_VEC512_PS, "CPU_INSTRUCTIONS_VEC512_SINGLE" },
 	{ COUNTER_INSTS_RET_VEC512_PD, "CPU_INSTRUCTIONS_VEC512_DOUBLE" },
 	#endif
-	{ COUNTER_CPU_CYCLES         , "CPU_CYCLES"                     }
+	{ COUNTER_CPU_CYCLES         , "CPU_CYCLES"                     },
+	{ COUNTER_INSTRUCTIONS       , "CPU_INSTRUCTIONS"               }
 };
 
 static std::map<const std::string, const uint64_t> counterDefines = {
