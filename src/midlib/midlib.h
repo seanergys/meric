@@ -176,7 +176,7 @@ EXTERNC char *midlib_get_enabled_domain_names(MidlibEnergy *enabled_domains); //
  * -> you also have the total energy consumption; Total_energy consumption: 1108.238159 [J], which combines all per domain energy.
  *
  *   ------- MidlibEnergyTimeStamp (id: 1738250807.6350) -------
- *  | a64fx_counter_name (size: 56): NULL or empty array
+ *  | a64fx_counter_name (size: 56): [EA_CORE_00, EA_CORE_01, EA_CORE_02, EA_CORE_03, EA_CORE_04, ...]
  *  | a64fx_counter_value (size: 56): NULL or empty array
  *  | a64fx_energy_per_counter (size: 56): [20.003511, 22.578263, 20.002508, 20.511014, 20.002596, ...]
  *  | a64fx_total_energy: 1108.238159

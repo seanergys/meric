@@ -29,12 +29,9 @@
 struct MidlibEnergyTimeStamp *initEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
 
-template <typename Tmode>
-static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
-template <typename Tmode>
-static void close();
-template <typename Tmode>
-static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
+template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
+template <typename Tmode> static void close();
+template <typename Tmode> static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
 /* --------------------------------------------------------------- */
 
@@ -159,11 +156,16 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX)))
     {
+#if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
         meric::A64FX::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
+#else
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
+        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX);
+#endif
     }
     if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
     {
