@@ -25,7 +25,7 @@ struct MidlibEnergyTimeStamp *ts = midlib_read_energy_measurements(&energy_domai
 
 // some code of interest
 
-struct MidlibEnergyTimeStamp *ts = midlib_read_energy_measurements(&energy_domains);
+struct MidlibEnergyTimeStamp *ts2 = midlib_read_energy_measurements(&energy_domains);
 
 
 struct MidlibEnergyTimeStamp *result = midlib_calc_energy_consumption(ts, ts2);

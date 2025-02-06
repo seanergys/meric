@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
      
 #pragma omp parallel
-    do_work(10.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+    do_work(20.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
     // END JOB
      
