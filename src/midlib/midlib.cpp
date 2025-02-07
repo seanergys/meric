@@ -370,7 +370,7 @@ void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
     for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
     {
         // Free the counter_name array (array of strings)
-        if (timestamp->domain_data[i].counter_name != NULL)
+        if (OPT_LIKELY(timestamp->domain_data[i].counter_name != NULL))
         {
             for (size_t j = 0; j < timestamp->domain_data[i].arr_size; j++)
             {
@@ -380,13 +380,13 @@ void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
         }
 
         // Free the counter_value array
-        if (timestamp->domain_data[i].counter_value != NULL)
+        if (OPT_LIKELY(timestamp->domain_data[i].counter_value != NULL))
         {
             free(timestamp->domain_data[i].counter_value);
         }
 
         // Free the energy_per_counter array
-        if (timestamp->domain_data[i].energy_per_counter != NULL)
+        if (OPT_LIKELY(timestamp->domain_data[i].energy_per_counter != NULL))
         {
             free(timestamp->domain_data[i].energy_per_counter);
         }
@@ -430,13 +430,20 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
         {
             result->domain_data[i].arr_size = begin->domain_data[i].arr_size;
             result->domain_data[i].energy_per_counter = (double *)malloc(begin->domain_data[i].arr_size * sizeof(double));
-            // Allocate memory for the counter_name array
+            if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
+            {
+                perror("[ERROR]: Failed to allocate memory for energy_per_counter");
+                midlib_free_energy_timestamp(result); // Free any previously allocated memory
+                return NULL;
+            } 
+ 
             result->domain_data[i].counter_name = (char **)malloc(begin->domain_data[i].arr_size * sizeof(char *));
-            if (!result->domain_data[i].counter_name)
+            if (OPT_UNLIKELY(result->domain_data[i].counter_name == NULL))
             {
                 perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp.counter_name");
                 exit(EXIT_FAILURE);
             }
+
             for (size_t j = 0; j < begin->domain_data[i].arr_size; j++)
             {
                 result->domain_data[i].counter_name[j] = strdup(begin->domain_data[i].counter_name[j]);
@@ -445,13 +452,6 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                     fprintf(stderr, "[ERROR]: Failed to allocate memory for the EnergyTimeStamp.counter_name[%d]", j);
                     exit(EXIT_FAILURE);
                 }
-            }
-
-            if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
-            {
-                perror("[ERROR]: Failed to allocate memory for energy_per_counter");
-                midlib_free_energy_timestamp(result); // Free any previously allocated memory
-                return NULL;
             }
 
             int cumulative = 0;
