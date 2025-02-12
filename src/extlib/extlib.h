@@ -1,8 +1,7 @@
 // ====================================================================
 // MERIC ext - library directly exposing MERIC internal implementation 
 // --------------------------------------------------------------------
-// Library providing energy measurement for energy/power/performance 
-// aware tools.
+// Library providing energy measurement for 3rd party tools 
 //
 // Author: Osman Yasal <osman.yasal@vsb.cz>
 // Version: 1.0.0
@@ -16,7 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
 
-#define EXTLIB_NUM_DOMAINS 5
+#define EXTLIB_NUM_DOMAINS 5  // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 struct ExtlibEnergyTimeStamp
 {
     double id; // Timestamp identifier
@@ -169,7 +168,7 @@ EXTERNC void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestam
  * @note The user of this method is responsible for freeing the memory.
  *
  */
-EXTERNC char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
+EXTERNC char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains);
 
 /**
  *
