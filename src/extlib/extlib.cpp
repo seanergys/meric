@@ -23,10 +23,10 @@
     --------- Compilation Unit Only Method Declerations ---------
 
     These methods are not present in the header file &
-    may or maynot be called indirectly by the midlib_* methods
+    may or maynot be called indirectly by the extlib_* methods
 
 */
-struct MidlibEnergyTimeStamp *initEnergyTimeStamp();
+struct ExtlibEnergyTimeStamp *initEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
 
 template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
@@ -137,9 +137,9 @@ template static void printArray<double>(const char *, double *, size_t, size_t);
 template static void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
 template static void printArray<char *>(const char *, char **, size_t, size_t);
 
-void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
+void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 {
-    if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
+    if (OPT_UNLIKELY(EXTLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
         perror("[ERROR]: No Domain Selected!\n");
         return;
@@ -147,82 +147,82 @@ void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed)
 
     meric::Environment::initHWSizes();
 
-    for (unsigned int domain = 1; domain < MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
         int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = NULL;
         enabled_domains->closeFns[index] = NULL;
     }
 
-    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX)))
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX)))
     {
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
         meric::A64FX::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
-        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX));
 #else
-        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX));
-        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX));
+        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
 #endif
     }
-    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL)))
     {
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
         meric::RAPL::init(is_detailed);
         meric::RAPL::initCountersUnits();
-        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
-        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL));
 #else
-        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL));
-        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL));
+        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
 #endif
     }
-    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML)))
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML)))
     {
 #ifdef HAVE_NVML_H
         nvmlInit();
         meric::NVML::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
         // std::cout << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
 
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
-        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML));
 #else
-        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML));
-        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML));
+        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
 #endif
     }
 
-    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM)))
     {
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
         meric::ROCM::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM, uint64_t>;
         enabled_domains->closeFns[index] = close<meric::ROCM>;
-        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM));
 #else
-        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM));
-        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM));
+        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
 
 #endif
     }
-    if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM)))
     {
 #ifdef HAVE_HDEEM_H
         meric::HDEEM::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
         enabled_domains->closeFns[index] = close<meric::HDEEM>;
-        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM));
 #else
-        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM));
-        MIDLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM);
+        fprintf(stderr, "[ERROR]: Turning off %s. It is selected but does NOT exists on this machine!\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM));
+        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
 #endif
     }
 }
@@ -231,25 +231,25 @@ static const char *printDomainName(unsigned int value)
 {
     switch (value)
     {
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
         return "A64FX";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
         return "RAPL";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
         return "NVML";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
         return "ROCM";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
         return "HDEEM";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END:
         return "END";
         break;
-    case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NO_SELECTION:
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION:
         return "NO_SELECTION";
         break;
     default:
@@ -258,11 +258,11 @@ static const char *printDomainName(unsigned int value)
     }
 }
 
-void midlib_close(MidlibEnergy *enabled_domains)
+void extlib_close(ExtlibEnergy *enabled_domains)
 {
-    for (unsigned int domain = 1; domain < MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->closeFns[index])
@@ -274,13 +274,13 @@ void midlib_close(MidlibEnergy *enabled_domains)
     }
 }
 
-MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_domains)
+ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains)
 {
-    struct MidlibEnergyTimeStamp *timestamp = initEnergyTimeStamp();
+    struct ExtlibEnergyTimeStamp *timestamp = initEnergyTimeStamp();
 
-    for (unsigned int domain = 1; domain < MidlibEnergy::MIDLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
         {
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
             if (enabled_domains->energyMeasurementFns[index])
@@ -302,19 +302,19 @@ MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_dom
     return timestamp;
 }
 
-struct MidlibEnergyTimeStamp *initEnergyTimeStamp()
+struct ExtlibEnergyTimeStamp *initEnergyTimeStamp()
 {
-    struct MidlibEnergyTimeStamp *energy_timestamp = (struct MidlibEnergyTimeStamp *)malloc(sizeof(struct MidlibEnergyTimeStamp));
+    struct ExtlibEnergyTimeStamp *energy_timestamp = (struct ExtlibEnergyTimeStamp *)malloc(sizeof(struct ExtlibEnergyTimeStamp));
     if (OPT_UNLIKELY(energy_timestamp == NULL))
     {
         perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp");
         exit(EXIT_FAILURE);
     }
 
-    memset(energy_timestamp, 0, sizeof(struct MidlibEnergyTimeStamp)); // Correct: clears struct fields
+    memset(energy_timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp)); // Correct: clears struct fields
 
     // set domain id, this is important for printing the structure (otherwise no_domain_selected is printed)
-    for (size_t i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; i++)
         energy_timestamp->domain_data[i].domain_id = 1 << i;
 
     struct timespec tt;
@@ -323,7 +323,7 @@ struct MidlibEnergyTimeStamp *initEnergyTimeStamp()
     return energy_timestamp;
 }
 
-void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit)
+void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size_t print_limit)
 {
 
 #define MAX_DOMAIN_NAME_LENGTH 50 // Adjusted for "NO_SELECTION" and "Unknown Domain"
@@ -333,9 +333,9 @@ void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size
         return;
     }
     // Print pointer addresses and array sizes
-    printf("------- MidlibEnergyTimeStamp (id: %.4f) -------\n", timestamp->id);
+    printf("------- ExtlibEnergyTimeStamp (id: %.4f) -------\n", timestamp->id);
 
-    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
         char domain_name_buffer[MAX_DOMAIN_NAME_LENGTH];
 
@@ -358,7 +358,7 @@ void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size
 #undef MAX_DOMAIN_NAME_LENGTH
 }
 
-void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
+void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
 {
 
     if (timestamp == NULL)
@@ -367,7 +367,7 @@ void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
     }
 
     // Iterate over each domain
-    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
         // Free the counter_name array (array of strings)
         if (OPT_LIKELY(timestamp->domain_data[i].counter_name != NULL))
@@ -396,7 +396,7 @@ void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp)
     free(timestamp);
 }
 
-struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergyTimeStamp *begin, struct MidlibEnergyTimeStamp *end)
+struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergyTimeStamp *begin, struct ExtlibEnergyTimeStamp *end)
 {
     if (OPT_UNLIKELY(begin == NULL))
     {
@@ -410,7 +410,7 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
     }
 
     // Check if all domain arrays are compatible
-    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
         if (OPT_UNLIKELY((begin->domain_data[i].counter_name == NULL) != (end->domain_data[i].counter_name == NULL) ||
                          (begin->domain_data[i].counter_value == NULL) != (end->domain_data[i].counter_value == NULL) ||
@@ -421,10 +421,10 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
         }
     }
 
-    struct MidlibEnergyTimeStamp *result = initEnergyTimeStamp();
+    struct ExtlibEnergyTimeStamp *result = initEnergyTimeStamp();
 
     // Calculate energy consumption for each domain
-    for (int i = 0; i < MIDLIB_NUM_DOMAINS; i++)
+    for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
         if (OPT_LIKELY(begin->domain_data[i].counter_value != NULL && begin->domain_data[i].counter_name != NULL))
         {
@@ -433,7 +433,7 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
             if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
             {
                 perror("[ERROR]: Failed to allocate memory for energy_per_counter");
-                midlib_free_energy_timestamp(result); // Free any previously allocated memory
+                extlib_free_energy_timestamp(result); // Free any previously allocated memory
                 return NULL;
             } 
  
@@ -461,14 +461,14 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                 switch (begin->domain_data[i].domain_id)
                 {
 
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX:
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
                     cumulative = 0;
                     result->domain_data[i].energy_per_counter[j] = meric::A64FX::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
 
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL:
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
                     cumulative = 1;
                     result->domain_data[i].energy_per_counter[j] = meric::RAPL::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
@@ -476,20 +476,20 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
                     printf("filling rapl i:%d -- j:%d -- result: %lf\n", i, j, result->domain_data[i].energy_per_counter[j]);
                     break;
 
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML:
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
                     cumulative = 0;
                     result->domain_data[i].energy_per_counter[j] = meric::NVML::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
 
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM:
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
                     result->domain_data[i].energy_per_counter[j] = meric::ROCM::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
                     break;
 
-                case MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM:
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
                     result->domain_data[i].energy_per_counter[j] = meric::HDEEM::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
@@ -506,35 +506,35 @@ struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergy
     return result;
 }
 
-char *midlib_get_enabled_domain_names(MidlibEnergy *enabled_domains)
+char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains)
 {
     std::string buffer = "";
 
     // Check if no domains are selected
-    if (OPT_UNLIKELY(MIDLIB_ENERGY_NO_SELECTION(*enabled_domains)))
+    if (OPT_UNLIKELY(EXTLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
         buffer = "NO_SELECTION";
     }
     else
     {
         // Append domain names for matches
-        if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_A64FX)))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX)))
         {
             buffer += "A64FX, ";
         }
-        if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_RAPL)))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL)))
         {
             buffer += "RAPL, ";
         }
-        if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NVML)))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML)))
         {
             buffer += "NVML, ";
         }
-        if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_ROCM)))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM)))
         {
             buffer += "ROCM, ";
         }
-        if (OPT_LIKELY(MIDLIB_ENERGY_HAS_DOMAIN(*enabled_domains, MidlibEnergy::MIDLIB_ENERGY_DOMAIN_HDEEM)))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM)))
         {
             buffer += "HDEEM, ";
         }

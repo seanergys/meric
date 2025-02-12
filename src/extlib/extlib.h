@@ -1,97 +1,71 @@
-// This is free and unencumbered software released into the public domain.
-//
-// Anyone is free to copy, modify, publish, use, compile, sell, or
-// distribute this software, either in source code form or as a compiled
-// binary, for any purpose, commercial or non-commercial, and by any
-// means.
-//
-// In jurisdictions that recognize copyright laws, the author or authors
-// of this software dedicate any and all copyright interest in the
-// software to the public domain. We make this dedication for the benefit
-// of the public at large and to the detriment of our heirs and
-// successors. We intend this dedication to be an overt act of
-// relinquishment in perpetuity of all present and future rights to this
-// software under copyright law.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-// OTHER DEALINGS IN THE SOFTWARE.
-//
-// For more information, please refer to <http://unlicense.org/>
-
-
 // ====================================================================
-// MERIC - Energy Interface for C Language
+// MERIC ext - library directly exposing MERIC internal implementation 
 // --------------------------------------------------------------------
-// This is a C wrapper for MERIC, providing energy measurement support
-// for C programs in the domains of A64FX, RAPL, ROCm, NVML, and HDEEM.
+// Library providing energy measurement for energy/power/performance 
+// aware tools.
 //
 // Author: Osman Yasal <osman.yasal@vsb.cz>
 // Version: 1.0.0
-// License: Public Domain (Unlicense) - http://unlicense.org/
+// License: BSD-3
 // ====================================================================
 
 
-#ifndef SRC_MIDLIB_MIDLIB_H_
-#define SRC_MIDLIB_MIDLIB_H_
+#ifndef SRC_EXTLIB_EXTLIB_H_
+#define SRC_EXTLIB_EXTLIB_H_
 
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
 
-#ifdef HAVE_NVML_H
+#ifdef HAVE_NVML_H // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #include <nvml.h>
 #endif
 
-#define MIDLIB_NUM_DOMAINS 5
-struct MidlibEnergyTimeStamp
+#define EXTLIB_NUM_DOMAINS 5
+struct ExtlibEnergyTimeStamp
 {
     double id; // Timestamp identifier
 
     // Embedded DomainData structure for each domain (a64fx, rapl, nvml, rocm, hdeem)
     struct
     {
-        uint8_t domain_id;             // MIDLIB_ENERGY_DOMAIN_{A64FX, RAPL, NVML, ROCM, HDEEM...}
+        uint8_t domain_id;             // EXTLIB_ENERGY_DOMAIN_{A64FX, RAPL, NVML, ROCM, HDEEM...}
         size_t arr_size;               // Number of counters in this domain
         char **counter_name;           // Array of counter names
         uint64_t *counter_value;       // Array of raw counter values
         double *energy_per_counter;    // Energy per counter (joules)
         double energy_total;           // Total energy for this domain
-    } domain_data[MIDLIB_NUM_DOMAINS]; // Array per domain (indexed by mutils::countTrailingZeros)
+    } domain_data[EXTLIB_NUM_DOMAINS]; // Array per domain (indexed by mutils::countTrailingZeros)
 
     double energy_total; // Combined total energy across all domains
 };
 
-typedef struct MidlibEnergy
+typedef struct ExtlibEnergy
 {
-    enum Domains
+    enum Domains  // TODO HDEEM-C vs HDEEM-S
     {
-        MIDLIB_ENERGY_DOMAIN_NO_SELECTION = 0, // 000000 No Domains Selected
-        MIDLIB_ENERGY_DOMAIN_A64FX = 1 << 0,   // 000001
-        MIDLIB_ENERGY_DOMAIN_RAPL = 1 << 1,    // 000010
-        MIDLIB_ENERGY_DOMAIN_NVML = 1 << 2,    // 000100
-        MIDLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 001000
-        MIDLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 010000
-        MIDLIB_ENERGY_DOMAIN_END = 1 << 5      // 100000 END of Domains.
+        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0, // 000000 No Domains Selected
+        EXTLIB_ENERGY_DOMAIN_A64FX = 1 << 0,   // 000001
+        EXTLIB_ENERGY_DOMAIN_RAPL = 1 << 1,    // 000010
+        EXTLIB_ENERGY_DOMAIN_NVML = 1 << 2,    // 000100
+        EXTLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 001000
+        EXTLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 010000
+        EXTLIB_ENERGY_DOMAIN_END = 1 << 5      // 100000 END of Domains.
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[MIDLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[MIDLIB_NUM_DOMAINS])();                                            // Close enabled domains
+    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                            // Close enabled domains
 
-} MidlibEnergy;
+} ExtlibEnergy;
 
 // Helper macros for bitwise operations
-#define MIDLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
-#define MIDLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
-#define MIDLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
+#define EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
+#define EXTLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
+#define EXTLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
 #ifdef __cplusplus
-#define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == MidlibEnergy::MIDLIB_ENERGY_DOMAIN_NO_SELECTION)
+#define EXTLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
 #else
-#define MIDLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == MIDLIB_ENERGY_DOMAIN_NO_SELECTION)
+#define EXTLIB_ENERGY_NO_SELECTION(enabled_domains) ((enabled_domains).value == EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
 #endif
 
 #ifdef __cplusplus
@@ -108,28 +82,28 @@ typedef struct MidlibEnergy
  * @brief Initializes the required settings to monitor the selected domains.
  *
  */
-EXTERNC void midlib_init(MidlibEnergy *enabled_domains, bool is_detailed);
+EXTERNC void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed);
 
 /**
  * @param enabled_domains Object representing the enabled domains, used to properly close them.
  *
- * @brief Pass the same object used in `midlib_init` to ensure correct closure of the domains.
+ * @brief Pass the same object used in `extlib_init` to ensure correct closure of the domains.
  */
-EXTERNC void midlib_close(MidlibEnergy *enabled_domains);
+EXTERNC void extlib_close(ExtlibEnergy *enabled_domains);
 
 /**
  * @param enabled_domains The object containing enabled domains, used to fetch energy readings from the selected domains.
  *
- * @brief Reads energy measurements using the `midlib_read_energy_measurements` function.
+ * @brief Reads energy measurements using the `extlib_read_energy_measurements` function.
  *
  * This function returns an `EnergyTimeStamp` object containing energy counter readings
  * for all enabled and existing energy measurement domains.
- * You need to get another EnergyTimeStamp and call midlib_calc_energy_consumption(...) to calculate *total_energy fields
+ * You need to get another EnergyTimeStamp and call extlib_calc_energy_consumption(...) to calculate *total_energy fields
  *
  * You can print the retrieved `EnergyTimeStamp` object using:
  *
  * @code
- * midlib_print_energy_timestamp(ts, <number_of_values>);
+ * extlib_print_energy_timestamp(ts, <number_of_values>);
  * @endcode
  *
  *
@@ -139,7 +113,7 @@ EXTERNC void midlib_close(MidlibEnergy *enabled_domains);
  * Below is a sample output when the **A64Fx domain** is enabled and present in the test machine:
  *
  * ```
- * -------- MidlibEnergyTimeStamp (id: 1738250797.6328) --------
+ * -------- ExtlibEnergyTimeStamp (id: 1738250797.6328) --------
  * | a64fx_counter_name (size: 56): [EA_CORE_00, EA_CORE_01, EA_CORE_02, EA_CORE_03, EA_CORE_04, ...]
  * | a64fx_counter_value (size: 56): [251544, 260996, 261868, 280186, 261523, ...]
  * | a64fx_energy_per_counter (size: 56): NULL or empty array
@@ -171,25 +145,25 @@ EXTERNC void midlib_close(MidlibEnergy *enabled_domains);
  *
  * @note The `id` field represents the timestamp at which the object was created during energy measurement.
  *
- * @note The user of this method is responsible for freeing the timestamp, call midlib_free_energy_timestamp(...) to clean up.
+ * @note The user of this method is responsible for freeing the timestamp, call extlib_free_energy_timestamp(...) to clean up.
  *
  */
-EXTERNC struct MidlibEnergyTimeStamp *midlib_read_energy_measurements(MidlibEnergy *enabled_domains);
+EXTERNC struct ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains);
 
 /**
  *
  * @param timestamp timestamp object to print
  * @param print_limit used to limit the array size to be printed, set -1 to see all
  *
- * @brief This method is used to print the MidlibEnergyTimeStamp object,
+ * @brief This method is used to print the ExtlibEnergyTimeStamp object,
  *
  */
-EXTERNC void midlib_print_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp, size_t print_limit);
+EXTERNC void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size_t print_limit);
 
 /**
  * @param timestamp timestamp object to be freed
  */
-EXTERNC void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestamp);
+EXTERNC void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp);
 
 /**
  * @param enabled_domains The object containing enabled domains
@@ -199,21 +173,21 @@ EXTERNC void midlib_free_energy_timestamp(struct MidlibEnergyTimeStamp *timestam
  * @note The user of this method is responsible for freeing the memory.
  *
  */
-EXTERNC char *midlib_get_enabled_domain_names(MidlibEnergy *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
+EXTERNC char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains); // NO NEED TO EXPOSE BUT I'LL KEEP IT HERE JUST IN CASE.
 
 /**
  *
  * @param begin begin timestamp
  * @param end end timestamp
  *
- * @brief Both timestamps must be generated by the same MidlibEnergy energy_domains object,
+ * @brief Both timestamps must be generated by the same ExtlibEnergy energy_domains object,
  *  The output of resulting timestamp is given below
  *
  * ```
  * -> you have the total energy consumption per domain ie. a64fx_total_energy, rapl_total_energy...
  * -> you also have the total energy consumption; Total_energy consumption: 1108.238159 [J], which combines all per domain energy.
  *
- *   ------- MidlibEnergyTimeStamp (id: 1738250807.6350) -------
+ *   ------- ExtlibEnergyTimeStamp (id: 1738250807.6350) -------
  *  | a64fx_counter_name (size: 56): [EA_CORE_00, EA_CORE_01, EA_CORE_02, EA_CORE_03, EA_CORE_04, ...]
  *  | a64fx_counter_value (size: 56): NULL or empty array
  *  | a64fx_energy_per_counter (size: 56): [20.003511, 22.578263, 20.002508, 20.511014, 20.002596, ...]
@@ -243,11 +217,11 @@ EXTERNC char *midlib_get_enabled_domain_names(MidlibEnergy *enabled_domains); //
  *  -----------------------------------
  * ```
  *
- * @note The user of this method is responsible for freeing the timestamp, call midlib_free_energy_timestamp(...) to clean up.
+ * @note The user of this method is responsible for freeing the timestamp, call extlib_free_energy_timestamp(...) to clean up.
  */
-EXTERNC struct MidlibEnergyTimeStamp *midlib_calc_energy_consumption(struct MidlibEnergyTimeStamp *begin, struct MidlibEnergyTimeStamp *end);
+EXTERNC struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergyTimeStamp *begin, struct ExtlibEnergyTimeStamp *end);
 
 // undef region
 #undef EXTERNC
 
-#endif // SRC_MIDLIB_MIDLIB_H_
+#endif // SRC_EXTLIB_EXTLIB_H_
