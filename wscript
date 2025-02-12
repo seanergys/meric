@@ -275,6 +275,15 @@ def build(ctx):
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/bin/"
 	)
+
+	#MERICext
+	ctx.stlib(
+		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
+		target       = "meric_ext",
+		use          = "basis",
+#		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
+		install_path = ctx.path.abspath()+"/lib/"
+	)
 	
 	if not ctx.env.NOOPENMP:
 		#MERIC
@@ -355,6 +364,16 @@ def build(ctx):
 		use          = "basis",
 		install_path = ctx.path.abspath()+"/lib/",
 		env          = ctx.all_envs["mpi"]
+	)
+	
+	#MERICext
+	ctx.stlib(
+		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
+		target       = "mericext",
+		use          = "basis",
+#		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
+		install_path = ctx.path.abspath()+"/lib/",
+
 	)
 
 ################################################################################
