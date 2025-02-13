@@ -284,6 +284,7 @@ def build(ctx):
 #		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/lib/"
 	)
+	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
 	
 	if not ctx.env.NOOPENMP:
 		#MERIC

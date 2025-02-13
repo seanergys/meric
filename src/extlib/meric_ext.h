@@ -9,8 +9,8 @@
 // ====================================================================
 
 
-#ifndef SRC_EXTLIB_EXTLIB_H_
-#define SRC_EXTLIB_EXTLIB_H_
+#ifndef SRC_EXTLIB_MERIC_EXT_H_
+#define SRC_EXTLIB_MERIC_EXT_H_
 
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
@@ -219,4 +219,4 @@ EXTERNC struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct Extl
 // undef region
 #undef EXTERNC
 
-#endif // SRC_EXTLIB_EXTLIB_H_
+#endif // SRC_EXTLIB_MERIC_EXT_H_

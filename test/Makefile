@@ -66,7 +66,7 @@ all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
  ######
 
 midlib_test: midlib_test.c
-	$(CC) -O0 -g midlib_test.c -L.. -la64fx_meric $(OPENMP) $(NVML) -o midlibTest
+	$(CC) -O0 -g -lmeric_ext $(LIBS) -o midlibTest midlib_test.c
 
 midlib_work_meric_test: midlib_work_meric_test.cpp
 	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) -o midlib_work_meric_test

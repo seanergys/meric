@@ -8,7 +8,7 @@
 #include <omp.h>
 #include <stdbool.h>
 
-#include "extlib.h"
+#include "meric_ext.h"
 #include "../basis/utils.h"
 #include "../basis/cpu_optimisations.h"
 #include "../wrapper/environmentwrapper.h"

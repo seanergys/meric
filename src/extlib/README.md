@@ -10,12 +10,12 @@ Function `extlib_calc_energy_consumption` returns energy consumed (Joules) in th
 
 **Note:** The methods `extlib_read_energy_measurements(...)` and `extlib_calc_energy_consumption(...)` return a heap-allocated `ExtlibEnergyTimeStamp` object. Please use `extlib_free_energy_timestamp(energy_timestamp)` to free the allocated memory appropriately. For methods that return a `char*`, you can use the `free(..)`.
 
-An example program is provided below. For the full interface, refer to `meric/src/extlib/extlib.h`, and for more comprehensive example see `meric/src/test/extlib_test.c`.
+An example program is provided below. For the full interface, refer to `meric/src/extlib/meric_ext.h`, and for more comprehensive example see `meric/src/test/extlib_test.c`.
 
 ```
 // extlib_example.c
 
-#include "extlib.h"
+#include <meric_ext.h>
 
 ExtlibEnergy energy_domains = {0};
 EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_A64FX);
