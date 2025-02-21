@@ -1,5 +1,7 @@
 #include "raplwrapper.h"
 #include "environmentwrapper.h"
+#include <fstream>
+#include <string>
 
 using namespace meric;
 
@@ -7,9 +9,10 @@ std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 std::map<std::string, double> RAPL::units;
+std::map<std::string, RAPL::SysfsRAPLCounterDesc_t> RAPL::s_counterDesc;
+std::map<std::string, unsigned long long int> RAPL::counters;
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-std::map<std::string, unsigned long long int> RAPL::counters;
 
 /**
  * returns result value of the counter (std::string) based on its startValue and
@@ -249,6 +252,52 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 		}	
 	}
 }
+#else
+void RAPL::init(bool detailed)
+{
+	detailedMode = detailed;
+	initMap(counters);
+	//initCountersUnits() is already called from environmentwrapper
+}
+
+double RAPL::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
+	double runtime, int & cumulative, std::string counter, std::string regionName)
+{
+	auto it = s_counterDesc.find(counter);
+	if(it == s_counterDesc.end())
+		return 0.0;
+
+	if(stopValue < startValue)
+	{
+		return ((it->second.rangeMax - startValue) + stopValue) * it->second.unit;
+	}
+
+	return (stopValue - startValue) * it->second.unit;
+}
+
+template<typename T>
+bool ReadValue(std::ifstream &fs, T &out)
+{
+	if(!fs.is_open())
+		return false;
+
+	fs.seekg(0);
+	fs >> out;
+	return true;
+};
+
+void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
+{
+	for(const auto &[name, desc]: s_counterDesc)
+		record[name] = 0;
+
+	for(auto &[name, desc]: s_counterDesc)
+	{
+		uint64_t value = 0;
+		ReadValue(desc.fs, value);
+		record[name] = value;
+	}
+}
 #endif
 
 /**
@@ -283,6 +332,17 @@ double RAPL::getUnit(std::string counterName)
 		return -1.0;
 }
 
+template<typename T>
+bool ReadValue(const std::string &filename, T &out)
+{
+	std::ifstream fs(filename);
+	if(!fs.is_open())
+		return false;
+
+	fs >> out;
+	return true;
+};
+
 /**
  * fill-in the RAPL counters into the dictionary, that will keep values of the required counters
  **/
@@ -290,6 +350,9 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 {
 // fill this vector
 	std::vector <std::string> names;
+
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+
 #ifdef _INTEL_
 	names.push_back(RAPL_PCKG_ENERGY);
 	names.push_back(RAPL_RAM_ENERGY);
@@ -354,8 +417,56 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 			dict[*it] = 0;
 		}
 	}
+#else
+
+#ifdef _INTEL_
+	names.push_back(RAPL_PCKG_ENERGY);
+	names.push_back(RAPL_RAM_ENERGY);
+#elif defined _AMD_
+	names.push_back(RAPL_PCKG_ENERGY);
+	names.push_back(RAPL_PCKG_CORES_ENERGY);
+#endif
+
+	const std::string sysfsRAPLRoot("/sys/class/powercap/intel-rapl");
+
+	for(int die = 0; die < Environment::SOCKETS_PER_NODE; ++die)
+	{
+		const std::string dieRootPath = sysfsRAPLRoot + ":" + std::to_string(die);
+		const std::vector<const char *> dieDomainNames{
+			"",
+			":0"
+		};
+
+		for(const char *pszDomainName: dieDomainNames)
+		{
+			std::string sysfsName;
+			uint64_t maxCounterRange = 0;
+
+			bool state = ReadValue(dieRootPath + pszDomainName + "/name", sysfsName);
+			state = state && ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange);
+
+			if(!state)
+				continue;
+
+			std::string counterBaseName;
+
+			for(const std::string &name: names)
+			{
+				if(sysfsName.rfind(name, 0) == 0)
+					counterBaseName = name;
+			}
+
+			if(counterBaseName.empty())
+				continue;
+
+			dict[counterBaseName + "_" + std::to_string(die)] = 0;
+			s_counterDesc[counterBaseName + "_" + std::to_string(die)] = SysfsRAPLCounterDesc_t{
+				maxCounterRange,
+				1.0e-6,
+				dieRootPath + pszDomainName + "/energy_uj",
+				std::ifstream(dieRootPath + pszDomainName + "/energy_uj")
+			};
+		}
+	}
+#endif // SYSFS RAPL
 }
-
-
-
-
