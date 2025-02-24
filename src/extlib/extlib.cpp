@@ -281,10 +281,10 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain))) // Check if the domain is enabled
         {
             int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
-            if (enabled_domains->energyMeasurementFns[index])
+            if (OPT_LIKELY(enabled_domains->energyMeasurementFns[index]))
             {
                 size_t arr_size;
                 uint64_t *counter_value;
@@ -295,10 +295,12 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
                 timestamp->domain_data[index].arr_size = arr_size;
                 timestamp->domain_data[index].counter_name = counter_label;
                 timestamp->domain_data[index].counter_value = counter_value;
+                printf("[INFO]: Energy is read from Domain %s [OK]\n", printDomainName(domain));
             }
-
-            printf("[INFO]: Energy is read from Domain %s [OK]\n", printDomainName(domain));
+            else
+                printf("[INFO]: ExtlibEnergy is NOT initialised correctly! Domain %s's energyMeasurementFns is NOT set! \n", printDomainName(domain));
         }
+         
     }
     return timestamp;
 }
@@ -474,7 +476,6 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
                     result->domain_data[i].energy_per_counter[j] = meric::RAPL::getResultValue(
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
-                    printf("filling rapl i:%d -- j:%d -- result: %lf\n", i, j, result->domain_data[i].energy_per_counter[j]);
                     break;
 
                 case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
