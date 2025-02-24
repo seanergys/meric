@@ -278,7 +278,7 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 #else // _AMD_
 	{ RAPL_PCKG_ENERGY,       "PCKG [J]" },
-	{ RAPL_PCKG_CORES_ENERGY, "PCKG CORES [J]" },
+	{ RAPL_PCKG_CORES_ENERGY, "PCKG_CORES [J]" },
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 #endif
 };

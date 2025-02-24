@@ -29,7 +29,7 @@
 #include "countersrates.h"
 #include "../basis/utils.h"
 
-#ifdef HAVE_HSR_SAFE
+#ifdef HAVE_MSR_SAFE
 	using namespace MSR_RAPL_COUNTERS;
 #elif HAVE_X86_ADAPT_H
 	using namespace X86ADAPT_RAPL_COUNTERS;

@@ -9,8 +9,12 @@ std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
 unsigned long long int RAPL::COUNTERMAX = pow(2,32);
 std::map<std::string, double> RAPL::units;
-std::map<std::string, RAPL::SysfsRAPLCounterDesc_t> RAPL::s_counterDesc;
 std::map<std::string, unsigned long long int> RAPL::counters;
+
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#else
+std::map<std::string, RAPL::SysfsRAPLCounterDesc_t> RAPL::s_counterDesc;
+#endif
 
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 
