@@ -89,6 +89,38 @@ void Environment::getCPUbrandString(std::string & CPUname)
 	CPUname = std::string(buff);
 }
 
+
+void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
+{
+	unsigned int regs[4];
+	regs[eax] = 0x1;
+	regs[ebx] = 0x0;
+	regs[ecx] = 0x0;
+	regs[edx] = 0x0;
+	CPUID(regs);
+
+	uint32_t model = (regs[eax] >> 4) & 0xF;
+	uint32_t family = (regs[eax] >> 8) & 0xF;
+	uint32_t extended_model = (regs[eax] >> 16) & 0xF;
+	uint32_t extended_family = (regs[eax] >> 20) & 0xFF;
+
+	// Compute actual family and model
+	if (family == 0xF) {
+		family += extended_family;
+	}
+	if (family == 0x6 || family == 0xF) {
+		model += (extended_model << 4);
+	}
+ 
+	std::ostringstream oss;
+	oss << std::hex << std::uppercase << std::setfill('0');
+	oss << std::setw(2) << family << "_";
+	oss << std::setw(2) << model << "H";
+
+	CPUFamilyModelOut = oss.str();
+}
+
+
 #else
 /**
  * Parse /proc/cpuinfo for the processor name, if not available, than creates internal name to recognise the hardware
