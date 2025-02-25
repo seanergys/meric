@@ -2,6 +2,7 @@
 #include "../../wrapper/raplwrapper.h"
 #include "../../wrapper/nvmlwrapper.h"
 #include "../../wrapper/a64fxwrapper.h"
+#include "../../wrapper/hwmonwrapper.h"
 #include "../../basis/utils.h"
 #include <limits>
 
@@ -332,6 +333,11 @@ int main(int argc, char **argv)
 			{
 				measurements.push_back(&measureEnergy<A64FX>);
 				prints.push_back(printValues<A64FX>);
+			}
+			else if(token == "HWMON")
+			{
+				measurements.push_back(&measureEnergy<HWMON>);
+				prints.push_back(printValues<HWMON>);
 			}
 			else
 			{

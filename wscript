@@ -61,7 +61,8 @@ def configure(ctx):
 	
 	if ctx.options.flags:
 		ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-	ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
+	ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-fPIC" ])
+	ctx.env.append_unique("LINKFLAGS", [ "-std=c++17", "-lstdc++fs" ])
 	if (ctx.options.includes):
 		for path in ctx.options.includes.split():
 			if path[0] == '-':
@@ -234,6 +235,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
@@ -255,6 +257,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
 		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
@@ -269,6 +272,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
@@ -418,7 +422,7 @@ def options(opt):
 		"--flags",
 		action="store",
 		default="-O2",
-		help="Compiler flags (-std=c++11, -fPIC and -qopenmp/-fopenmp are default)"
+		help="Compiler flags (-std=c++17, -fPIC and -qopenmp/-fopenmp are default)"
 	)
 	
 	opt.add_option("--includes",

@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_COUNTERS_H_
 
 #include <cstdint>
+#include <string>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -278,7 +279,7 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 #else // _AMD_
 	{ RAPL_PCKG_ENERGY,       "PCKG [J]" },
-	{ RAPL_PCKG_CORES_ENERGY, "PCKG_CORES [J]" },
+	{ RAPL_PCKG_CORES_ENERGY, "PCKG_ACTIVE_CORES_AVG [J]" },
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
 #endif
 };
@@ -302,6 +303,22 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "PCKG [J]" },
 	{ RAPL_RAM_ENERGY,       "RAM [J]"  },
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
+};
+}
+
+namespace HWMON_COUNTERS {
+const std::string HWMON_CORE_ENERGY = "Ecore";
+const std::string HWMON_DIE_ENERGY  = "Esocket";
+// const std::string HWMON_PCKG_ENERGY = "";
+
+static std::map<const std::string, std::string> counterLabel = {
+	{ HWMON_CORE_ENERGY, "CORE" },
+	{ HWMON_DIE_ENERGY,  "DIE"  }
+};
+
+static std::map<const std::string, std::string> counterUnit = {
+	{ HWMON_CORE_ENERGY, "[J]" },
+	{ HWMON_DIE_ENERGY,  "[J]" }
 };
 }
 
