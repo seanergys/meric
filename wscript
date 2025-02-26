@@ -61,8 +61,7 @@ def configure(ctx):
 	
 	if ctx.options.flags:
 		ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-	ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-fPIC" ])
-	ctx.env.append_unique("LINKFLAGS", [ "-std=c++17", "-lstdc++fs" ])
+	ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
 	if (ctx.options.includes):
 		for path in ctx.options.includes.split():
 			if path[0] == '-':
@@ -422,7 +421,7 @@ def options(opt):
 		"--flags",
 		action="store",
 		default="-O2",
-		help="Compiler flags (-std=c++17, -fPIC and -qopenmp/-fopenmp are default)"
+		help="Compiler flags (-std=c++11, -fPIC and -qopenmp/-fopenmp are default)"
 	)
 	
 	opt.add_option("--includes",

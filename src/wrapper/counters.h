@@ -311,14 +311,9 @@ const std::string HWMON_CORE_ENERGY = "Ecore";
 const std::string HWMON_DIE_ENERGY  = "Esocket";
 // const std::string HWMON_PCKG_ENERGY = "";
 
-static std::map<const std::string, std::string> counterLabel = {
-	{ HWMON_CORE_ENERGY, "CORE" },
-	{ HWMON_DIE_ENERGY,  "DIE"  }
-};
-
-static std::map<const std::string, std::string> counterUnit = {
-	{ HWMON_CORE_ENERGY, "[J]" },
-	{ HWMON_DIE_ENERGY,  "[J]" }
+static std::map<const std::string, std::pair<std::string, std::string> > counterLabels = {
+	{ HWMON_CORE_ENERGY, { "CORE", "[J]" } },
+	{ HWMON_DIE_ENERGY,  { "DIE", "[J]"  } }
 };
 }
 

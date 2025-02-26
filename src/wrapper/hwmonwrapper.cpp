@@ -1,13 +1,10 @@
-#include <filesystem>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 #include <cmath>
+#include <dirent.h>
 
 #include "hwmonwrapper.h"
 #include "environmentwrapper.h"
@@ -26,6 +23,9 @@ std::string FormatNumber(const T value, int width = 0);
 std::string MakeCounterName(const std::string &name, const std::vector<std::pair<int, int>> &nums = {}, 
     bool isLabel = false);
 
+template<typename F>
+std::string SearchDir(const std::string &path, F &&f);
+
 std::map<std::string, HWMON::CounterDesc_t> HWMON::s_counterDesc;
 std::map<std::string, unsigned long long int> HWMON::counters;
 
@@ -40,23 +40,26 @@ void HWMON::close()
 
 void HWMON::getCounterValues(std::map<std::string, unsigned long long int> &record)
 {
-    for(auto &[name, desc]: s_counterDesc)
+    for(auto &desc: s_counterDesc)
     {
         uint64_t value = 0;
-        ReadValue(desc.fs, value);
-        record[name] = value;
+        ReadValue(desc.second.fs, value);
+        record[desc.first] = value;
     }
 }
 
 void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
 {
-    namespace fs = std::filesystem;
-
     const std::string hwmonRootPath("/sys/class/hwmon");
 
-    std::string hwmonCountersRoot;
+    std::string hwmonCountersRoot = SearchDir(hwmonRootPath, 
+        [&](const std::string &filename) {
+            std::string name;
+            ReadValue(hwmonRootPath + "/" + filename + "/name", name);
+            return (name == "amd_energy");
+        });
 
-    for(const auto &entry: fs::directory_iterator(hwmonRootPath))
+    /*for(const auto &entry: fs::directory_iterator(hwmonRootPath))
     {
         if(!fs::exists(entry.path().string() + "/name"))
             continue;
@@ -68,7 +71,7 @@ void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
             hwmonCountersRoot = entry.path().string();
             break;
         }
-    }
+    }*/
 
     std::vector<std::pair<std::string, int> > counters;
     counters.push_back({ HWMON_CORE_ENERGY, log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1 });
@@ -77,24 +80,24 @@ void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
     std::regex counterFileRegex("^energy([0-9]+)_input$");
     std::regex counterLabelRegex("^([a-zA-Z]+)([0-9]+)$");
 
-    for(const auto &entry: fs::directory_iterator(hwmonCountersRoot))
-    {
-        const std::string filename = entry.path().filename().string();
-
+    SearchDir(hwmonCountersRoot, [&](const std::string &filename) {
         std::smatch counterFileMatch;
         if(!std::regex_match(filename, counterFileMatch, counterFileRegex))
-            continue;
+            return false;
 
         std::string hwmonCounterLabel;
         if(!ReadValue(hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_label", hwmonCounterLabel))
-            continue;
+            return false;
 
         std::smatch counterLabelMatch;
         if(!std::regex_match(hwmonCounterLabel, counterLabelMatch, counterLabelRegex))
-            continue;
+            return false;
 
-        for(const auto &[name, suffixLength]: counters)
+        for(const auto &counter: counters)
         {
+            const auto &name = counter.first;
+            const auto &suffixLength = counter.second;
+
             if(name == counterLabelMatch[1].str())
             {
                 uint64_t num = 0;
@@ -104,19 +107,20 @@ void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
                 const std::string fullName  = MakeCounterName(name, {{ num, suffixLength }});
                 const std::string fullLabel = MakeCounterName(name, {{ num, suffixLength }}, true);
 
-                counterLabel[fullName] = fullLabel;
-
                 dict[fullName] = 0;
                 s_counterDesc[fullName] = CounterDesc_t{
                     1.0e-6,
                     hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_input",
-                    std::ifstream(hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_input")
+                    std::ifstream(hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_input"),
+                    fullLabel
                 };
 
                 break;
             }
         }
-    }
+
+        return false;
+    });
 }
 
 double HWMON::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
@@ -143,15 +147,17 @@ std::string HWMON::getSourceLabel()
 
 std::string HWMON::getCounterLabel(const std::string counter)
 {
-    if(auto it = counterLabel.find(counter); it != counterLabel.end())
-        return it->second;
+    auto it = s_counterDesc.find(counter);
+    if(it != s_counterDesc.end())
+        return it->second.label;
 
     return counter;
 }
 
 double HWMON::getUnit(std::string counterName)
 {
-    if(auto it = s_counterDesc.find(counterName); it != s_counterDesc.end())
+    auto it = s_counterDesc.find(counterName);
+    if(it != s_counterDesc.end())
         return it->second.unit;
 
     return -1.0;
@@ -192,16 +198,39 @@ std::string MakeCounterName(const std::string &name, const std::vector<std::pair
 {
     std::ostringstream oss;
 
-    if(auto it = counterLabel.find(name); it != counterLabel.end() && isLabel)
-        oss << it->second;
+    auto labelIt = isLabel ? counterLabels.find(name) : counterLabels.end();
+
+    if(labelIt != counterLabels.end())
+        oss << labelIt->second.first;
     else
         oss << name;
 
-    for(const auto &[num, width]: nums)
-        oss << "_" << std::setfill('0') << std::setw(width) << num;
-
-    if(auto it = counterUnit.find(name); it != counterUnit.end())
-        oss << " " << it->second;
+    for(const auto &num: nums)
+        oss << "_" << std::setfill('0') << std::setw(num.second) << num.first;
+    
+    if(labelIt != counterLabels.end())
+        oss << " " << labelIt->second.second;
 
     return oss.str();
+}
+
+template<typename F>
+std::string SearchDir(const std::string &path, F &&f)
+{
+    DIR *pDir;
+    if((pDir = opendir(path.c_str())) == NULL)
+        return std::string();
+    
+    dirent *pDirEnt;
+    while((pDirEnt = readdir(pDir)) != NULL)
+    {
+        if(f(pDirEnt->d_name))
+        {
+            closedir(pDir);
+            return (path + "/" + pDirEnt->d_name);
+        }
+    }
+
+    closedir(pDir);
+    return std::string();
 }

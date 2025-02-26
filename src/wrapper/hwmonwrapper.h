@@ -37,6 +37,7 @@ protected:
         double unit;
         std::string path;
         std::ifstream fs;
+        std::string label;
     };
 
     static std::map<std::string, CounterDesc_t> s_counterDesc;
