@@ -154,6 +154,9 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 
 		ratios["CPU_FREQUENCY"+suffix+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
 
+		unsigned long long int instructions = getResultValue(start[PERFEVENT_COUNTERS::COUNTER_INSTRUCTIONS + suffix],
+									stop[PERFEVENT_COUNTERS::COUNTER_INSTRUCTIONS + suffix], runtime, cumulative);
+
 		#ifdef _INTEL_
 		//unsigned long long int cyclesAMXActive = getResultValue(start[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY + suffix],
 		//							stop[PERFEVENT_COUNTERS::COUNTER_CYCLES_AMX_BUSY + suffix], runtime, cumulative);
@@ -186,6 +189,12 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		ratios["CPU_FP_FP_INSTRUCTION_VEC256_RATIO"+suffix] = instructionsFp ? instructionsFpVec256/(double)instructionsFp : 0;
 		ratios["CPU_FP_FP_INSTRUCTION_VEC512_RATIO"+suffix] = instructionsFp ? instructionsFpVec512/(double)instructionsFp : 0;
 		ratios["CPU_FP_FP_INSTRUCTION_VECTORIZATION_RATIO"+suffix] = instructionsFp ? instructionsFpVec/(double)instructionsFp : 0;
+
+		ratios["CPU_FP_ALL_INSTRUCTION_SCALAR_RATIO"+suffix] = instructions ? instructionsFpScalar/(double)instructions : 0;
+		ratios["CPU_FP_ALL_INSTRUCTION_VEC128_RATIO"+suffix] = instructions ? instructionsFpVec128/(double)instructions : 0;
+		ratios["CPU_FP_ALL_INSTRUCTION_VEC256_RATIO"+suffix] = instructions ? instructionsFpVec256/(double)instructions : 0;
+		ratios["CPU_FP_ALL_INSTRUCTION_VEC512_RATIO"+suffix] = instructions ? instructionsFpVec512/(double)instructions : 0;
+		ratios["CPU_FP_ALL_INSTRUCTION_VECTORIZATION_RATIO"+suffix] = instructions ? instructionsFpVec/(double)instructions : 0;
 
 		unsigned long long int flops = instructionsFpScalar + 4*instructionsFpVec128Single + 2*instructionsFpVec128Double +
 							8*instructionsFpVec256Single + 4*instructionsFpVec256Double + 16*instructionsFpVec512Single + 8*instructionsFpVec512Double;
