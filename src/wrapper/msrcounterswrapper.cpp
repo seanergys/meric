@@ -6,7 +6,7 @@ using namespace meric;
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
 uint64_t MSR::nominal_freq = 0;
 
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
+// #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
 
 void MSR::init()
@@ -14,15 +14,34 @@ void MSR::init()
 	//msr library as well as RAPL units has been already initialized in Environment::init(...)
 	initMap(counters);
 
-	//enable uncore-frequency monitoring
-	uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
-	#ifdef U_MSR_PMON_FIXED_CTL
-	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
-		write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
-	#endif
-	nominal_freq = Environment::getNominalFrequency();
-
-	//TODO prepare a msr batch
+	std::string cpuFamilyModelString = Environment::getCPUFamilyModelString();
+	CpuidSignatureValues cpu_arch = meric::stringToCpuidSignature(cpuFamilyModelString);
+	
+	switch (cpu_arch)
+	{
+		// case CpuidSignatureValues::UNKNOWN :	// handle unknown case
+		// {
+        //     MERIC_INFO << "Invalid CpuidSignatureValues string: " << cpuFamilyModelString << std::endl; 
+		// 	exit(EXIT_FAILURE);
+		// }
+		case CpuidSignatureValues::INTEL_06_8FH :	// if it's Intel SapphireRapids
+		{
+			// TODO: Apply counter logic.
+			break;
+		}
+		default:	// apply this in default or it is unknown
+		{
+			//enable uncore-frequency monitoring for other architectures
+			uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
+			#ifdef U_MSR_PMON_FIXED_CTL
+			for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
+				write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
+			#endif
+			nominal_freq = Environment::getNominalFrequency();
+			//TODO prepare a msr batch
+			break;
+		}	
+	}
 }
 
 void MSR::close()
