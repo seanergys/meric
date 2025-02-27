@@ -308,12 +308,12 @@ static std::map<const std::string, std::string> counterLabel = {
 
 namespace HWMON_COUNTERS {
 const std::string HWMON_CORE_ENERGY = "Ecore";
-const std::string HWMON_DIE_ENERGY  = "Esocket";
+const std::string HWMON_PCKG_ENERGY = "Esocket";
 // const std::string HWMON_PCKG_ENERGY = "";
 
 static std::map<const std::string, std::pair<std::string, std::string> > counterLabels = {
 	{ HWMON_CORE_ENERGY, { "CORE", "[J]" } },
-	{ HWMON_DIE_ENERGY,  { "DIE", "[J]"  } }
+	{ HWMON_PCKG_ENERGY, { "PCKG", "[J]" } }
 };
 }
 

@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <fstream>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <cmath>
 #include <dirent.h>
 
@@ -24,7 +26,46 @@ std::string MakeCounterName(const std::string &name, const std::vector<std::pair
     bool isLabel = false);
 
 template<typename F>
-std::string SearchDir(const std::string &path, F &&f);
+bool IterateDir(const std::string &path, F &&f);
+
+struct CollectCountersDesc_t {
+    std::string prefix;
+    std::regex  counterFileRegex;
+    std::regex  labelRegex;
+    std::pair<std::string, std::string> labelFilename;
+    std::set<std::string> counters;
+};
+
+template<typename T, typename F>
+void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f);
+
+template<typename T>
+T ParseString(const std::string &str);
+
+std::string &RTrim(std::string &s, const char *t) {
+    s.erase(s.find_last_not_of(t) + 1);
+    return s;
+}
+
+std::string &LTrim(std::string &s, const char *t) {
+    s.erase(0, s.find_first_not_of(t));
+    return s;
+}
+
+std::string &Trim(std::string &s, const char *t = " \t\n\r\f\v") {
+    return LTrim(RTrim(s, t), t);
+}
+
+std::string Trim(const std::string &s, const char *t = " \t\n\r\f\v") {
+    std::string sc = s;
+    return LTrim(RTrim(sc, t), t);
+}
+
+std::string NormalizeLabel(const std::string &str) {
+    std::string out = Trim(str);
+    std::replace(out.begin(), out.end(), ' ', '_');
+    return out;
+}
 
 std::map<std::string, HWMON::CounterDesc_t> HWMON::s_counterDesc;
 std::map<std::string, unsigned long long int> HWMON::counters;
@@ -50,77 +91,110 @@ void HWMON::getCounterValues(std::map<std::string, unsigned long long int> &reco
 
 void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
 {
-    const std::string hwmonRootPath("/sys/class/hwmon");
+    struct Counter_t {
+        std::string path;
+        std::string baseLabel;
+        int id;
+        double samplePeriod;
+    };
 
-    std::string hwmonCountersRoot = SearchDir(hwmonRootPath, 
-        [&](const std::string &filename) {
+    const std::string hwmonRootPath("/sys/class/hwmon");
+    std::vector<Counter_t> hwmonCounters;
+    std::map<std::string, int> labelsSuffixLen;
+
+    {
+        std::vector<std::string> hwmonCounterRoots;
+
+        IterateDir(hwmonRootPath, [&](const std::string &filename) {
             std::string name;
             ReadValue(hwmonRootPath + "/" + filename + "/name", name);
-            return (name == "amd_energy");
+            if(name == "amd_energy")
+                hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
         });
 
-    /*for(const auto &entry: fs::directory_iterator(hwmonRootPath))
-    {
-        if(!fs::exists(entry.path().string() + "/name"))
-            continue;
+        CollectCountersDesc_t collectDesc;
+        collectDesc.prefix           = "";
+        collectDesc.counterFileRegex = "^energy([0-9]+)_input$";
+        collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
+        collectDesc.labelFilename    = { "energy", "_label" };
+        collectDesc.counters         = { HWMON_CORE_ENERGY, HWMON_PCKG_ENERGY };
 
-        std::string name;
-        ReadValue(entry.path().string() + "/name", name);
-        if(name == "amd_energy")
+        CollectCounters(hwmonCounterRoots, collectDesc, hwmonCounters, 
+            [&](Counter_t &out, const std::string &path, 
+                    const std::smatch &counterMatch, const std::smatch &labelMatch) 
+            {
+                out.samplePeriod = 0.0;
+                return true;
+            });
+        
+        labelsSuffixLen[HWMON_CORE_ENERGY] = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
+        labelsSuffixLen[HWMON_PCKG_ENERGY] = log10(Environment::SOCKETS_PER_NODE) + 1;
+        
+        int socketCount = 0;
+        for(const Counter_t &counter: hwmonCounters)
+            socketCount += (counter.baseLabel == HWMON_PCKG_ENERGY ? 1 : 0);
+
+        int socketStep = socketCount / Environment::SOCKETS_PER_NODE;
+        auto it = hwmonCounters.begin();
+        while(it != hwmonCounters.end())
         {
-            hwmonCountersRoot = entry.path().string();
-            break;
+            if(it->baseLabel == HWMON_PCKG_ENERGY)
+            {
+                if((it->id % socketStep) != 0)
+                {
+                    it = hwmonCounters.erase(it);
+                    continue;
+                }
+
+                it->id = it->id / socketStep;
+            }
+
+            ++it;
         }
+    }
+
+    /*{
+        std::vector<std::string> hwmonCounterRoots;
+
+        IterateDir(hwmonRootPath, [&](const std::string &filename) {
+            hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
+        });
+
+        CollectCountersDesc_t collectDesc;
+        collectDesc.prefix           = "/device";
+        collectDesc.counterFileRegex = "^power([0-9]+)_average$";
+        collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
+        collectDesc.labelFilename    = { "power", "_oem_info" };
+        collectDesc.counters         = { 
+            "CPU_Power_Socket", "Module_Power_Socket", 
+            "SysIO_Power_Socket", "Grace_Power_Socket" 
+        };
+
+        CollectCounters(hwmonCounterRoots, collectDesc, hwmonCounters, 
+            [&](Counter_t &out, const std::string &path, 
+                    const std::smatch &counterMatch, const std::smatch &labelMatch) 
+            {
+                int interval = 0;
+                ReadValue(path + "/power" + counterMatch[1].str() + "_average_interval", interval);
+
+                out.samplePeriod = interval * 1.0e-3;
+
+                return true;
+            });
     }*/
 
-    std::vector<std::pair<std::string, int> > counters;
-    counters.push_back({ HWMON_CORE_ENERGY, log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1 });
-    counters.push_back({ HWMON_DIE_ENERGY, log10(Environment::SOCKETS_PER_NODE) + 1 });
+    for(const Counter_t &counter: hwmonCounters)
+    {
+        const std::string fullName  = MakeCounterName(counter.baseLabel, {{ counter.id, labelsSuffixLen[counter.baseLabel] }});
+        const std::string fullLabel = MakeCounterName(counter.baseLabel, {{ counter.id, labelsSuffixLen[counter.baseLabel] }}, true);
 
-    std::regex counterFileRegex("^energy([0-9]+)_input$");
-    std::regex counterLabelRegex("^([a-zA-Z]+)([0-9]+)$");
-
-    SearchDir(hwmonCountersRoot, [&](const std::string &filename) {
-        std::smatch counterFileMatch;
-        if(!std::regex_match(filename, counterFileMatch, counterFileRegex))
-            return false;
-
-        std::string hwmonCounterLabel;
-        if(!ReadValue(hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_label", hwmonCounterLabel))
-            return false;
-
-        std::smatch counterLabelMatch;
-        if(!std::regex_match(hwmonCounterLabel, counterLabelMatch, counterLabelRegex))
-            return false;
-
-        for(const auto &counter: counters)
-        {
-            const auto &name = counter.first;
-            const auto &suffixLength = counter.second;
-
-            if(name == counterLabelMatch[1].str())
-            {
-                uint64_t num = 0;
-                std::istringstream ss(counterLabelMatch[2].str());
-                ss >> num;
-
-                const std::string fullName  = MakeCounterName(name, {{ num, suffixLength }});
-                const std::string fullLabel = MakeCounterName(name, {{ num, suffixLength }}, true);
-
-                dict[fullName] = 0;
-                s_counterDesc[fullName] = CounterDesc_t{
-                    1.0e-6,
-                    hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_input",
-                    std::ifstream(hwmonCountersRoot + "/energy" + counterFileMatch[1].str() + "_input"),
-                    fullLabel
-                };
-
-                break;
-            }
-        }
-
-        return false;
-    });
+        s_counterDesc[fullName] = CounterDesc_t{
+            1.0e-6,
+            counter.path,
+            std::ifstream(counter.path),
+            fullLabel
+        };
+    }
 }
 
 double HWMON::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
@@ -170,8 +244,7 @@ bool ReadValue(const std::string &filename, T &out)
 	if(!fs.is_open())
 		return false;
 
-	fs >> out;
-	return true;
+	return ReadValue(fs, out);
 };
 
 template<typename T>
@@ -182,6 +255,17 @@ bool ReadValue(std::ifstream &fs, T &out)
 
 	fs.seekg(0);
 	fs >> out;
+	return true;
+};
+
+template<>
+bool ReadValue(std::ifstream &fs, std::string &out)
+{
+	if(!fs.is_open())
+		return false;
+
+	fs.seekg(0);
+	std::getline(fs, out);
 	return true;
 };
 
@@ -215,22 +299,59 @@ std::string MakeCounterName(const std::string &name, const std::vector<std::pair
 }
 
 template<typename F>
-std::string SearchDir(const std::string &path, F &&f)
+bool IterateDir(const std::string &path, F &&f)
 {
     DIR *pDir;
     if((pDir = opendir(path.c_str())) == NULL)
-        return std::string();
+        return false;
     
     dirent *pDirEnt;
     while((pDirEnt = readdir(pDir)) != NULL)
-    {
-        if(f(pDirEnt->d_name))
-        {
-            closedir(pDir);
-            return (path + "/" + pDirEnt->d_name);
-        }
-    }
+        f(pDirEnt->d_name);
 
     closedir(pDir);
-    return std::string();
+    return true;
+}
+
+template<typename T, typename F>
+void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f)
+{
+    for(const std::string &path: paths)
+    {
+        IterateDir(path + desc.prefix, [&](const std::string &filename) {
+            std::smatch counterFileMatch;
+            if(!std::regex_match(filename, counterFileMatch, desc.counterFileRegex))
+                return;
+
+            std::string hwmonCounterLabel;
+            if(!ReadValue(path + desc.prefix + "/" + desc.labelFilename.first + counterFileMatch[1].str() + desc.labelFilename.second, hwmonCounterLabel))
+                return;
+
+            std::smatch hwmonCounterLabelMatch;
+            if(!std::regex_match(hwmonCounterLabel, hwmonCounterLabelMatch, desc.labelRegex))
+                return;
+
+            std::string baseLabel = NormalizeLabel(hwmonCounterLabelMatch[1]);
+
+            if(desc.counters.count(baseLabel) < 1)
+                return;
+
+            T counter;
+            counter.path      = path + "/" + filename;
+            counter.baseLabel = baseLabel;
+            counter.id        = ParseString<int>(hwmonCounterLabelMatch[2]);
+
+            if(f(counter, path + desc.prefix, counterFileMatch, hwmonCounterLabelMatch))
+                counters.push_back(counter);
+        });
+    }
+}
+
+template<typename T>
+T ParseString(const std::string &str)
+{
+    T value = T();
+    std::istringstream ss(str);
+    ss >> value;
+    return value;
 }
