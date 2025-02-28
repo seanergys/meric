@@ -89,11 +89,7 @@ public:
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName()
 	{
-#ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
-#else // _AMD_
-		return "";
-#endif
 	};
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(const std::string counter);
@@ -102,10 +98,12 @@ public:
 	static double getUnit(std::string counterName);
 private:
 	struct SysfsRAPLCounterDesc_t {
+		std::string label;
 		uint64_t rangeMax;
 		double unit;
 		std::string path;
 		std::ifstream fs;
+		bool isCumulative;
 	};
 
 	static std::string suffix;

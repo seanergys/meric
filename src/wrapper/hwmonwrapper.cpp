@@ -10,23 +10,10 @@
 
 #include "hwmonwrapper.h"
 #include "environmentwrapper.h"
+#include "sysfs_utils.h"
 
 using namespace meric;
-
-template<typename T>
-bool ReadValue(const std::string &filename, T &out);
-
-template<typename T>
-bool ReadValue(std::ifstream &fs, T &out);
-
-template<typename T>
-std::string FormatNumber(const T value, int width = 0);
-
-std::string MakeCounterName(const std::string &name, const std::vector<std::pair<int, int>> &nums = {}, 
-    bool isLabel = false);
-
-template<typename F>
-bool IterateDir(const std::string &path, F &&f);
+using namespace meric::sysfs_utils;
 
 struct CollectCountersDesc_t {
     std::string prefix;
@@ -38,34 +25,6 @@ struct CollectCountersDesc_t {
 
 template<typename T, typename F>
 void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f);
-
-template<typename T>
-T ParseString(const std::string &str);
-
-std::string &RTrim(std::string &s, const char *t) {
-    s.erase(s.find_last_not_of(t) + 1);
-    return s;
-}
-
-std::string &LTrim(std::string &s, const char *t) {
-    s.erase(0, s.find_first_not_of(t));
-    return s;
-}
-
-std::string &Trim(std::string &s, const char *t = " \t\n\r\f\v") {
-    return LTrim(RTrim(s, t), t);
-}
-
-std::string Trim(const std::string &s, const char *t = " \t\n\r\f\v") {
-    std::string sc = s;
-    return LTrim(RTrim(sc, t), t);
-}
-
-std::string NormalizeLabel(const std::string &str) {
-    std::string out = Trim(str);
-    std::replace(out.begin(), out.end(), ' ', '_');
-    return out;
-}
 
 std::map<std::string, HWMON::CounterDesc_t> HWMON::s_counterDesc;
 std::map<std::string, unsigned long long int> HWMON::counters;
@@ -185,8 +144,8 @@ void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
 
     for(const Counter_t &counter: hwmonCounters)
     {
-        const std::string fullName  = MakeCounterName(counter.baseLabel, {{ counter.id, labelsSuffixLen[counter.baseLabel] }});
-        const std::string fullLabel = MakeCounterName(counter.baseLabel, {{ counter.id, labelsSuffixLen[counter.baseLabel] }}, true);
+        const std::string fullName  = MakeCounterName(counter.baseLabel, counterLabels, {{ counter.id, labelsSuffixLen[counter.baseLabel] }});
+        const std::string fullLabel = MakeCounterName(counter.baseLabel, counterLabels, {{ counter.id, labelsSuffixLen[counter.baseLabel] }}, true);
 
         s_counterDesc[fullName] = CounterDesc_t{
             1.0e-6,
@@ -237,82 +196,6 @@ double HWMON::getUnit(std::string counterName)
     return -1.0;
 }
 
-template<typename T>
-bool ReadValue(const std::string &filename, T &out)
-{
-	std::ifstream fs(filename);
-	if(!fs.is_open())
-		return false;
-
-	return ReadValue(fs, out);
-};
-
-template<typename T>
-bool ReadValue(std::ifstream &fs, T &out)
-{
-	if(!fs.is_open())
-		return false;
-
-	fs.seekg(0);
-	fs >> out;
-	return true;
-};
-
-template<>
-bool ReadValue(std::ifstream &fs, std::string &out)
-{
-	if(!fs.is_open())
-		return false;
-
-	fs.seekg(0);
-	std::getline(fs, out);
-	return true;
-};
-
-template<typename T>
-std::string FormatNumber(const T value, int width)
-{
-    std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(width) << value;
-    return oss.str();
-}
-
-std::string MakeCounterName(const std::string &name, const std::vector<std::pair<int, int>> &nums, 
-    bool isLabel)
-{
-    std::ostringstream oss;
-
-    auto labelIt = isLabel ? counterLabels.find(name) : counterLabels.end();
-
-    if(labelIt != counterLabels.end())
-        oss << labelIt->second.first;
-    else
-        oss << name;
-
-    for(const auto &num: nums)
-        oss << "_" << std::setfill('0') << std::setw(num.second) << num.first;
-    
-    if(labelIt != counterLabels.end())
-        oss << " " << labelIt->second.second;
-
-    return oss.str();
-}
-
-template<typename F>
-bool IterateDir(const std::string &path, F &&f)
-{
-    DIR *pDir;
-    if((pDir = opendir(path.c_str())) == NULL)
-        return false;
-    
-    dirent *pDirEnt;
-    while((pDirEnt = readdir(pDir)) != NULL)
-        f(pDirEnt->d_name);
-
-    closedir(pDir);
-    return true;
-}
-
 template<typename T, typename F>
 void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f)
 {
@@ -345,13 +228,4 @@ void CollectCounters(const std::vector<std::string> &paths, const CollectCounter
                 counters.push_back(counter);
         });
     }
-}
-
-template<typename T>
-T ParseString(const std::string &str)
-{
-    T value = T();
-    std::istringstream ss(str);
-    ss >> value;
-    return value;
 }

@@ -2,8 +2,10 @@
 #include "environmentwrapper.h"
 #include <fstream>
 #include <string>
+#include "sysfs_utils.h"
 
 using namespace meric;
+using namespace meric::sysfs_utils;
 
 std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
@@ -271,6 +273,8 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 	if(it == s_counterDesc.end())
 		return 0.0;
 
+	cumulative = it->second.isCumulative ? 1 : 0;
+
 	if(stopValue < startValue)
 	{
 		return ((it->second.rangeMax - startValue) + stopValue) * it->second.unit;
@@ -279,39 +283,21 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 	return (stopValue - startValue) * it->second.unit;
 }
 
-template<typename T>
-bool ReadValue(std::ifstream &fs, T &out)
-{
-	if(!fs.is_open())
-		return false;
-
-	fs.seekg(0);
-	fs >> out;
-	return true;
-};
-
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
-	for(const auto &[name, desc]: s_counterDesc)
-		record[name] = 0;
+	for(const auto &desc: s_counterDesc)
+		record[desc.first] = 0;
 
-	for(auto &[name, desc]: s_counterDesc)
+	for(auto &desc: s_counterDesc)
 	{
 		uint64_t value = 0;
-		ReadValue(desc.fs, value);
-		record[name] = value;
+		ReadValue(desc.second.fs, value);
+		record[desc.first] = value;
 	}
 }
 #endif
 
-/**
- * returns label of this class (required for the output)
- **/
-std::string RAPL::getSourceLabel()
-{
-	return "RAPL";
-}
-
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 /**
  * each counter has a label, that will represent this counter in the output file
  * returns a label of the input counter
@@ -324,6 +310,24 @@ std::string RAPL::getCounterLabel(const std::string counter)
 	else
 		return counter;
 }
+#else
+std::string RAPL::getCounterLabel(const std::string counter)
+{
+	auto it = s_counterDesc.find(counter);
+	if(it != s_counterDesc.end())
+		return it->second.label;
+
+	return counter;
+}
+#endif
+
+/**
+ * returns label of this class (required for the output)
+ **/
+std::string RAPL::getSourceLabel()
+{
+	return "RAPL";
+}
 
 /**
  * returns unit (double) of the requested RAPL counter
@@ -335,17 +339,6 @@ double RAPL::getUnit(std::string counterName)
 	else
 		return -1.0;
 }
-
-template<typename T>
-bool ReadValue(const std::string &filename, T &out)
-{
-	std::ifstream fs(filename);
-	if(!fs.is_open())
-		return false;
-
-	fs >> out;
-	return true;
-};
 
 /**
  * fill-in the RAPL counters into the dictionary, that will keep values of the required counters
@@ -463,12 +456,24 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 			if(counterBaseName.empty())
 				continue;
 
-			dict[counterBaseName + "_" + std::to_string(die)] = 0;
-			s_counterDesc[counterBaseName + "_" + std::to_string(die)] = SysfsRAPLCounterDesc_t{
+			const std::string fullName  = MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }});
+			const std::string fullLabel = MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }}, true);
+
+			units[fullName] = 1.0e-6;
+			dict[fullName] = 0;
+			s_counterDesc[fullName] = SysfsRAPLCounterDesc_t{
+				fullLabel,
 				maxCounterRange,
 				1.0e-6,
 				dieRootPath + pszDomainName + "/energy_uj",
-				std::ifstream(dieRootPath + pszDomainName + "/energy_uj")
+				std::ifstream(dieRootPath + pszDomainName + "/energy_uj"),
+#ifdef _INTEL_
+				true
+#elif defined _AMD_
+				counterBaseName == RAPL_PCKG_ENERGY
+#else
+				false
+#endif
 			};
 		}
 	}
