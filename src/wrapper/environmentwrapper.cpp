@@ -119,9 +119,9 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 
 	CPUFamilyModelOut = oss.str();
 
-	#if defined(__INTEL__)
+	#if defined(_INTEL_)
     	CPUFamilyModelOut = std::string("INTEL_") + CPUFamilyModelOut;
-	#elif defined(__amd64__)
+	#elif defined(_AMD_) || defined(__amd64__)
 		CPUFamilyModelOut = std::string("AMD_") + CPUFamilyModelOut;
 	#endif
 

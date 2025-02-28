@@ -1013,10 +1013,10 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
  /**
   * 
-  * U_MSR_PMON_GLOBAL_CTL register (64 bit register) **********************************************
+  * MSR_UNC_SPR_PMON_GLOBAL_CTL register (64 bit register) **********************************************
 	
 	The following registers represent state governing all PMUs in the uncore, both to exert
-	global control and collect unit-level information. U_MSR_PMON_GLOBAL_CTL contains bits that can stop (.frz_all) all the uncore counters.
+	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTL contains bits that can stop (.frz_all) all the uncore counters.
 
   * MSR		MASK
   * 0x2FF0	0x0000000000000001
@@ -1027,9 +1027,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
 #ifdef _INTEL_
-	#ifndef
-		U_MSR_PMON_GLOBAL_CTL = 0x2FF0;
-	#endif
+	#define MSR_UNC_SPR_PMON_GLOBAL_CTL	0x2FF0
 #endif
  
   /**
@@ -1047,9 +1045,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
  #ifdef _INTEL_
-	 #ifndef
-	 	MSR_UNC_SPR_C0_PMON_UNIT_CTRL = 0x2000;
-	 #endif
+ 	#define MSR_UNC_SPR_C0_PMON_UNIT_CTRL  0x2000
  #endif
   
 
@@ -1081,9 +1077,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
  #ifdef _INTEL_
-	 #ifndef
-	 		MSR_UNC_SPR_C0_PMON_CTRL = 0x2002;
-	 #endif
+ 	#define MSR_UNC_SPR_C0_PMON_CTRL  0x2002
  #endif
   
 
@@ -1104,9 +1098,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
  const uint64_t MSR_UNC_SPR_C0_PMON_CTR_count_mask= 0x0000FFFFFFFFFFFF; 
  const uint64_t MSR_UNC_SPR_C0_PMON_CTR_count_shift= 0;
   #ifdef _INTEL_
-	  #ifndef
-	  		MSR_UNC_SPR_C0_PMON_CTR = 0x2008;
-	  #endif
+  	#define MSR_UNC_SPR_C0_PMON_CTR  0x2008
   #endif
 
   //********************************************** END INTEL SAPPHIRE RAPIDS **********************************************

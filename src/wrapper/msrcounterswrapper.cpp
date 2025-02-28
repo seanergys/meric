@@ -5,8 +5,9 @@ using namespace meric;
 
 uint64_t MSR::COUNTERMAX = 0xFFFFFFFFFFFFFFFF;
 uint64_t MSR::nominal_freq = 0;
+CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 
-// #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
 
 void MSR::init()
@@ -14,39 +15,41 @@ void MSR::init()
 	//msr library as well as RAPL units has been already initialized in Environment::init(...)
 	initMap(counters);
 
-	std::string cpuFamilyModelString = Environment::getCPUFamilyModelString();
-	CpuidSignatureValues cpu_arch = meric::stringToCpuidSignature(cpuFamilyModelString);
-	
-	switch (cpu_arch)
+	std::string cpuFamilyModelString;
+	Environment::getCPUFamilyModelString(cpuFamilyModelString);
+	MSR::cpu_arch = meric::stringToCpuidSignature(cpuFamilyModelString);
+	if(MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH)
 	{
-		// case CpuidSignatureValues::UNKNOWN :	// handle unknown case
-		// {
-        //     MERIC_INFO << "Invalid CpuidSignatureValues string: " << cpuFamilyModelString << std::endl; 
-		// 	exit(EXIT_FAILURE);
-		// }
-		case CpuidSignatureValues::INTEL_06_8FH :	// if it's Intel SapphireRapids
-		{
-			// TODO: Apply counter logic.
-			break;
+		for (int i=0; i < Environment::SOCKETS_PER_NODE; i++){
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x1); // freeze counting by global ctl
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_UNIT_CTRL, 0x300); // 0x300 to clear unit box control and counter values
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_CTRL, 0x1020001); // 0x1020001 to set configuration
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x0); // un-freeze counting by global ctl
 		}
-		default:	// apply this in default or it is unknown
-		{
-			//enable uncore-frequency monitoring for other architectures
-			uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
-			#ifdef U_MSR_PMON_FIXED_CTL
-			for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
-				write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
-			#endif
-			nominal_freq = Environment::getNominalFrequency();
-			//TODO prepare a msr batch
-			break;
-		}	
 	}
+	else
+	{
+		//enable uncore-frequency monitoring for other architectures
+		uint64_t U_MSR_PMON_FIXED_CTL_bits = 1 << U_MSR_PMON_FIXED_CTL_shift;
+		#ifdef U_MSR_PMON_FIXED_CTL
+		for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
+			write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
+		#endif
+		nominal_freq = Environment::getNominalFrequency();
+		//TODO prepare a msr batch
+	} 
 }
 
 void MSR::close()
 {
 	//library will be finalized in Environment::close()
+	if(MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH)
+	{
+		for (int i=0; i < Environment::SOCKETS_PER_NODE; i++){
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x1); // freeze counting by global ctl
+			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_UNIT_CTRL, 0x300); // 0x300 to clear unit box control and counter values
+		}
+	}
 }
 
 void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
@@ -70,10 +73,19 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> & record)
 	
 	for (int i=0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-#ifdef U_MSR_PMON_FIXED_CTR
-		read_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTR, &val);
-		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
+		if(MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH){
+#ifdef MSR_UNC_SPR_C0_PMON_CTR
+			read_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_CTR, &val);
 #endif
+		}
+		else{
+#ifdef U_MSR_PMON_FIXED_CTR
+			read_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTR, &val);
+#endif
+		}
+		
+		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
+		
 #ifdef MSR_PKG_PERF_STATUS
 		read_msr(Environment::mapCoresToSocket[i][0], MSR_PKG_PERF_STATUS, &val);
 		record[MSR_COUNTERS::RAPL_PKG_ACTIVE + "_" + std::to_string(i)] = val;
