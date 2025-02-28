@@ -311,6 +311,21 @@ std::string RAPL::getCounterLabel(const std::string counter)
 		return counter;
 }
 #else
+
+std::string RAPL::summaryCounter()
+{
+	return RAPL_SUM_ENERGY;
+}
+
+std::string RAPL::getSummaryCounterName()
+{
+	auto it = counterLabel.find(summaryCounter());
+    if(it != counterLabel.end())
+        return it->second.first + " " + it->second.second;
+
+    return summaryCounter();
+}
+
 std::string RAPL::getCounterLabel(const std::string counter)
 {
 	auto it = s_counterDesc.find(counter);

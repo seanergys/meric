@@ -21,9 +21,7 @@ public:
     static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
         double runtime, int &cumulative, std::string counter, std::string regionName = "");
     static std::string summaryCounter();
-    static std::string getSummaryCounterName() {
-        return "";
-    }
+    static std::string getSummaryCounterName();
     static std::string getSourceLabel();
     static std::string getCounterLabel(const std::string counter);
     static void getRatios(std::map<std::string, unsigned long long int> &start, 
@@ -38,6 +36,7 @@ protected:
         std::string path;
         std::ifstream fs;
         std::string label;
+        bool isCumulative;
     };
 
     static std::map<std::string, CounterDesc_t> s_counterDesc;

@@ -151,7 +151,8 @@ void HWMON::initMap(std::map<std::string, unsigned long long int> &dict)
             1.0e-6,
             counter.path,
             std::ifstream(counter.path),
-            fullLabel
+            fullLabel,
+            counter.baseLabel == HWMON_PCKG_ENERGY
         };
     }
 }
@@ -163,6 +164,8 @@ double HWMON::getResultValue(unsigned long long int startValue, unsigned long lo
     if(it == s_counterDesc.end())
         return 0.0;
 
+    cumulative = it->second.isCumulative ? 1 : 0;
+
     // TODO: Handle counter overflow.
 
     return (stopValue - startValue) * it->second.unit;
@@ -170,7 +173,16 @@ double HWMON::getResultValue(unsigned long long int startValue, unsigned long lo
 
 std::string HWMON::summaryCounter()
 {
-    return "";
+    return HWMON_SUM_ENERGY;
+}
+
+std::string HWMON::getSummaryCounterName()
+{
+    auto it = counterLabels.find(summaryCounter());
+    if(it != counterLabels.end())
+        return it->second.first + " " + it->second.second;
+
+    return summaryCounter();
 }
 
 std::string HWMON::getSourceLabel()
@@ -180,9 +192,11 @@ std::string HWMON::getSourceLabel()
 
 std::string HWMON::getCounterLabel(const std::string counter)
 {
-    auto it = s_counterDesc.find(counter);
-    if(it != s_counterDesc.end())
-        return it->second.label;
+    {
+        auto it = s_counterDesc.find(counter);
+        if(it != s_counterDesc.end())
+            return it->second.label;
+    }
 
     return counter;
 }

@@ -276,11 +276,11 @@ static std::map<const std::string, std::pair<std::string, std::string> > counter
 #ifdef _INTEL_
 	{ RAPL_PCKG_ENERGY,      { "PCKG", "[J]" } },
 	{ RAPL_RAM_ENERGY,       { "RAM",  "[J]" } },
-	{ RAPL_SUM_ENERGY,       { "ENERGY_CONSUMPTION", "[J]" } },
+	{ RAPL_SUM_ENERGY,       { "Energy consumption", "[J]" } },
 #else // _AMD_
 	{ RAPL_PCKG_ENERGY,       { "PCKG", "[J]" } },
 	{ RAPL_PCKG_CORES_ENERGY, { "PCKG_ACTIVE_CORES_AVG", "[J]" } },
-	{ RAPL_SUM_ENERGY,        { "ENERGY_CONSUMPTION", "[J]" } },
+	{ RAPL_SUM_ENERGY,        { "Energy consumption", "[J]" } },
 #endif
 };
 }
@@ -307,13 +307,14 @@ static std::map<const std::string, std::string> counterLabel = {
 }
 
 namespace HWMON_COUNTERS {
+const std::string HWMON_SUM_ENERGY  = "ENERGY_CONSUMPTION";
 const std::string HWMON_CORE_ENERGY = "Ecore";
 const std::string HWMON_PCKG_ENERGY = "Esocket";
-// const std::string HWMON_PCKG_ENERGY = "";
 
 static std::map<const std::string, std::pair<std::string, std::string> > counterLabels = {
 	{ HWMON_CORE_ENERGY, { "CORE", "[J]" } },
-	{ HWMON_PCKG_ENERGY, { "PCKG", "[J]" } }
+	{ HWMON_PCKG_ENERGY, { "PCKG", "[J]" } },
+	{ HWMON_SUM_ENERGY,  { "Energy consumption", "[J]" } }
 };
 }
 
