@@ -18,49 +18,57 @@ CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 std::map<std::string, uint64_t> MSR::counters;
 
 /**
- * @brief Stores and retrieves MSR register addresses for uncore frequency reading for Sapphire Rapids and later CPUs.
+ * @brief Stores and retrieves MSR register addresses along with ownership information 
+ *        for uncore frequency reading on Sapphire Rapids and later CPUs.
  *
- * @description This function maintains a list of MSR register addresses for uncore frequency measurement, 
- * applicable only to Sapphire Rapids and newer models. To retrieve stored values, call the function 
- * without arguments. To update the stored addresses, provide a vector of MSR values. Non-zero values 
- * update corresponding indices, while zero values leave them unchanged.
+ * @description This function maintains a list of MSR register addresses paired with 
+ * ownership status, applicable only to Sapphire Rapids and newer models. To retrieve 
+ * stored values, call the function without arguments. To update stored addresses 
+ * and ownership, provide a vector of address-ownership pairs.
  *
- * @param addrs A vector containing MSR register addresses. Non-zero values update the stored values, 
- * while missing or zero entries retain their previous values.
+ * - Non-zero MSR values update corresponding indices, while zero values leave them unchanged.
+ * - Ownership is indicated in the second element of the pair: `0` means not owned, 
+ *   while any positive value signifies ownership.
  *
- * @return A vector containing the stored MSR addresses.
+ * @param msr_data A vector of pairs, where each pair consists of:
+ *        - First element (`uint32_t`): MSR register address (non-zero updates the stored address).
+ *        - Second element (`uint32_t`): Ownership flag (`0` = not owned, `>0` = owned).
+ *        Missing or zero entries retain their previous values.
+ *
+ * @return A vector of pairs, where each pair contains a stored MSR register address 
+ *         and its corresponding ownership status.
  *
  * @note This function is defined as `static` and is only callable within this compilation unit.
- * It dynamically expands to store additional MSR addresses when needed.
+ *       It dynamically expands to store additional MSR addresses when needed.
  */
-
-static std::vector<uint32_t> sapphireRapidsUncoreCounterMSR(const std::vector<uint32_t>& addrs = {})
+static std::vector<std::pair<uint32_t, uint32_t>> sapphireRapidsUncoreCounterMSR(
+    const std::vector<std::pair<uint32_t, uint32_t>>& msr_data = {})
 {
-    static std::vector<uint32_t> counterMsrs;
+    static std::vector<std::pair<uint32_t, uint32_t>> counterMsrs;
 
     // If no parameters are passed, return the current list immediately
-    if (addrs.empty()) {
+    if (msr_data.empty()) {
         return counterMsrs;
     }
 
-    // Initialize the vector to match the input size if it's the first call
+    // Initialize the vector on the first call
     if (counterMsrs.empty()) {
-        counterMsrs.resize(addrs.size(), -1);	// set -1 to indicate no msr is set.
+        counterMsrs.resize(msr_data.size(), {static_cast<uint32_t>(-1), 0}); // Default: -1 (unset MSR), 0 (not owned)
     }
 
-    // Update stored values if non-zero values are provided
-    for (size_t i = 0; i < addrs.size(); ++i) {
-        if (addrs[i] != 0) {
-            if (i < counterMsrs.size()) {
-                counterMsrs[i] = addrs[i];
-            } else {
-                counterMsrs.push_back(addrs[i]);
-            }
+    // Update stored MSR addresses and ownership
+    for (size_t i = 0; i < msr_data.size(); ++i) {
+        if (msr_data[i].first != 0) { // Update only if non-zero
+            counterMsrs[i].first = msr_data[i].first;
+        }
+        if (msr_data[i].second > 0) { // Update ownership if explicitly set
+            counterMsrs[i].second = msr_data[i].second;
         }
     }
 
     return counterMsrs;
 }
+
 
 void MSR::init()
 {
@@ -84,7 +92,7 @@ void MSR::init()
 		 *
 		 */
 
-		std::vector<uint32_t> addrs;
+		 std::vector<std::pair<uint32_t, uint32_t>>  msrCTRandOwnership;
 		for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		{
 			bool socket_free_box_found = false;
@@ -97,22 +105,22 @@ void MSR::init()
 				{
 					// check if ctr is available.
 					uint64_t val = -1; // all 0xFFFFFFFFF...F
-					if (read_msr(Environment::mapCoresToSocket[socket][0], ctrl, &val))
+					if (read_msr(Environment::mapCoresToSocket[socket][0], ctrl, &val)) // continue traversing if msr is not read (check msr_allowlist for the addr.)
 						continue;
 
-					if ((val & 0x0F) == 0x0) // if it is empty configure for monitoring (check the event_code section to determine if it is empty)
+					if ((val & 0x0F) == 0x0) // if it is empty configure for monitoring (check the event_code section [7:0] bits to determine if it is empty)
 					{
 						socket_free_box_found = true;
-						addrs.push_back(ctrl_to_ctr(ctrl));
+						msrCTRandOwnership.push_back({ctrl_to_ctr(ctrl), 1});	// add the counter of that controller, we owned the msr.
 						write_msr(Environment::mapCoresToSocket[socket][0], ctrl, 0x1020001); // 0x1020001 to set configuration
 
 						MERIC_INFO << "Socket[" << socket << "]: Empty slot is found, configuring for uncore frequency measurements.\n";
 						break; // exit traversing ctrl
 					}
-					else if ((val & 0xFF) == 0x1) // if it is already monitoring, just read it. (https://perfmon-events.intel.com/index.html?pltfrm=spxeon.html&evnt=UNC_CHA_CLOCKTICKS)
+					else if ((val & 0xFF) == 0x1) // if it is already being monitored, just read it. (https://perfmon-events.intel.com/index.html?pltfrm=spxeon.html&evnt=UNC_CHA_CLOCKTICKS)
 					{
 						socket_free_box_found = true;
-						addrs.push_back(ctrl_to_ctr(ctrl));
+						msrCTRandOwnership.push_back({ctrl_to_ctr(ctrl), 0});	// we are not owned the msr.
 						MERIC_INFO << "Socket[" << socket << "]: The event is already being monitored; eavesdropping on the existing monitoring process.\n";
 						break; // exit traversing ctrl
 					}
@@ -120,17 +128,16 @@ void MSR::init()
 				if (socket_free_box_found)	// early termination
 					break; // Exit the outer loop to check the other socket.
 			} 
-			if (!socket_free_box_found){
-				addrs.push_back(-1);
+			if (!socket_free_box_found){	// check if it found a box for the given socket or not.
+				msrCTRandOwnership.push_back({-1, 0});		// this is must! since we couldn't find a box for the given socket, we set "-1" to indicate no msr availability and 0 for no ownership.
 				MERIC_INFO << "Socket " << socket << ": All Cboxes are occupied, Uncore frequency monitoring is not active.\n";	
 			}
 		}
 		
-		auto msr_adresses = sapphireRapidsUncoreCounterMSR(addrs); // store the found msr counter adrresses.
+		auto msr_adresses = sapphireRapidsUncoreCounterMSR(msrCTRandOwnership); // store the found msr counter adrresses.
 		MERIC_INFO << "SPR uncore freq configured to: ";
-		
-		for(uint32_t addr : addrs)
-			std::cout << std::hex << addr << ", ";
+		for(auto addr : msrCTRandOwnership)
+			MERIC_INFO << std::hex << "msr:" << addr.first << " ownership:" << addr.second << "\n";
 	}
 	else
 	{
@@ -154,8 +161,11 @@ void MSR::close()
 		// TODO: to close sequence, never freeze, clear the control so it will stop.
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 		{
-			if(msr_adresses[i] != -1)
-				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i]), 0x300); // 0x300 to clear unit box control and counter values
+			if(msr_adresses[i].first != -1 && msr_adresses[i].second == 1){	// there's an msr and we own it
+				MERIC_INFO << "setting ctrl 0x3000 to MSR " << (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0) << "\n";
+				write_msr(Environment::mapCoresToSocket[i][0], (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0), 0x300);
+				write_msr(Environment::mapCoresToSocket[i][0], (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0), 0x300);
+			}
 		}
 	}
 }
@@ -184,8 +194,8 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> &record)
 		if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 		{
 			auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter adrresses.
-			if (i < msr_adresses.size() && msr_adresses[i] != -1)	// read msr if it is correctly set (available box) 
-				read_msr(Environment::mapCoresToSocket[i][0], msr_adresses[i], &val);
+			if (i < msr_adresses.size() && msr_adresses[i].first != -1)	// read msr if it is correctly set (available box) 
+				read_msr(Environment::mapCoresToSocket[i][0], msr_adresses[i].first, &val);
 		}
 		else
 		{
