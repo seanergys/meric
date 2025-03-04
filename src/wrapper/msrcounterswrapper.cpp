@@ -18,33 +18,48 @@ CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 std::map<std::string, uint64_t> MSR::counters;
 
 /**
- * @brief Stores and retrieves MSR register addresses for uncore frequency reading for sapphire rapids and later cpus.
+ * @brief Stores and retrieves MSR register addresses for uncore frequency reading for Sapphire Rapids and later CPUs.
  *
- * @description This function maintains the MSR register addresses for uncore frequency measurement,
- * applicable only to Sapphire Rapids and newer models. To retrieve stored values, call the function
- * without arguments. To update the stored addresses, provide the respective MSR values.
- * Use the `ctrl_to_ctr` or `ctr_to_ctrl` utilities for conversion between control and counter registers.
+ * @description This function maintains a list of MSR register addresses for uncore frequency measurement, 
+ * applicable only to Sapphire Rapids and newer models. To retrieve stored values, call the function 
+ * without arguments. To update the stored addresses, provide a vector of MSR values. Non-zero values 
+ * update corresponding indices, while zero values leave them unchanged.
  *
- * @param addr0 The counter MSR register address for socket 0 (default: 0, meaning not valid).
- * @param addr1 The counter MSR register address for socket 1 (default: 0, meaning not valid).
+ * @param addrs A vector containing MSR register addresses. Non-zero values update the stored values, 
+ * while missing or zero entries retain their previous values.
  *
- * @return A pair containing the stored MSR addresses for socket 0 and socket 1.
+ * @return A vector containing the stored MSR addresses.
  *
  * @note This function is defined as `static` and is only callable within this compilation unit.
+ * It dynamically expands to store additional MSR addresses when needed.
  */
 
-static std::pair<uint32_t, uint32_t> sapphireRapidsUncoreCounterMSR(uint32_t addr0 = 0, uint32_t addr1 = 0)
+static std::vector<uint32_t> sapphireRapidsUncoreCounterMSR(const std::vector<uint32_t>& addrs = {})
 {
-	static uint32_t counterMsrSocket0 = 0;
-	static uint32_t counterMsrSocket1 = 0;
+    static std::vector<uint32_t> counterMsrs;
 
-	// If provided values are non-zero, update the stored values
-	if (addr0 != 0)
-		counterMsrSocket0 = addr0;
-	if (addr1 != 0)
-		counterMsrSocket1 = addr1; // Fixed incorrect variable assignment
+    // If no parameters are passed, return the current list immediately
+    if (addrs.empty()) {
+        return counterMsrs;
+    }
 
-	return {counterMsrSocket0, counterMsrSocket1};
+    // Initialize the vector to match the input size if it's the first call
+    if (counterMsrs.empty()) {
+        counterMsrs.resize(addrs.size(), -1);	// set -1 to indicate no msr is set.
+    }
+
+    // Update stored values if non-zero values are provided
+    for (size_t i = 0; i < addrs.size(); ++i) {
+        if (addrs[i] != 0) {
+            if (i < counterMsrs.size()) {
+                counterMsrs[i] = addrs[i];
+            } else {
+                counterMsrs.push_back(addrs[i]);
+            }
+        }
+    }
+
+    return counterMsrs;
 }
 
 void MSR::init()
@@ -68,58 +83,54 @@ void MSR::init()
 		 * --->
 		 *
 		 */
-		uint32_t counterMsrSocket0 = 0;
-		uint32_t counterMsrSocket1 = 0;
+
+		std::vector<uint32_t> addrs;
 		for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		{
-			std::cout << "----------- socket:" << socket << "-----------\n"; 
+			bool socket_free_box_found = false;
+			write_msr(Environment::mapCoresToSocket[socket][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x0); // always un-freeze counting on global ctl and never freeze.
+
 			// Traverse CBOXes to find an appropriate one
 			cha_ctrl0_traverser(cha_ctrl0_addr)
 			{
-				std::cout << std::hex << cha_ctrl0_addr << " ---- >";
 				ctrl_traverser(ctrl, cha_ctrl0_addr)
 				{
-					std::cout << std::hex << "(" << ctrl << " " << ctrl_to_ctr(ctrl) << "), ";
 					// check if ctr is available.
-					uint64_t val;
-					read_msr(Environment::mapCoresToSocket[socket][0], ctrl, &val);
-					std::cout << std::hex << "ctrl val: " << val << "\n";
-					if ((val & 0xFF) == 0x0) // if it is empty configure for monitoring
+					uint64_t val = -1; // all 0xFFFFFFFFF...F
+					if (read_msr(Environment::mapCoresToSocket[socket][0], ctrl, &val))
+						continue;
+
+					if ((val & 0x0F) == 0x0) // if it is empty configure for monitoring (check the event_code section to determine if it is empty)
 					{
-						(socket == 0 ? counterMsrSocket0 : counterMsrSocket1) = ctrl_to_ctr(ctrl);
+						socket_free_box_found = true;
+						addrs.push_back(ctrl_to_ctr(ctrl));
 						write_msr(Environment::mapCoresToSocket[socket][0], ctrl, 0x1020001); // 0x1020001 to set configuration
+
+						MERIC_INFO << "Socket[" << socket << "]: Empty slot is found, configuring for uncore frequency measurements.\n";
+						break; // exit traversing ctrl
 					}
-					else if ((val & 0xFF) == 0x1) // if it is already monitoring, just read it.
+					else if ((val & 0xFF) == 0x1) // if it is already monitoring, just read it. (https://perfmon-events.intel.com/index.html?pltfrm=spxeon.html&evnt=UNC_CHA_CLOCKTICKS)
 					{
-						(socket == 0 ? counterMsrSocket0 : counterMsrSocket1) = ctrl_to_ctr(ctrl);
+						socket_free_box_found = true;
+						addrs.push_back(ctrl_to_ctr(ctrl));
+						MERIC_INFO << "Socket[" << socket << "]: The event is already being monitored; eavesdropping on the existing monitoring process.\n";
+						break; // exit traversing ctrl
 					}
-					return;
 				}
-				std::cout << "\n";
+				if (socket_free_box_found)	// early termination
+					break; // Exit the outer loop to check the other socket.
+			} 
+			if (!socket_free_box_found){
+				addrs.push_back(-1);
+				MERIC_INFO << "Socket " << socket << ": All Cboxes are occupied, Uncore frequency monitoring is not active.\n";	
 			}
-			// if(false) // check if it is available
-			// {
-
-			// }
-			// else{	// if there's none, print and error and continue
-			// 	MERIC_INFO << "All Cboxes are occupied, Uncore frequency is not being monitored\n";
-			// }
-			// write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x1); // freeze counting by global ctl
-			// write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_UNIT_CTRL, 0x300); // 0x300 to clear unit box control and counter values
-			// write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_CTRL, 0x1020001); // 0x1020001 to set configuration
-			// write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x0); // un-freeze counting by global ctl
 		}
-		if (counterMsrSocket0 == 0)
-		{
-			MERIC_INFO << "Socket 0: All Cboxes are occupied, Uncore frequency monitoring is not active.\n";
-		}
-
-		if (counterMsrSocket1 == 0)
-		{
-			MERIC_INFO << "Socket 1: All Cboxes are occupied, Uncore frequency monitoring is not active.\n";
-		}
-
-		sapphireRapidsUncoreCounterMSR(counterMsrSocket0, counterMsrSocket1); // store the msr adrresses found.
+		
+		auto msr_adresses = sapphireRapidsUncoreCounterMSR(addrs); // store the found msr counter adrresses.
+		MERIC_INFO << "SPR uncore freq configured to: ";
+		
+		for(uint32_t addr : addrs)
+			std::cout << std::hex << addr << ", ";
 	}
 	else
 	{
@@ -139,11 +150,12 @@ void MSR::close()
 	// library will be finalized in Environment::close()
 	if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 	{
+		auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter adrresses.
 		// TODO: to close sequence, never freeze, clear the control so it will stop.
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 		{
-			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x1);	  // freeze counting by global ctl
-			write_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_UNIT_CTRL, 0x300); // 0x300 to clear unit box control and counter values
+			if(msr_adresses[i] != -1)
+				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i]), 0x300); // 0x300 to clear unit box control and counter values
 		}
 	}
 }
@@ -169,11 +181,11 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> &record)
 
 	for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH)
-		{ // based on Sapphire Rapids microarchitecture or later
-#ifdef MSR_UNC_SPR_C0_PMON_CTR
-			read_msr(Environment::mapCoresToSocket[i][0], MSR_UNC_SPR_C0_PMON_CTR, &val);
-#endif
+		if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
+		{
+			auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter adrresses.
+			if (i < msr_adresses.size() && msr_adresses[i] != -1)	// read msr if it is correctly set (available box) 
+				read_msr(Environment::mapCoresToSocket[i][0], msr_adresses[i], &val);
 		}
 		else
 		{
