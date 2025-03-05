@@ -162,9 +162,11 @@ void MSR::close()
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 		{
 			if(msr_adresses[i].first != -1 && msr_adresses[i].second == 1){	// there's an msr and we own it
-				MERIC_INFO << "setting ctrl 0x3000 to MSR " << (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0) << "\n";
-				write_msr(Environment::mapCoresToSocket[i][0], (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0), 0x300);
-				write_msr(Environment::mapCoresToSocket[i][0], (ctr_to_ctrl(msr_adresses[i].first) & 0xFFF0), 0x300);
+
+				// reset the ctrl for all zeros + rst bit. since we don't stop any counter, we do this twice to makesure the counter is reset properly
+				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i].first), 0x20000);
+				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i].first), 0x20000);
+				MERIC_INFO << "setting ctrl 0x20000 to MSR " << ctr_to_ctrl(msr_adresses[i].first) << "\n"; 
 			}
 		}
 	}
