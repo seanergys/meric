@@ -260,7 +260,7 @@ const std::string RAPL_SUM_ENERGY  = "ENERGY_CONSUMPTION";
 	const std::string RAPL_RAM_ENERGY  = "dram";
 //	const std::string RAPL_PP0_ENERGY  = ""; //client CPUs only
 //	const std::string RAPL_PP1_ENERGY  = ""; //client CPUs only
-//	const std::string RAPL_PLATFORM_ENERGY = "";
+	const std::string RAPL_PLATFORM_ENERGY = "psys";
 #else // _AMD_
 	const std::string RAPL_PCKG_ENERGY       = "package";
 	const std::string RAPL_PCKG_CORES_ENERGY = "core";
