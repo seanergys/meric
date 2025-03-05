@@ -2,10 +2,8 @@
 #include "environmentwrapper.h"
 #include <fstream>
 #include <string>
-#include "sysfs_utils.h"
 
 using namespace meric;
-using namespace meric::sysfs_utils;
 
 std::string RAPL::suffix = "_";
 bool RAPL::detailedMode = false;
@@ -29,17 +27,25 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 {
 	std::string counterName;
 	if (detailedMode)
+	{
 		counterName = counter.substr(0, counter.find_last_of('_'));
+	}
 	else
+	{
 		counterName = counter;
+	}
 
 #ifdef _INTEL_
 	cumulative = 1;
 #else //_AMD_
 	if (counterName == RAPL_PCKG_ENERGY)
+	{
 		cumulative = 1;
+	}
 	else
+	{
 		cumulative = 0;
+	}
 #endif
 	
 	if (stopValue < startValue)
@@ -53,7 +59,9 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 		return 0.0;
 	}
 	else
+	{
 		return (stopValue - startValue) * units[counterName];
+	}
 }
 
 /**
@@ -73,7 +81,9 @@ void RAPL::init(bool detailed)
 void RAPL::initCountersUnits()
 {
 	if (units.size())
+	{
 		return; //already initialized
+	}
 	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_RAPL_POWER_UNIT
 	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
@@ -87,7 +97,9 @@ void RAPL::initCountersUnits()
 	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
 	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
 	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+	{
 		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+	}
 #elif defined HAVE_GEOPM_H
 	MSR_RAPL_POWER_UNIT_bits = geopm_signal_to_field(pio.read_signal("MSR::RAPL_POWER_UNIT#", pio.signal_domain_type("MSR::RAPL_POWER_UNIT#"), 0));
 #endif
@@ -131,7 +143,9 @@ void RAPL::initCountersUnits()
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	{
 		record[iterator->first] = 0;
+	}
 
 	if (detailedMode)
 	{
@@ -161,7 +175,8 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			}
 			record [iterator->first] = (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 		}
-	}else
+	}
+	else
 	{
 		for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		{
@@ -200,7 +215,9 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	{
 		record[iterator->first] = 0;
+	}
 	
 	if (detailedMode)
 	{
@@ -217,7 +234,9 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
+				{
 					continue;
+				}
 				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
 				if (itemId < 0) //== -ENXIO
@@ -234,9 +253,12 @@ void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & reco
 				record [iterator->first] = (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 			}
 			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
+			{
 				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
+			}
 		}
-	}else
+	}
+	else
 	{
 		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
 		{
@@ -271,27 +293,29 @@ double RAPL::getResultValue(unsigned long long int startValue, unsigned long lon
 {
 	auto it = s_counterDesc.find(counter);
 	if(it == s_counterDesc.end())
+	{
 		return 0.0;
+	}
 
 	cumulative = it->second.isCumulative ? 1 : 0;
-
 	if(stopValue < startValue)
 	{
 		return ((it->second.rangeMax - startValue) + stopValue) * it->second.unit;
 	}
-
 	return (stopValue - startValue) * it->second.unit;
 }
 
 void RAPL::getCounterValues(std::map<std::string, unsigned long long int> & record)
 {
 	for(const auto &desc: s_counterDesc)
+	{
 		record[desc.first] = 0;
+	}
 
 	for(auto &desc: s_counterDesc)
 	{
 		uint64_t value = 0;
-		ReadValue(desc.second.fs, value);
+		sysfsutils::ReadValue(desc.second.fs, value);
 		record[desc.first] = value;
 	}
 }
@@ -306,9 +330,13 @@ std::string RAPL::getCounterLabel(const std::string counter)
 {
 	std::map<const std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
+	{
 		return it->second;
+	}
 	else
+	{
 		return counter;
+	}
 }
 #else
 
@@ -320,18 +348,20 @@ std::string RAPL::summaryCounter()
 std::string RAPL::getSummaryCounterName()
 {
 	auto it = counterLabel.find(summaryCounter());
-    if(it != counterLabel.end())
-        return it->second.first + " " + it->second.second;
-
-    return summaryCounter();
+	if(it != counterLabel.end())
+	{
+		return it->second.first + " " + it->second.second;
+	}
+	return summaryCounter();
 }
 
 std::string RAPL::getCounterLabel(const std::string counter)
 {
 	auto it = s_counterDesc.find(counter);
 	if(it != s_counterDesc.end())
+	{
 		return it->second.label;
-
+	}
 	return counter;
 }
 #endif
@@ -350,9 +380,13 @@ std::string RAPL::getSourceLabel()
 double RAPL::getUnit(std::string counterName)
 {
 	if (units.count(counterName))
+	{
 		return units[counterName];
+	}
 	else
+	{
 		return -1.0;
+	}
 }
 
 /**
@@ -371,15 +405,18 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 #elif defined _AMD_
 	names.push_back(RAPL_PCKG_ENERGY);
 	if (detailedMode)
+	{
 		names.push_back(RAPL_CORE_ENERGY);
+	}
 	else
+	{
 		counterLabel[RAPL_PCKG_ENERGY] = RAPL_SUM_ENERGY;
+	}
 #endif
 
 // in detailed mode RAPL gives us values for each cpu 
 // this is a reason for adding a suffix with number of a socket for each counter
 
-// DO NOT EDIT THE REST OF THIS FUNCTION
 	if (detailedMode)
 	{
 #ifdef _AMD_
@@ -387,7 +424,6 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 		if (it != names.end())
 		{
 			const int suffixLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE)+1;
-
 			for(int core = 0; core != Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; core++)
 			{
 				std::ostringstream os;
@@ -422,14 +458,15 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 #endif
 			}
 		}
-	}else
+	}
+	else
 	{
 		for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
 		{
 			dict[*it] = 0;
 		}
 	}
-#else
+#else //SYFS
 
 #ifdef _INTEL_
 	names.push_back(RAPL_PCKG_ENERGY);
@@ -440,7 +477,6 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 #endif
 
 	const std::string sysfsRAPLRoot("/sys/class/powercap/intel-rapl");
-
 	for(int die = 0; die < Environment::SOCKETS_PER_NODE; ++die)
 	{
 		const std::string dieRootPath = sysfsRAPLRoot + ":" + std::to_string(die);
@@ -454,25 +490,31 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 			std::string sysfsName;
 			uint64_t maxCounterRange = 0;
 
-			bool state = ReadValue(dieRootPath + pszDomainName + "/name", sysfsName);
-			state = state && ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange);
+			bool state = sysfsutils::ReadValue(dieRootPath + pszDomainName + "/name", sysfsName);
+			state = state && sysfsutils::ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange);
 
 			if(!state)
+			{
 				continue;
+			}
 
 			std::string counterBaseName;
 
 			for(const std::string &name: names)
 			{
 				if(sysfsName.rfind(name, 0) == 0)
+				{
 					counterBaseName = name;
+				}
 			}
 
 			if(counterBaseName.empty())
+			{
 				continue;
+			}
 
-			const std::string fullName  = MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }});
-			const std::string fullLabel = MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }}, true);
+			const std::string fullName  = sysfsutils::MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }});
+			const std::string fullLabel = sysfsutils::MakeCounterName(counterBaseName, counterLabel, {{ die, 1 }}, true);
 
 			units[fullName] = 1.0e-6;
 			dict[fullName] = 0;
@@ -492,5 +534,5 @@ void RAPL::initMap(std::map<std::string, unsigned long long int> & dict)
 			};
 		}
 	}
-#endif // SYSFS RAPL
+#endif // SYSFS
 }

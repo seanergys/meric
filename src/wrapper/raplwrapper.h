@@ -1,4 +1,3 @@
-
 #ifndef SRC_WRAPPER_RAPLWRAPPER_H_
 #define SRC_WRAPPER_RAPLWRAPPER_H_
 
@@ -28,6 +27,7 @@
 #include "counters.h"
 #include "countersrates.h"
 #include "../basis/utils.h"
+#include "../basis/sysfsutils.h"
 
 #ifdef HAVE_MSR_SAFE
 	using namespace MSR_RAPL_COUNTERS;
@@ -63,9 +63,13 @@ public:
 		return RAPL_SUM_ENERGY;
 #else // _AMD_
 		if (detailedMode)
-			return RAPL_SUM_ENERGY;
+		{
+  			return RAPL_SUM_ENERGY;
+  		}
 		else
+		{
 			return "";
+		}
 #endif
 	};
 	static std::string getSourceLabel();
