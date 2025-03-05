@@ -190,6 +190,18 @@ public:
 			DAVIDE::stop(_stopTime);
 		}
 
+		for(mode m: MONITORS)
+		{
+			switch(m)
+			{
+			case MODE_HWMON_SAMPLES:
+				HWMON::stop(_stopTime);
+				break;
+			default:
+				break;
+			}
+		}
+
 		Meric::close();
 		Environment::restoreSystemSettings();
 

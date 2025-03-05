@@ -1,5 +1,6 @@
 
 #include "meric.h"
+#include <algorithm>
 
 using namespace meric;
 
@@ -147,6 +148,19 @@ SharedMeric::SharedMeric()
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
 	{
 		A64FX::init();
+	}
+
+	for(mode m: MONITORS)
+	{
+		switch(m)
+		{
+		case MODE_HWMON_SAMPLES:
+			HWMON::start(_startTime);
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+			break;
+		default:
+			break;
+		}
 	}
 	
 	setMainRegionName();
