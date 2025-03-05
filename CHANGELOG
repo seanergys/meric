@@ -1,5 +1,6 @@
 ### XX.XX.XXXX #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
+  - support for Intel and AMD RAPL energy readings from the intel_rapl / intel_rapl_common kernel module 
 
 ### 15.05.2024 #################################################################
   - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop
