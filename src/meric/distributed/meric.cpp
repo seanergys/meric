@@ -66,8 +66,8 @@ DistributedMeric::DistributedMeric()
 	
 		if (Meric::DEBUG)
 		{
-		    if(Meric::AGGREGATE)
-		    {
+			if(Meric::AGGREGATE)
+			{
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
 			}
 			else
@@ -99,8 +99,8 @@ DistributedMeric::DistributedMeric()
 	
 		if (Meric::DEBUG)
 		{
-		    if(Meric::AGGREGATE)
-		    {
+			if(Meric::AGGREGATE)
+			{
 				_storeList.push_back(new DebugAggregateStore<TimeEnergyStore>(_storingProcs, !_MPInodeRank));
 			}
 			else
@@ -165,6 +165,19 @@ DistributedMeric::DistributedMeric()
 		else
 		{
 			_storeList.push_back(new CountersStore<ROCM, uint64_t, double>(!_MPInodeRank));
+		}
+	}
+	
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON_SAMPLES) != MONITORS.end())
+	{
+		HWMON::start(_startTime);
+		if (Meric::AGGREGATE)
+		{
+			_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
+		}
+		else
+		{
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 		

@@ -184,3 +184,4 @@ template class meric::SamplesStore <HDEEM>;
 template class meric::SamplesStore <JETSON>;
 template class meric::SamplesStore <THUNDER>;
 template class meric::SamplesStore <DAVIDE>;
+template class meric::SamplesStore <HWMON>;

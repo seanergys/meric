@@ -1,6 +1,6 @@
 
-#ifndef SRC_MERIC_SHARED_SHAREDMERIC_H_
-#define SRC_MERIC_SHARED_SHAREDMERIC_H_
+#ifndef SRC_MERIC_SHARED_MERIC_H_
+#define SRC_MERIC_SHARED_MERIC_H_
 
 #include "../meric.h"
 
@@ -180,14 +180,24 @@ public:
 	void save()
 	{
 		stop(_mainRegion); //applicationMainRegion
-		
-		if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
+
+		for(mode m: MONITORS)
 		{
-			HDEEM::stop(_stopTime);
-		}
-		else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
-		{
-			DAVIDE::stop(_stopTime);
+			switch(m)
+			{
+			case MODE_HDEEM_SAMPLES:
+			case MODE_HDEEM_COUNTERS:
+				HDEEM::stop(_stopTime);
+				break;
+			case MODE_DAVIDE:
+				DAVIDE::stop(_stopTime);
+				break;
+			case MODE_HWMON_SAMPLES:
+				HWMON::stop(_stopTime);
+				break;
+			default:
+				break;
+			}
 		}
 
 		Meric::close();
@@ -204,7 +214,9 @@ public:
 		{
 			size_t pos = find(_name.begin(), _name.end(), reg) - _name.begin();
 			if (pos < _name.size())
+			{
 				_name[pos] = "";
+			}
 		}
 		
 		unsigned int executionID = 0;
@@ -214,7 +226,9 @@ public:
 			_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
 		}
 		if (_storeList.size())
+		{
 			_storeList[0]->storeMeasurementInfo();
+		}
 	}
 
 	SharedMeric();
@@ -225,4 +239,4 @@ private:
 
 }
 
-#endif /* SRC_MERIC_SHARED_SHAREDMERIC_H_ */
+#endif /* SRC_MERIC_SHARED_MERIC_H_ */
