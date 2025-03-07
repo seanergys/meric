@@ -329,3 +329,4 @@ void MSR::initMap(std::map<std::string, uint64_t> &dict)
 #undef cha_ctrl0_traverser
 #undef ctrl_traverser
 #undef ctrl_to_ctr
+#undef ctr_to_ctrl
