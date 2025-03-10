@@ -8,7 +8,7 @@ uint64_t MSR::nominal_freq = 0;
 CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 
 //---- undef at the end of the file.
-#define cha_ctrl0_traverser(i) for (size_t i = MSR_UNC_SPR_C0_PMON_CTRL; i <= 0x23B2; i += 0x10)
+#define cha_ctrl0_traverser(i) for (size_t i = MSR_UNC_SPR_C0_PMON_CTRL0; i <= MSR_UNC_SPR_C59_PMON_CTRL0; i += MSR_UNC_SPR_PMON_CTRL_INCREMENT)
 #define ctrl_traverser(i, cha_ctrl0_addr) for (size_t i = cha_ctrl0_addr; i < (cha_ctrl0_addr + 0x4); i += 0x1)
 #define ctrl_to_ctr(ctrl_addr) ctrl_addr + 6 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
 #define ctr_to_ctrl(ctr_addr) ctr_addr - 6	 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
@@ -80,16 +80,11 @@ void MSR::init()
 	MSR::cpu_arch = meric::stringToCpuidSignature(cpuFamilyModelString);
 	if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 	{
-		// TODO
-
 		/**
-		 *  TODO
+		 * ---> if it is freezed, then unfreeze but never freeze yoruself and keep it unfreeze
 		 *  --> check cboxes to find an available one, if there's none print and warning and not activate
 		 * ---> when event select is 0x0 (check this) then it is available to us.
-		 * ---> if it is freezed, then unfreeze but never freeze yoruself and keep it unfreeze
 		 * ---> remove freeze operations here (don't freeze only un-freeze)
-		 * --->
-		 *
 		 */
 
 		 std::vector<std::pair<uint32_t, uint32_t>>  msrCTRandOwnership;
@@ -117,13 +112,14 @@ void MSR::init()
 						MERIC_INFO << "Socket[" << socket << "]: Empty slot is found, configuring for uncore frequency measurements.\n";
 						break; // exit traversing ctrl
 					}
-					else if ((val & 0xFF) == 0x1) // if it is already being monitored, just read it. (https://perfmon-events.intel.com/index.html?pltfrm=spxeon.html&evnt=UNC_CHA_CLOCKTICKS)
-					{
-						socket_free_box_found = true;
-						msrCTRandOwnership.push_back({ctrl_to_ctr(ctrl), 0});	// we are not owned the msr.
-						MERIC_INFO << "Socket[" << socket << "]: The event is already being monitored; eavesdropping on the existing monitoring process.\n";
-						break; // exit traversing ctrl
-					}
+					// We cancel eavesdropping since it can be turned off by the owner and pertup our measurements
+					// else if ((val & 0xFF) == 0x1) // if it is already being monitored, just read it. (https://perfmon-events.intel.com/index.html?pltfrm=spxeon.html&evnt=UNC_CHA_CLOCKTICKS)
+					// {
+					// 	socket_free_box_found = true;
+					// 	msrCTRandOwnership.push_back({ctrl_to_ctr(ctrl), 0});	// we are not owned the msr.
+					// 	MERIC_INFO << "Socket[" << socket << "]: The event is already being monitored; eavesdropping on the existing monitoring process.\n";
+					// 	break; // exit traversing ctrl
+					// }
 				}
 				if (socket_free_box_found)	// early termination
 					break; // Exit the outer loop to check the other socket.
@@ -158,7 +154,7 @@ void MSR::close()
 	if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 	{
 		auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter adrresses.
-		// TODO: to close sequence, never freeze, clear the control so it will stop.
+		// to close sequence, never freeze the unit box, clear the control so it will stop.
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 		{
 			if(msr_adresses[i].first != -1 && msr_adresses[i].second == 1){	// there's an msr and we own it
