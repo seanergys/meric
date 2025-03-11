@@ -1046,6 +1046,8 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   */
  #ifdef _INTEL_
  	#define MSR_UNC_SPR_C0_PMON_UNIT_CTRL  0x2000
+ 	#define MSR_UNC_SPR_C59_PMON_UNIT_CTRL  0x23B0
+	 #define MSR_UNC_SPR_PMON_UNIT_CTRL_increment 0x10
  #endif
   
 
@@ -1079,9 +1081,13 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
  #ifdef _INTEL_
  	#define MSR_UNC_SPR_C0_PMON_CTRL0  0x2002
 	#define MSR_UNC_SPR_C59_PMON_CTRL0 0x23B2
-	#define MSR_UNC_SPR_PMON_CTRL_INCREMENT 0x10
+	#define MSR_UNC_SPR_Cn_PMON_CTRL_increment 0x10
+
+	// *** Related Configurations ***
+	#define MSR_UNC_SPR_Cn_PMON_CTRL_config__clear 0x20000 // ctrl clear configuration and reset the counter.
+	#define MSR_UNC_SPR_Cn_PMON_CTRL_config__uncore_freq 0x1020001 // ctrl event configuration to count uncore frequency
  #endif
-  
+
 
 
   /**
@@ -1097,12 +1103,10 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
 
- const uint64_t MSR_UNC_SPR_C0_PMON_CTR_count_mask= 0x0000FFFFFFFFFFFF; 
- const uint64_t MSR_UNC_SPR_C0_PMON_CTR_count_shift= 0;
   #ifdef _INTEL_
   	#define MSR_UNC_SPR_C0_PMON_CTR0  0x2008
 	#define MSR_UNC_SPR_C59_PMON_CTR0 0x023B8
-	#define MSR_UNC_SPR_PMON_CTR_INCREMENT 0x10
+	#define MSR_UNC_SPR_PMON_CTR_increment 0x10
   #endif
 
   //********************************************** END INTEL SAPPHIRE RAPIDS **********************************************
