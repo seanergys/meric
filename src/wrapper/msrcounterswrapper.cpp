@@ -91,7 +91,7 @@ void MSR::init()
 		for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		{
 			bool socket_free_box_found = false;
-			write_msr(Environment::mapCoresToSocket[socket][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x0); // always un-freeze counting on global ctl and never freeze.
+			write_msr(Environment::mapCoresToSocket[socket][0], MSR_UNC_SPR_PMON_GLOBAL_CTRL, 0x0); // always un-freeze counting on global ctl and never freeze.
 
 			// Traverse CBOXes to find an appropriate one
 			cha_ctrl0_traverser(cha_ctrl0_addr)

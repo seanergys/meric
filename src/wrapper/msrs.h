@@ -1013,10 +1013,10 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
  /**
   * 
-  * MSR_UNC_SPR_PMON_GLOBAL_CTL register (64 bit register) **********************************************
+  * MSR_UNC_SPR_PMON_GLOBAL_CTRL register (64 bit register) **********************************************
 	
 	The following registers represent state governing all PMUs in the uncore, both to exert
-	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTL contains bits that can stop (.frz_all) all the uncore counters.
+	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTRL contains bits that can stop (.frz_all) all the uncore counters.
 
   * MSR		MASK
   * 0x2FF0	0x0000000000000001
@@ -1027,7 +1027,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
 #ifdef _INTEL_
-	#define MSR_UNC_SPR_PMON_GLOBAL_CTL	0x2FF0
+	#define MSR_UNC_SPR_PMON_GLOBAL_CTRL	0x2FF0
 #endif
  
   /**
