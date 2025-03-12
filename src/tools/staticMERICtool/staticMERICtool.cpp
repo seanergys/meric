@@ -107,7 +107,7 @@ void printHelp()
 	          << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
 	          << "\t mericStatic parameters:\n"
 //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
-	          << "\t-e = one energy measurement systems from supported: RAPL, NVML, or A64FX\n"
+	          << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
 	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 	          << "\t-t = #OpenMP threads\n"
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	Environment::restoreSystemSettings(true);	//TODO check if needed
+	Environment::restoreSystemSettings();
 	Environment::close();
 	
 	return 0;
