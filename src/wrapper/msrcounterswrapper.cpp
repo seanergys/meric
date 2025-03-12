@@ -8,10 +8,10 @@ uint64_t MSR::nominal_freq = 0;
 CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 
 //---- undef at the end of the file.
-#define cha_ctrl0_traverser(i) for (size_t i = MSR_UNC_SPR_C0_PMON_CTRL0; i <= MSR_UNC_SPR_C59_PMON_CTRL0; i += MSR_UNC_SPR_Cn_PMON_CTRL_increment)
-#define ctrl_traverser(i, cha_ctrl0_addr) for (size_t i = cha_ctrl0_addr; i < (cha_ctrl0_addr + 0x4); i += 0x1)
-#define ctrl_to_ctr(ctrl_addr) ctrl_addr + 6 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
-#define ctr_to_ctrl(ctr_addr) ctr_addr - 6	 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
+#define cha_ctl0_traverser(i) for (size_t i = MSR_UNC_SPR_C0_PMON_CTL0; i <= MSR_UNC_SPR_C59_PMON_CTL0; i += MSR_UNC_SPR_Cn_PMON_CTL_increment)
+#define ctl_traverser(i, cha_ctrl0_addr) for (size_t i = cha_ctrl0_addr; i < (cha_ctrl0_addr + 0x4); i += 0x1)
+#define ctl_to_ctr(ctrl_addr) ctrl_addr + 6 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
+#define ctr_to_ctl(ctr_addr) ctr_addr - 6	 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
 //----
 
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
@@ -91,12 +91,12 @@ void MSR::init()
 		for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 		{
 			bool socket_free_box_found = false;
-			write_msr(Environment::mapCoresToSocket[socket][0], MSR_UNC_SPR_PMON_GLOBAL_CTRL, 0x0); // always un-freeze counting on global ctl and never freeze.
+			write_msr(Environment::mapCoresToSocket[socket][0], MSR_UNC_SPR_PMON_GLOBAL_CTL, 0x0); // always un-freeze counting on global ctl and never freeze.
 
 			// Traverse CBOXes to find an appropriate one
-			cha_ctrl0_traverser(cha_ctrl0_addr)
+			cha_ctl0_traverser(cha_ctrl0_addr)
 			{
-				ctrl_traverser(ctrl, cha_ctrl0_addr)
+				ctl_traverser(ctrl, cha_ctrl0_addr)
 				{
 					// check if ctr is available.
 					uint64_t val = -1; // all 0xFFFFFFFFF...F
@@ -106,8 +106,8 @@ void MSR::init()
 					if ((val & 0x0F) == 0x0) // if it is empty configure for monitoring (check the event_code section [7:0] bits to determine if it is empty)
 					{
 						socket_free_box_found = true;
-						msrCTRandOwnership.push_back({ctrl_to_ctr(ctrl), 1});	// add the counter of that controller, we owned the msr.
-						write_msr(Environment::mapCoresToSocket[socket][0], ctrl, MSR_UNC_SPR_Cn_PMON_CTRL_config__uncore_freq);
+						msrCTRandOwnership.push_back({ctl_to_ctr(ctrl), 1});	// add the counter of that controller, we owned the msr.
+						write_msr(Environment::mapCoresToSocket[socket][0], ctrl, MSR_UNC_SPR_Cn_PMON_CTL_config__uncore_freq);
 
 						MERIC_INFO << "Socket[" << socket << "]: Empty slot is found, configuring for uncore frequency measurements.\n";
 						break; // exit traversing ctrl
@@ -125,7 +125,7 @@ void MSR::init()
 		auto msr_adresses = sapphireRapidsUncoreCounterMSR(msrCTRandOwnership); // store the found msr counter adrresses.
 		MERIC_INFO << "SPR uncore freq configured to: ";
 		for(auto addr : msrCTRandOwnership)
-			MERIC_INFO << std::hex << "msr:" << ctr_to_ctrl(addr.first) << " ownership:" << addr.second << "\n";
+			MERIC_INFO << std::hex << "msr:" << ctr_to_ctl(addr.first) << " ownership:" << addr.second << "\n";
 	}
 	else
 	{
@@ -152,9 +152,9 @@ void MSR::close()
 			if(msr_adresses[i].first != -1 && msr_adresses[i].second == 1){	// there's an msr and we own it
 
 				// reset the ctrl for all zeros + rst bit. since we don't stop any counter, we do this twice to makesure the counter is reset properly
-				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i].first), MSR_UNC_SPR_Cn_PMON_CTRL_config__clear);
-				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctrl(msr_adresses[i].first), MSR_UNC_SPR_Cn_PMON_CTRL_config__clear);
-				MERIC_INFO << "setting ctrl 0x" << std::hex << MSR_UNC_SPR_Cn_PMON_CTRL_config__clear  << " to MSR " << ctr_to_ctrl(msr_adresses[i].first) << "\n"; 
+				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctl(msr_adresses[i].first), MSR_UNC_SPR_Cn_PMON_CTL_config__clear);
+				write_msr(Environment::mapCoresToSocket[i][0], ctr_to_ctl(msr_adresses[i].first), MSR_UNC_SPR_Cn_PMON_CTL_config__clear);
+				MERIC_INFO << "setting ctrl 0x" << std::hex << MSR_UNC_SPR_Cn_PMON_CTL_config__clear  << " to MSR " << ctr_to_ctl(msr_adresses[i].first) << "\n"; 
 			}
 		}
 	}
@@ -314,7 +314,7 @@ void MSR::initMap(std::map<std::string, uint64_t> &dict)
 	}
 }
 
-#undef cha_ctrl0_traverser
-#undef ctrl_traverser
-#undef ctrl_to_ctr
-#undef ctr_to_ctrl
+#undef cha_ctl0_traverser
+#undef ctl_traverser
+#undef ctl_to_ctr
+#undef ctr_to_ctl

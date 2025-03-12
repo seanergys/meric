@@ -1013,10 +1013,10 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 
  /**
   * 
-  * MSR_UNC_SPR_PMON_GLOBAL_CTRL register (64 bit register) **********************************************
+  * MSR_UNC_SPR_PMON_GLOBAL_CTL register (64 bit register) **********************************************
 	
 	The following registers represent state governing all PMUs in the uncore, both to exert
-	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTRL contains bits that can stop (.frz_all) all the uncore counters.
+	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTL contains bits that can stop (.frz_all) all the uncore counters.
 
   * MSR		MASK
   * 0x2FF0	0x0000000000000001
@@ -1027,12 +1027,12 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
 #ifdef _INTEL_
-	#define MSR_UNC_SPR_PMON_GLOBAL_CTRL	0x2FF0
+	#define MSR_UNC_SPR_PMON_GLOBAL_CTL	0x2FF0
 #endif
  
   /**
   * 
-  * MSR_UNC_SPR_C0_PMON_UNIT_CTRL register (64 bit register) **********************************************
+  * MSR_UNC_SPR_C0_PMON_UNIT_CTL register (64 bit register) **********************************************
 
   * MSR			MASK
   * 0x0002000	0x0000000000000301
@@ -1045,15 +1045,15 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
  #ifdef _INTEL_
- 	#define MSR_UNC_SPR_C0_PMON_UNIT_CTRL  0x2000
- 	#define MSR_UNC_SPR_C59_PMON_UNIT_CTRL  0x23B0
-	 #define MSR_UNC_SPR_PMON_UNIT_CTRL_increment 0x10
+ 	#define MSR_UNC_SPR_C0_PMON_UNIT_CTL  0x2000
+ 	#define MSR_UNC_SPR_C59_PMON_UNIT_CTL  0x23B0
+	 #define MSR_UNC_SPR_PMON_UNIT_CTL_increment 0x10
  #endif
   
 
   /**
   * 
-  * MSR_UNC_SPR_C0_PMON_CTRL register (64 bit register) **********************************************
+  * MSR_UNC_SPR_C0_PMON_CTL register (64 bit register) **********************************************
 
   * MSR			MASK
   * 0x2002		0x00000000FF96FFFF
@@ -1079,13 +1079,13 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   *  
   */
  #ifdef _INTEL_
- 	#define MSR_UNC_SPR_C0_PMON_CTRL0  0x2002
-	#define MSR_UNC_SPR_C59_PMON_CTRL0 0x23B2
-	#define MSR_UNC_SPR_Cn_PMON_CTRL_increment 0x10
+ 	#define MSR_UNC_SPR_C0_PMON_CTL0  0x2002
+	#define MSR_UNC_SPR_C59_PMON_CTL0 0x23B2
+	#define MSR_UNC_SPR_Cn_PMON_CTL_increment 0x10
 
 	// *** Related Configurations ***
-	#define MSR_UNC_SPR_Cn_PMON_CTRL_config__clear 0x20000 // ctrl clear configuration and reset the counter.
-	#define MSR_UNC_SPR_Cn_PMON_CTRL_config__uncore_freq 0x1020001 // ctrl event configuration to count uncore frequency
+	#define MSR_UNC_SPR_Cn_PMON_CTL_config__clear 0x20000 // ctrl clear configuration and reset the counter.
+	#define MSR_UNC_SPR_Cn_PMON_CTL_config__uncore_freq 0x1020001 // ctrl event configuration to count uncore frequency
  #endif
 
 
