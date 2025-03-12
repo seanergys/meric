@@ -465,7 +465,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	{
 		uint64_t IA32_ENERGY_PERF_BIAS_bits = 0x0;
 		if (!currentWhitelist.count(IA32_ENERGY_PERF_BIAS))
+		{
 			meric::read_msr(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
+		}
 		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
 		{
 			ok = false;
@@ -760,7 +762,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	// PKG
 		uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
 		if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
+		{
 			meric::read_msr(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+		}
 
 		std::cout 
 			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
@@ -1157,6 +1161,12 @@ void sysEnergyMeasurement()
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
+#elif defined __x86_64
+	if (access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK ) != -1 )
+	{
+		std::cout << "\tRAPL\n";
+		systems++;
+	}
 #endif
 
 #ifdef HAVE_HDEEM_H
