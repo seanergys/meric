@@ -295,7 +295,11 @@ int Meric::getDefaultParameters()
 				}
 			#endif
 			#if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_GEOPM_H)
-				if (modeString[token] == MODE_RAPL)
+				if (modeString[token] == MODE_RAPL
+				#if defined __x86_64
+					&& (access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK ) == -1 )
+				#endif
+					)
 				{
 					std::cerr << "MERIC WARNING: RAPL power monitoring not available\n";
 					continue;
