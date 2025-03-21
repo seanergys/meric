@@ -15,10 +15,11 @@
 
 using namespace meric;
 
-#ifdef HAVE_LINUX_PERF_EVENT_H
 bool PERFEVENT::detailedMode = false;
-std::map<const std::string, long> PERFEVENT::countersFd;
 unsigned long long int PERFEVENT::COUNTERMAX = LLONG_MAX;
+
+#ifdef HAVE_LINUX_PERF_EVENT_H
+std::map<const std::string, long> PERFEVENT::countersFd;
 
 void PERFEVENT::init(bool detailed)
 {
