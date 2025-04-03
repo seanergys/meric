@@ -79,6 +79,38 @@ void PERFEVENT::close()
 	}
 }
 
+__u32 PERFEVENT::getPMUtype(std::string PMUname)
+{
+	std::string pathToPMUtypeFile = "/sys/bus/event_source/devices/"+PMUname+"/type";
+
+	__u32 PMUtype;
+
+	std::ifstream PMUtypeFile;
+	PMUtypeFile.open(pathToPMUtypeFile);
+	if(PMUtypeFile.is_open())
+	{
+		std::string PMUtypeStr;
+		if(!std::getline(PMUtypeFile, PMUtypeStr).fail())
+		{
+			PMUtype = (__u32)std::stoul(PMUtypeStr);
+		}
+		else
+		{
+			std::cerr << "PERFEVENT error while reading file " << pathToPMUtypeFile << "\n";			
+			PMUtype = 0;
+		}
+
+		PMUtypeFile.close();
+	}
+	else
+	{
+		std::cerr << "PERFEVENT error while opening file " << pathToPMUtypeFile << "\n";
+		PMUtype = 0;
+	}
+
+	return PMUtype;
+}
+
 long PERFEVENT::openCounter(perf_event_attr attr, int cpu)
 {
 	//(struct perf_event_attr, pid, cpu, group_fd, flags);

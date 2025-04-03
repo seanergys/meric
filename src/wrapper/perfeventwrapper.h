@@ -32,6 +32,7 @@ public:
 
 private:
 	static void start();
+	static __u32 getPMUtype(std::string PMUname);
 	static long openCounter(perf_event_attr attr, int cpu);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 
