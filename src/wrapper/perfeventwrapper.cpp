@@ -66,7 +66,7 @@ void PERFEVENT::close()
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_DISABLE, 0) != 0)
 		{
-			std::cerr << "PREFEVENT error when stoping counting\n";
+			std::cerr << "PERFEVENT error when stopping counting\n";
 		}
 	}
 	
@@ -74,7 +74,7 @@ void PERFEVENT::close()
 	{
 		if (::close(iterator->second) != 0)
 		{
-			std::cerr << "PREFEVENT error when closing file descriptor\n";
+			std::cerr << "PERFEVENT error when closing file descriptor\n";
 		}
 	}
 }
@@ -132,7 +132,7 @@ pid == -1 and cpu == -1
 	if (fd < 0)
 	{
 		//int err = errno;
-		std::cerr << "PREFEVENT error while opening new fd\n";
+		std::cerr << "PERFEVENT error while opening new fd\n";
 	}
 	
 	return fd;
@@ -144,11 +144,11 @@ void PERFEVENT::start()
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
 		{
-			std::cerr << "PREFEVENT error when reseting counter\n";
+			std::cerr << "PERFEVENT error when resetting counter\n";
 		}
 		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
 		{
-			std::cerr << "PREFEVENT error when starting counting\n";
+			std::cerr << "PERFEVENT error when starting counting\n";
 		}
 	}
 }
@@ -161,7 +161,7 @@ void PERFEVENT::getCounterValues(std::map<std::string, unsigned long long int> &
 		if ((read(iterator->second, &result, sizeof(unsigned long long int))) != sizeof(unsigned long long int))
 		{
 			//int errn = errno;
-			std::cerr << "PREFEVENT error. Failed to read counter "<< iterator->first << std::endl;
+			std::cerr << "PERFEVENT error. Failed to read counter "<< iterator->first << std::endl;
 			record[iterator->first] = 0;
 		}
 		else
