@@ -38,14 +38,22 @@ void PERFEVENT::init(bool detailed)
 		return openCounter(attr, cpu);
 	};
 	
-	for (int i=0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	//Initialization of per-core monitoring of CPU cycles and CPU instructions
+	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);
 		
 		countersFd[PERFEVENT_COUNTERS::PERF_CPU_CYCLES + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, i);
 		countersFd[PERFEVENT_COUNTERS::PERF_CPU_INSTS + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
+	}
 
-		#ifdef _INTEL_
+	#ifdef _INTEL_
+	//Initialization of per-core monitoring of supported Intel counters
+	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	{
+		std::string suffix = "_" + std::to_string(i);
+
+		//countersFd[PERFEVENT_COUNTERS::INTEL_CYCLES_AMX_ACTIVE + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CYCLES_AMX_ACTIVE], i);
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_SCALAR + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_SCALAR], i);
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC128_S + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC128_S], i);
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC128_D + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC128_D], i);
@@ -53,9 +61,8 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC256_D + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC256_D], i);
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC512_S + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC512_S], i);
 		countersFd[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC512_D + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_FP_INSTS_VEC512_D], i);
-		//countersFd[PERFEVENT_COUNTERS::INTEL_CYCLES_AMX_ACTIVE + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CYCLES_AMX_ACTIVE], i);
-		#endif
 	}
+	#endif
 
 	start();
 }
