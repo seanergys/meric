@@ -31,10 +31,6 @@ uint Environment::currentGPUMemFreq = 0;
 uint Environment::currentGPUSMFreq = 0;
 #endif
 
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-bool Environment::manualLevelSet = false;
-#endif
-
 #ifdef __x86_64
 /**
  * Provides the processor name, reads it from register
@@ -199,8 +195,7 @@ void Environment::getGPUbrandString(std::string & GPUname)
 	#ifdef HAVE_NVML_H
 	if (NVML::getGPUsPerNode() && nvmlDeviceGetName (NVML::getGPUHandle(0), name, GPU_NAME_LENGTH) == NVML_SUCCESS)
 	#elif defined HAVE_ROCM_SMI_ROCM_SMI_H
-	rsmi_init(0);
-	if(rsmi_dev_name_get(0, name, GPU_NAME_LENGTH) == RSMI_STATUS_SUCCESS)
+	if(rsmi_init(0) == RSMI_STATUS_SUCCESS && rsmi_dev_name_get(0, name, GPU_NAME_LENGTH) == RSMI_STATUS_SUCCESS)
 	#endif
 	{
 		GPUname = std::string(name);
@@ -850,13 +845,18 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
  * drivers prior 465.xxx had a posibility to raise the rights via `sudo nvidia-smi -acp UNRESTRICTED`
  **/
 #ifdef HAVE_NVML_H
-GPU_TUNING_WAY Environment::getGPUTuningMethod()
+void Environment::getGPUTuningMethod()
 {
 	if (activatedGPUtuning != NO_TUNING)
-		return activatedGPUtuning;
+	{
+		return;
+	}
 	
 	if (geteuid() == 0)
-		return NVML_API;
+	{
+		activatedGPUtuning = NVML_API; 
+		return;
+	}
 	
 	char driverVersion[80];
 	if (nvmlSystemGetDriverVersion(driverVersion, 80) == NVML_SUCCESS)
@@ -865,48 +865,44 @@ GPU_TUNING_WAY Environment::getGPUTuningMethod()
 		std::string::size_type pos = name.find('.');
 		if (pos != std::string::npos && std::stoi(name.substr(0, pos)) > 465)
 		{
-			return NVIDIA_SMI;
+			activatedGPUtuning = NVIDIA_SMI;
+			return;
 		}
 	}
-	return NVML_API;
+	activatedGPUtuning = NVML_API;
 }
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 /**
- * ROCm SMI does not expose any options to raise the rights to change the frequency levels
+ * AMD GPU frequency scaling switched to manual mode
  **/
-GPU_TUNING_WAY Environment::getGPUTuningMethod()
+void Environment::getGPUTuningMethod()
 {
 	if (activatedGPUtuning != NO_TUNING)
 	{
-		return activatedGPUtuning;
+		return;
 	}
 	
 	if (geteuid() == 0)
 	{
-		if(!manualLevelSet)
+		activatedGPUtuning = ROCM_SMI_API;
+		for(int id = 0; id < ROCM::getGPUsPerNode(); id++)
 		{
-
-			for(int id = 0; id < ROCM::getGPUsPerNode(); id++)
+			if(rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_MANUAL) != RSMI_STATUS_SUCCESS)
 			{
-				if(rsmi_dev_perf_level_set(id, RSMI_DEV_PERF_LEVEL_MANUAL) != RSMI_STATUS_SUCCESS)
-				{
-					std::cerr << "MERIC ERROR: RSMI failed to enable GPU frequency tunning\n";
-				}
+				std::cerr << "MERIC ERROR: RSMI failed to enable GPU frequency tunning\n";
+				activatedGPUtuning = NO_TUNING;
+				return;
 			}
-
-			manualLevelSet = true;	
 		}
-		return ROCM_SMI_API;
 	}
-
-	if(!manualLevelSet)
+	else
 	{
 		system("sudo rocm-smi --setperflevel manual 2> /dev/null > /dev/null \n");
-		manualLevelSet = true;
+		activatedGPUtuning = ROCM_SMI_UTIL;
 	}
-	return ROCM_SMI_UTIL;
+	return;
 }
 #endif
 
@@ -1807,14 +1803,18 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 
 #ifdef HAVE_NVML_H
-	nvmlInit();
-	activatedGPUtuning = getGPUTuningMethod();
-	NVML::init();
+	if (nvmlInit() != NVML_SUCCESS)
+	{
+		std::cerr << "NVML ERROR: Unable to initialize\n";
+	}
+	else
+	{
+		NVML::init();
+	}
 #endif
 	
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	ROCM::init();
-	activatedGPUtuning = getGPUTuningMethod();
 #endif
 	
 	initHWSizes();
@@ -1827,7 +1827,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 //ACTIVATE DVFS
 		if (defaultParameter.frequency != 0)
 		{
-			activatedDVFS = activateDVFS();
+			activatedDVFS = activateDVFS(); //TODO void
 		}
 
 //ACTIVATE UFS
@@ -1835,6 +1835,13 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		if (defaultSettings.defaultUncoreFreq != -1)
 		{
 			activatedUFS = true;
+		}
+#endif
+//ACTIVATE GPU tuning
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
+		if (defaultParameter.frequencyGPU != 0)
+		{
+			getGPUTuningMethod();
 		}
 #endif
 #ifdef __arm__

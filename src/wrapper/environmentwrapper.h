@@ -210,7 +210,7 @@ public:
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	static bool isPWRCAPpossible();
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
-	static GPU_TUNING_WAY getGPUTuningMethod();
+	static void getGPUTuningMethod();
 #endif
 	
 	static void getAvailableCF(std::vector<long> & values);
@@ -245,10 +245,6 @@ private:
 	static void getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values);
 	static uint currentGPUMemFreq; //Hz
 	static uint currentGPUSMFreq;  //Hz
-#endif
-
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	static bool manualLevelSet;
 #endif
 
 	static systemLimits defaultSettings;
