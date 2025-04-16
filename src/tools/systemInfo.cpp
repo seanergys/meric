@@ -86,7 +86,7 @@ std::string getAMDGPUName(const std::string hex)
 	else if(hex == "0x7485")
 		name = "Mi300X VF";
 	else
-		name = "Unknown GPU type";
+		name = "Unknown AMD GPU type";
 	return name;	
 }
 
@@ -1190,10 +1190,13 @@ void sysEnergyMeasurement()
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	uint32_t deviceCount;
 	uint64_t energy;
 	float precision;
 	uint64_t timestamp;
-	if(rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
+	//energy read cause segfault if rocm smi not initialized, which we do not know in this location
+	//for that reason additional device count read is issued
+	if(rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS && rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
 	{
 		std::cout << "\tROCM\n";
 		systems++;
@@ -1295,32 +1298,47 @@ int main(int argc, char **argv)
 	status = USING_MSR;
 		#ifdef HAVE_MSR_CORE_H
 		if (init_msr())
+		{
 			std::cerr << "LIBMSR ERROR: Unable to initialize\n";
+		}
 		#endif
 	#elif defined HAVE_X86_ADAPT_H
 	status = USING_ADAPT;
 	if (x86_adapt_init())
+	{
 		std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
+	}
 	#elif defined HAVE_GEOPM_H
 	status = USING_GEOPM;
 	#endif
 	
 	#ifdef HAVE_E_SMI_E_SMI_H
 	if (esmi_init() != ESMI_SUCCESS)
+	{
 		std::cerr << "ESMI ERROR: Unable to initialize\n";
+	}
 	#endif
 	
 	#ifdef HAVE_NVML_H
 	nvmlInit();
+	if (nvmlInit() != NVML_SUCCESS)
+	{
+		std::cerr << "NVML ERROR: Unable to initialize\n";
+	}
 	#endif
 	
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	rsmi_init(0);
+	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	{
+		std::cerr << "ROCm SMI: Unable to initialize\n";
+	}
 	#endif
 
 
 	if (status == USING_MSR)
+	{
 		checkMsrWhitelist();
+	}
 
 	bool systemInTheDefaultSettings = true;
 	timespec modifTime;
