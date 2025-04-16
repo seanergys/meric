@@ -854,7 +854,7 @@ void Environment::getGPUTuningMethod()
 	
 	if (geteuid() == 0)
 	{
-		activatedGPUtuning = NVML_API; 
+		activatedGPUtuning = NVML_API;
 		return;
 	}
 	
