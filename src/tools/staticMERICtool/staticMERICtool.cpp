@@ -126,6 +126,7 @@ void printHelp()
 	exit(1);
 }
  
+bool isRunning = true;
 int child_pid = -1;
 void signalHandler(int signal)
 {
@@ -139,8 +140,11 @@ void signalHandler(int signal)
 			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
-			write(STDOUT_FILENO, "Child not exist.\n", 18);
-		// _exit(0);
+		{
+			write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
+			isRunning = false;
+			// _exit(0);
+		}
 	}
 	else if (signal == SIGTERM)
 	{
@@ -152,8 +156,11 @@ void signalHandler(int signal)
 			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
-			write(STDOUT_FILENO, "Child not exist.\n", 18);
-		// _exit(0);
+		{
+			write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
+			isRunning = false;
+			_exit(0);
+		}
 	}
 }
 
@@ -426,8 +433,7 @@ int main(int argc, char **argv)
 
 	////////////////////////////////////////////////////////////////////////////////
 	Environment::init(SYS_OTHER, defaultParameter, 0);
- 
-	bool isRunning = true;
+  
 	double endTime = 0.0;
 	struct timespec timestamp;
 
