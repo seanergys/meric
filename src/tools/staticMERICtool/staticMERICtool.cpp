@@ -5,6 +5,9 @@
 #include "../../wrapper/hwmonwrapper.h"
 #include "../../basis/utils.h"
 #include <limits>
+#include <csignal>
+#include <unistd.h>
+#include <sys/wait.h>
 
 using namespace meric;
 
@@ -12,16 +15,16 @@ int POWER_BASELINE = 0;
 
 //----------------------------------------------------------------------------//
 
-std::vector<std::map<std::string, unsigned long long int>> recordEnergy; //TODO change to vector<vectors<unsigned long long int>> with mapping the strings to vector element IDs // TODO double
+std::vector<std::map<std::string, unsigned long long int>> recordEnergy; // TODO change to vector<vectors<unsigned long long int>> with mapping the strings to vector element IDs // TODO double
 std::vector<double> recordTime;
 
 template <typename Tmode>
 void printValues(bool verbose)
 {
-//	std::cout << "#SAMPLES: " << recordTime.size() << '\n'
-//	          << "START: " << recordTime[0] << '\n'
-//	          << "STOP: " << recordTime.back() << '\n';
-          
+	//	std::cout << "#SAMPLES: " << recordTime.size() << '\n'
+	//	          << "START: " << recordTime[0] << '\n'
+	//	          << "STOP: " << recordTime.back() << '\n';
+
 	if (recordTime.size() < 2)
 	{
 		std::cerr << "ERROR missing samples\n";
@@ -29,56 +32,57 @@ void printValues(bool verbose)
 	}
 
 	std::map<std::string, double> record;
-	for(std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
+	for (std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
 	{
 		record[iterator->first] = 0;
 	}
-	
+
 	double summary = 0.0;
 	double runtime = recordTime.back() - recordTime[0];
-	
-	for(int i=1; i<recordEnergy.size(); i++)
+
+	for (int i = 1; i < recordEnergy.size(); i++)
 	{
-		for(auto iterator = record.begin(); iterator != record.end(); iterator++)
+		for (auto iterator = record.begin(); iterator != record.end(); iterator++)
 		{
 			int cumulative = 0;
-			record[iterator->first] += Tmode::getResultValue(recordEnergy[i-1][iterator->first], recordEnergy[i][iterator->first], recordTime[i-1]-recordTime[i], cumulative, iterator->first);
-			
+			record[iterator->first] += Tmode::getResultValue(recordEnergy[i - 1][iterator->first], recordEnergy[i][iterator->first], recordTime[i - 1] - recordTime[i], cumulative, iterator->first);
+
 			if (cumulative > 0)
 			{
 				summary += record[iterator->first];
 			}
 		}
 	}
-	summary += POWER_BASELINE*runtime;
-		
+	summary += POWER_BASELINE * runtime;
+
 	if (verbose)
 	{
-		//MPI_Reduce (MAX, runtime, MPI_COMM_WORLD);
+		// MPI_Reduce (MAX, runtime, MPI_COMM_WORLD);
 		std::cout << "Runtime [s] = " << runtime << std::endl;
-		
-		//MPI_Gather() //map -> vector
-		for(std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
+
+		// MPI_Gather() //map -> vector
+		for (std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
 		{
 			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << record[iterator->first] << std::endl;
 		}
 		if (Tmode::getSummaryCounterName() != "")
 		{
-			std::cout << std::endl << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
+			std::cout << std::endl
+					  << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
 		}
 	}
 	else
 	{
-		//MPI_Gather(0, double, summary, 1, COMM_WORLD);
-		//TODO what if there is no summary
-		std::cout <<  summary << std::endl;
+		// MPI_Gather(0, double, summary, 1, COMM_WORLD);
+		// TODO what if there is no summary
+		std::cout << summary << std::endl;
 	}
 }
 
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
-template <typename Tmode> 
+template <typename Tmode>
 void measureEnergy(bool verbose, double timeNow = 0.0)
 {
 	if (recordEnergy.empty())
@@ -101,25 +105,63 @@ void measureEnergy(bool verbose, double timeNow = 0.0)
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-//TODO	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
-//TODO	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
-//TODO	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
-	          << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
-	          << "\t mericStatic parameters:\n"
-//	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
-	          << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
-	          << "\t-c = CPU core frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
-	          << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
-	          << "\t-t = #OpenMP threads\n"
-	          << "\t-p = CPU power capping power limit [mW]\n"
-	          << "\t-w = CPU power capping time window [ms]\n"
-	          << "\t-s = GPU SM frequency [Hz]\n"
-	          << "\t-r = GPU memory frequency [Hz]\n"
-	          << "\t-g = GPU power capping power limit [mW]\n"
-	          << "\t-b = single node baseline (static) power consumption [W]\n"
-	          << "\t-q = print the overall consumed energy only [J]\n"
-	          << std::endl;
+			  // TODO	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
+			  // TODO	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
+			  // TODO	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
+			  << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
+			  << "\t mericStatic parameters:\n"
+			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
+			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
+			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
+			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
+			  << "\t-t = #OpenMP threads\n"
+			  << "\t-p = CPU power capping power limit [mW]\n"
+			  << "\t-w = CPU power capping time window [ms]\n"
+			  << "\t-s = GPU SM frequency [Hz]\n"
+			  << "\t-r = GPU memory frequency [Hz]\n"
+			  << "\t-g = GPU power capping power limit [mW]\n"
+			  << "\t-b = single node baseline (static) power consumption [W]\n"
+			  << "\t-q = print the overall consumed energy only [J]\n"
+			  << std::endl;
 	exit(1);
+}
+ 
+int child_pid = -1;
+void signalHandler(int signal)
+{
+	if (signal == SIGINT)
+	{
+		write(STDOUT_FILENO, "Interrupt signal (Ctrl+C) received\n", 36);
+
+		if (child_pid > 0)
+		{
+			kill(child_pid, SIGINT); // Forward signal to child process
+			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+		}
+		else
+			write(STDOUT_FILENO, "Child not exist.\n", 18);
+		// _exit(0);
+	}
+	else if (signal == SIGTERM)
+	{
+		write(STDOUT_FILENO, "Termination signal received.\n", 30); 
+
+		if (child_pid > 0)
+		{
+			kill(child_pid, SIGTERM); // Forward signal to child process
+			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+		}
+		else
+			write(STDOUT_FILENO, "Child not exist.\n", 18);
+		// _exit(0);
+	}
+}
+
+// Setup signal handler
+void setupSignalHandlers()
+{
+	std::signal(SIGINT, signalHandler);	 // Ctrl+C
+	std::signal(SIGTERM, signalHandler); // `kill` default
 }
 
 int main(int argc, char **argv)
@@ -133,7 +175,7 @@ int main(int argc, char **argv)
 		std::cerr << "missing machine hostname\n";
 		exit(1);
 	}
-
+	setupSignalHandlers();
 	RegionParameters defaultParameter;
 	for (int i = 1; i < argc; ++i)
 	{
@@ -145,136 +187,173 @@ int main(int argc, char **argv)
 				try
 				{
 					defaultParameter.frequency = std::stol(argv[++i]);
-				} catch (std::exception const &e)
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-u")
+		}
+		else if (arg == "-u")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.uncoreFrequency = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.uncoreFrequency = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-t")
+		}
+		else if (arg == "-t")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.nthreads = std::stoi (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.nthreads = std::stoi(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-p")
+		}
+		else if (arg == "-p")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.powerCapPKG = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.powerCapPKG = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-w")
+		}
+		else if (arg == "-w")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.powerCapPKGtime = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.powerCapPKGtime = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-s")
+		}
+		else if (arg == "-s")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.frequencyGPU = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.frequencyGPU = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-r")
+		}
+		else if (arg == "-r")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.frequencyGPUmem = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.frequencyGPUmem = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-g")
+		}
+		else if (arg == "-g")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					defaultParameter.powerCapGPU = std::stol (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					defaultParameter.powerCapGPU = std::stol(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-q")
+		}
+		else if (arg == "-q")
 		{
 			verbose = false;
-		}else if (arg == "-b")
+		}
+		else if (arg == "-b")
 		{
 			if (i + 1 < argc)
 			{
-				try{
-					POWER_BASELINE = std::stoul (argv[++i]);
-				} catch (std::exception const &e)
+				try
+				{
+					POWER_BASELINE = std::stoul(argv[++i]);
+				}
+				catch (std::exception const &e)
 				{
 					printHelp();
 				}
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
-		}else if (arg == "-e")
+		}
+		else if (arg == "-e")
 		{
 			if (i + 1 < argc)
 			{
 				energyMode = std::string(argv[++i]);
 				std::transform(energyMode.begin(), energyMode.end(), energyMode.begin(), ::toupper);
-			}else
+			}
+			else
 			{
 				printHelp();
 			}
@@ -292,11 +371,9 @@ int main(int argc, char **argv)
 			printHelp();
 		}
 	}
-	
 
-	std::vector <void(*)(bool,double)> measurements;
-	std::vector <void(*)(bool)> prints;
-
+	std::vector<void (*)(bool, double)> measurements;
+	std::vector<void (*)(bool)> prints;
 
 	if (energyMode == "")
 	{
@@ -308,10 +385,10 @@ int main(int argc, char **argv)
 		{
 			std::string token;
 			size_t pos = energyMode.find_first_of(',');
-			if(pos != std::string::npos)
+			if (pos != std::string::npos)
 			{
-				token = energyMode.substr(0,pos);
-				energyMode = energyMode.substr(pos+1, energyMode.size()-pos);
+				token = energyMode.substr(0, pos);
+				energyMode = energyMode.substr(pos + 1, energyMode.size() - pos);
 			}
 			else
 			{
@@ -334,85 +411,128 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<A64FX>);
 				prints.push_back(printValues<A64FX>);
 			}
-			else if(token == "HWMON")
+			else if (token == "HWMON")
 			{
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(printValues<HWMON>);
 			}
 			else
 			{
-				std::cerr << "ERROR: unknown energy measurement system '"+token+"'\n\n";
+				std::cerr << "ERROR: unknown energy measurement system '" + token + "'\n\n";
 				printHelp();
 			}
 		}
 	}
 
-////////////////////////////////////////////////////////////////////////////////	
+	////////////////////////////////////////////////////////////////////////////////
 	Environment::init(SYS_OTHER, defaultParameter, 0);
-	
-	bool endCondition = true;
+ 
+	bool isRunning = true;
 	double endTime = 0.0;
 	struct timespec timestamp;
 
 	double timeNow = mutils::timeToDouble(timestamp);
-	for(auto measureEnergyGeneral : measurements)
+	for (auto measureEnergyGeneral : measurements)
 	{
 		measureEnergyGeneral(verbose, timeNow);
 	}
 
-	#pragma omp parallel num_threads(2) shared(endCondition, endTime) private(timestamp)
+	int pid = fork();
+
+	if (pid == 0) // child
 	{
-		int tid = omp_get_thread_num();
-		
-		if (tid == 0)
+		// Replace the child process with the application command
+		char *const args[] = {(char *)"sh", (char *)"-c", (char *)applicationCommand.c_str(), nullptr};
+		execvp(args[0], args); // Replace with the command, use execvp to search in PATH
+
+		// If execvp fails, print an error
+		std::cerr << "Error: " << strerror(errno) << std::endl;
+		exit(1);
+	}
+	else if (pid > 0) // parent
+	{
+		child_pid = pid;
+		double waitTime = timeNow;
+
+		// Parent checks periodically if the child has finished
+		while (isRunning)
 		{
-			if (system(applicationCommand.c_str()) != 0)
+			int status;
+			pid_t result = waitpid(child_pid, &status, WNOHANG); // Non-blocking check for child status
+
+			if (result == -1)
 			{
-				std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+				std::cerr << "Error: " << strerror(errno) << std::endl;
+				exit(1);
 			}
-			else
+			else if (result == 0)
 			{
-				clock_gettime(CLOCK_REALTIME, &timestamp);
-				endTime = mutils::timeToDouble(timestamp);
-			}
-			endCondition = false;
-		}
-		else
-		{
-			double waitTime = timeNow;
-			do
-			{
+				// Child has not finished yet, keep checking
 				clock_gettime(CLOCK_REALTIME, &timestamp);
 				timeNow = mutils::timeToDouble(timestamp);
-				if (timeNow - waitTime > 60) //TODO application input parameter
+
+				if (timeNow - waitTime > 60) // TODO: application input parameter
 				{
-					for(auto measureEnergyGeneral : measurements)
+					for (auto measureEnergyGeneral : measurements)
 					{
 						measureEnergyGeneral(verbose, timeNow);
 					}
 					waitTime = timeNow;
 				}
-				usleep(1000);	//1ms sleep - we must check whether the application has ended
+
+				usleep(1000); // Sleep for 1 second before checking again
 			}
-			while(endCondition);
-					
-			if (endTime > 0.0)
+			else
 			{
-				//final energy measurement stamp
-				for(auto measureEnergyGeneral : measurements)
-				{
-					measureEnergyGeneral(verbose, endTime);
+				// Child has finished
+				child_pid = -1;	// reset the child_pid.
+				if (WIFEXITED(status)) {
+					// Check if the child process exited normally.
+					if (WEXITSTATUS(status) != 0) {
+						std::cerr << "Error: Child process terminated with an error (exit status: " 
+								  << WEXITSTATUS(status) << ")" << std::endl;
+					}else std::cout << "Success: Child process terminated successfully.\n";
+				} else if (WIFSIGNALED(status)) {
+					// If the child process terminated due to a signal.
+					std::cerr << "Error: Child process terminated by signal " 
+							  << WTERMSIG(status) << std::endl;
+				} else if (WIFSTOPPED(status)) {
+					// If the child process is stopped.
+					std::cerr << "Error: Child process is stopped by signal " 
+							  << WSTOPSIG(status) << std::endl;
+				} else {
+					std::cerr << "Error: Unexpected child process termination state." << std::endl;
 				}
-				for(auto printGeneral : prints)
-				{
-					printGeneral(verbose);
-				}
+				
+				clock_gettime(CLOCK_REALTIME, &timestamp);
+				endTime = mutils::timeToDouble(timestamp);
+				isRunning = false;
+			}
+		}
+
+		// After the child finishes, measure energy and print
+		if (endTime > 0.0)
+		{
+			// Final energy measurement stamp
+			for (auto measureEnergyGeneral : measurements)
+			{
+				measureEnergyGeneral(verbose, endTime);
+			}
+
+			for (auto printGeneral : prints)
+			{
+				printGeneral(verbose);
 			}
 		}
 	}
-	
+	else
+	{ // error
+		std::cerr << "Fork failed: " << strerror(errno) << std::endl;
+		exit(1);
+	}
+
 	Environment::restoreSystemSettings();
 	Environment::close();
-	
+
 	return 0;
 }
