@@ -110,13 +110,12 @@ void printHelp()
 			  // TODO	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
 			  // TODO	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
 			  << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
-			  << "\t mericStatic [mericStatic parameters] -- start\n"
-			  << "\t mericStatic -- stop\n"
-			  << "\t mericStatic [mericStatic parameters] -- start: starts measuring energy untill mericStatic -- stop command issued."
-			  << "\t mericStatic [mericStatic parameters] -- stop: sends SIGTERM signal to stop mericStatic commands."
+			  << "\t mericStatic [mericStatic parameters] -- start: Starts measuring energy untill mericStatic -- stop command issued.\n"
+			  << "\t mericStatic [mericStatic parameters] -- stop: Sends SIGTERM signal to stop mericStatic commands.\n"
+			  << "\t mericStatic [mericStatic parameters] -- eval: Reads all dump files and aggregates total energy consumption.\n"
 			  << "\t mericStatic parameters:\n"
 			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
-			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0. If id < 0, then prints to terminal"
+			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
 			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
@@ -132,11 +131,15 @@ void printHelp()
 	exit(1);
 }
 
+std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
+double extractEnergyConsumption(const std::string &filepath);
+
 enum class TOOL_MODE
 {
 	DEFAULT,
 	START,
-	STOP
+	STOP,
+	EVAL
 };
 TOOL_MODE toolMode = TOOL_MODE::DEFAULT;
 bool isRunning = true;
@@ -193,8 +196,8 @@ int main(int argc, char **argv)
 	std::string applicationCommand = "";
 
 	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
-																				 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
-																											  : "0";
+																					 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
+																												  : "0";
 	if (job_id_env)
 		job_id = std::atoi(job_id_env);
 	printf("job_id :%d\n", job_id);
@@ -413,6 +416,10 @@ int main(int argc, char **argv)
 					toolMode = TOOL_MODE::STOP;
 					applicationCommand = "pkill -u \"$USER\" -f mericStatic";
 				}
+				else if (std::string(argv[i]) == "eval")
+				{
+					toolMode = TOOL_MODE::EVAL;
+				}
 				else
 				{
 					toolMode = TOOL_MODE::DEFAULT;
@@ -431,20 +438,23 @@ int main(int argc, char **argv)
 		}
 	}
 
-	// redirect the output to the file created.
 	std::ofstream outfile;
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
-	std::string filename = "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
-	outfile.open(filename, std::ios::out | std::ios::trunc);
-	if (outfile.is_open())
-		std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
-	else
-		std::cerr << "Error creating the file:" << filename << "\n";
+	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
+	{
+		// redirect the output to the file created.
+		std::string filename = "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
+		outfile.open(filename, std::ios::out | std::ios::trunc);
+		if (outfile.is_open())
+			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
+		else
+			std::cerr << "Error creating the file:" << filename << "\n";
+	}
 
 	std::vector<void (*)(bool, double)> measurements;
 	std::vector<void (*)(bool)> prints;
 
-	if (toolMode != TOOL_MODE::STOP && energyMode == "")
+	if ((toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START) && energyMode == "")
 	{
 		printHelp();
 	}
@@ -651,9 +661,20 @@ int main(int argc, char **argv)
 	{
 		if (std::system(applicationCommand.c_str()) != 0)
 			std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+	}
+	else if (toolMode == TOOL_MODE::EVAL)
+	{
+		// check if all files are there, if so aggregate the total energy
+		std::string prefix = "mericStatic_" + std::to_string(job_id);
+		std::vector<std::string> files = listMatchingFiles(prefix);
+		double totalEnergy = 0.0;
+		for (const auto &filepath : files)
+		{
+			totalEnergy += extractEnergyConsumption(filepath);
+			std::cout << filepath << "\n";
+		}
 
-		// srun -> 10
-		// MPI_INIT(..) --> 10
+		std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
 	}
 
 	Environment::restoreSystemSettings();
@@ -666,4 +687,41 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+
+double extractEnergyConsumption(const std::string &filepath)
+{
+	std::ifstream file(filepath);
+	std::string line;
+	std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
+	std::smatch match;
+
+	while (std::getline(file, line))
+	{
+		if (std::regex_search(line, match, energyRegex))
+		{
+			return std::stod(match[1]);
+		}
+	}
+	return 0.0; // If not found
+}
+
+std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
+{
+	std::vector<std::string> result;
+	DIR *dir = opendir(directory.c_str());
+	if (!dir)
+		return result;
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != nullptr)
+	{
+		std::string name(entry->d_name);
+		if (name.find(prefix) == 0)
+		{
+			result.push_back(directory + "/" + name);
+		}
+	}
+	closedir(dir);
+	return result;
 }
