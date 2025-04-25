@@ -12,6 +12,7 @@
 using namespace meric;
 
 int POWER_BASELINE = 0;
+int job_id; // id specific to the execution.
 
 //----------------------------------------------------------------------------//
 
@@ -115,6 +116,7 @@ void printHelp()
 			  << "\t mericStatic [mericStatic parameters] -- stop: sends SIGTERM signal to stop mericStatic commands."
 			  << "\t mericStatic parameters:\n"
 			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
+			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0. If id < 0, then prints to terminal"
 			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
@@ -139,7 +141,7 @@ enum class TOOL_MODE
 TOOL_MODE toolMode = TOOL_MODE::DEFAULT;
 bool isRunning = true;
 int child_pid = -1;
- 
+
 void signalHandler(int signal)
 {
 	if (signal == SIGINT)
@@ -189,6 +191,14 @@ int main(int argc, char **argv)
 	char hostname[HOST_NAME_MAX];
 	std::string energyMode = "";
 	std::string applicationCommand = "";
+
+	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
+																				 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
+																											  : "0";
+	if (job_id_env)
+		job_id = std::atoi(job_id_env);
+	printf("job_id :%d\n", job_id);
+
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
 		std::cerr << "missing machine hostname\n";
@@ -377,6 +387,17 @@ int main(int argc, char **argv)
 				printHelp();
 			}
 		}
+		else if (arg == "-i")
+		{
+			if (i + 1 < argc)
+			{
+				job_id = std::atoi(argv[++i]);
+			}
+			else
+			{
+				printHelp();
+			}
+		}
 		else if (arg == "--")
 		{
 			if (i + 1 < argc)
@@ -410,10 +431,20 @@ int main(int argc, char **argv)
 		}
 	}
 
+	// redirect the output to the file created.
+	std::ofstream outfile;
+	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
+	std::string filename = "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
+	outfile.open(filename, std::ios::out | std::ios::trunc);
+	if (outfile.is_open())
+		std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
+	else
+		std::cerr << "Error creating the file:" << filename << "\n";
+
 	std::vector<void (*)(bool, double)> measurements;
 	std::vector<void (*)(bool)> prints;
 
-	if (energyMode == "" && toolMode != TOOL_MODE::STOP)
+	if (toolMode != TOOL_MODE::STOP && energyMode == "")
 	{
 		printHelp();
 	}
@@ -600,7 +631,7 @@ int main(int argc, char **argv)
 		}
 		clock_gettime(CLOCK_REALTIME, &timestamp);
 		endTime = mutils::timeToDouble(timestamp);
-		
+
 		// After the child finishes, measure energy and print
 		if (endTime > 0.0)
 		{
@@ -620,10 +651,19 @@ int main(int argc, char **argv)
 	{
 		if (std::system(applicationCommand.c_str()) != 0)
 			std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+
+		// srun -> 10
+		// MPI_INIT(..) --> 10
 	}
 
 	Environment::restoreSystemSettings();
 	Environment::close();
+
+	if (outfile.is_open())
+	{
+		std::cout.rdbuf(coutbuf);
+		outfile.close();
+	}
 
 	return 0;
 }
