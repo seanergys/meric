@@ -47,7 +47,16 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
 	}
 
-	#ifdef _INTEL_
+	#ifdef _AMD_
+	//Initialization of per-core monitoring of supported AMD counters
+	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	{
+		std::string suffix = "_" + std::to_string(i);
+	
+		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], i);
+	}
+	
+	#elif defined _INTEL_
 	//Initialization of per-core monitoring of supported Intel counters
 	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
 	{
@@ -205,7 +214,17 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 				stop[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix], runtime, cumulative);
 		}
 
-		#ifdef _INTEL_
+		#ifdef _AMD_
+		unsigned long long int flops = 0;
+		if(stop.count(PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix))
+		{
+			flops = getResultValue(start[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix],
+				stop[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix], runtime, cumulative);
+		}
+
+		ratios["CPU_FLOP"+suffix+" [FLOP/s]"] = flops/runtime;
+		
+		#elif defined _INTEL_
 		//unsigned long long int cyclesAMXActive = 0;
 		//if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix))
 		//{

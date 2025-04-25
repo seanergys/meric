@@ -55,7 +55,9 @@ namespace PERFEVENT_COUNTERS {
 const std::string PERFEVENT_CPU_CYCLES = "CPU_CYCLES";
 const std::string PERFEVENT_CPU_INSTS = "CPU_INSTRUCTIONS";
 
-#ifdef _INTEL_
+#ifdef _AMD_
+const std::string AMD_CPU_FLOPS = "CPU_FLOPS";
+#elif defined _INTEL_
 const std::string INTEL_CPU_CYCLES_AMX_ACTIVE = "CPU_CYCLES_AMX_BUSY";
 const std::string INTEL_CPU_INSTS_SCALAR_FP = "CPU_INST_SCALAR_FP";
 const std::string INTEL_CPU_INSTS_VEC128_FP_SP = "CPU_INST_VEC128_FP_SP";
@@ -67,7 +69,9 @@ const std::string INTEL_CPU_INSTS_VEC512_FP_DP = "CPU_INST_VEC512_FP_DP";
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
-	#ifdef _INTEL_
+	#ifdef _AMD_
+	{ AMD_CPU_FLOPS,                AMD_CPU_FLOPS                     },
+	#elif defined _INTEL_
 	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  "CPU_CYCLES_AMX_ACTIVE"           },
 	{ INTEL_CPU_INSTS_SCALAR_FP,    "CPU_INSTRUCTIONS_SCALAR_FP"      },
 	{ INTEL_CPU_INSTS_VEC128_FP_SP, "CPU_INSTRUCTIONS_VEC_128B_FP_SP" },
@@ -82,7 +86,9 @@ static std::map<const std::string, std::string> counterLabel = {
 };
 
 static std::map<const std::string, const uint64_t> counterDefines = {
-	#ifdef _INTEL_
+	#ifdef _AMD_
+	{ AMD_CPU_FLOPS,                0x0f03 }
+	#elif defined _INTEL_
 	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  0x02b7 },
 	{ INTEL_CPU_INSTS_SCALAR_FP,    0x03c7 },
 	{ INTEL_CPU_INSTS_VEC128_FP_SP, 0x08c7 },
