@@ -25,26 +25,13 @@ void PERFEVENT::init(bool detailed)
 {
 	detailedMode = detailed;
 
-	auto setCounter = [&] (__u32 type, __u64 config, int cpu)
-	{
-		struct perf_event_attr attr;
-		memset(&attr, 0, sizeof(struct perf_event_attr));
-		attr.size = sizeof(struct perf_event_attr);
-		attr.inherit = 1;
-		attr.type = type;
-		attr.config = config;
-		attr.disabled = 1;
-
-		return openCounter(attr, cpu);
-	};
-	
 	//Initialization of per-core monitoring of CPU cycles and CPU instructions
 	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
 	{
 		std::string suffix = "_" + std::to_string(i);
 		
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, i);
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = setCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
+		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, i);
+		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
 	}
 
 	#ifdef _AMD_
@@ -53,7 +40,7 @@ void PERFEVENT::init(bool detailed)
 	{
 		std::string suffix = "_" + std::to_string(i);
 	
-		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], i);
+		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], i);
 	}
 	
 	#elif defined _INTEL_
@@ -62,14 +49,14 @@ void PERFEVENT::init(bool detailed)
 	{
 		std::string suffix = "_" + std::to_string(i);
 
-		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = setCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], i);
+		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP], i);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], i);
 	}
 	#endif
 
@@ -127,31 +114,45 @@ __u32 PERFEVENT::getPMUtype(std::string PMUname)
 	return PMUtype;
 }
 
-long PERFEVENT::openCounter(perf_event_attr attr, int cpu)
+long PERFEVENT::openCounter(__u32 type, __u64 config, int cpu)
 {
-	//(struct perf_event_attr, pid, cpu, group_fd, flags);
-	long fd = syscall(__NR_perf_event_open, &attr, -1, cpu, -1, 0);
-/*
-pid == 0 and cpu == -1
-    This measures the calling process/thread on any CPU. 
-pid == 0 and cpu >= 0
-    This measures the calling process/thread only when running on the specified CPU. 
-pid > 0 and cpu == -1
-    This measures the specified process/thread on any CPU. 
-pid > 0 and cpu >= 0
-    This measures the specified process/thread only when running on the specified CPU. 
-pid == -1 and cpu >= 0
-    This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less than 1. 
-pid == -1 and cpu == -1
-    This setting is invalid and will return an error.
-*/
-	if (fd < 0)
+	long fileDescriptor = -1;
+
+	if((type > 0) || ((type == PERF_TYPE_HARDWARE) && ((config == PERF_COUNT_HW_CPU_CYCLES) || (config == PERF_COUNT_HW_INSTRUCTIONS))))
+	{
+		struct perf_event_attr attr;
+		memset(&attr, 0, sizeof(struct perf_event_attr));
+		attr.size = sizeof(struct perf_event_attr);
+		attr.inherit = 1;
+		attr.type = type;
+		attr.config = config;
+		attr.disabled = 1;
+
+		//(struct perf_event_attr, pid, cpu, group_fd, flags);
+		fileDescriptor = syscall(__NR_perf_event_open, &attr, -1, cpu, -1, 0);
+		/*
+		pid == 0 and cpu == -1
+		    This measures the calling process/thread on any CPU. 
+		pid == 0 and cpu >= 0
+		    This measures the calling process/thread only when running on the specified CPU. 
+		pid > 0 and cpu == -1
+		    This measures the specified process/thread on any CPU. 
+		pid > 0 and cpu >= 0
+		    This measures the specified process/thread only when running on the specified CPU. 
+		pid == -1 and cpu >= 0
+		    This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less than 1. 
+		pid == -1 and cpu == -1
+		    This setting is invalid and will return an error.
+		*/
+	}
+
+	if (fileDescriptor < 0)
 	{
 		//int err = errno;
 		std::cerr << "PERFEVENT error while opening new fd\n";
 	}
 	
-	return fd;
+	return fileDescriptor;
 }
 
 void PERFEVENT::start()
