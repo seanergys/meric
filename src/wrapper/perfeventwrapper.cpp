@@ -69,7 +69,7 @@ void PERFEVENT::close()
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_DISABLE, 0) != 0)
 		{
-			std::cerr << "PERFEVENT error when stopping counting\n";
+			std::cerr << "PERFEVENT error - failed to disable counter " << iterator->first << "\n";
 		}
 	}
 	
@@ -77,7 +77,7 @@ void PERFEVENT::close()
 	{
 		if (::close(iterator->second) != 0)
 		{
-			std::cerr << "PERFEVENT error when closing file descriptor\n";
+			std::cerr << "PERFEVENT error - failed to close file descriptor for counter " << iterator->first << "\n";
 		}
 	}
 }
@@ -99,7 +99,7 @@ __u32 PERFEVENT::getPMUtype(std::string PMUname)
 		}
 		else
 		{
-			std::cerr << "PERFEVENT error while reading file " << pathToPMUtypeFile << "\n";			
+			std::cerr << "PERFEVENT error - failed to read file " << pathToPMUtypeFile << "\n";
 			PMUtype = 0;
 		}
 
@@ -107,7 +107,7 @@ __u32 PERFEVENT::getPMUtype(std::string PMUname)
 	}
 	else
 	{
-		std::cerr << "PERFEVENT error while opening file " << pathToPMUtypeFile << "\n";
+		std::cerr << "PERFEVENT error - failed to open file " << pathToPMUtypeFile << "\n";
 		PMUtype = 0;
 	}
 
@@ -149,7 +149,7 @@ long PERFEVENT::openCounter(__u32 type, __u64 config, int cpu)
 	if (fileDescriptor < 0)
 	{
 		//int err = errno;
-		std::cerr << "PERFEVENT error while opening new fd\n";
+		std::cerr << "PERFEVENT error - failed to open new file descriptor\n";
 	}
 	
 	return fileDescriptor;
@@ -161,11 +161,11 @@ void PERFEVENT::start()
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
 		{
-			std::cerr << "PERFEVENT error when resetting counter\n";
+			std::cerr << "PERFEVENT error - failed to reset counter " << iterator->first << "\n";
 		}
 		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
 		{
-			std::cerr << "PERFEVENT error when starting counting\n";
+			std::cerr << "PERFEVENT error - failed to enable counter " << iterator->first << "\n";
 		}
 	}
 }
@@ -178,7 +178,7 @@ void PERFEVENT::getCounterValues(std::map<std::string, unsigned long long int> &
 		if ((read(iterator->second, &result, sizeof(unsigned long long int))) != sizeof(unsigned long long int))
 		{
 			//int errn = errno;
-			std::cerr << "PERFEVENT error. Failed to read counter "<< iterator->first << std::endl;
+			std::cerr << "PERFEVENT error - failed to read counter " << iterator->first << "\n";
 			record[iterator->first] = 0;
 		}
 		else
