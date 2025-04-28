@@ -131,6 +131,7 @@ void printHelp()
 	exit(1);
 }
 
+bool isJobRunning(const std::string& jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
 double extractEnergyConsumption(const std::string &filepath);
 
@@ -664,17 +665,24 @@ int main(int argc, char **argv)
 	}
 	else if (toolMode == TOOL_MODE::EVAL)
 	{
-		// check if all files are there, if so aggregate the total energy
-		std::string prefix = "mericStatic_" + std::to_string(job_id);
-		std::vector<std::string> files = listMatchingFiles(prefix);
-		double totalEnergy = 0.0;
-		for (const auto &filepath : files)
-		{
-			totalEnergy += extractEnergyConsumption(filepath);
-			std::cout << filepath << "\n";
-		}
 
-		std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+		if (isJobRunning("mericStatic"))
+			std::cout << "Job is not yet completed!\n";
+		else
+		{
+
+			// check if all files are there, if so aggregate the total energy
+			std::string prefix = "mericStatic_" + std::to_string(job_id);
+			std::vector<std::string> files = listMatchingFiles(prefix);
+			double totalEnergy = 0.0;
+			for (const auto &filepath : files)
+			{
+				totalEnergy += extractEnergyConsumption(filepath);
+				std::cout << filepath << "\n";
+			}
+
+			std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+		}
 	}
 
 	Environment::restoreSystemSettings();
@@ -724,4 +732,25 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	}
 	closedir(dir);
 	return result;
+}
+bool isJobRunning(const std::string& jobName)
+{
+    std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
+    
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe)
+    {
+        std::cerr << "Failed to run command.\n";
+        return false;
+    }
+
+    char buffer[256];
+    std::string result;
+    
+    while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr)
+    {
+        result += buffer;
+    }
+	std::cout << result << "\n";
+    return !result.empty();
 }
