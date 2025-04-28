@@ -86,18 +86,13 @@ __u32 PERFEVENT::getPMUtype(std::string PMUname)
 {
 	std::string pathToPMUtypeFile = "/sys/bus/event_source/devices/"+PMUname+"/type";
 
-	__u32 PMUtype;
+	__u32 PMUtype = 0;
 
 	std::ifstream PMUtypeFile;
 	PMUtypeFile.open(pathToPMUtypeFile);
 	if(PMUtypeFile.is_open())
 	{
-		std::string PMUtypeStr;
-		if(!std::getline(PMUtypeFile, PMUtypeStr).fail())
-		{
-			PMUtype = (__u32)std::stoul(PMUtypeStr);
-		}
-		else
+		if(!(PMUtypeFile >> PMUtype))
 		{
 			std::cerr << "PERFEVENT error - failed to read file " << pathToPMUtypeFile << "\n";
 			PMUtype = 0;
@@ -108,7 +103,6 @@ __u32 PERFEVENT::getPMUtype(std::string PMUname)
 	else
 	{
 		std::cerr << "PERFEVENT error - failed to open file " << pathToPMUtypeFile << "\n";
-		PMUtype = 0;
 	}
 
 	return PMUtype;
