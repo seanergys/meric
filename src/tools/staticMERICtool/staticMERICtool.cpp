@@ -587,7 +587,7 @@ int main(int argc, char **argv)
 					// Child has finished
 					child_pid = -1; // reset the child_pid.
 
-					/*
+					/* TODO: verbose these.
 					if (WIFEXITED(status))
 					{
 						// Check if the child process exited normally.
@@ -799,7 +799,7 @@ bool isJobRunning(const std::string &jobName)
 	{
 		result += buffer;
 	}
-	std::cout << result << "\n";
+	// std::cout << result << "\n";
 	return !result.empty();
 }
 
