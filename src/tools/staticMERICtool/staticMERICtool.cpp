@@ -4,10 +4,13 @@
 #include "../../wrapper/a64fxwrapper.h"
 #include "../../wrapper/hwmonwrapper.h"
 #include "../../basis/utils.h"
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <limits>
 #include <csignal>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <errno.h>
 
 using namespace meric;
 
@@ -127,13 +130,16 @@ void printHelp()
 			  << "\t-g = GPU power capping power limit [mW]\n"
 			  << "\t-b = single node baseline (static) power consumption [W]\n"
 			  << "\t-q = print the overall consumed energy only [J]\n"
+			  << "\t-o = output directory, ./mericStaticMeasurements by default\n"
 			  << std::endl;
 	exit(1);
 }
 
-bool isJobRunning(const std::string& jobName);
+bool isJobRunning(const std::string &jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
 double extractEnergyConsumption(const std::string &filepath);
+double extractMaxRuntime(const std::string &filepath);
+bool createDirectoryIfNotExists(const std::string &path);
 
 enum class TOOL_MODE
 {
@@ -150,32 +156,32 @@ void signalHandler(int signal)
 {
 	if (signal == SIGINT)
 	{
-		write(STDOUT_FILENO, "Interrupt signal (Ctrl+C) received\n", 36);
+		// write(STDOUT_FILENO, "Interrupt signal (Ctrl+C) received\n", 36);
 
 		if (child_pid > 0)
 		{
 			kill(child_pid, SIGINT); // Forward signal to child process
-			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
 		{
-			write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
+			// write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
 			isRunning = false;
 			// _exit(0);
 		}
 	}
 	else if (signal == SIGTERM)
 	{
-		write(STDOUT_FILENO, "Termination signal received.\n", 30);
+		// write(STDOUT_FILENO, "Termination signal received.\n", 30);
 
 		if (child_pid > 0)
 		{
 			kill(child_pid, SIGTERM); // Forward signal to child process
-			write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
 		{
-			write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
+			// write(STDOUT_FILENO, "Child not exist, terminating.\n", 31);
 			isRunning = false;
 			// _exit(0);
 		}
@@ -195,6 +201,7 @@ int main(int argc, char **argv)
 	char hostname[HOST_NAME_MAX];
 	std::string energyMode = "";
 	std::string applicationCommand = "";
+	std::string outputDirectory = "mericStaticMeasurements";
 
 	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
 																					 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
@@ -402,6 +409,17 @@ int main(int argc, char **argv)
 				printHelp();
 			}
 		}
+		else if (arg == "-o")
+		{
+			if (i + 1 < argc)
+			{
+				outputDirectory = std::string(argv[++i]);
+			}
+			else
+			{
+				printHelp();
+			}
+		}
 		else if (arg == "--")
 		{
 			if (i + 1 < argc)
@@ -443,8 +461,10 @@ int main(int argc, char **argv)
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
 	{
+		createDirectoryIfNotExists(outputDirectory);
+
 		// redirect the output to the file created.
-		std::string filename = "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
+		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
 		outfile.open(filename, std::ios::out | std::ios::trunc);
 		if (outfile.is_open())
 			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
@@ -566,6 +586,8 @@ int main(int argc, char **argv)
 				{
 					// Child has finished
 					child_pid = -1; // reset the child_pid.
+
+					/*
 					if (WIFEXITED(status))
 					{
 						// Check if the child process exited normally.
@@ -592,7 +614,8 @@ int main(int argc, char **argv)
 					else
 					{
 						std::cerr << "Error: Unexpected child process termination state." << std::endl;
-					}
+					} 
+					*/
 
 					clock_gettime(CLOCK_REALTIME, &timestamp);
 					endTime = mutils::timeToDouble(timestamp);
@@ -673,14 +696,17 @@ int main(int argc, char **argv)
 
 			// check if all files are there, if so aggregate the total energy
 			std::string prefix = "mericStatic_" + std::to_string(job_id);
-			std::vector<std::string> files = listMatchingFiles(prefix);
+			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
 			double totalEnergy = 0.0;
+			double maxRuntime = 0.0;
 			for (const auto &filepath : files)
 			{
 				totalEnergy += extractEnergyConsumption(filepath);
-				std::cout << filepath << "\n";
+				double localRuntime = extractMaxRuntime(filepath);
+				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
+				// std::cout << filepath << "\n";
 			}
-
+			std::cout << "Max Runtime [sec] = " << maxRuntime << "\n";
 			std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
 		}
 	}
@@ -695,6 +721,28 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+double extractMaxRuntime(const std::string &filepath)
+{
+	std::ifstream file(filepath);
+	std::string line;
+	std::regex runtimeRegex(R"(Runtime \[s\] = ([0-9.]+))");
+	std::smatch match;
+
+	double maxRuntime = 0.0;
+
+	while (std::getline(file, line))
+	{
+		if (std::regex_search(line, match, runtimeRegex))
+		{
+			double runtime = std::stod(match[1]);
+			if (runtime > maxRuntime)
+			{
+				maxRuntime = runtime;
+			}
+		}
+	}
+	return maxRuntime; // Will be 0.0 if not found
 }
 
 double extractEnergyConsumption(const std::string &filepath)
@@ -733,24 +781,44 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	closedir(dir);
 	return result;
 }
-bool isJobRunning(const std::string& jobName)
+bool isJobRunning(const std::string &jobName)
 {
-    std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
-    
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe)
-    {
-        std::cerr << "Failed to run command.\n";
-        return false;
-    }
+	std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
 
-    char buffer[256];
-    std::string result;
-    
-    while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr)
-    {
-        result += buffer;
-    }
+	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+	if (!pipe)
+	{
+		std::cerr << "Failed to run command.\n";
+		return false;
+	}
+
+	char buffer[256];
+	std::string result;
+
+	while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr)
+	{
+		result += buffer;
+	}
 	std::cout << result << "\n";
-    return !result.empty();
+	return !result.empty();
+}
+
+bool createDirectoryIfNotExists(const std::string &path)
+{
+	struct stat st;
+	if (stat(path.c_str(), &st) != 0)
+	{
+		// Directory does not exist
+		if (mkdir(path.c_str(), 0755) != 0)
+		{
+			std::cerr << "Failed to create directory '" << path << "': " << strerror(errno) << "\n";
+			return false;
+		}
+	}
+	else if (!S_ISDIR(st.st_mode))
+	{
+		std::cerr << "'" << path << "' exists but is not a directory.\n";
+		return false;
+	}
+	return true;
 }
