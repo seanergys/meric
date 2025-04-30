@@ -157,7 +157,8 @@ void Environment::getCPUbrandString(std::string & CPUname)
 				}
 			}
 		}
-		// https://github.com/pytorch/cpuinfo/blob/main/src/arm/uarch.c
+		// AArch64 MIDR_EL1, Main ID Register
+		// https://developer.arm.com/documentation/107734/0002/AArch64-registers/AArch64-Identification-registers-summary/MIDR-EL1--Main-ID-Register?lang=en
 		else if (CPUname == "0x41")
 		{
 			CPUname = "ARM";
@@ -181,24 +182,30 @@ void Environment::getCPUbrandString(std::string & CPUname)
 					long model_id = strtol(model.c_str(), NULL, 16);
 					switch (model_id)
 					{
+						case 0xD84:
+							CPUmodel = "Neoverse V3";
+							break;
+						case 0xD8E:
+							CPUmodel = "Neoverse N3";
+							break;
 						case 0xD4F:
-							CPUmodel = " Neoverse V2";
+							CPUmodel = "Neoverse V2";
 							break;
 						case 0xD49:
-							CPUmodel = " Neoverse N2";
+							CPUmodel = "Neoverse N2";
 							break;
 						case 0xD40:
-							CPUmodel = " Neoverse V1";
+							CPUmodel = "Neoverse V1";
 							break;
 						case 0xD0C:
-							CPUmodel = " Neoverse V2";
+							CPUmodel = "Neoverse N1";
 							break;
 						default:
-							CPUmodel = " " + model;
+							CPUmodel = model;
 					}
 				}
 			}
-			CPUname += CPUarch + CPUmodel;
+			CPUname += CPUarch + " " + CPUmodel;
 		}
 		
 		CPUinfoFile.close();
