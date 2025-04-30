@@ -1242,7 +1242,7 @@ void sysEnergyMeasurement()
 	uint64_t timestamp;
 	//energy read cause segfault if rocm smi not initialized, which we do not know in this location
 	//for that reason additional device count read is issued
-	if(rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS && rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
+	if(rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS && deviceCount > 0 && rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
 	{
 		std::cout << "\tROCM\n";
 		systems++;
