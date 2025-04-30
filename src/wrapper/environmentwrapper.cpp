@@ -127,7 +127,7 @@ void Environment::getCPUbrandString(std::string & CPUname)
 			}
 		}
 		
-		//0x64 is identifier assigned to Fujitsu, which they use as CPU name
+		//0x46 is identifier assigned to Fujitsu, which they use as CPU name
 		//https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_identification_method_v1_EN.pdf
 		if (CPUname == "0x46")
 		{
@@ -146,12 +146,59 @@ void Environment::getCPUbrandString(std::string & CPUname)
 					char* test;
 					long model_id = strtol(model.c_str(), &test, 16);
 					if (*test == 0 && model_id == 0x1)
+					{
 						CPUname += " A64FX";
+					}
 					else
+					{
 						CPUname += " " + model;
+					}
 					break;
 				}
 			}
+		}
+		// https://github.com/pytorch/cpuinfo/blob/main/src/arm/uarch.c
+		else if (CPUname == "0x41")
+		{
+			CPUname = "ARM";
+			CPUinfoFile.clear();
+			CPUinfoFile.seekg(0);
+			std::string CPUarch = "";
+			std::string CPUmodel = "";
+			while (getline(CPUinfoFile,line) && (CPUarch == "" || CPUmodel == ""))
+			{
+				std::string labelArch = line.substr(0,16);
+				std::for_each(labelArch.begin(), labelArch.end(), [](char & c){ c = ::tolower(c); });
+				std::string labelPart = labelArch.substr(0,8);
+				if (CPUarch == "" && labelArch == "cpu architecture")
+				{
+					CPUarch = "v"+line.substr(line.find(':')+2);
+				}
+				else if (CPUmodel == "" && labelPart == "cpu part")
+				{
+					std::string model = line.substr(line.find(':')+2);
+					char* test;
+					long model_id = strtol(model.c_str(), NULL, 16);
+					switch (model_id)
+					{
+						case 0xD4F:
+							CPUmodel = " Neoverse V2";
+							break;
+						case 0xD49:
+							CPUmodel = " Neoverse N2";
+							break;
+						case 0xD40:
+							CPUmodel = " Neoverse V1";
+							break;
+						case 0xD0C:
+							CPUmodel = " Neoverse V2";
+							break;
+						default:
+							CPUmodel = " " + model;
+					}
+				}
+			}
+			CPUname += CPUarch + CPUmodel;
 		}
 		
 		CPUinfoFile.close();
