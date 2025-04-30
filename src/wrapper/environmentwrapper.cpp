@@ -207,6 +207,9 @@ void Environment::getCPUbrandString(std::string & CPUname)
 			}
 			CPUname += CPUarch + " " + CPUmodel;
 		}
+		// else 
+		// 0x69 = Intel
+		// 0x56 = Marwell
 		
 		CPUinfoFile.close();
 	}
