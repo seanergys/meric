@@ -19,91 +19,94 @@ int job_id; // id specific to the execution.
 
 //----------------------------------------------------------------------------//
 
-std::vector<std::map<std::string, unsigned long long int>> recordEnergy; // TODO change to vector<vectors<unsigned long long int>> with mapping the strings to vector element IDs // TODO double
-std::vector<double> recordTime;
+template <typename Tmode>
+struct EnergyRecords {
+    static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
+    static std::vector<double> recordTime;
+
+    static void printValues(bool verbose) {
+        if (recordTime.size() < 2) {
+            std::cerr << "ERROR missing samples\n";
+            exit(2);
+        }
+
+        std::map<std::string, double> record;
+        for (auto& kv : recordEnergy[0]) {
+            record[kv.first] = 0;
+        }
+
+        double summary = 0.0;
+        double runtime = recordTime.back() - recordTime[0];
+
+        for (int i = 1; i < recordEnergy.size(); i++) {
+            for (auto& kv : record) {
+                int cumulative = 0;
+                record[kv.first] += Tmode::getResultValue(
+                    recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first], 
+                    recordTime[i - 1] - recordTime[i], cumulative, kv.first
+                );
+                if (cumulative > 0) {
+                    summary += record[kv.first];
+                }
+            }
+        }
+        summary += POWER_BASELINE * runtime;
+
+        if (verbose) {
+            std::cout << "Runtime [s] = " << runtime << std::endl;
+
+            // Print each counter value
+            for (auto& kv : recordEnergy[0]) {
+                std::cout << Tmode::getCounterLabel(kv.first) << " = " << record[kv.first] << std::endl;
+            }
+            if (Tmode::getSummaryCounterName() != "") {
+                std::cout << std::endl << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
+            }
+        } else {
+            std::cout << summary << std::endl;
+        }
+    }
+
+    static void clear() {
+        recordEnergy.clear();
+        recordTime.clear();
+    }
+
+    static std::vector<std::map<std::string, unsigned long long int>> getData() {
+        return recordEnergy;
+    }
+
+};
 
 template <typename Tmode>
-void printValues(bool verbose)
-{
-	//	std::cout << "#SAMPLES: " << recordTime.size() << '\n'
-	//	          << "START: " << recordTime[0] << '\n'
-	//	          << "STOP: " << recordTime.back() << '\n';
+std::vector<std::map<std::string, unsigned long long int>> EnergyRecords<Tmode>::recordEnergy;
 
-	if (recordTime.size() < 2)
-	{
-		std::cerr << "ERROR missing samples\n";
-		exit(2);
-	}
+template <typename Tmode>
+std::vector<double> EnergyRecords<Tmode>::recordTime;
 
-	std::map<std::string, double> record;
-	for (std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
-	{
-		record[iterator->first] = 0;
-	}
-
-	double summary = 0.0;
-	double runtime = recordTime.back() - recordTime[0];
-
-	for (int i = 1; i < recordEnergy.size(); i++)
-	{
-		for (auto iterator = record.begin(); iterator != record.end(); iterator++)
-		{
-			int cumulative = 0;
-			record[iterator->first] += Tmode::getResultValue(recordEnergy[i - 1][iterator->first], recordEnergy[i][iterator->first], recordTime[i - 1] - recordTime[i], cumulative, iterator->first);
-
-			if (cumulative > 0)
-			{
-				summary += record[iterator->first];
-			}
-		}
-	}
-	summary += POWER_BASELINE * runtime;
-
-	if (verbose)
-	{
-		// MPI_Reduce (MAX, runtime, MPI_COMM_WORLD);
-		std::cout << "Runtime [s] = " << runtime << std::endl;
-
-		// MPI_Gather() //map -> vector
-		for (std::map<std::string, unsigned long long int>::iterator iterator = recordEnergy[0].begin(); iterator != recordEnergy[0].end(); iterator++)
-		{
-			std::cout << Tmode::getCounterLabel(iterator->first) << " = " << record[iterator->first] << std::endl;
-		}
-		if (Tmode::getSummaryCounterName() != "")
-		{
-			std::cout << std::endl
-					  << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
-		}
-	}
-	else
-	{
-		// MPI_Gather(0, double, summary, 1, COMM_WORLD);
-		// TODO what if there is no summary
-		std::cout << summary << std::endl;
-	}
-}
 
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
+
 template <typename Tmode>
 void measureEnergy(bool verbose, double timeNow = 0.0)
 {
-	if (recordEnergy.empty())
-	{
-		Tmode::init(true);
-	}
+    if (EnergyRecords<Tmode>::recordEnergy.empty()) {
+        Tmode::init(true);
+    }
 
-	if (timeNow == 0.0)
-	{
-		struct timespec timestamp;
-		clock_gettime(CLOCK_REALTIME, &timestamp);
-		timeNow = mutils::timeToDouble(timestamp);
-	}
-	std::map<std::string, unsigned long long int> energyNow;
-	Tmode::getCounterValues(energyNow);
-	recordEnergy.push_back(energyNow);
-	recordTime.push_back(timeNow);
+    if (timeNow == 0.0) {
+        struct timespec timestamp;
+        clock_gettime(CLOCK_REALTIME, &timestamp);
+        timeNow = mutils::timeToDouble(timestamp);
+    }
+
+    std::map<std::string, unsigned long long int> energyNow;
+    Tmode::getCounterValues(energyNow);
+
+    EnergyRecords<Tmode>::recordEnergy.push_back(energyNow);
+    EnergyRecords<Tmode>::recordTime.push_back(timeNow);
 }
 
 void printHelp()
@@ -499,22 +502,22 @@ int main(int argc, char **argv)
 			if (token == "RAPL")
 			{
 				measurements.push_back(&measureEnergy<RAPL>);
-				prints.push_back(printValues<RAPL>);
+				prints.push_back(EnergyRecords<RAPL>::printValues);
 			}
 			else if (token == "NVML")
 			{
 				measurements.push_back(&measureEnergy<NVML>);
-				prints.push_back(printValues<NVML>);
+				prints.push_back(EnergyRecords<NVML>::printValues);
 			}
 			else if (token == "A64FX")
 			{
 				measurements.push_back(&measureEnergy<A64FX>);
-				prints.push_back(printValues<A64FX>);
+				prints.push_back(EnergyRecords<A64FX>::printValues);
 			}
 			else if (token == "HWMON")
 			{
 				measurements.push_back(&measureEnergy<HWMON>);
-				prints.push_back(printValues<HWMON>);
+				prints.push_back(EnergyRecords<HWMON>::printValues);
 			}
 			else
 			{
@@ -747,19 +750,21 @@ double extractMaxRuntime(const std::string &filepath)
 
 double extractEnergyConsumption(const std::string &filepath)
 {
-	std::ifstream file(filepath);
-	std::string line;
-	std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
-	std::smatch match;
+    std::ifstream file(filepath);
+    std::string line;
+    std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
+    std::smatch match;
+    double totalEnergy = 0.0;
 
-	while (std::getline(file, line))
-	{
-		if (std::regex_search(line, match, energyRegex))
-		{
-			return std::stod(match[1]);
-		}
-	}
-	return 0.0; // If not found
+    while (std::getline(file, line))
+    {
+        if (std::regex_search(line, match, energyRegex))
+        {
+            totalEnergy += std::stod(match[1]);  // Accumulate the energy
+        }
+    }
+
+    return totalEnergy;  // Return the accumulated energy
 }
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
