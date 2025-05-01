@@ -104,18 +104,21 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 	uint32_t extended_model = (regs[eax] >> 16) & 0xF;
 	uint32_t extended_family = (regs[eax] >> 20) & 0xFF;
 
+    uint32_t model_synth = model;
+    uint32_t family_synth = family;
+
 	// Compute actual family and model
 	if (family == 0xF) {
-		family += extended_family;
+		family_synth += extended_family;
 	}
 	if (family == 0x6 || family == 0xF) {
-		model += (extended_model << 4);
+		model_synth += (extended_model << 4);
 	}
  
 	std::ostringstream oss;
 	oss << std::hex << std::uppercase << std::setfill('0');
-	oss << std::setw(2) << family << "_";
-	oss << std::setw(2) << model << "H";
+	oss << std::setw(2) << family_synth << "_";
+	oss << std::setw(2) << model_synth << "H";
 
 	CPUFamilyModelOut = oss.str();
 
