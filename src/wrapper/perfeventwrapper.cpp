@@ -220,96 +220,73 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int coreIdxLength = log10(CORES_PER_NODE) + 1;
 
+	//Initialization of map counterValues
+	std::map<std::string, std::vector<unsigned long long int>> counterValues;
+	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS].reserve(CORES_PER_NODE);
+	#ifdef _AMD_
+	counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS].reserve(CORES_PER_NODE);
+	#elif defined _INTEL_
+	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
+	#endif
+
+	//Construction of map counterValues
+	for(std::map<std::string, std::vector<unsigned long long int>>::iterator iterator = counterValues.begin(); iterator != counterValues.end(); iterator++)
+	{
+		int counterIdxLength = log10(iterator->second.capacity()) + 1;
+
+		for(int i = 0; i < iterator->second.capacity(); i++)
+		{
+			std::ostringstream idxFill;
+			idxFill << std::setfill('0') << std::setw(counterIdxLength) << i;
+			std::string suffix = "_" + idxFill.str();
+
+			unsigned long long int counterValue = 0;
+			if(stop.count(iterator->first + suffix))
+			{
+				counterValue = getResultValue(start[iterator->first + suffix], stop[iterator->first + suffix], runtime, cumulative);
+			}
+
+			iterator->second.push_back(counterValue);
+		}
+	}
+
 	for(int i = 0; i < CORES_PER_NODE; i++)
 	{
 		std::ostringstream idxFill;
 		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
 		std::string suffix = "_" + idxFill.str();
 
-		unsigned long long int cycles = 0;
-		if(stop.count(PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix))
-		{
-			cycles = getResultValue(start[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix],
-				stop[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix], runtime, cumulative);
-		}
+		unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][i];
 
 		ratios["CPU_CORE_FREQUENCY"+suffix+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
 
-		unsigned long long int instructions = 0;
-		if(stop.count(PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix))
-		{
-			instructions = getResultValue(start[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix],
-				stop[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix], runtime, cumulative);
-		}
+		unsigned long long int instructions = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][i];
 
 		#ifdef _AMD_
-		unsigned long long int flops = 0;
-		if(stop.count(PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix))
-		{
-			flops = getResultValue(start[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix],
-				stop[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix], runtime, cumulative);
-		}
+		unsigned long long int flops = counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS][i];
 
 		ratios["CPU_FLOP"+suffix+" [FLOP/s]"] = flops/runtime;
 		
 		#elif defined _INTEL_
-		//unsigned long long int cyclesAMXActive = 0;
-		//if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix))
-		//{
-		//	cyclesAMXActive = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix],
-		//		stop[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix], runtime, cumulative);
-		//}
+		//unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][i];
 		
 		//ratios["CPU_AMX_ACTIVE"+suffix+" [%]"] = (cyclesAMXActive/cycles)*100;
 
-		unsigned long long int instructionsScalarFp = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix))
-		{
-			instructionsScalarFp = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec128FpSP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix))
-		{
-			instructionsVec128FpSP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec128FpDP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix))
-		{
-			instructionsVec128FpDP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec256FpSP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix))
-		{
-			instructionsVec256FpSP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec256FpDP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix))
-		{
-			instructionsVec256FpDP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec512FpSP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix))
-		{
-			instructionsVec512FpSP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix], runtime, cumulative);
-		}
-
-		unsigned long long int instructionsVec512FpDP = 0;
-		if(stop.count(PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix))
-		{
-			instructionsVec512FpDP = getResultValue(start[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix],
-				stop[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix], runtime, cumulative);
-		}
+		unsigned long long int instructionsScalarFp = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP][i];
+		unsigned long long int instructionsVec128FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP][i];
+		unsigned long long int instructionsVec128FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP][i];
+		unsigned long long int instructionsVec256FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP][i];
+		unsigned long long int instructionsVec256FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP][i];
+		unsigned long long int instructionsVec512FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP][i];
+		unsigned long long int instructionsVec512FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP][i];
 		
 		unsigned long long int instructionsVec128Fp = instructionsVec128FpSP + instructionsVec128FpDP;
 		unsigned long long int instructionsVec256Fp = instructionsVec256FpSP + instructionsVec256FpDP;
