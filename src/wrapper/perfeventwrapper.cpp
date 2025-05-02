@@ -25,38 +25,66 @@ void PERFEVENT::init(bool detailed)
 {
 	detailedMode = detailed;
 
-	//Initialization of per-core monitoring of CPU cycles and CPU instructions
-	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
+	int coreIdxLength = log10(CORES_PER_NODE) + 1;
+
+	//Mapping cores to core indexes
+	std::vector<int> mapCoresToCoreIdxs;
+	mapCoresToCoreIdxs.reserve(CORES_PER_NODE);
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		std::string suffix = "_" + std::to_string(i);
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int core = Environment::mapCoresToSocket[i][j];
+
+			mapCoresToCoreIdxs.push_back(core);
+		}
+	}
+
+	//Initialization of per-core monitoring of CPU cycles and CPU instructions
+	for(int i = 0; i < CORES_PER_NODE; i++)
+	{
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
+
+		int core = mapCoresToCoreIdxs[i];
 		
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, i);
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, i);
+		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, core);
+		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, core);
 	}
 
 	#ifdef _AMD_
 	//Initialization of per-core monitoring of supported AMD counters
-	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	for(int i = 0; i < CORES_PER_NODE; i++)
 	{
-		std::string suffix = "_" + std::to_string(i);
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
+
+		int core = mapCoresToCoreIdxs[i];
 	
-		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], i);
+		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], core);
 	}
 	
 	#elif defined _INTEL_
 	//Initialization of per-core monitoring of supported Intel counters
-	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	for(int i = 0; i < CORES_PER_NODE; i++)
 	{
-		std::string suffix = "_" + std::to_string(i);
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
 
-		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP], i);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], i);
+		int core = mapCoresToCoreIdxs[i];
+
+		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
 	}
 	#endif
 
@@ -189,9 +217,14 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 {
 	int cumulative = 0;
 
-	for(int i = 0; i < Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
+	int coreIdxLength = log10(CORES_PER_NODE) + 1;
+
+	for(int i = 0; i < CORES_PER_NODE; i++)
 	{
-		std::string suffix = "_" + std::to_string(i);
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
 
 		unsigned long long int cycles = 0;
 		if(stop.count(PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix))

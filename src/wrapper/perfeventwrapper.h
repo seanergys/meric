@@ -7,6 +7,7 @@
 #endif
 #include <map>
 #include <iostream>
+#include <cmath>
 #include <climits>
 
 #include "environmentwrapper.h"
