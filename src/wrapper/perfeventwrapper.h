@@ -37,9 +37,20 @@ private:
 	static long openCounter(__u32 type, __u64 config, int cpu);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
 
+	#ifdef _AMD_
+	static void initL3CacheSizes();
+	#endif
+
 	static bool detailedMode;
 	static std::map<const std::string, long> countersFd;
 	static unsigned long long int COUNTERMAX;
+
+	#ifdef _AMD_
+	static int L3_CACHES_PER_SOCKET;
+
+	static std::map<int, std::vector<int>> mapCoresToL3Cache;
+	static std::map<int, std::vector<int>> mapL3CachesToSocket;
+	#endif
 };
 
 #else

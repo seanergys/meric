@@ -21,9 +21,22 @@ unsigned long long int PERFEVENT::COUNTERMAX = LLONG_MAX;
 #ifdef HAVE_LINUX_PERF_EVENT_H
 std::map<const std::string, long> PERFEVENT::countersFd;
 
+#ifdef _AMD_
+int PERFEVENT::L3_CACHES_PER_SOCKET = 1;
+
+std::map<int, std::vector<int>> PERFEVENT::mapCoresToL3Cache;
+std::map<int, std::vector<int>> PERFEVENT::mapL3CachesToSocket;
+#endif
+
 void PERFEVENT::init(bool detailed)
 {
 	detailedMode = detailed;
+
+	#ifdef _AMD_
+	initL3CacheSizes();
+
+	__u32 PMU_TYPE_AMD_L3 = getPMUtype("amd_l3");
+	#endif
 
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int coreIdxLength = log10(CORES_PER_NODE) + 1;
@@ -40,6 +53,25 @@ void PERFEVENT::init(bool detailed)
 			mapCoresToCoreIdxs.push_back(core);
 		}
 	}
+
+	#ifdef _AMD_
+	int L3_CACHES_PER_NODE = PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
+	int L3CacheIdxLength = log10(L3_CACHES_PER_NODE) + 1;
+
+	//Mapping cores to L3 cache indexes
+	std::vector<int> mapCoresToL3CacheIdxs;
+	mapCoresToL3CacheIdxs.reserve(L3_CACHES_PER_NODE);
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < PERFEVENT::L3_CACHES_PER_SOCKET; j++)
+		{
+			int L3Cache = PERFEVENT::mapL3CachesToSocket[i][j];
+			int core = PERFEVENT::mapCoresToL3Cache[L3Cache][0];
+
+			mapCoresToL3CacheIdxs.push_back(core);
+		}
+	}
+	#endif
 
 	//Initialization of per-core monitoring of CPU cycles and CPU instructions
 	for(int i = 0; i < CORES_PER_NODE; i++)
@@ -65,6 +97,18 @@ void PERFEVENT::init(bool detailed)
 		int core = mapCoresToCoreIdxs[i];
 	
 		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], core);
+	}
+	
+	//Initialization of monitoring of L3 cache misses (AMD)
+	for(int i = 0; i < L3_CACHES_PER_NODE; i++)
+	{
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
+
+		int core = mapCoresToL3CacheIdxs[i];
+
+		countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffix] = openCounter(PMU_TYPE_AMD_L3, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
 	}
 	
 	#elif defined _INTEL_
@@ -109,6 +153,79 @@ void PERFEVENT::close()
 		}
 	}
 }
+
+#ifdef _AMD_
+void PERFEVENT::initL3CacheSizes()
+{
+	bool errorOccured = false;
+
+	int TMP_L3_CACHES_PER_SOCKET = 1;
+
+	std::map<int, std::vector<int>> tmpMapCoresToL3Cache;
+	std::map<int, std::vector<int>> tmpMapL3CachesToSocket;
+
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int core = Environment::mapCoresToSocket[i][j];
+
+			std::string pathToL3CacheIdFile = "/sys/devices/system/cpu/cpu"+std::to_string(core)+"/cache/index3/id";
+
+			int L3Cache;
+
+			std::ifstream L3CacheIdFile;
+			L3CacheIdFile.open(pathToL3CacheIdFile);
+			if(L3CacheIdFile.is_open())
+			{
+				if(!(L3CacheIdFile >> L3Cache))
+				{
+					std::cerr << "PERFEVENT error - failed to read file " << pathToL3CacheIdFile << "\n";
+					errorOccured = true;
+				}
+
+				L3CacheIdFile.close();
+			}
+			else
+			{
+				std::cerr << "PERFEVENT error - failed to open file " << pathToL3CacheIdFile << "\n";
+				errorOccured = true;
+			}
+
+			if(!errorOccured)
+			{
+				if(!tmpMapCoresToL3Cache.count(L3Cache))
+				{
+					tmpMapL3CachesToSocket[i].push_back(L3Cache);
+
+					if(TMP_L3_CACHES_PER_SOCKET < tmpMapL3CachesToSocket[i].size())
+					{
+						TMP_L3_CACHES_PER_SOCKET++;
+					}
+				}
+
+				tmpMapCoresToL3Cache[L3Cache].push_back(core);
+			}
+		}
+	}
+
+	if(!errorOccured)
+	{
+		PERFEVENT::L3_CACHES_PER_SOCKET = TMP_L3_CACHES_PER_SOCKET;
+
+		PERFEVENT::mapCoresToL3Cache = std::move(tmpMapCoresToL3Cache);
+		PERFEVENT::mapL3CachesToSocket = std::move(tmpMapL3CachesToSocket);
+	}
+	else
+	{
+		for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+		{
+			PERFEVENT::mapL3CachesToSocket[i].push_back(i);
+			PERFEVENT::mapCoresToL3Cache[i].push_back(-1);
+		}
+	}
+}
+#endif
 
 __u32 PERFEVENT::getPMUtype(std::string PMUname)
 {

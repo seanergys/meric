@@ -57,6 +57,7 @@ const std::string PERFEVENT_CPU_INSTS = "CPU_INSTRUCTIONS";
 
 #ifdef _AMD_
 const std::string AMD_CPU_FLOPS = "CPU_FLOPS";
+const std::string AMD_CPU_L3_MISSES = "CPU_L3_MISSES";
 #elif defined _INTEL_
 const std::string INTEL_CPU_CYCLES_AMX_ACTIVE = "CPU_CYCLES_AMX_BUSY";
 const std::string INTEL_CPU_INSTS_SCALAR_FP = "CPU_INST_SCALAR_FP";
@@ -71,6 +72,7 @@ const std::string INTEL_CPU_INSTS_VEC512_FP_DP = "CPU_INST_VEC512_FP_DP";
 static std::map<const std::string, std::string> counterLabel = {
 	#ifdef _AMD_
 	{ AMD_CPU_FLOPS,                AMD_CPU_FLOPS                     },
+	{ AMD_CPU_L3_MISSES,            AMD_CPU_L3_MISSES                 },
 	#elif defined _INTEL_
 	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  "CPU_CYCLES_AMX_ACTIVE"           },
 	{ INTEL_CPU_INSTS_SCALAR_FP,    "CPU_INSTRUCTIONS_SCALAR_FP"      },
@@ -87,7 +89,8 @@ static std::map<const std::string, std::string> counterLabel = {
 
 static std::map<const std::string, const uint64_t> counterDefines = {
 	#ifdef _AMD_
-	{ AMD_CPU_FLOPS,                0x0f03 }
+	{ AMD_CPU_FLOPS,                0x0f03 },
+	{ AMD_CPU_L3_MISSES,            0x0104 }
 	#elif defined _INTEL_
 	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  0x02b7 },
 	{ INTEL_CPU_INSTS_SCALAR_FP,    0x03c7 },
