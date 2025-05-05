@@ -233,6 +233,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
@@ -260,6 +261,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
 		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
@@ -276,6 +278,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
