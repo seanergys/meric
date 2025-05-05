@@ -79,6 +79,10 @@ std::string MakeCounterName(const std::string &name,
 	const std::vector<std::pair<int, int>> &nums = {}, 
 	bool isLabel = false);
 
+std::string MakeCounterName(const std::string &name, 
+	const std::string &prefix = "", const std::string &suffix = "",
+	const std::vector<std::pair<int, int>> &nums = {});
+
 std::string &RTrim(std::string &s, const char *t);
 std::string &LTrim(std::string &s, const char *t);
 std::string &Trim(std::string &s, const char *t = " \t\n\r\f\v");

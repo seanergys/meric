@@ -11,27 +11,32 @@ std::string MakeCounterName(const std::string &name,
 	const std::vector<std::pair<int, int>> &nums, 
 	bool isLabel)
 {
-	std::ostringstream oss;
-
 	auto labelIt = isLabel ? counterLabels.find(name) : counterLabels.end();
-	if(labelIt != counterLabels.end())
+
+	if(labelIt == counterLabels.end())
 	{
-		oss << labelIt->second.first;
+		return MakeCounterName(name, "", "", nums);
 	}
-	else
-	{
-		oss << name;
-	}
+
+	return MakeCounterName(name, 
+		labelIt->second.first, labelIt->second.second,
+		nums);
+}
+
+std::string MakeCounterName(const std::string &name, 
+	const std::string &prefix, const std::string &suffix,
+	const std::vector<std::pair<int, int>> &nums)
+{
+	std::ostringstream oss;
+	oss << (prefix.empty() ? name : prefix);
 
 	for(const auto &num: nums)
 	{
 		oss << "_" << std::setfill('0') << std::setw(num.second) << num.first;
 	}
+
+	oss << (suffix.empty() ? std::string() : (" " + suffix));
 	
-	if(labelIt != counterLabels.end())
-	{
-		oss << " " << labelIt->second.second;
-	}
 	return oss.str();
 }
 

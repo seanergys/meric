@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <map>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -281,6 +282,44 @@ static std::map<const std::string, std::pair<std::string, std::string> > counter
 	{ RAPL_PCKG_ENERGY,       { "PCKG", "[J]" } },
 	{ RAPL_PCKG_CORES_ENERGY, { "PCKG_ACTIVE_CORES_AVG", "[J]" } },
 	{ RAPL_SUM_ENERGY,        { "Energy consumption", "[J]" } },
+#endif
+};
+}
+////////////////////////////////////////////////////////////////////////////////
+namespace PERF_RAPL_COUNTERS {
+struct CounterDef_t {
+	enum Domain_t {
+		DOMAIN_NONE       = 0,
+		DOMAIN_GLOBAL     = 1,
+		DOMAIN_PER_SOCKET = 2,
+		DOMAIN_PER_CORE   = 3,
+		DOMAIN_PER_THREAD = 4,
+	};
+
+	enum Flags_t {
+		FLAG_NONE_BIT 		  = 0,
+		FLAG_ACCUMULATIVE_BIT = 1 << 0
+	};
+
+	std::string label;
+	std::string unit;
+	Domain_t 	domain;
+	uint32_t    flags;
+	uint32_t    type;
+	uint64_t    config;
+};
+
+const std::string RAPL_SUM_ENERGY = "ENERGY_CONSUMPTION";
+
+static std::map<const std::string, CounterDef_t> counterDefs = {
+#ifdef _INTEL_
+	{ "PCKG", { "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
+	{ "RAM", { "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
+	{ RAPL_SUM_ENERGY, { "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+#else // _AMD_
+	{ "PCKG", { "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 10, 0x2 } },
+	{ "CORE", { "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, 11, 0x1 }},
+	{ RAPL_SUM_ENERGY, { "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #endif
 };
 }
