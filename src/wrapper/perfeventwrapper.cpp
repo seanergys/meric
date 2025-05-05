@@ -18,15 +18,15 @@ using namespace meric;
 bool PERFEVENT::detailedMode = false;
 unsigned long long int PERFEVENT::COUNTERMAX = LLONG_MAX;
 
-#ifdef HAVE_LINUX_PERF_EVENT_H
-std::map<const std::string, long> PERFEVENT::countersFd;
-
 #ifdef _AMD_
 int PERFEVENT::L3_CACHES_PER_SOCKET = 1;
 
 std::map<int, std::vector<int>> PERFEVENT::mapCoresToL3Cache;
 std::map<int, std::vector<int>> PERFEVENT::mapL3CachesToSocket;
 #endif
+
+#ifdef HAVE_LINUX_PERF_EVENT_H
+std::map<const std::string, long> PERFEVENT::countersFd;
 
 void PERFEVENT::init(bool detailed)
 {
@@ -98,7 +98,7 @@ void PERFEVENT::init(bool detailed)
 	
 		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], core);
 	}
-	
+
 	//Initialization of monitoring of L3 cache misses (AMD)
 	for(int i = 0; i < L3_CACHES_PER_NODE; i++)
 	{
@@ -337,12 +337,44 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int coreIdxLength = log10(CORES_PER_NODE) + 1;
 
+	#ifdef _AMD_
+	//Mapping core indexes to cores
+	std::map<int, int> mapCoreIdxsToCores;
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int core = Environment::mapCoresToSocket[i][j];
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			mapCoreIdxsToCores[core] = coreIdx;
+		}
+	}
+
+	int L3_CACHES_PER_NODE = PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
+	int L3CacheIdxLength = log10(L3_CACHES_PER_NODE) + 1;
+
+	//Mapping L3 caches to L3 cache indexes
+	std::vector<int> mapL3CachesToL3CacheIdxs;
+	mapL3CachesToL3CacheIdxs.reserve(L3_CACHES_PER_NODE);
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < PERFEVENT::L3_CACHES_PER_SOCKET; j++)
+		{
+			int L3Cache = (!PERFEVENT::mapL3CachesToSocket.empty()) ? PERFEVENT::mapL3CachesToSocket[i][j] : i;
+
+			mapL3CachesToL3CacheIdxs.push_back(L3Cache);
+		}
+	}
+	#endif
+
 	//Initialization of map counterValues
 	std::map<std::string, std::vector<unsigned long long int>> counterValues;
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS].reserve(CORES_PER_NODE);
 	#ifdef _AMD_
 	counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES].reserve(L3_CACHES_PER_NODE);
 	#elif defined _INTEL_
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
@@ -429,6 +461,33 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		ratios["CPU_FLOP"+suffix+" [FLOP/s]"] = flops/runtime;
 		#endif
 	}
+
+	#ifdef _AMD_
+	for(int i = 0; i < L3_CACHES_PER_NODE; i++)
+	{
+		std::ostringstream idxFill;
+		idxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << i;
+		std::string suffix = "_" + idxFill.str();
+
+		unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES][i];
+		unsigned long long int instructions = 0;
+
+		if(L3CacheMisses > 0)
+		{
+			int L3Cache = mapL3CachesToL3CacheIdxs[i];
+			int CORES_PER_L3_CACHE = PERFEVENT::mapCoresToL3Cache[L3Cache].size();
+			for(int j = 0; j < CORES_PER_L3_CACHE; j++)
+			{
+				int core = PERFEVENT::mapCoresToL3Cache[L3Cache][j];
+				int coreIdx = mapCoreIdxsToCores[core];
+
+				instructions += counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
+			}
+		}
+
+		ratios["CPU_COMPUTATIONAL_INTENSITY"+suffix+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
+	}
+	#endif
 }
 
 std::string PERFEVENT::getSourceLabel()

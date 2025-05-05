@@ -74,6 +74,13 @@ private:
 
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
+
+	#ifdef _AMD_
+	static int L3_CACHES_PER_SOCKET;
+
+	static std::map<int, std::vector<int>> mapCoresToL3Cache;
+	static std::map<int, std::vector<int>> mapL3CachesToSocket;
+	#endif
 };
 #endif
 
