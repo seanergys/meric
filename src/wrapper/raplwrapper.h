@@ -7,6 +7,18 @@
 #include <map>
 #include <memory>
 
+#ifdef HAVE_X86_ADAPT_H
+	#include <x86_adapt.h>
+#elif defined HAVE_MSR_CORE_H
+	#include <msr_rapl.h>
+#elif defined HAVE_GEOPM_H
+	#include <geopm/PlatformTopo.hpp>
+	#include <geopm/PlatformIO.hpp>
+	#include <geopm_hash.h>
+    #include <geopm_field.h>
+	static geopm::PlatformIO &pio = geopm::platform_io();
+#endif
+
 #include "msrs.h" // FIXME: Propagates "msr_whitelist" into "systemInfo.cpp"
 
 namespace meric {

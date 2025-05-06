@@ -116,6 +116,9 @@ def configure(ctx):
 			elif ctx.check_cxx(lib="cpupower", uselib_store="cpupower", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
+		if ctx.check_cxx(header_name="geopm_version.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False):
+			ctx.env.append_unique("DEFINES", [ "HAVE_GEOPM_H=1"])
+			ctx.env.append_unique("LINKFLAGS", [ "-lgeopmd" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
 			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False)
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):

@@ -19,12 +19,14 @@
 	#include <x86_adapt.h>
 #endif
 
+/* NOTE: We have those in "raplwrapper.h" already
 #ifdef HAVE_GEOPM_H
 	#include <geopm/PlatformTopo.hpp>
 	#include <geopm/PlatformIO.hpp>
 	#include <geopm_hash.h>
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
+*/
 
 #ifdef HAVE_NVML_H
 	#include <nvml.h>

@@ -1,5 +1,4 @@
 #include "raplwrapper.h"
-#include <asm/unistd_64.h>
 #include <cstdio>
 #include <iostream>
 #include <limits>
@@ -20,6 +19,17 @@
 #include "environmentwrapper.h"
 #include "counters.h"
 #include "../basis/sysfsutils.h"
+
+#ifdef HAVE_HSR_SAFE
+	namespace MSR_RAPL_COUNTERS_NS = MSR_RAPL_COUNTERS;
+#elif HAVE_X86_ADAPT_H
+	namespace MSR_RAPL_COUNTERS_NS = X86ADAPT_RAPL_COUNTERS;
+#elif defined HAVE_GEOPM_H
+	namespace MSR_RAPL_COUNTERS_NS = GEOPM_RAPL_COUNTERS;
+#else
+	namespace MSR_RAPL_COUNTERS_NS = MSR_RAPL_COUNTERS;
+#endif
+
 
 using namespace meric;
 
@@ -152,7 +162,7 @@ void RAPL_MSR::close()
 
 void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
     for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
@@ -295,7 +305,7 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 double RAPL_MSR::getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
     double runtime, int &cumulative, std::string counter, std::string regionName)
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
 	std::string counterName;
 	if (detailedMode)
@@ -338,14 +348,14 @@ double RAPL_MSR::getResultValue(RawCounterValue_t startValue, RawCounterValue_t 
 
 std::string RAPL_MSR::summaryCounter()
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
     return RAPL_SUM_ENERGY;
 }
 
 std::string RAPL_MSR::getSummaryCounterName()
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
 #ifdef _INTEL_
 		return RAPL_SUM_ENERGY;
@@ -368,7 +378,7 @@ std::string RAPL_MSR::getSourceLabel()
 
 std::string RAPL_MSR::getCounterLabel(const std::string counter)
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
 	std::map<const std::string, std::string>::iterator it = counterLabel.find(counter);
 	if (it != counterLabel.end())
@@ -383,7 +393,7 @@ std::string RAPL_MSR::getCounterLabel(const std::string counter)
 
 void RAPL_MSR::initCountersUnits()
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
     RAPL::PCKG_POWER_LIMIT       = RAPL_PCKG_POWER_LIMIT;
     RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
@@ -457,7 +467,7 @@ double RAPL_MSR::getUnit(std::string counter)
 
 void RAPL_MSR::initMap(CounterRecord_t &dict)
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
     // fill this vector
     std::vector <std::string> names;
@@ -532,7 +542,7 @@ void RAPL_MSR::initMap(CounterRecord_t &dict)
 
 bool RAPL_MSR::isAvailable()
 {
-    using namespace MSR_RAPL_COUNTERS;
+    using namespace MSR_RAPL_COUNTERS_NS;
 
     return check_whitelist_msr({});
 }
