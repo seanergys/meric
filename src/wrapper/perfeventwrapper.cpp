@@ -122,12 +122,9 @@ void PERFEVENT::init(bool detailed)
 		int core = mapCoresToCoreIdxs[i];
 
 		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
 	}
 	#endif
@@ -377,12 +374,9 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES].reserve(L3_CACHES_PER_NODE);
 	#elif defined _INTEL_
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP].reserve(CORES_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
 	#endif
 
@@ -429,36 +423,29 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		
 		//ratios["CPU_AMX_ACTIVE"+suffix+" [%]"] = (cyclesAMXActive/cycles)*100;
 
-		unsigned long long int instructionsScalarFp = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP][i];
-		unsigned long long int instructionsVec128FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_SP][i];
+		unsigned long long int instructionsScalarFpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP][i];
 		unsigned long long int instructionsVec128FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP][i];
-		unsigned long long int instructionsVec256FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_SP][i];
 		unsigned long long int instructionsVec256FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP][i];
-		unsigned long long int instructionsVec512FpSP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_SP][i];
 		unsigned long long int instructionsVec512FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP][i];
+
+		unsigned long long int flops = instructionsScalarFpDP + 2*instructionsVec128FpDP + 4*instructionsVec256FpDP + 8*instructionsVec512FpDP;
+
+		ratios["CPU_FLOP_DP"+suffix+" [FLOP/s]"] = flops/runtime;
 		
-		unsigned long long int instructionsVec128Fp = instructionsVec128FpSP + instructionsVec128FpDP;
-		unsigned long long int instructionsVec256Fp = instructionsVec256FpSP + instructionsVec256FpDP;
-		unsigned long long int instructionsVec512Fp = instructionsVec512FpSP + instructionsVec512FpDP;
-		unsigned long long int instructionsVecFp = instructionsVec128Fp + instructionsVec256Fp + instructionsVec512Fp;
-		unsigned long long int instructionsFp = instructionsScalarFp + instructionsVecFp;
+		unsigned long long int instructionsVecFpDP = instructionsVec128FpDP + instructionsVec256FpDP + instructionsVec512FpDP;
+		unsigned long long int instructionsFpDP = instructionsScalarFpDP + instructionsVecFpDP;
 
-		ratios["CPU_INSTRUCTION SCALAR_FP/FP"+suffix+" [%]"] = instructionsFp ? (instructionsScalarFp/(double)instructionsFp)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_128B_FP/FP"+suffix+" [%]"] = instructionsFp ? (instructionsVec128Fp/(double)instructionsFp)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_256B_FP/FP"+suffix+" [%]"] = instructionsFp ? (instructionsVec256Fp/(double)instructionsFp)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_512B_FP/FP"+suffix+" [%]"] = instructionsFp ? (instructionsVec512Fp/(double)instructionsFp)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_FP/FP"+suffix+" [%]"] = instructionsFp ? (instructionsVecFp/(double)instructionsFp)*100 : 0;
+		ratios["CPU_INSTRUCTION SCALAR_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsScalarFpDP/(double)instructionsFpDP)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_128B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec128FpDP/(double)instructionsFpDP)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_256B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec256FpDP/(double)instructionsFpDP)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_512B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec512FpDP/(double)instructionsFpDP)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVecFpDP/(double)instructionsFpDP)*100 : 0;
 
-		ratios["CPU_INSTRUCTION SCALAR_FP/ALL"+suffix+" [%]"] = instructions ? (instructionsScalarFp/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_128B_FP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec128Fp/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_256B_FP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec256Fp/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_512B_FP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec512Fp/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_FP/ALL"+suffix+" [%]"] = instructions ? (instructionsVecFp/(double)instructions)*100 : 0;
-
-		unsigned long long int flops = instructionsScalarFp + 4*instructionsVec128FpSP + 2*instructionsVec128FpDP +
-								8*instructionsVec256FpSP + 4*instructionsVec256FpDP + 16*instructionsVec512FpSP + 8*instructionsVec512FpDP;
-
-		ratios["CPU_FLOP"+suffix+" [FLOP/s]"] = flops/runtime;
+		ratios["CPU_INSTRUCTION SCALAR_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsScalarFpDP/(double)instructions)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_128B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec128FpDP/(double)instructions)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_256B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec256FpDP/(double)instructions)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_512B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec512FpDP/(double)instructions)*100 : 0;
+		ratios["CPU_INSTRUCTION VEC_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVecFpDP/(double)instructions)*100 : 0;
 		#endif
 	}
 
