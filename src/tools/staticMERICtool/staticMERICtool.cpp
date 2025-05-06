@@ -728,7 +728,7 @@ int main(int argc, char **argv)
 				std::cout << entry.first << " Energy consumption [J] = " << entry.second << "\n";
 				totalSum += entry.second;
 			}
-			std::cout << "Total Energy = " << totalSum << "\n";
+			std::cout << "Total Energy [J] = " << totalSum << "\n";
 			std::cout << "Total Watt-hour (Total Energy[J] / 3600) = " << (totalSum / 3600.0) << "\n";
 
 		}
@@ -796,24 +796,6 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 
     return energyValues;
 }
-// double extractEnergyConsumption(const std::string &filepath)
-// {
-//     std::ifstream file(filepath);
-//     std::string line;
-//     std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
-//     std::smatch match;
-//     double totalEnergy = 0.0;
-
-//     while (std::getline(file, line))
-//     {
-//         if (std::regex_search(line, match, energyRegex))
-//         {
-//             totalEnergy += std::stod(match[1]);  // Accumulate the energy
-//         }
-//     }
-
-//     return totalEnergy;  // Return the accumulated energy
-// }
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
 {
