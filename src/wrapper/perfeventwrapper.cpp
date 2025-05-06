@@ -126,6 +126,7 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES], core);
 	}
 	#endif
 
@@ -378,6 +379,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES].reserve(CORES_PER_NODE);
 	#endif
 
 	//Construction of map counterValues
@@ -446,6 +448,10 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		ratios["CPU_INSTRUCTION VEC_256B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec256FpDP/(double)instructions)*100 : 0;
 		ratios["CPU_INSTRUCTION VEC_512B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec512FpDP/(double)instructions)*100 : 0;
 		ratios["CPU_INSTRUCTION VEC_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVecFpDP/(double)instructions)*100 : 0;
+
+		unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES][i];
+
+		ratios["CPU_COMPUTATIONAL_INTENSITY"+suffix+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
 		#endif
 	}
 

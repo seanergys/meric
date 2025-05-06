@@ -64,6 +64,7 @@ const std::string INTEL_CPU_INSTS_SCALAR_FP_DP = "CPU_INST_SCALAR_FP_DP";
 const std::string INTEL_CPU_INSTS_VEC128_FP_DP = "CPU_INST_VEC128_FP_DP";
 const std::string INTEL_CPU_INSTS_VEC256_FP_DP = "CPU_INST_VEC256_FP_DP";
 const std::string INTEL_CPU_INSTS_VEC512_FP_DP = "CPU_INST_VEC512_FP_DP";
+const std::string INTEL_CPU_L3_MISSES = "CPU_L3_MISSES";
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
@@ -76,6 +77,7 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ INTEL_CPU_INSTS_VEC128_FP_DP, "CPU_INSTRUCTIONS_VEC_128B_FP_DP" },
 	{ INTEL_CPU_INSTS_VEC256_FP_DP, "CPU_INSTRUCTIONS_VEC_256B_FP_DP" },
 	{ INTEL_CPU_INSTS_VEC512_FP_DP, "CPU_INSTRUCTIONS_VEC_512B_FP_DP" },
+	{ INTEL_CPU_L3_MISSES,          INTEL_CPU_L3_MISSES               },
 	#endif
 	{ PERFEVENT_CPU_CYCLES,         PERFEVENT_CPU_CYCLES              },
 	{ PERFEVENT_CPU_INSTS,          PERFEVENT_CPU_INSTS               }
@@ -90,7 +92,8 @@ static std::map<const std::string, const uint64_t> counterDefines = {
 	{ INTEL_CPU_INSTS_SCALAR_FP_DP, 0x01c7 },
 	{ INTEL_CPU_INSTS_VEC128_FP_DP, 0x04c7 },
 	{ INTEL_CPU_INSTS_VEC256_FP_DP, 0x10c7 },
-	{ INTEL_CPU_INSTS_VEC512_FP_DP, 0x40c7 }
+	{ INTEL_CPU_INSTS_VEC512_FP_DP, 0x40c7 },
+	{ INTEL_CPU_L3_MISSES,          0x20d1 }
 	#endif
 };
 
