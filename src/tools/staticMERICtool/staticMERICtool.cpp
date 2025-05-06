@@ -11,6 +11,7 @@
 #include <csignal>
 #include <unistd.h>
 #include <errno.h>
+#include <iomanip>
 
 using namespace meric;
 
@@ -53,17 +54,18 @@ struct EnergyRecords {
         summary += POWER_BASELINE * runtime;
 
         if (verbose) {
-            std::cout << "Runtime [s] = " << runtime << std::endl;
+            std::cout << "Runtime [s] = "<< std::fixed << runtime << std::endl; // TODO: prevent scientific format, that's with e234 etc.
 
             // Print each counter value
             for (auto& kv : recordEnergy[0]) {
-                std::cout << Tmode::getCounterLabel(kv.first) << " = " << record[kv.first] << std::endl;
+                std::cout << Tmode::getCounterLabel(kv.first) << " = " <<  std::fixed << record[kv.first] << std::endl;
             }
             if (Tmode::getSummaryCounterName() != "") {
-                std::cout << std::endl << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
+                std::cout << std::endl <<  std::fixed << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << std::fixed << summary << std::endl;
+				std::cout << "Watt-hour (Energy[J] / 3600) = "  << std::fixed << (summary / 3600.0) << "\n\n";
             }
         } else {
-            std::cout << summary << std::endl;
+            std::cout << std::fixed << summary << std::endl;	// TODO: prevent scientific format, that's with e234 etc.
         }
     }
 
@@ -140,7 +142,7 @@ void printHelp()
 
 bool isJobRunning(const std::string &jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
-double extractEnergyConsumption(const std::string &filepath);
+std::map<std::string, double> extractEnergyConsumption(const std::string &filepath);
 double extractMaxRuntime(const std::string &filepath);
 bool createDirectoryIfNotExists(const std::string &path);
 
@@ -700,17 +702,35 @@ int main(int argc, char **argv)
 			// check if all files are there, if so aggregate the total energy
 			std::string prefix = "mericStatic_" + std::to_string(job_id);
 			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
-			double totalEnergy = 0.0;
+			std::map<std::string, double> totalEnergy = {
+				{"RAPL", 0.0},
+				{"NVML", 0.0},
+				{"A64FX", 0.0},
+				{"HWMON", 0.0},
+				{"ROCM", 0.0},
+			};
 			double maxRuntime = 0.0;
 			for (const auto &filepath : files)
 			{
-				totalEnergy += extractEnergyConsumption(filepath);
+				auto energies = extractEnergyConsumption(filepath);
+				for (const auto &entry : energies)
+					totalEnergy[entry.first] += entry.second;
+
 				double localRuntime = extractMaxRuntime(filepath);
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
 				// std::cout << filepath << "\n";
 			}
-			std::cout << "Max Runtime [sec] = " << maxRuntime << "\n";
-			std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+			std::cout << "Max Runtime [s] = " << maxRuntime << "\n";
+			// std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+			double totalSum = 0;
+			for (const auto &entry : totalEnergy)
+			{
+				std::cout << entry.first << " Energy consumption [J] = " << entry.second << "\n";
+				totalSum += entry.second;
+			}
+			std::cout << "Total Energy = " << totalSum << "\n";
+			std::cout << "Total Watt-hour (Total Energy[J] / 3600) = " << (totalSum / 3600.0) << "\n";
+
 		}
 	}
 
@@ -748,24 +768,52 @@ double extractMaxRuntime(const std::string &filepath)
 	return maxRuntime; // Will be 0.0 if not found
 }
 
-double extractEnergyConsumption(const std::string &filepath)
+std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
 {
     std::ifstream file(filepath);
     std::string line;
-    std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
+
+    std::map<std::string, double> energyValues = {
+        {"RAPL", 0.0},
+        {"NVML", 0.0},
+        {"A64FX", 0.0},
+        {"HWMON", 0.0},
+		{"ROCM", 0.0},
+    };
+
+    std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
     std::smatch match;
-    double totalEnergy = 0.0;
 
     while (std::getline(file, line))
     {
-        if (std::regex_search(line, match, energyRegex))
+        if (std::regex_search(line, match, pattern))
         {
-            totalEnergy += std::stod(match[1]);  // Accumulate the energy
+            std::string source = match[1];
+            double value = std::stod(match[2]);
+            energyValues[source] = value;
         }
     }
 
-    return totalEnergy;  // Return the accumulated energy
+    return energyValues;
 }
+// double extractEnergyConsumption(const std::string &filepath)
+// {
+//     std::ifstream file(filepath);
+//     std::string line;
+//     std::regex energyRegex(R"(Energy consumption \[J\] = ([0-9.]+))");
+//     std::smatch match;
+//     double totalEnergy = 0.0;
+
+//     while (std::getline(file, line))
+//     {
+//         if (std::regex_search(line, match, energyRegex))
+//         {
+//             totalEnergy += std::stod(match[1]);  // Accumulate the energy
+//         }
+//     }
+
+//     return totalEnergy;  // Return the accumulated energy
+// }
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
 {
