@@ -34,8 +34,30 @@ void PERFEVENT::init(bool detailed)
 
 	#ifdef _AMD_
 	initL3CacheSizes();
+	#endif
 
-	__u32 PMU_TYPE_AMD_L3 = getPMUtype("amd_l3");
+	//#ifdef _INTEL_
+	//std::string cpuFamilyModel;
+	//Environment::getCPUFamilyModelString(cpuFamilyModel);
+	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(cpuFamilyModel);
+	//#endif
+
+	std::map<std::string, __u32> PMU_TYPES;
+
+	#ifdef _AMD_
+	PMU_TYPES["amd_l3"] = getPMUtype("amd_l3");
+
+	//#elif defined _INTEL_
+	//PMU_TYPES["uncore_cha_0"] = getPMUtype("uncore_cha_0");
+
+	//if(cpuidSignature < CpuidSignatureValues::INTEL_06_8FH)
+	//{
+		//PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0000;
+	//}
+	//else
+	//{
+		//PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0001;
+	//}
 	#endif
 
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
@@ -73,6 +95,11 @@ void PERFEVENT::init(bool detailed)
 	}
 	#endif
 
+	//#ifdef _INTEL_
+	//int SOCKETS_PER_NODE = Environment::SOCKETS_PER_NODE;
+	//int socketIdxLength = log10(SOCKETS_PER_NODE) + 1;
+	//#endif
+
 	//Initialization of per-core monitoring of CPU cycles and CPU instructions
 	for(int i = 0; i < CORES_PER_NODE; i++)
 	{
@@ -108,7 +135,8 @@ void PERFEVENT::init(bool detailed)
 
 		int core = mapCoresToL3CacheIdxs[i];
 
-		countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffix] = openCounter(PMU_TYPE_AMD_L3, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
+		__u32 PMU_TYPE = PMU_TYPES["amd_l3"];
+		countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffix] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
 	}
 	
 	#elif defined _INTEL_
@@ -128,6 +156,19 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES], core);
 	}
+
+	//Initialization of per-socket monitoring of supported Intel counters
+	//for(int i = 0; i < SOCKETS_PER_NODE; i++)
+	//{
+		//std::ostringstream idxFill;
+		//idxFill << std::setfill('0') << std::setw(socketIdxLength) << i;
+		//std::string suffix = "_" + idxFill.str();
+
+		//int core = Environment::mapCoresToSocket[i][0];
+
+		//__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
+		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffix] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
+	//}
 	#endif
 
 	start();
@@ -366,6 +407,11 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	}
 	#endif
 
+	//#ifdef _INTEL_
+	//int SOCKETS_PER_NODE = Environment::SOCKETS_PER_NODE;
+	//int socketIdxLength = log10(SOCKETS_PER_NODE) + 1;
+	//#endif
+
 	//Initialization of map counterValues
 	std::map<std::string, std::vector<unsigned long long int>> counterValues;
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
@@ -380,6 +426,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES].reserve(CORES_PER_NODE);
+	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(SOCKETS_PER_NODE);
 	#endif
 
 	//Construction of map counterValues
@@ -480,6 +527,18 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 
 		ratios["CPU_COMPUTATIONAL_INTENSITY"+suffix+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
 	}
+
+	//#elif defined _INTEL_
+	//for(int i = 0; i < SOCKETS_PER_NODE; i++)
+	//{
+		//std::ostringstream idxFill;
+		//idxFill << std::setfill('0') << std::setw(socketIdxLength) << i;
+		//std::string suffix = "_" + idxFill.str();
+
+		//unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES][i];
+
+		//ratios["CPU_UNCORE_FREQUENCY"+suffix+" [Hz]"] = uncoreCycles/runtime;
+	//}
 	#endif
 }
 
