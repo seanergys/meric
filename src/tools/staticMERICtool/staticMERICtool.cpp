@@ -62,7 +62,7 @@ struct EnergyRecords {
             }
             if (Tmode::getSummaryCounterName() != "") {
                 std::cout << std::endl <<  std::fixed << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << std::fixed << summary << std::endl;
-				std::cout << "Watt-hour (Energy[J] / 3600) = "  << std::fixed << (summary / 3600.0) << "\n\n";
+				std::cout << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = "  << std::fixed << (summary / 3600.0) << "\n\n";
             }
         } else {
             std::cout << std::fixed << summary << std::endl;	// TODO: prevent scientific format, that's with e234 etc.
@@ -725,11 +725,13 @@ int main(int argc, char **argv)
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
+				if(entry.second == 0.0) continue;
 				std::cout << entry.first << " Energy consumption [J] = " << entry.second << "\n";
 				totalSum += entry.second;
 			}
-			std::cout << "Total Energy [J] = " << totalSum << "\n";
-			std::cout << "Total Watt-hour (Total Energy[J] / 3600) = " << (totalSum / 3600.0) << "\n";
+			std::cout << "\n";
+			std::cout << "Total Energy consumption [J] = " << totalSum << "\n";
+			std::cout << "Total Energy consumption [Wh] = " << (totalSum / 3600.0) << "\n";
 
 		}
 	}
