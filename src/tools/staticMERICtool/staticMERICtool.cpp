@@ -720,18 +720,18 @@ int main(int argc, char **argv)
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
 				// std::cout << filepath << "\n";
 			}
-			std::cout << "Max Runtime [s] = " << maxRuntime << "\n";
+			std::cout << "Max Runtime [s] = " << std::fixed << maxRuntime << "\n";
 			// std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
 				if(entry.second == 0.0) continue;
-				std::cout << entry.first << " Energy consumption [J] = " << entry.second << "\n";
+				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << entry.second << "\n";
 				totalSum += entry.second;
 			}
 			std::cout << "\n";
-			std::cout << "Total Energy consumption [J] = " << totalSum << "\n";
-			std::cout << "Total Energy consumption [Wh] = " << (totalSum / 3600.0) << "\n";
+			std::cout << "Total Energy consumption [J] = " << std::fixed << totalSum << "\n";
+			std::cout << "Total Energy consumption [Wh] = " << std::fixed << (totalSum / 3600.0) << "\n";
 
 		}
 	}
