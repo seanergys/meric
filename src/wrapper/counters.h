@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_COUNTERS_H_
 
 #include <cstdint>
+#include <unordered_map>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -66,6 +67,8 @@ const std::string INTEL_CPU_INSTS_VEC256_FP_DP = "CPU_INST_VEC256_FP_DP";
 const std::string INTEL_CPU_INSTS_VEC512_FP_DP = "CPU_INST_VEC512_FP_DP";
 const std::string INTEL_CPU_L3_MISSES = "CPU_L3_MISSES";
 const std::string INTEL_CPU_UNCORE_CYCLES = "CPU_UNCORE_CYCLES";
+const std::string INTEL_CPU_DRAM_BYTES_READ = "CPU_DRAM_READ";
+const std::string INTEL_CPU_DRAM_BYTES_WRITE = "CPU_DRAM_WRITE";
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
@@ -80,6 +83,8 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ INTEL_CPU_INSTS_VEC512_FP_DP, "CPU_INSTRUCTIONS_VEC_512B_FP_DP" },
 	{ INTEL_CPU_L3_MISSES,          INTEL_CPU_L3_MISSES               },
 	{ INTEL_CPU_UNCORE_CYCLES,      INTEL_CPU_UNCORE_CYCLES           },
+	{ INTEL_CPU_DRAM_BYTES_READ,    "CPU_DRAM_BYTES_READ"             },
+	{ INTEL_CPU_DRAM_BYTES_WRITE,   "CPU_DRAM_BYTES_WRITE"            },
 	#endif
 	{ PERFEVENT_CPU_CYCLES,         PERFEVENT_CPU_CYCLES              },
 	{ PERFEVENT_CPU_INSTS,          PERFEVENT_CPU_INSTS               }
@@ -97,6 +102,11 @@ static std::map<const std::string, uint64_t> counterDefines = {
 	{ INTEL_CPU_INSTS_VEC512_FP_DP, 0x40c7 },
 	{ INTEL_CPU_L3_MISSES,          0x20d1 }
 	#endif
+};
+
+static std::unordered_map<std::string, int> counterMultipliers = {
+	{ INTEL_CPU_DRAM_BYTES_READ,  64 },
+	{ INTEL_CPU_DRAM_BYTES_WRITE, 64 }
 };
 
 }
