@@ -52,24 +52,24 @@ void PERFEVENT::init(bool detailed)
 	#ifdef _AMD_
 	PMU_TYPES["amd_l3"] = getPMUtype("amd_l3");
 
-	//#elif defined _INTEL_
-	//PMU_TYPES["uncore_cha_0"] = getPMUtype("uncore_cha_0");
-
-	//for(int i = 0; i < PERFEVENT::IMCs_PER_SOCKET; i++)
-	//{
-		//std::string PMUname = "uncore_imc_" + std::to_string(i);
-		//PMU_TYPES[PMUname] = getPMUtype(PMUname);
-	//}
-
-	//if(cpuidSignature < CpuidSignatureValues::INTEL_06_8FH)
-	//{
-		//PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0000;
-	//}
-	//else
-	//{
-		//PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0001;
-	//}
-
+//	#elif defined _INTEL_
+//	PMU_TYPES["uncore_cha_0"] = getPMUtype("uncore_cha_0");
+//
+//	for(int i = 0; i < PERFEVENT::IMCs_PER_SOCKET; i++)
+//	{
+//		std::string PMUname = "uncore_imc_" + std::to_string(i);
+//		PMU_TYPES[PMUname] = getPMUtype(PMUname);
+//	}
+//
+//	if(cpuidSignature < CpuidSignatureValues::INTEL_06_8FH)
+//	{
+//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0000;
+//	}
+//	else
+//	{
+//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0001;
+//	}
+//
 //	if(cpuidSignature < CpuidSignatureValues::INTEL_06_6CH)
 //	{
 //		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0304;
@@ -87,132 +87,124 @@ void PERFEVENT::init(bool detailed)
 //	}
 	#endif
 
-	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
-	int coreIdxLength = log10(CORES_PER_NODE) + 1;
+	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	#ifdef _AMD_
+	int L3CacheIdxLength = log10(PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	//#elif defined _INTEL_
+	//int IMCidxLength = log10(PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	#endif
+	//#ifdef _INTEL_
+	//int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
+	//#endif
 
-	//Mapping cores to core indexes
-	std::vector<int> mapCoresToCoreIdxs;
-	mapCoresToCoreIdxs.reserve(CORES_PER_NODE);
+	//Initialization of per-core monitoring of CPU cycles and CPU instructions
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
 		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
 		{
-			int core = Environment::mapCoresToSocket[i][j];
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
 
-			mapCoresToCoreIdxs.push_back(core);
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+			int core = Environment::mapCoresToSocket[i][j];
+			
+			countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffixCoreIdx] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, core);
+			countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffixCoreIdx] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, core);
 		}
 	}
 
 	#ifdef _AMD_
-	int L3_CACHES_PER_NODE = PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
-	int L3CacheIdxLength = log10(L3_CACHES_PER_NODE) + 1;
-
-	//Mapping cores to L3 cache indexes
-	std::vector<int> mapCoresToL3CacheIdxs;
-	mapCoresToL3CacheIdxs.reserve(L3_CACHES_PER_NODE);
+	//Initialization of monitoring of supported AMD counters
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
+		//(per core)
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+			int core = Environment::mapCoresToSocket[i][j];
+	
+			countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], core);
+		}
+
+		//(per L3 cache)
 		for(int j = 0; j < PERFEVENT::L3_CACHES_PER_SOCKET; j++)
 		{
+			int L3CacheIdx = i*PERFEVENT::L3_CACHES_PER_SOCKET + j;
+
+			std::ostringstream L3CacheIdxFill;
+			L3CacheIdxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << L3CacheIdx;
+			std::string suffixL3CacheIdx = "_" + L3CacheIdxFill.str();
+
 			int L3Cache = PERFEVENT::mapL3CachesToSocket[i][j];
 			int core = PERFEVENT::mapCoresToL3Cache[L3Cache][0];
 
-			mapCoresToL3CacheIdxs.push_back(core);
+			__u32 PMU_TYPE = PMU_TYPES["amd_l3"];
+			countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffixL3CacheIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
 		}
-	}
-
-	//#elif defined _INTEL_
-	//int IMCs_PER_NODE = PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE;
-	//int IMCidxLength = log10(IMCs_PER_NODE) + 1;
-	#endif
-
-	//#ifdef _INTEL_
-	//int SOCKETS_PER_NODE = Environment::SOCKETS_PER_NODE;
-	//int socketIdxLength = log10(SOCKETS_PER_NODE) + 1;
-	//#endif
-
-	//Initialization of per-core monitoring of CPU cycles and CPU instructions
-	for(int i = 0; i < CORES_PER_NODE; i++)
-	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
-
-		int core = mapCoresToCoreIdxs[i];
-		
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, core);
-		countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffix] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, core);
-	}
-
-	#ifdef _AMD_
-	//Initialization of per-core monitoring of supported AMD counters
-	for(int i = 0; i < CORES_PER_NODE; i++)
-	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
-
-		int core = mapCoresToCoreIdxs[i];
-	
-		countersFd[PERFEVENT_COUNTERS::AMD_CPU_FLOPS + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_FLOPS], core);
-	}
-
-	//Initialization of monitoring of L3 cache misses (AMD)
-	for(int i = 0; i < L3_CACHES_PER_NODE; i++)
-	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
-
-		int core = mapCoresToL3CacheIdxs[i];
-
-		__u32 PMU_TYPE = PMU_TYPES["amd_l3"];
-		countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffix] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
 	}
 	
 	#elif defined _INTEL_
-	//Initialization of per-core monitoring of supported Intel counters
-	for(int i = 0; i < CORES_PER_NODE; i++)
+	//Initialization of monitoring of supported Intel counters
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
+		//(per core)
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
 
-		int core = mapCoresToCoreIdxs[i];
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
-		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES + suffix] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES], core);
-	}
+			int core = Environment::mapCoresToSocket[i][j];
 
-	//Initialization of per-socket monitoring of supported Intel counters
-	//for(int i = 0; i < SOCKETS_PER_NODE; i++)
-	//{
-		//std::ostringstream socketIdxFill;
-		//socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << i;
-		//std::string suffixSocketIdx = "_" + socketIdxFill.str();
+			//if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+			//{
+			//	countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
+			//}
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP], core);
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP], core);
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES], core);
+		}
 
-		//int core = Environment::mapCoresToSocket[i][0];
-
-		//__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
-		//countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
-
+		//(per IMC)
 //		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
 //		{
 //			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
+//
 //			std::ostringstream IMCidxFill;
 //			IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
 //			std::string suffixIMCidx = "_" + IMCidxFill.str();
+//
+//			int core = Environment::mapCoresToSocket[i][0];
 //
 //			std::string PMUname = "uncore_imc_" + std::to_string(j);
 //			__u32 PMU_TYPE = PMU_TYPES[PMUname];
 //			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ], core);
 //			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE], core);
 //		}
-	//}
+//
+//		//(per socket)
+//		int socketIdx = i;
+//
+//		std::ostringstream socketIdxFill;
+//		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+//		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+//
+//		int core = Environment::mapCoresToSocket[i][0];
+//
+//		__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
+//		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
+	}
 	#endif
 
 	start();
@@ -481,38 +473,18 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 {
 	int cumulative = 0;
 
+	//#ifdef _INTEL_
+	//std::string cpuFamilyModel;
+	//Environment::getCPUFamilyModelString(cpuFamilyModel);
+	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(cpuFamilyModel);
+	//#endif
+
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int coreIdxLength = log10(CORES_PER_NODE) + 1;
 
 	#ifdef _AMD_
-	//Mapping core indexes to cores
-	std::map<int, int> mapCoreIdxsToCores;
-	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
-	{
-		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
-		{
-			int core = Environment::mapCoresToSocket[i][j];
-			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
-
-			mapCoreIdxsToCores[core] = coreIdx;
-		}
-	}
-
 	int L3_CACHES_PER_NODE = PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int L3CacheIdxLength = log10(L3_CACHES_PER_NODE) + 1;
-
-	//Mapping L3 caches to L3 cache indexes
-	std::vector<int> mapL3CachesToL3CacheIdxs;
-	mapL3CachesToL3CacheIdxs.reserve(L3_CACHES_PER_NODE);
-	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
-	{
-		for(int j = 0; j < PERFEVENT::L3_CACHES_PER_SOCKET; j++)
-		{
-			int L3Cache = (!PERFEVENT::mapL3CachesToSocket.empty()) ? PERFEVENT::mapL3CachesToSocket[i][j] : i;
-
-			mapL3CachesToL3CacheIdxs.push_back(L3Cache);
-		}
-	}
 
 	//#elif defined _INTEL_
 	//int IMCs_PER_NODE = PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE;
@@ -520,30 +492,33 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	#endif
 
 	//#ifdef _INTEL_
-	//int SOCKETS_PER_NODE = Environment::SOCKETS_PER_NODE;
-	//int socketIdxLength = log10(SOCKETS_PER_NODE) + 1;
+	//int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 	//#endif
 
-	//Initialization of map counterValues
+	//Initialization and construction of map counterValues
 	std::map<std::string, std::vector<unsigned long long int>> counterValues;
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS].reserve(CORES_PER_NODE);
+
 	#ifdef _AMD_
 	counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES].reserve(L3_CACHES_PER_NODE);
+
 	#elif defined _INTEL_
-	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
+	//if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+	//{
+	//	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
+	//}
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES].reserve(CORES_PER_NODE);
-	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(SOCKETS_PER_NODE);
+	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
 	#endif
 
-	//Construction of map counterValues
 	for(std::map<std::string, std::vector<unsigned long long int>>::iterator iterator = counterValues.begin(); iterator != counterValues.end(); iterator++)
 	{
 		int counterIdxLength = log10(iterator->second.capacity()) + 1;
@@ -564,95 +539,142 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		}
 	}
 
-	for(int i = 0; i < CORES_PER_NODE; i++)
+	//Evaluation of CPU core frequency
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(coreIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
 
-		unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][i];
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-		ratios["CPU_CORE_FREQUENCY"+suffix+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
+			unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
 
-		unsigned long long int instructions = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][i];
-
-		#ifdef _AMD_
-		unsigned long long int flops = counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS][i];
-
-		ratios["CPU_FLOP"+suffix+" [FLOP/s]"] = flops/runtime;
-		
-		#elif defined _INTEL_
-		//unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][i];
-		
-		//ratios["CPU_AMX_ACTIVE"+suffix+" [%]"] = (cyclesAMXActive/cycles)*100;
-
-		unsigned long long int instructionsScalarFpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP][i];
-		unsigned long long int instructionsVec128FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP][i];
-		unsigned long long int instructionsVec256FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP][i];
-		unsigned long long int instructionsVec512FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP][i];
-
-		unsigned long long int flops = instructionsScalarFpDP + 2*instructionsVec128FpDP + 4*instructionsVec256FpDP + 8*instructionsVec512FpDP;
-
-		ratios["CPU_FLOP_DP"+suffix+" [FLOP/s]"] = flops/runtime;
-		
-		unsigned long long int instructionsVecFpDP = instructionsVec128FpDP + instructionsVec256FpDP + instructionsVec512FpDP;
-		unsigned long long int instructionsFpDP = instructionsScalarFpDP + instructionsVecFpDP;
-
-		ratios["CPU_INSTRUCTION SCALAR_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsScalarFpDP/(double)instructionsFpDP)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_128B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec128FpDP/(double)instructionsFpDP)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_256B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec256FpDP/(double)instructionsFpDP)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_512B_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVec512FpDP/(double)instructionsFpDP)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_FP_DP/FP_DP"+suffix+" [%]"] = instructionsFpDP ? (instructionsVecFpDP/(double)instructionsFpDP)*100 : 0;
-
-		ratios["CPU_INSTRUCTION SCALAR_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsScalarFpDP/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_128B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec128FpDP/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_256B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec256FpDP/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_512B_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVec512FpDP/(double)instructions)*100 : 0;
-		ratios["CPU_INSTRUCTION VEC_FP_DP/ALL"+suffix+" [%]"] = instructions ? (instructionsVecFpDP/(double)instructions)*100 : 0;
-
-		unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES][i];
-
-		ratios["CPU_COMPUTATIONAL_INTENSITY"+suffix+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
-		#endif
+			ratios["CPU_CORE_FREQUENCY"+suffixCoreIdx+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
+		}
 	}
 
 	#ifdef _AMD_
-	for(int i = 0; i < L3_CACHES_PER_NODE; i++)
+	//Mapping core indexes to cores
+	std::map<int, int> mapCoreIdxsToCores;
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		std::ostringstream idxFill;
-		idxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << i;
-		std::string suffix = "_" + idxFill.str();
-
-		unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES][i];
-		unsigned long long int instructions = 0;
-
-		if(L3CacheMisses > 0)
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
 		{
-			int L3Cache = mapL3CachesToL3CacheIdxs[i];
-			int CORES_PER_L3_CACHE = PERFEVENT::mapCoresToL3Cache[L3Cache].size();
-			for(int j = 0; j < CORES_PER_L3_CACHE; j++)
-			{
-				int core = PERFEVENT::mapCoresToL3Cache[L3Cache][j];
-				int coreIdx = mapCoreIdxsToCores[core];
+			int core = Environment::mapCoresToSocket[i][j];
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
 
-				instructions += counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
-			}
+			mapCoreIdxsToCores[core] = coreIdx;
 		}
-
-		ratios["CPU_COMPUTATIONAL_INTENSITY"+suffix+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
 	}
 
-	//#elif defined _INTEL_
-	//for(int i = 0; i < SOCKETS_PER_NODE; i++)
-	//{
-		//std::ostringstream socketIdxFill;
-		//socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << i;
-		//std::string suffixSocketIdx = "_" + socketIdxFill.str();
+	//Evaluation of ratios from supported AMD counters
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
 
-		//unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES][i];
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-		//ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
+			unsigned long long int flops = counterValues[PERFEVENT_COUNTERS::AMD_CPU_FLOPS][coreIdx];
 
+			ratios["CPU_FLOP"+suffixCoreIdx+" [FLOP/s]"] = flops/runtime;
+		}
+
+		for(int j = 0; j < PERFEVENT::L3_CACHES_PER_SOCKET; j++)
+		{
+			int L3CacheIdx = i*PERFEVENT::L3_CACHES_PER_SOCKET + j;
+
+			std::ostringstream L3CacheIdxFill;
+			L3CacheIdxFill << std::setfill('0') << std::setw(L3CacheIdxLength) << L3CacheIdx;
+			std::string suffixL3CacheIdx = "_" + L3CacheIdxFill.str();
+
+			unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES][L3CacheIdx];
+
+			unsigned long long int instructionsPerL3Cache = 0;
+			if(L3CacheMisses > 0)
+			{
+				int L3Cache = PERFEVENT::mapL3CachesToSocket[i][j];
+				int CORES_PER_L3_CACHE = PERFEVENT::mapCoresToL3Cache[L3Cache].size();
+				for(int k = 0; k < CORES_PER_L3_CACHE; k++)
+				{
+					int core = PERFEVENT::mapCoresToL3Cache[L3Cache][k];
+					int coreIdx = mapCoreIdxsToCores[core];
+
+					instructionsPerL3Cache += counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
+				}
+			}
+
+			ratios["CPU_COMPUTATIONAL_INTENSITY"+suffixL3CacheIdx+" [instructions/B]"] = L3CacheMisses ? instructionsPerL3Cache/((double)L3CacheMisses*64) : 0;
+		}
+	}
+
+	#elif defined _INTEL_
+	//Evaluation of ratios from supported Intel counters
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+//			if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+//			{
+//				unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][coreIdx];
+//				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+//		
+//				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = (cyclesAMXActive/cycles)*100;
+//			}
+
+			unsigned long long int instructionsScalarFpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP][coreIdx];
+			unsigned long long int instructionsVec128FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP][coreIdx];
+			unsigned long long int instructionsVec256FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP][coreIdx];
+			unsigned long long int instructionsVec512FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP][coreIdx];
+
+			unsigned long long int flops = instructionsScalarFpDP + 2*instructionsVec128FpDP + 4*instructionsVec256FpDP + 8*instructionsVec512FpDP;
+
+			ratios["CPU_FLOP_DP"+suffixCoreIdx+" [FLOP/s]"] = flops/runtime;
+			
+			unsigned long long int instructionsVecFpDP = instructionsVec128FpDP + instructionsVec256FpDP + instructionsVec512FpDP;
+			unsigned long long int instructionsFpDP = instructionsScalarFpDP + instructionsVecFpDP;
+
+			ratios["CPU_INSTRUCTION SCALAR_FP_DP/FP_DP"+suffixCoreIdx+" [%]"] = instructionsFpDP ? (instructionsScalarFpDP/(double)instructionsFpDP)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_128B_FP_DP/FP_DP"+suffixCoreIdx+" [%]"] = instructionsFpDP ? (instructionsVec128FpDP/(double)instructionsFpDP)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_256B_FP_DP/FP_DP"+suffixCoreIdx+" [%]"] = instructionsFpDP ? (instructionsVec256FpDP/(double)instructionsFpDP)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_512B_FP_DP/FP_DP"+suffixCoreIdx+" [%]"] = instructionsFpDP ? (instructionsVec512FpDP/(double)instructionsFpDP)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_FP_DP/FP_DP"+suffixCoreIdx+" [%]"] = instructionsFpDP ? (instructionsVecFpDP/(double)instructionsFpDP)*100 : 0;
+
+			unsigned long long int instructions = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
+
+			ratios["CPU_INSTRUCTION SCALAR_FP_DP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsScalarFpDP/(double)instructions)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_128B_FP_DP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsVec128FpDP/(double)instructions)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_256B_FP_DP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsVec256FpDP/(double)instructions)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_512B_FP_DP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsVec512FpDP/(double)instructions)*100 : 0;
+			ratios["CPU_INSTRUCTION VEC_FP_DP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsVecFpDP/(double)instructions)*100 : 0;
+
+			unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES][coreIdx];
+
+			ratios["CPU_COMPUTATIONAL_INTENSITY"+suffixCoreIdx+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
+		}
+
+//		int socketIdx = i;
+//
+//		std::ostringstream socketIdxFill;
+//		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+//		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+//
+//		unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES][socketIdx];
+//
+//		ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
+//
 //		if(detailedMode)
 //		{
 //			for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
@@ -687,7 +709,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 //			ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] = DRAMbytesWritePerSocket/runtime;
 //			ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] = (DRAMbytesReadPerSocket + DRAMbytesWritePerSocket)/runtime;
 //		}
-//	}
+	}
 	#endif
 }
 
