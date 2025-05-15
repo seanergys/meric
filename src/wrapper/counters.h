@@ -105,8 +105,10 @@ static std::map<const std::string, uint64_t> counterDefines = {
 };
 
 static std::unordered_map<std::string, int> counterMultipliers = {
+	#ifdef _INTEL_
 	{ INTEL_CPU_DRAM_BYTES_READ,  64 },
 	{ INTEL_CPU_DRAM_BYTES_WRITE, 64 }
+	#endif
 };
 
 }
