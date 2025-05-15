@@ -42,12 +42,13 @@ struct EnergyRecords {
         for (int i = 1; i < recordEnergy.size(); i++) {
             for (auto& kv : record) {
                 int cumulative = 0;
-                record[kv.first] += Tmode::getResultValue(
+                double delta = Tmode::getResultValue(
                     recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first], 
                     recordTime[i - 1] - recordTime[i], cumulative, kv.first
                 );
+				record[kv.first] += delta;
                 if (cumulative > 0) {
-                    summary += record[kv.first];
+                    summary += delta;
                 }
             }
         }
@@ -591,37 +592,6 @@ int main(int argc, char **argv)
 				{
 					// Child has finished
 					child_pid = -1; // reset the child_pid.
-
-					/* TODO: verbose these.
-					if (WIFEXITED(status))
-					{
-						// Check if the child process exited normally.
-						if (WEXITSTATUS(status) != 0)
-						{
-							std::cerr << "Error: Child process terminated with an error (exit status: "
-									  << WEXITSTATUS(status) << ")" << std::endl;
-						}
-						else
-							std::cout << "Success: Child process terminated successfully.\n";
-					}
-					else if (WIFSIGNALED(status))
-					{
-						// If the child process terminated due to a signal.
-						std::cerr << "Error: Child process terminated by signal "
-								  << WTERMSIG(status) << std::endl;
-					}
-					else if (WIFSTOPPED(status))
-					{
-						// If the child process is stopped.
-						std::cerr << "Error: Child process is stopped by signal "
-								  << WSTOPSIG(status) << std::endl;
-					}
-					else
-					{
-						std::cerr << "Error: Unexpected child process termination state." << std::endl;
-					} 
-					*/
-
 					clock_gettime(CLOCK_REALTIME, &timestamp);
 					endTime = mutils::timeToDouble(timestamp);
 					isRunning = false;
