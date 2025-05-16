@@ -54,7 +54,9 @@
 
 namespace meric {
 
-enum mode {MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_ROCM, MODE_OCC, MODE_A64FX};
+enum mode { MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, 
+	MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_ROCM, 
+	MODE_OCC, MODE_A64FX, MODE_HWMON_COUNTERS, MODE_HWMON_SAMPLES };
 
 static std::map <const std::string, mode> modeString = {
 	{"NONE", MODE_RUN},
@@ -69,7 +71,9 @@ static std::map <const std::string, mode> modeString = {
 	{"NVML", MODE_NVML},
 	{"ROCM", MODE_ROCM},
 	{"OCC", MODE_OCC},
-	{"A64FX", MODE_A64FX}
+	{"A64FX", MODE_A64FX},
+	{"HWMON-C", MODE_HWMON_COUNTERS},
+	{"HWMON-S", MODE_HWMON_SAMPLES}
 };
 
 enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER};										//TODO remove this enum
@@ -206,7 +210,7 @@ public:
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	static bool isPWRCAPpossible();
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
-	static GPU_TUNING_WAY getGPUTuningMethod();
+	static void getGPUTuningMethod();
 #endif
 	
 	static void getAvailableCF(std::vector<long> & values);
@@ -241,10 +245,6 @@ private:
 	static void getAvailableGPUfrequencies(std::map<uint, std::vector<uint>> & values);
 	static uint currentGPUMemFreq; //Hz
 	static uint currentGPUSMFreq;  //Hz
-#endif
-
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	static bool manualLevelSet;
 #endif
 
 	static systemLimits defaultSettings;

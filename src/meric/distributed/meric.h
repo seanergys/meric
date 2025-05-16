@@ -1,6 +1,6 @@
 
-#ifndef SRC_MERIC_DISTRIBUTED_DISTRIBUTEDMERIC_H_
-#define SRC_MERIC_DISTRIBUTED_DISTRIBUTEDMERIC_H_
+#ifndef SRC_MERIC_DISTRIBUTED_MERIC_H_
+#define SRC_MERIC_DISTRIBUTED_MERIC_H_
 
 #include <mpi.h>
 
@@ -202,17 +202,29 @@ public:
 		stop(_mainRegion); //applicationMainRegion
 		
 		if (MPIbarriers)
+		{
 			MPI_Barrier(_currentNode);
+		}
 
 		if (!_MPInodeRank)
 		{
-			if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end() || std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
+			for(mode m: MONITORS)
 			{
-				HDEEM::stop(_stopTime);
-			}
-			else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
-			{
-				DAVIDE::stop(_stopTime);
+				switch(m)
+				{
+				case MODE_HDEEM_SAMPLES:
+				case MODE_HDEEM_COUNTERS:
+					HDEEM::stop(_stopTime);
+					break;
+				case MODE_DAVIDE:
+					DAVIDE::stop(_stopTime);
+					break;
+				case MODE_HWMON_SAMPLES:
+					HWMON::stop(_stopTime);
+					break;
+				default:
+					break;
+				}
 			}
 		}
 	
@@ -294,4 +306,4 @@ private:
 
 }
 
-#endif /* SRC_MERIC_DISTRIBUTED_DISTRIBUTEDMERIC_H_ */
+#endif /* SRC_MERIC_DISTRIBUTED_MERIC_H_ */

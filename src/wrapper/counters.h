@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_COUNTERS_H_
 
 #include <cstdint>
+#include <string>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -251,6 +252,39 @@ static std::map<const std::string, uint64_t> counterDefines = {
 
 }
 ////////////////////////////////////////////////////////////////////////////////
+namespace SYSFS_RAPL_COUNTERS {
+const std::string RAPL_SUM_ENERGY  = "ENERGY_CONSUMPTION";
+
+#ifdef _INTEL_
+	const std::string RAPL_PCKG_ENERGY = "package";
+	const std::string RAPL_RAM_ENERGY  = "dram";
+//	const std::string RAPL_PP0_ENERGY  = ""; //client CPUs only
+//	const std::string RAPL_PP1_ENERGY  = ""; //client CPUs only
+	const std::string RAPL_PLATFORM_ENERGY = "psys";
+#else // _AMD_
+	const std::string RAPL_PCKG_ENERGY       = "package";
+	const std::string RAPL_PCKG_CORES_ENERGY = "core";
+#endif
+
+//TODO
+const std::string RAPL_PCKG_POWER_LIMIT = "";
+const std::string RAPL_RAM_POWER_LIMIT  = "";
+const std::string RAPL_PLATFORM_POWER_LIMIT = "";
+const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "";
+
+static std::map<const std::string, std::pair<std::string, std::string> > counterLabel = {
+#ifdef _INTEL_
+	{ RAPL_PCKG_ENERGY,      { "PCKG", "[J]" } },
+	{ RAPL_RAM_ENERGY,       { "RAM",  "[J]" } },
+	{ RAPL_SUM_ENERGY,       { "Energy consumption", "[J]" } },
+#else // _AMD_
+	{ RAPL_PCKG_ENERGY,       { "PCKG", "[J]" } },
+	{ RAPL_PCKG_CORES_ENERGY, { "PCKG_ACTIVE_CORES_AVG", "[J]" } },
+	{ RAPL_SUM_ENERGY,        { "Energy consumption", "[J]" } },
+#endif
+};
+}
+////////////////////////////////////////////////////////////////////////////////
 namespace GEOPM_RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "MSR::PKG_ENERGY_STATUS#";
@@ -269,6 +303,22 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ RAPL_PCKG_ENERGY,      "PCKG [J]" },
 	{ RAPL_RAM_ENERGY,       "RAM [J]"  },
 	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
+};
+}
+////////////////////////////////////////////////////////////////////////////////
+namespace HWMON_COUNTERS {
+const std::string HWMON_SUM_ENERGY  = "ENERGY_CONSUMPTION";
+#ifdef _AMD_
+const std::string HWMON_CORE_ENERGY = "Ecore";
+const std::string HWMON_PCKG_ENERGY = "Esocket";
+#endif
+
+static std::map<const std::string, std::pair<std::string, std::string> > counterLabels = {
+#ifdef _AMD_
+	{ HWMON_CORE_ENERGY, { "CORE", "[J]" } },
+	{ HWMON_PCKG_ENERGY, { "PCKG", "[J]" } },
+#endif
+	{ HWMON_SUM_ENERGY,  { "Energy consumption", "[J]" } }
 };
 }
 

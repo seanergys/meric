@@ -26,6 +26,7 @@
 #include "../wrapper/occwrapper.h"
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
+#include "../wrapper/hwmonwrapper.h"
 
 namespace meric {
 

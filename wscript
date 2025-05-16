@@ -116,9 +116,8 @@ def configure(ctx):
 			elif ctx.check_cxx(lib="cpupower", uselib_store="cpupower", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
-		if ctx.check_cxx(lib="nvidia-ml", uselib_store="nvml", mandatory=False, execute=True):
-			ctx.env.append_unique("DEFINES", [ "HAVE_NVML_H=1" ])
-			ctx.env.append_unique("LINKFLAGS", [ "-lnvidia-ml" ])
+		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
+			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False)
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
 			ctx.env.append_unique("LINKFLAGS", [ "-lrocm_smi64" ])
 		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
@@ -197,22 +196,19 @@ def configure(ctx):
 
 ################################################################################
 def build(ctx):
-	if not os.path.exists(ctx.path.abspath()+"/bin/"):
-		os.mkdir(ctx.path.abspath()+"/bin/")
-	
 	# SBI TOOL
 	if ctx.env.SBI:
 		ctx.program(
 			source       = ctx.path.ant_glob('src/tools/SBI/dinst_instrument.cpp'),
 			target       = "dinst_instrument",
 			use          = "boost dyninst",
-			install_path = ctx.path.abspath()+"/bin/"
+			install_path = "${PREFIX}/bin"
 		)
 		ctx.program(
 			source       = ctx.path.ant_glob('src/tools/SBI/dinst_profile.cpp'),
 			target       = "dinst_profile",
 			use          = "boost dyninst",
-			install_path = ctx.path.abspath()+"/bin/"
+			install_path = "${PREFIX}/bin"
 		)
 	if "SBI_ONLY" in ctx.env.SBI:
 		return
@@ -235,13 +231,19 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
-		install_path = ctx.path.abspath()+"/bin/"
+		install_path = "${PREFIX}/bin"
 	)
-	shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh" , ctx.path.abspath()+"/bin/")
-	shutil.copy("src/tools/staticMERICtool/multiNodeStaticMeasureStop.sh" , ctx.path.abspath()+"/bin/")
+	ctx.install_files(
+		dest = "${PREFIX}/bin",
+		files = ["src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh",
+		        "src/tools/staticMERICtool/multiNodeStaticMeasureStop.sh"],
+		chmod = 0o755
+	)
 	
 	# MERICwrapper
 	ctx.program(
@@ -256,10 +258,12 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
 		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
-		install_path = ctx.path.abspath()+"/bin/"
+		install_path = "${PREFIX}/bin"
 	)
 	
 	# SYSTEM INFO TOOL
@@ -270,10 +274,12 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
-		install_path = ctx.path.abspath()+"/bin/"
+		install_path = "${PREFIX}/bin"
 	)
 
 	#MERICext
@@ -286,6 +292,14 @@ def build(ctx):
 	)
 	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
 	
+	if ctx.env.PREFIX != ctx.path.abspath():
+		#INCLUDE
+		ctx.install_files(
+			dest         = "${PREFIX}/include",
+			files        = ctx.path.ant_glob('include/*'),
+			chmod        = 0o664
+		)
+
 	if not ctx.env.NOOPENMP:
 		#MERIC
 		ctx.stlib(
@@ -294,7 +308,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
 			use          = "basis",
-			install_path = ctx.path.abspath()+"/lib/"
+			install_path = "${PREFIX}/lib"
 		)
 		
 		ctx.shlib(
@@ -303,7 +317,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
 			use          = "basis",
-			install_path = ctx.path.abspath()+"/lib/"
+			install_path = "${PREFIX}/lib"
 		)
 		
 		#TIMEPROF
@@ -311,14 +325,14 @@ def build(ctx):
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
 			use          = "basis",
-			install_path = ctx.path.abspath()+"/lib/"
+			install_path = "${PREFIX}/lib"
 		)
 		
 		ctx.shlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
 			use          = "basis",
-			install_path = ctx.path.abspath()+"/lib/"
+			install_path = "${PREFIX}/lib"
 		)
 		suffix=""
 	else:
@@ -336,7 +350,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
 		use          = "basis",
-		install_path = ctx.path.abspath()+"/lib/",
+		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
 	
@@ -346,7 +360,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
 		use          = "basis",
-		install_path = ctx.path.abspath()+"/lib/",
+		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
 	
@@ -355,7 +369,7 @@ def build(ctx):
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
 		use          = "basis",
-		install_path = ctx.path.abspath()+"/lib/",
+		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
 	
@@ -363,7 +377,7 @@ def build(ctx):
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
 		use          = "basis",
-		install_path = ctx.path.abspath()+"/lib/",
+		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
 	
@@ -379,6 +393,13 @@ def build(ctx):
 
 ################################################################################
 def options(opt):
+	option_group = opt.get_option_group('configure options')
+	option_group.add_option("--prefix",
+		dest='prefix',
+		default=opt.path.abspath(),
+		help="installation prefix"
+	)
+
 	opt.add_option(
 		"--verbose",
 		action="store_true",

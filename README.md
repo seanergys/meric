@@ -134,10 +134,9 @@ From the Sandy Bridge microarchitecture all Intel processors provide software-ba
 
 Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
 
-Intel RAPL system to limit power consumption of the CPU, it can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
+Intel uses RAPL system to limit power consumption of thier CPUs. The power limit can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
 
-	
-MERIC must be compiled and used at a node with [msr-safe](https://github.com/LLNL/msr-safe) to read RAPL counters (works well for both Intel and AMD). In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
+MERIC supports reading RAPL energy consumption od Intel and AMD CPUs using virtual sysfs created by [intel_rapl/intel_rapl_common](https://github.com/torvalds/linux/blob/master/drivers/powercap/intel_rapl_common.c) linux kernel module. To reduce energy reading overhead and to receive more detailed information MERIC support usage [msr-safe](https://github.com/LLNL/msr-safe) (works well for both Intel and AMD). If MERIC compiled at a system with the msr-safe available, then the msr-safe is always used for the readings. In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) (support for Icelake and older Intel architectures) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
 
 
 ## HDEEM ##

@@ -86,7 +86,7 @@ std::string getAMDGPUName(const std::string hex)
 	else if(hex == "0x7485")
 		name = "Mi300X VF";
 	else
-		name = "Unknown GPU type";
+		name = "Unknown AMD GPU type";
 	return name;	
 }
 
@@ -108,7 +108,9 @@ void sysInfoSize(bool detailed = false)
 		std::sort (onlineThreads.begin(), onlineThreads.end());
 		std::cout << "\n\tActive threads: ";
 		for (int i=onlineThreads.size()-1; i>=0; i--)
+		{
 			std::cout << onlineThreads[i] << " ";
+		}
 	}
 	std::cout << std::endl;
 
@@ -122,7 +124,9 @@ void sysInfoSize(bool detailed = false)
 			{
 				std::cout << "\t\tCore " << core << ":";
 				for (const auto &thread : meric::Environment::mapThreadsToCore[core])
+				{
 					std::cout << " " << thread;
+				}
 				std::cout << std::endl;
 			}
 		}
@@ -157,7 +161,9 @@ void sysInfoSize(bool detailed = false)
 			{
 				GPUdeviceCount++;
 				if (GPUname == "")
+				{
 					GPUname = std::string(ent->d_name);
+				}
 			}
 		}
 		closedir (dir);
@@ -171,12 +177,18 @@ void sysInfoSize(bool detailed = false)
 			GPUname = GPUname.substr(GPUname.find(':'));
 			std::size_t pos = GPUname.find_first_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 			if (pos != std::string::npos)
+			{
 				GPUname = GPUname.substr(pos);
+			}
 		}
 		if (GPUname != "")
+		{
 			std::cout << "\tGPU name:         " << GPUname << '\n';
+		}
 		if (GPUdeviceCount)
+		{
 			std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
+		}
 		
 		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the CUDA GPUs\n";
 	}
@@ -210,7 +222,8 @@ void sysInfoSize(bool detailed = false)
 				std::string cardPath = "/sys/class/drm/" + deviceName + "/device/";
 				
 				std::string vendorID = readFile(cardPath + "vendor");
-				if (vendorID == "0x1002"){
+				if (vendorID == "0x1002")
+				{
 					GPUDeviceCount++;
 					
 					std::string pciDeviceID = readFile(cardPath + "device");
@@ -218,15 +231,17 @@ void sysInfoSize(bool detailed = false)
 				}
 			}
 		}
-        if (modelName != "")
-            std::cout << "\tGPU name:         " << modelName << '\n';
-        if (GPUDeviceCount){
-            std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n';
-			std::cout << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
+	        if (modelName != "")
+		{
+			std::cout << "\tGPU name:         " << modelName << '\n';
+		}
+	        if (GPUDeviceCount)
+		{
+			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
+			          << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
 		}
 		closedir(dir2);
 	}
-
 
 #endif
 }
@@ -345,10 +360,14 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 #if ( defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H ) && defined MSR_TURBO_RATIO_LIMIT && defined MSR_TURBO_RATIO_LIMIT_CORES
 		uint64_t MSR_TURBO_RATIO_LIMIT_bits = 0x0;
 		if (!currentWhitelist.count(MSR_TURBO_RATIO_LIMIT))
+		{
 			meric::read_msr(0, MSR_TURBO_RATIO_LIMIT, &MSR_TURBO_RATIO_LIMIT_bits);
+		}
 		uint64_t MSR_TURBO_RATIO_LIMIT_CORES_bits = 0x0;
 		if (!currentWhitelist.count(MSR_TURBO_RATIO_LIMIT_CORES))
+		{
 			meric::read_msr(0, MSR_TURBO_RATIO_LIMIT_CORES, &MSR_TURBO_RATIO_LIMIT_CORES_bits);
+		}
 		
 		std::vector <int> turboRatio;
 		turboRatio.reserve(16);
@@ -410,7 +429,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		}
 #else
 		std::cout << "enabled\n";
-#endif		
+#endif
 	}
 	else
 	{
@@ -455,7 +474,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	{
 		std::cout << "\tAvailable CPU core frequencies:  ";
 		for(long CF : availCF)
+		{
 			std::cout << CF/1000 << " " ;
+		}
 		std::cout << "kHz\n";
 	}
 	
@@ -465,7 +486,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	{
 		uint64_t IA32_ENERGY_PERF_BIAS_bits = 0x0;
 		if (!currentWhitelist.count(IA32_ENERGY_PERF_BIAS))
+		{
 			meric::read_msr(0, IA32_ENERGY_PERF_BIAS, &IA32_ENERGY_PERF_BIAS_bits);
+		}
 		if (IA32_ENERGY_PERF_BIAS_bits != limits.IA32_ENERGY_PERF_BIAS_default)
 		{
 			ok = false;
@@ -512,7 +535,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		{
 			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+		}
 		freq = setting * 100000000;
 		std::cout << "\tMin CPU uncore frequency:    " << freq/1000 << " kHz\n";
 		if (ok && freq != limits.minUncoreFreq)
@@ -606,7 +631,9 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 							{
 								std::cout << "\t\t";
 								for (int f=0; f<gpuFreqCount; f++)
+								{
 									std::cout << gpuFreq[f] << " ";
+								}
 								std::cout << "MHz\n";
 							}
 						}
@@ -669,13 +696,13 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
  	if(ret_sys == RSMI_STATUS_SUCCESS)
  	{
-		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1e3 << " - " <<   sysFreqs.frequency[0] / 1e3  << " kHz (" << sysFreqs.num_supported << " steps)\n";
+		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " - " <<   sysFreqs.frequency[0] / 1000  << " kHz (" << sysFreqs.num_supported << " steps)\n";
 		if(detailed || sysFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 		{
 			std::cout << "\t\t";		
 			for(int i = sysFreqs.num_supported - 1; i > -1; i--)
 			{
-				std::cout << sysFreqs.frequency[i] / 1e6  << " ";
+				std::cout << sysFreqs.frequency[i] / 1000000  << " ";
 			}
 			std::cout << "MHz\n";
 		}
@@ -685,13 +712,13 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	{
 		if(memFreqs.num_supported > 1)
 		{
-			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1e3 << " - " << memFreqs.frequency[0] / 1e3  << " kHz (" << memFreqs.num_supported << " steps)\n";
+			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000 << " - " << memFreqs.frequency[0] / 1000  << " kHz (" << memFreqs.num_supported << " steps)\n";
 			if(detailed || memFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 			{
 				std::cout << "\t\t";
 				for(int i = memFreqs.num_supported - 1; i >= 0; i--)
 				{
-					std::cout << memFreqs.frequency[i] / 1e6  << " ";
+					std::cout << memFreqs.frequency[i] / 1000000  << " ";
 				}
 				std::cout << "MHz\n";
 			}
@@ -702,13 +729,13 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 	{
 		if(socFreqs.num_supported > 1)
 		{
-			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1e3 << " - " <<   socFreqs.frequency[0] / 1e3  << " kHz (" << socFreqs.num_supported << " steps)\n";
+			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1000 << " - " <<   socFreqs.frequency[0] / 1000  << " kHz (" << socFreqs.num_supported << " steps)\n";
 			if(detailed || socFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 			{
 				std::cout << "\t\t";
 				for(int i = socFreqs.num_supported - 1; i >= 0; i--)
 				{
-					std::cout << socFreqs.frequency[i] / 1e6  << " ";
+					std::cout << socFreqs.frequency[i] / 1000000  << " ";
 				}
 				std::cout << "MHz\n";
 			}
@@ -717,17 +744,17 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 
 	if(ret_mem == RSMI_STATUS_SUCCESS)
 	{
-		std::cout << "\tSM frequency:     " << sysFreqs.frequency[sysFreqs.current] / 1e3 << " kHz\n";
+		std::cout << "\tSM frequency:     " << sysFreqs.frequency[sysFreqs.current] / 1000 << " kHz\n";
 	}
 
 	if(ret_mem == RSMI_STATUS_SUCCESS)
 	{
-		std::cout << "\tMemory frequency: " << memFreqs.frequency[memFreqs.current] / 1e3 << " kHz\n";
+		std::cout << "\tMemory frequency: " << memFreqs.frequency[memFreqs.current] / 1000 << " kHz\n";
 	}
 
 	if(ret_mem == RSMI_STATUS_SUCCESS)
 	{
-		std::cout << "\tSoC frequency:    " << socFreqs.frequency[socFreqs.current] / 1e3 << " kHz\n";
+		std::cout << "\tSoC frequency:    " << socFreqs.frequency[socFreqs.current] / 1000 << " kHz\n";
 	}
 #endif
 
@@ -760,7 +787,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	// PKG
 		uint64_t MSR_PKG_DRAM_POWER_INFO_bits = 0x0;
 		if (!currentWhitelist.count(MSR_PKG_POWER_INFO))
+		{
 			meric::read_msr(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+		}
 
 		std::cout 
 			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
@@ -776,7 +805,10 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 	// DRAM
 		if (!currentWhitelist.count(MSR_DRAM_POWER_INFO))
+		{
 			meric::read_msr(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
+		}
+
 		std::cout 
 			<< "\tDRAM max power limit:  "
 			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
@@ -886,13 +918,17 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			uint64_t MSR_DRAM_POWER_LIMIT_bits = 0x0;
 		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_DRAM_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_DRAM_POWER_LIMIT))
+			{
 				meric::read_msr(0, MSR_DRAM_POWER_LIMIT, &MSR_DRAM_POWER_LIMIT_bits);
+			}
 		#elif defined HAVE_X86_ADAPT_H
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_RAM_POWER_LIMIT");
 			x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_DRAM_POWER_LIMIT_bits);
 
 			if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+			{
 				std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+			}
 		#elif defined HAVE_GEOPM_H
 			MSR_DRAM_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::DRAM_POWER_LIMIT#", pio.signal_domain_type("MSR::DRAM_POWER_LIMIT#"), 0));
 		#endif
@@ -929,7 +965,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tPKG power limit #1: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+			}
 		}
 		
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_time_window_us");
@@ -939,7 +977,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tPKG time window #1: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+			}
 		}
 		
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw");
@@ -949,7 +989,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tPKG power limit #2: " << std::stol(pwrCapInfo)/1000000 << " W\n";
+			}
 		}
 
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_time_window_us");
@@ -959,7 +1001,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tPKG time window #2: " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+			}
 		}
 
 		// DRAM
@@ -979,7 +1023,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tDRAM power limit:   " << std::stol(pwrCapInfo)/1000000 << " W\n";
+			}
 		}
 
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_time_window_us");
@@ -989,7 +1035,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
 			if (pwrCapInfo != "")
+			{
 				std::cout << "\tDRAM time window:   " << std::stol(pwrCapInfo)/1000000.0 << " s\n";
+			}
 		}
 	#endif
 
@@ -1012,7 +1060,9 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 			uint64_t MSR_PLATFORM_POWER_LIMIT_bits = 0x0;
 	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PLATFORM_POWER_LIMIT
 			if (!currentWhitelist.count(MSR_PLATFORM_POWER_LIMIT))
+			{
 				meric::read_msr(0, MSR_PLATFORM_POWER_LIMIT, &MSR_PLATFORM_POWER_LIMIT_bits);
+			}
 			if (MSR_PLATFORM_POWER_LIMIT_bits)
 			{
 				std::cout << "\tPLATFORM power limit #1: " 
@@ -1157,6 +1207,12 @@ void sysEnergyMeasurement()
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
+#elif defined __x86_64
+	if (access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK ) != -1 )
+	{
+		std::cout << "\tRAPL\n";
+		systems++;
+	}
 #endif
 
 #ifdef HAVE_HDEEM_H
@@ -1180,10 +1236,13 @@ void sysEnergyMeasurement()
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	uint32_t deviceCount;
 	uint64_t energy;
 	float precision;
 	uint64_t timestamp;
-	if(rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
+	//energy read cause segfault if rocm smi not initialized, which we do not know in this location
+	//for that reason additional device count read is issued
+	if(rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS && deviceCount > 0 && rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
 	{
 		std::cout << "\tROCM\n";
 		systems++;
@@ -1213,9 +1272,13 @@ void checkMsrWhitelist()
 {
 	std::string whitelistName;
 	if (access("/dev/cpu/msr_whitelist", F_OK ) != -1 )
+	{
 		whitelistName = "/dev/cpu/msr_whitelist";
+	}
 	else if (access("/dev/cpu/msr_allowlist", F_OK ) != -1 ) //from v1.5.0
+	{
 		whitelistName = "/dev/cpu/msr_allowlist";
+	}
 	else
 	{
 		std::cerr << "\nMSR_SAFE ERROR: No allowlist file in /dev/cpu/\n";
@@ -1244,7 +1307,9 @@ void checkMsrWhitelist()
 		{
 			it = currentWhitelist.find(reg);
 			if (it != currentWhitelist.end())
+			{
 				currentWhitelist.erase(it);
+			}
 		}
 		msrfile.close();
 		
@@ -1252,7 +1317,9 @@ void checkMsrWhitelist()
 		{
 			std::cerr << "\n# MISSING REGISTERS IN "<< whitelistName <<"\n\t# MSR # Write Mask\n";
 			for (std::pair<const uint64_t,uint64_t>& x: currentWhitelist)
+			{
 				std::cerr << std::hex << "\t0x"<< x.first << "\t0x" << x.second << std::endl;
+			}
 		}
 	}
 	std::cerr << std::endl;
@@ -1267,9 +1334,13 @@ int main(int argc, char **argv)
 	{
 		std::string arg = argv[i];
 		if (arg == "-r")
+		{
 			restore = true;
+		}
 		else if (arg == "-t")
+		{
 			detailedInfo = true;
+		}
 		else
 		{
 			std::cerr << "Utility prints information about the system topology and HW knobs ranges\n"
@@ -1285,32 +1356,47 @@ int main(int argc, char **argv)
 	status = USING_MSR;
 		#ifdef HAVE_MSR_CORE_H
 		if (init_msr())
+		{
 			std::cerr << "LIBMSR ERROR: Unable to initialize\n";
+		}
 		#endif
 	#elif defined HAVE_X86_ADAPT_H
 	status = USING_ADAPT;
 	if (x86_adapt_init())
+	{
 		std::cerr << "X86ADAPT ERROR: Unable to initialize\n";
+	}
 	#elif defined HAVE_GEOPM_H
 	status = USING_GEOPM;
 	#endif
 	
 	#ifdef HAVE_E_SMI_E_SMI_H
 	if (esmi_init() != ESMI_SUCCESS)
+	{
 		std::cerr << "ESMI ERROR: Unable to initialize\n";
+	}
 	#endif
 	
 	#ifdef HAVE_NVML_H
 	nvmlInit();
+	if (nvmlInit() != NVML_SUCCESS)
+	{
+		std::cerr << "NVML ERROR: Unable to initialize\n";
+	}
 	#endif
 	
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	rsmi_init(0);
+	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	{
+		std::cerr << "ROCm SMI: Unable to initialize\n";
+	}
 	#endif
 
 
 	if (status == USING_MSR)
+	{
 		checkMsrWhitelist();
+	}
 
 	bool systemInTheDefaultSettings = true;
 	timespec modifTime;
