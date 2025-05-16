@@ -235,7 +235,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     {
         meric::HWMON::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, double>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::HWMON>;
         printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON));
     }
