@@ -17,6 +17,8 @@
 #include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/rocmwrapper.h"
 #include "../wrapper/hdeemwrapper.h"
+#include "../wrapper/hwmonwrapper.h"
+
 #include "../basis/cpu_optimisations.h"
 
 
@@ -70,6 +72,7 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels)
 template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, char ***);
 template static void measureEnergy<meric::RAPL, unsigned long long int>(size_t *, uint64_t **, char ***);
 template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, char ***);
+template static void measureEnergy<meric::HWMON, unsigned long long int>(size_t *, uint64_t **, char ***);
 template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, char ***);
 template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, char ***);
 
@@ -82,6 +85,7 @@ template static void close<meric::A64FX>();
 template static void close<meric::RAPL>();
 template static void close<meric::ROCM>();
 template static void close<meric::HDEEM>();
+template static void close<meric::HWMON>();
 template <>
 void close<meric::NVML>()
 {
@@ -226,6 +230,15 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
 #endif
     }
+
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON)))
+    {
+        meric::HWMON::init(is_detailed);
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, double>;
+        enabled_domains->closeFns[index] = close<meric::HWMON>;
+        printf("[INFO]: Domain %s is init [OK]\n", printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON));
+    }
 }
 
 static const char *printDomainName(unsigned int value)
@@ -246,6 +259,9 @@ static const char *printDomainName(unsigned int value)
         break;
     case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
         return "HDEEM";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+        return "HWMON";
         break;
     case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END:
         return "END";
@@ -496,6 +512,14 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
                         begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
                         (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j], "");
                     break;
+
+                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+                    cumulative = 0;
+                    result->domain_data[i].energy_per_counter[j] = meric::HWMON::getResultValue(
+                        begin->domain_data[i].counter_value[j], end->domain_data[i].counter_value[j],
+                        (end->id - begin->id), cumulative, begin->domain_data[i].counter_name[j]);
+                    break;
+
                 default:
                     fprintf(stderr, "[ERROR]: Unknown domain ID %d\n", begin->domain_data[i].domain_id);
                 }
@@ -539,6 +563,10 @@ char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains)
         if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM)))
         {
             buffer += "HDEEM, ";
+        }
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON)))
+        {
+            buffer += "HWMON, ";
         }
     }
 

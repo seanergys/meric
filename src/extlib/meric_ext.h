@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
 
-#define EXTLIB_NUM_DOMAINS 5  // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#define EXTLIB_NUM_DOMAINS 6  // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 struct ExtlibEnergyTimeStamp
 {
     double id; // Timestamp identifier
@@ -38,13 +38,14 @@ typedef struct ExtlibEnergy
 {
     enum Domains  // TODO HDEEM-C vs HDEEM-S <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     {
-        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0,      // 000000 No Domains Selected
-        EXTLIB_ENERGY_DOMAIN_A64FX        = 1 << 0, // 000001
-        EXTLIB_ENERGY_DOMAIN_RAPL         = 1 << 1, // 000010
-        EXTLIB_ENERGY_DOMAIN_NVML         = 1 << 2, // 000100
-        EXTLIB_ENERGY_DOMAIN_ROCM         = 1 << 3, // 001000
-        EXTLIB_ENERGY_DOMAIN_HDEEM        = 1 << 4, // 010000
-        EXTLIB_ENERGY_DOMAIN_END          = 1 << 5  // 100000 END of Domains.
+        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0,      // 0000000 No Domains Selected
+        EXTLIB_ENERGY_DOMAIN_A64FX        = 1 << 0, // 0000001
+        EXTLIB_ENERGY_DOMAIN_RAPL         = 1 << 1, // 0000010
+        EXTLIB_ENERGY_DOMAIN_NVML         = 1 << 2, // 0000100
+        EXTLIB_ENERGY_DOMAIN_ROCM         = 1 << 3, // 0001000
+        EXTLIB_ENERGY_DOMAIN_HDEEM        = 1 << 4, // 0010000
+        EXTLIB_ENERGY_DOMAIN_HWMON        = 1 << 5, // 0100000
+        EXTLIB_ENERGY_DOMAIN_END          = 1 << 6  // 1000000 END of Domains.
     };
     unsigned int value;
 
