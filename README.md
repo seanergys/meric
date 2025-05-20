@@ -609,6 +609,9 @@ The application can be any user-provided program; however, if the user provides 
 - `stop`: Sends the SIGTERM signal to stop the `mericStatic` commands.
 - `eval`: Reads all dump files and aggregates total energy consumption.
 
+> ⚠️ **Warning:** The `start`, `stop`, and `eval` commands must be executed **only once per node**, regardless of how many tasks are requested per node. Please see the example use-cases related to multi-host multi-task execution.
+
+
 <!-- 
 ### mericStatic Parameters
 
@@ -636,7 +639,7 @@ By default, `mericStatic` creates a folder named `mericStaticMeasurements` and s
 
 #### **Program Measurement**
 
-In this setup, we measure RAPL and NVML energy consumption for `sleep 5`.
+In this setup, we measure RAPL and NVML energy consumption for `sleep 5` for a single node.
 
 ```
 mericStatic -e RAPL,NVML -- sleep 5
@@ -710,25 +713,66 @@ So far we've used a single host, but `mericStatic` can also be used by the job s
 **Executing for a program and evaluating the result**
 
 ```
-$ slurm --overlap ./mericStatic -e RAPL,NVML -- ./application [application parameters]
+$ srun ./mericStatic -e RAPL,NVML -- ./application [application parameters]
 $ ./mericStatic -- eval
 ```
 
 **Executing for a program, early termination and result evaluation**
 
 ```
-$ slurm --overlap ./mericStatic -e RAPL,NVML -- ./application [application parameters] &
-$ slurm ./mericStatic -- stop
+$ srun --overlap ./mericStatic -e RAPL,NVML -- ./application [application parameters] &
+$ srun ./mericStatic -- stop
 $ ./mericStatic -- eval
 ```
+Note that `--overlap` is slurm specific, allowing to execute other srun commands simultaniously, with this we could issue `stop`
 
 **Long-run start, stop, and evaluation**
 
 ```
-$ slurm --overlap ./mericStatic -e RAPL,NVML -- start &
-/////////////////// after some time ///////////////////
-$ slurm ./mericStatic -- stop
+$ srun --overlap ./mericStatic -e RAPL,NVML -- start &
+------------------ after some time ------------------
+$ srun ./mericStatic -- stop
 $ ./mericStatic -- eval
+```
+
+**Real Use-Case for Multi-Host Multi-Task Execution**
+
+Following is an sbatch script for a dummy benchmark. Note that in the benchmark we allocate 16 nodes with 8 gpus where each to create 8 instances of the program and each to have 16 cpus.
+
+Below example is written both for slurm and srun. based on the slurm configurations, sometimes it is not possible to request single instance per node with --overlap. In such cases one can use mpirun for that.
+```
+#!/bin/bash
+#SBATCH --account OPEN-XX-YY
+#SBATCH --job-name namd_gpu_1N_test
+#SBATCH --partition qgpu
+#SBATCH --nodes 16
+#SBATCH --ntasks-per-node 8
+#SBATCH --cpus-per-task 16
+#SBATCH --gpus-per-node 8
+#SBATCH --time 00:20:00
+#SBATCH --output=out-%x.%j.txt
+
+#SBATCH --mail-user=john_doe@gmail.com
+#SBATCH --mail-type=BEGIN,END,FAIL
+
+nnodes=16
+
+
+mkdir mericStaticMeasurements
+
+# srun --overlap --ntasks-per-node 1 --nodes $nnodes /path-to/mericStatic -e RAPL,NVML -o ./mericStaticMeasurements/$nnodes -- start &
+mpirun -np $nnodes --map-by ppr:1:node /path-to/mericStatic -e RAPL,NVML -o ./mericStaticMeasurements/$nnodes -- start &
+
+srun /path-to/benchmark [params]
+
+mpirun -np $nnodes --map-by ppr:1:node /path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- stop
+# srun  --ntasks-per-node 1 --nodes 4 /path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- stop
+
+/path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- eval
+
+out_file="./out-${SLURM_JOB_NAME}.${SLURM_JOB_ID}.txt"
+mv "$out_file" "mericStaticMeasurements/$nnodes/$out_file"
+
 ```
 
 --------------------------------------------------------------------------------
