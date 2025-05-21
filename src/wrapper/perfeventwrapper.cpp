@@ -441,7 +441,7 @@ void PERFEVENT::getCounterValues(std::map<std::string, unsigned long long int> &
 			size_t suffixStartPos = iterator->first.find_last_of('_');
 			counterBaseName = iterator->first.substr(0, suffixStartPos);
 
-			std::unordered_map<const std::string, int>::iterator counterMultipliersIterator = PERFEVENT_COUNTERS::counterMultipliers.find(counterBaseName);
+			std::unordered_map<std::string, int>::iterator counterMultipliersIterator = PERFEVENT_COUNTERS::counterMultipliers.find(counterBaseName);
 			if(counterMultipliersIterator != PERFEVENT_COUNTERS::counterMultipliers.end())
 			{
 				counterMultiplier = counterMultipliersIterator->second;
