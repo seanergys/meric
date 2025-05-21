@@ -631,7 +631,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 //				unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][coreIdx];
 //				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
 //		
-//				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = (cyclesAMXActive/cycles)*100;
+//				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = cycles ? (cyclesAMXActive/cycles)*100 : 0;
 //			}
 
 			unsigned long long int instructionsScalarFpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP][coreIdx];
@@ -675,39 +675,29 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 //
 //		ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
 //
-//		if(detailedMode)
+//		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
 //		{
-//			for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
-//			{
-//				int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
+//			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
 //
+//			unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
+//			unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
+//
+//			if(detailedMode)
+//			{
 //				std::ostringstream IMCidxFill;
 //				IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
 //				std::string suffixIMCidx = "_" + IMCidxFill.str();
-//
-//				unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
-//				unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
 //
 //				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixIMCidx+" [B/s]"] = DRAMbytesRead/runtime;
 //				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixIMCidx+" [B/s]"] = DRAMbytesWrite/runtime;
 //				ratios["CPU_DRAM_BANDWIDTH"+suffixIMCidx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
 //			}
-//		}
-//		else
-//		{
-//			unsigned long long int DRAMbytesReadPerSocket = 0;
-//			unsigned long long int DRAMbytesWritePerSocket = 0;
-//			for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
+//			else
 //			{
-//				int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
-//
-//				DRAMbytesReadPerSocket += counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
-//				DRAMbytesWritePerSocket += counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
+//				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] += DRAMbytesRead/runtime;
+//				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] += DRAMbytesWrite/runtime;
+//				ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
 //			}
-//
-//			ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] = DRAMbytesReadPerSocket/runtime;
-//			ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] = DRAMbytesWritePerSocket/runtime;
-//			ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] = (DRAMbytesReadPerSocket + DRAMbytesWritePerSocket)/runtime;
 //		}
 	}
 	#endif
