@@ -157,15 +157,17 @@ struct EnergyRecords<HWMON_S>
 		HWMON::fillTime(HWMON_S::endTime);
 		HWMON::stop(HWMON_S::endTime);
 
+		double duration = (HWMON_S::endTime.tv_sec - HWMON_S::startTime.tv_sec);
+
 		std::vector<double> energy(HWMON::vrSensorLabel.size(), 0);
 		std::vector<double> minWatts(HWMON::vrSensorLabel.size(), 0);
 		std::vector<double> maxWatts(HWMON::vrSensorLabel.size(), 0);
 
 		size_t firstBlade, lastBlade, firstVR, lastVR;
-		HWMON::getData(HWMON_S::startTime.tv_nsec, (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec),
+		HWMON::getData(HWMON_S::startTime.tv_sec, duration,
 					   &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
 
-		std::cout << "Runtime [s] = " << std::fixed << std::setprecision(3) << (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec) / 1000000.0 << "\n";
+		std::cout << "Runtime [s] = " << std::fixed << duration << "\n";
 		double summary = 0.0;
 		for (auto &&i : energy)
 		{
