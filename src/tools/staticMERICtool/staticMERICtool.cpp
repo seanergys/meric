@@ -21,64 +21,77 @@ int job_id; // id specific to the execution.
 //----------------------------------------------------------------------------//
 
 template <typename Tmode>
-struct EnergyRecords {
-    static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
-    static std::vector<double> recordTime;
+struct EnergyRecords
+{
+	static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
+	static std::vector<double> recordTime;
 
-    static void printValues(bool verbose) {
-        if (recordTime.size() < 2) {
-            std::cerr << "ERROR missing samples\n";
-            exit(2);
-        }
+	static void printValues(bool verbose)
+	{
+		if (recordTime.size() < 2)
+		{
+			std::cerr << "ERROR missing samples\n";
+			exit(2);
+		}
 
-        std::map<std::string, double> record;
-        for (auto& kv : recordEnergy[0]) {
-            record[kv.first] = 0;
-        }
+		std::map<std::string, double> record;
+		for (auto &kv : recordEnergy[0])
+		{
+			record[kv.first] = 0;
+		}
 
-        double summary = 0.0;
-        double runtime = recordTime.back() - recordTime[0];
+		double summary = 0.0;
+		double runtime = recordTime.back() - recordTime[0];
 
-        for (int i = 1; i < recordEnergy.size(); i++) {
-            for (auto& kv : record) {
-                int cumulative = 0;
-                double delta = Tmode::getResultValue(
-                    recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first], 
-                    recordTime[i - 1] - recordTime[i], cumulative, kv.first
-                );
+		for (int i = 1; i < recordEnergy.size(); i++)
+		{
+			for (auto &kv : record)
+			{
+				int cumulative = 0;
+				double delta = Tmode::getResultValue(
+					recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first],
+					recordTime[i - 1] - recordTime[i], cumulative, kv.first);
 				record[kv.first] += delta;
-                if (cumulative > 0) {
-                    summary += delta;
-                }
-            }
-        }
-        summary += POWER_BASELINE * runtime;
+				if (cumulative > 0)
+				{
+					summary += delta;
+				}
+			}
+		}
+		summary += POWER_BASELINE * runtime;
 
-        if (verbose) {
-            std::cout << "Runtime [s] = "<< std::fixed << runtime << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+		if (verbose)
+		{
+			std::cout << "Runtime [s] = " << std::fixed << runtime << std::endl; // TODO: prevent scientific format, that's with e234 etc.
 
-            // Print each counter value
-            for (auto& kv : recordEnergy[0]) {
-                std::cout << Tmode::getCounterLabel(kv.first) << " = " <<  std::fixed << record[kv.first] << std::endl;
-            }
-            if (Tmode::getSummaryCounterName() != "") {
-                std::cout << std::endl <<  std::fixed << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << std::fixed << summary << std::endl;
-				std::cout << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = "  << std::fixed << (summary / 3600.0) << "\n\n";
-            }
-        } else {
-            std::cout << std::fixed << summary << std::endl;	// TODO: prevent scientific format, that's with e234 etc.
-        }
-    }
+			// Print each counter value
+			for (auto &kv : recordEnergy[0])
+			{
+				std::cout << Tmode::getCounterLabel(kv.first) << " = " << std::fixed << std::setprecision(3) << record[kv.first] << std::endl;
+			}
+			if (Tmode::getSummaryCounterName() != "")
+			{
+				std::cout << std::endl
+						  << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
+				std::cout << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+			}
+		}
+		else
+		{
+			std::cout << std::fixed << std::setprecision(3) << summary << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+		}
+	}
 
-    static void clear() {
-        recordEnergy.clear();
-        recordTime.clear();
-    }
+	static void clear()
+	{
+		recordEnergy.clear();
+		recordTime.clear();
+	}
 
-    static std::vector<std::map<std::string, unsigned long long int>> getData() {
-        return recordEnergy;
-    }
-
+	static std::vector<std::map<std::string, unsigned long long int>> getData()
+	{
+		return recordEnergy;
+	}
 };
 
 template <typename Tmode>
@@ -87,7 +100,6 @@ std::vector<std::map<std::string, unsigned long long int>> EnergyRecords<Tmode>:
 template <typename Tmode>
 std::vector<double> EnergyRecords<Tmode>::recordTime;
 
-
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
@@ -95,22 +107,77 @@ std::vector<double> EnergyRecords<Tmode>::recordTime;
 template <typename Tmode>
 void measureEnergy(bool verbose, double timeNow = 0.0)
 {
-    if (EnergyRecords<Tmode>::recordEnergy.empty()) {
-        Tmode::init(true);
-    }
+	if (EnergyRecords<Tmode>::recordEnergy.empty())
+	{
+		Tmode::init(true);
+	}
 
-    if (timeNow == 0.0) {
-        struct timespec timestamp;
-        clock_gettime(CLOCK_REALTIME, &timestamp);
-        timeNow = mutils::timeToDouble(timestamp);
-    }
+	if (timeNow == 0.0)
+	{
+		struct timespec timestamp;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
+		timeNow = mutils::timeToDouble(timestamp);
+	}
 
-    std::map<std::string, unsigned long long int> energyNow;
-    Tmode::getCounterValues(energyNow);
+	std::map<std::string, unsigned long long int> energyNow;
+	Tmode::getCounterValues(energyNow);
 
-    EnergyRecords<Tmode>::recordEnergy.push_back(energyNow);
-    EnergyRecords<Tmode>::recordTime.push_back(timeNow);
+	EnergyRecords<Tmode>::recordEnergy.push_back(energyNow);
+	EnergyRecords<Tmode>::recordTime.push_back(timeNow);
 }
+
+struct HWMON_S
+{
+	static timespec startTime; // this is dummy.
+	static timespec endTime;   // this is dummy.
+}; // dummy class to seperate from counting.
+
+timespec HWMON_S::startTime = {0, 0};
+timespec HWMON_S::endTime = {0, 0};
+
+// following will be called many times but init only once.
+template <>
+void measureEnergy<HWMON_S>(bool verbose, double timeNow)
+{
+	static bool is_init = false;
+	if (is_init == false)
+	{
+		is_init = true;
+		HWMON::init(true);
+		HWMON::fillTime(HWMON_S::startTime);
+		HWMON::start(HWMON_S::startTime);
+	}
+}
+
+template <>
+struct EnergyRecords<HWMON_S>
+{
+	static void printValues(bool verbose)
+	{
+		HWMON::fillTime(HWMON_S::endTime);
+		HWMON::stop(HWMON_S::endTime);
+
+		std::vector<double> energy(HWMON::vrSensorLabel.size(), 0);
+		std::vector<double> minWatts(HWMON::vrSensorLabel.size(), 0);
+		std::vector<double> maxWatts(HWMON::vrSensorLabel.size(), 0);
+
+		size_t firstBlade, lastBlade, firstVR, lastVR;
+		HWMON::getData(HWMON_S::startTime.tv_nsec, (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec),
+					   &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
+
+		std::cout << "Runtime [s] = " << std::fixed << std::setprecision(3) << (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec) / 1000000.0 << "\n";
+		double summary = 0.0;
+		for (auto &&i : energy)
+		{
+			summary += i;
+		}
+		std::cout << std::endl
+						  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
+				std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+
+		HWMON::close();
+	}
+};
 
 void printHelp()
 {
@@ -167,7 +234,7 @@ void signalHandler(int signal)
 		if (child_pid > 0)
 		{
 			kill(child_pid, SIGINT); // Forward signal to child process
-			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+									 // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
 		{
@@ -183,7 +250,7 @@ void signalHandler(int signal)
 		if (child_pid > 0)
 		{
 			kill(child_pid, SIGTERM); // Forward signal to child process
-			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+									  // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
 		}
 		else
 		{
@@ -517,10 +584,15 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<A64FX>);
 				prints.push_back(EnergyRecords<A64FX>::printValues);
 			}
-			else if (token == "HWMON")
+			else if (token == "HWMON_C") // counting mode
 			{
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(EnergyRecords<HWMON>::printValues);
+			}
+			else if (token == "HWMON_S") // sampling mode for grace11
+			{
+				measurements.push_back(&measureEnergy<HWMON_S>);
+				prints.push_back(EnergyRecords<HWMON_S>::printValues);
 			}
 			else
 			{
@@ -690,19 +762,19 @@ int main(int argc, char **argv)
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
 				// std::cout << filepath << "\n";
 			}
-			std::cout << "Max Runtime [s] = " << std::fixed << maxRuntime << "\n";
+			std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
 			// std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
-				if(entry.second == 0.0) continue;
-				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << entry.second << "\n";
+				if (entry.second == 0.0)
+					continue;
+				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << std::setprecision(3) << entry.second << "\n";
 				totalSum += entry.second;
 			}
 			std::cout << "\n";
-			std::cout << "Total Energy consumption [J] = " << std::fixed << totalSum << "\n";
-			std::cout << "Total Energy consumption [Wh] = " << std::fixed << (totalSum / 3600.0) << "\n";
-
+			std::cout << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n";
+			std::cout << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
 		}
 	}
 
@@ -742,31 +814,31 @@ double extractMaxRuntime(const std::string &filepath)
 
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
 {
-    std::ifstream file(filepath);
-    std::string line;
+	std::ifstream file(filepath);
+	std::string line;
 
-    std::map<std::string, double> energyValues = {
-        {"RAPL", 0.0},
-        {"NVML", 0.0},
-        {"A64FX", 0.0},
-        {"HWMON", 0.0},
+	std::map<std::string, double> energyValues = {
+		{"RAPL", 0.0},
+		{"NVML", 0.0},
+		{"A64FX", 0.0},
+		{"HWMON", 0.0},
 		{"ROCM", 0.0},
-    };
+	};
 
-    std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
-    std::smatch match;
+	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
+	std::smatch match;
 
-    while (std::getline(file, line))
-    {
-        if (std::regex_search(line, match, pattern))
-        {
-            std::string source = match[1];
-            double value = std::stod(match[2]);
-            energyValues[source] = value;
-        }
-    }
+	while (std::getline(file, line))
+	{
+		if (std::regex_search(line, match, pattern))
+		{
+			std::string source = match[1];
+			double value = std::stod(match[2]);
+			energyValues[source] = value;
+		}
+	}
 
-    return energyValues;
+	return energyValues;
 }
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
