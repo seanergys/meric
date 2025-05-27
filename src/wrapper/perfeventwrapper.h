@@ -33,6 +33,7 @@ public:
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios);
 
 private:
+	static bool getParanoidLevel(int& paranoidLevel);
 	static void start();
 	static __u32 getPMUtype(std::string PMUname);
 	static long openCounter(__u32 type, __u64 config, int cpu);

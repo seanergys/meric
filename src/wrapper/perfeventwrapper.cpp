@@ -33,6 +33,21 @@ std::map<const std::string, long> PERFEVENT::countersFd;
 
 void PERFEVENT::init(bool detailed)
 {
+	int paranoidLevel;
+	if(getParanoidLevel(paranoidLevel))
+	{
+		if(paranoidLevel > 0)
+		{
+			std::cerr << "PERFEVENT error - perf_event_paranoid value (" << paranoidLevel << ")" << " is greater than 0 - monitoring of performance counters is not available" << "\n";
+			return;
+		}
+	}
+	else
+	{
+		std::cerr << "PERFEVENT error - failed to obtain perf_event_paranoid value - monitoring of performance counters is not available" << "\n";
+		return;
+	}
+
 	detailedMode = detailed;
 
 	#ifdef _AMD_
@@ -208,6 +223,40 @@ void PERFEVENT::init(bool detailed)
 	#endif
 
 	start();
+}
+
+bool PERFEVENT::getParanoidLevel(int& paranoidLevel)
+{
+	std::string pathToPerfEventParanoidFile = "/proc/sys/kernel/perf_event_paranoid";
+
+	int tmpParanoidLevel = 2;
+	
+	bool paranoidLevelObtained = false;
+
+	std::ifstream perfEventParanoidFile;
+	perfEventParanoidFile.open(pathToPerfEventParanoidFile);
+	if(perfEventParanoidFile.is_open())
+	{
+		if(perfEventParanoidFile >> tmpParanoidLevel)
+		{
+			paranoidLevelObtained = true;
+		}
+		else
+		{
+			std::cerr << "PERFEVENT error - failed to read file " << pathToPerfEventParanoidFile << "\n";
+			tmpParanoidLevel = 2;
+		}
+
+		perfEventParanoidFile.close();
+	}
+	else
+	{
+		std::cerr << "PERFEVENT error - failed to open file " << pathToPerfEventParanoidFile << "\n";
+	}
+
+	paranoidLevel = tmpParanoidLevel;
+
+	return paranoidLevelObtained;
 }
 
 void PERFEVENT::close()
