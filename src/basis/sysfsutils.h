@@ -25,7 +25,6 @@ bool IterateDir(const std::string &path, F &&f)
 	{
 		f(pDirEnt->d_name);
 	}
-  
 	closedir(pDir);
 	return true;
 }
