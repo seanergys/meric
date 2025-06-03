@@ -72,8 +72,8 @@ struct EnergyRecords
 			if (Tmode::getSummaryCounterName() != "")
 			{
 				std::cout << std::endl
-						  << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
-				std::cout << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+				          << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << summary << "\n"
+				          << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
 			}
 		}
 		else
@@ -164,8 +164,7 @@ struct EnergyRecords<HWMON_S>
 		std::vector<double> maxWatts(HWMON::vrSensorLabel.size(), 0);
 
 		size_t firstBlade, lastBlade, firstVR, lastVR;
-		HWMON::getData(HWMON_S::startTime.tv_sec, duration,
-					   &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
+		HWMON::getData(HWMON_S::startTime.tv_sec, duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
 
 		std::cout << "Runtime [s] = " << std::fixed << duration << "\n";
 		double summary = 0.0;
@@ -173,9 +172,8 @@ struct EnergyRecords<HWMON_S>
 		{
 			summary += i;
 		}
-		std::cout << std::endl
-						  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
-				std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+		std::cout << '\n' << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << '\n'
+		          << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
 
 		HWMON::close();
 	}
@@ -232,11 +230,11 @@ void signalHandler(int signal)
 	if (signal == SIGINT)
 	{
 		// write(STDOUT_FILENO, "Interrupt signal (Ctrl+C) received\n", 36);
-
 		if (child_pid > 0)
 		{
-			kill(child_pid, SIGINT); // Forward signal to child process
-									 // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// Forward signal to child process
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			kill(child_pid, SIGINT);
 		}
 		else
 		{
@@ -248,11 +246,11 @@ void signalHandler(int signal)
 	else if (signal == SIGTERM)
 	{
 		// write(STDOUT_FILENO, "Termination signal received.\n", 30);
-
 		if (child_pid > 0)
 		{
-			kill(child_pid, SIGTERM); // Forward signal to child process
-									  // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// Forward signal to child process
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			kill(child_pid, SIGTERM);
 		}
 		else
 		{
@@ -278,11 +276,13 @@ int main(int argc, char **argv)
 	std::string applicationCommand = "";
 	std::string outputDirectory = "mericStaticMeasurements";
 
-	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
-																					 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
-																												  : "0";
+	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") 
+	                                                     ? std::getenv("PBS_JOBID")    : std::getenv("FLUX_JOB_ID") 
+	                                                     ? std::getenv("FLUX_JOB_ID")  : "0";
 	if (job_id_env)
+	{
 		job_id = std::atoi(job_id_env);
+	}
 	printf("job_id :%d\n", job_id);
 
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
@@ -542,9 +542,13 @@ int main(int argc, char **argv)
 		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
 		outfile.open(filename, std::ios::out | std::ios::trunc);
 		if (outfile.is_open())
+		{
 			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
+		}
 		else
+		{
 			std::cerr << "Error creating the file:" << filename << "\n";
+		}
 	}
 
 	std::vector<void (*)(bool, double)> measurements;
@@ -733,16 +737,19 @@ int main(int argc, char **argv)
 	else if (toolMode == TOOL_MODE::STOP && !applicationCommand.empty())
 	{
 		if (std::system(applicationCommand.c_str()) != 0)
+		{
 			std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+		}
 	}
 	else if (toolMode == TOOL_MODE::EVAL)
 	{
 
 		if (isJobRunning("mericStatic"))
+		{
 			std::cout << "Job is not yet completed!\n";
+		}
 		else
 		{
-
 			// check if all files are there, if so aggregate the total energy
 			std::string prefix = "mericStatic_" + std::to_string(job_id);
 			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
@@ -758,7 +765,9 @@ int main(int argc, char **argv)
 			{
 				auto energies = extractEnergyConsumption(filepath);
 				for (const auto &entry : energies)
+				{
 					totalEnergy[entry.first] += entry.second;
+				}
 
 				double localRuntime = extractMaxRuntime(filepath);
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
@@ -770,13 +779,15 @@ int main(int argc, char **argv)
 			for (const auto &entry : totalEnergy)
 			{
 				if (entry.second == 0.0)
+				{
 					continue;
+				}
 				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << std::setprecision(3) << entry.second << "\n";
 				totalSum += entry.second;
 			}
-			std::cout << "\n";
-			std::cout << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n";
-			std::cout << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
+			std::cout << "\n"
+			          << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n"
+			          << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
 		}
 	}
 
@@ -848,7 +859,9 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	std::vector<std::string> result;
 	DIR *dir = opendir(directory.c_str());
 	if (!dir)
+	{
 		return result;
+	}
 
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != nullptr)
@@ -862,6 +875,7 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	closedir(dir);
 	return result;
 }
+
 bool isJobRunning(const std::string &jobName)
 {
 	std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
