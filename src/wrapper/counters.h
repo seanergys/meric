@@ -153,7 +153,7 @@ namespace OCC_COUNTERS {
  * PWRVDN  = Power consumption for this Processor's Vdn (nest) (calculated from AVSBus readings) (1ms)
  * PWRMEM  = Power consumption for Memory for this Processor read from APSS (500us)
  * PWRAPSSCH0 - PWRAPSSCH15 = Power Provided by APSS channel x (where x=0...15) (500us)
- *	APSS – Analog Power Subsystem Sweep, provide real time power measurements of voltage rails.
+ *	APSS - Analog Power Subsystem Sweep, provide real time power measurements of voltage rails.
  **/
 static std::map<const std::string, std::string> counterLabel = {
 	{ "PWRSYS",  "Energy consumption [J]" },
@@ -297,13 +297,13 @@ struct CounterDef_t {
 	};
 
 	enum Flags_t {
-		FLAG_NONE_BIT 		  = 0,
+		FLAG_NONE_BIT         = 0,
 		FLAG_ACCUMULATIVE_BIT = 1 << 0
 	};
 
 	std::string label;
 	std::string unit;
-	Domain_t 	domain;
+	Domain_t    domain;
 	uint32_t    flags;
 	uint32_t    type;
 	uint64_t    config;

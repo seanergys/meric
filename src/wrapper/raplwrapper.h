@@ -15,7 +15,7 @@
 	#include <geopm/PlatformTopo.hpp>
 	#include <geopm/PlatformIO.hpp>
 	#include <geopm_hash.h>
-    #include <geopm_field.h>
+	#include <geopm_field.h>
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 

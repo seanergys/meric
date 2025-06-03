@@ -76,7 +76,7 @@ static std::map <const std::string, mode> modeString = {
 	{"HWMON-S", MODE_HWMON_SAMPLES}
 };
 
-enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER};										//TODO remove this enum
+enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER}; //TODO remove this enum
 
 enum DVFS_WAY {
 	NO_DVFS = 0,   // it is not possible to control the CPU core frequency
@@ -246,7 +246,6 @@ private:
 	static uint currentGPUMemFreq; //Hz
 	static uint currentGPUSMFreq;  //Hz
 #endif
-
 	static systemLimits defaultSettings;
 	static bool usedDVFS;
 	static bool usedUFS;
