@@ -171,11 +171,11 @@ struct EnergyRecords<HWMON_S>
 		double summary = 0.0;
 		for (auto &&i : energy)
 		{
-			summary += i;
+			summary += (i / (lastVR - firstVR) * duration);
 		}
 		std::cout << std::endl
-						  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
-				std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+				  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
+		std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
 
 		HWMON::close();
 	}
@@ -742,7 +742,6 @@ int main(int argc, char **argv)
 			std::cout << "Job is not yet completed!\n";
 		else
 		{
-
 			// check if all files are there, if so aggregate the total energy
 			std::string prefix = "mericStatic_" + std::to_string(job_id);
 			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
