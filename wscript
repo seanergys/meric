@@ -1,6 +1,7 @@
 
 from waflib import Logs
 import os, shutil, copy, re, platform
+import subprocess
 
 def getCPUvendor():
 	vendor = ""
@@ -284,13 +285,40 @@ def build(ctx):
 
 	#MERICext
 	ctx.stlib(
-		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
+		source       = ctx.path.ant_glob('src/extlib/c/*.cpp'),
 		target       = "meric_ext",
 		use          = "basis",
 #		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/lib/"
 	)
-	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
+	shutil.copy("src/extlib/c/meric_ext.h" , ctx.path.abspath()+"/include/")
+
+
+
+	venv = ctx.path.find_dir('src/extlib/py').make_node('.venv').abspath()
+	if not os.path.exists(venv):
+		ctx.exec_command(f'python3 -m venv {venv}')
+	ctx.exec_command(
+		f'{venv}/bin/pip install -r {ctx.path.find_node("src/extlib/py/requirements.txt").abspath()}'
+	)
+	python = f'{venv}/bin/python'
+	includes = [
+		i[2:] for i in subprocess.check_output([python, '-m', 'pybind11', '--includes'])
+		.decode().split() if i.startswith('-I')
+	]
+	ext = subprocess.check_output([
+		python, '-c',
+		'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))'
+	]).decode().strip()
+
+	ctx.shlib(
+		source=ctx.path.find_dir('src/extlib/py').ant_glob('*.cpp'),
+		use="basis",
+		target='mericpy',
+		install_path=ctx.path.abspath() + '/lib',
+		cxxflags=['-std=c++11', '-fPIC'],
+		includes=includes,
+	)
 	
 	if ctx.env.PREFIX != ctx.path.abspath():
 		#INCLUDE
@@ -379,16 +407,6 @@ def build(ctx):
 		use          = "basis",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
-	)
-	
-	#MERICext
-	ctx.stlib(
-		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
-		target       = "mericext",
-		use          = "basis",
-#		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
-		install_path = ctx.path.abspath()+"/lib/",
-
 	)
 
 ################################################################################

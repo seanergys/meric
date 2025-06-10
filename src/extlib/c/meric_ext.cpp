@@ -9,17 +9,17 @@
 #include <stdbool.h>
 
 #include "meric_ext.h"
-#include "../basis/utils.h"
-#include "../basis/cpu_optimisations.h"
-#include "../wrapper/environmentwrapper.h"
-#include "../wrapper/a64fxwrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/nvmlwrapper.h"
-#include "../wrapper/rocmwrapper.h"
-#include "../wrapper/hdeemwrapper.h"
-#include "../wrapper/hwmonwrapper.h"
+#include "../../basis/utils.h"
+#include "../../basis/cpu_optimisations.h"
+#include "../../wrapper/environmentwrapper.h"
+#include "../../wrapper/a64fxwrapper.h"
+#include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/nvmlwrapper.h"
+#include "../../wrapper/rocmwrapper.h"
+#include "../../wrapper/hdeemwrapper.h"
+#include "../../wrapper/hwmonwrapper.h"
 
-#include "../basis/cpu_optimisations.h"
+#include "../../basis/cpu_optimisations.h"
 
 
 /*
