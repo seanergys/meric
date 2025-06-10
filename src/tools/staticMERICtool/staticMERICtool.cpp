@@ -194,7 +194,7 @@ void printHelp()
 			  << "\t mericStatic parameters:\n"
 			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
-			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
+			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON-C, HWMON-S, or A64FX\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-t = #OpenMP threads\n"
@@ -586,12 +586,12 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<A64FX>);
 				prints.push_back(EnergyRecords<A64FX>::printValues);
 			}
-			else if (token == "HWMON_C") // counting mode
+			else if (token == "HWMON-C") // counting mode
 			{
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(EnergyRecords<HWMON>::printValues);
 			}
-			else if (token == "HWMON_S") // sampling mode for grace11
+			else if (token == "HWMON-S") // sampling mode for grace11
 			{
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
