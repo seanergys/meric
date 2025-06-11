@@ -285,21 +285,21 @@ def build(ctx):
 
 	#MERICext
 	ctx.stlib(
-		source       = ctx.path.ant_glob('src/extlib/c/*.cpp'),
+		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
 		target       = "meric_ext",
 		use          = "basis",
 #		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
 		install_path = ctx.path.abspath()+"/lib/"
 	)
-	shutil.copy("src/extlib/c/meric_ext.h" , ctx.path.abspath()+"/include/")
+	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
 
 
 
-	venv = ctx.path.find_dir('src/extlib/py').make_node('.venv').abspath()
+	venv = ctx.path.find_dir('src/python').make_node('.venv').abspath()
 	if not os.path.exists(venv):
 		ctx.exec_command(f'python3 -m venv {venv}')
 	ctx.exec_command(
-		f'{venv}/bin/pip install -r {ctx.path.find_node("src/extlib/py/requirements.txt").abspath()}'
+		f'{venv}/bin/pip install -r {ctx.path.find_node("src/python/requirements.txt").abspath()}'
 	)
 	python = f'{venv}/bin/python'
 	includes = [
@@ -310,15 +310,6 @@ def build(ctx):
 		python, '-c',
 		'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))'
 	]).decode().strip()
-
-	ctx.shlib(
-		source=ctx.path.find_dir('src/extlib/py').ant_glob('*.cpp'),
-		use="basis",
-		target='mericpy',
-		install_path=ctx.path.abspath() + '/lib',
-		cxxflags=['-std=c++11', '-fPIC'],
-		includes=includes,
-	)
 	
 	if ctx.env.PREFIX != ctx.path.abspath():
 		#INCLUDE
@@ -347,7 +338,27 @@ def build(ctx):
 			use          = "basis",
 			install_path = "${PREFIX}/lib"
 		)
-		
+
+		#MERIC-Python Wrapper
+		ctx.shlib(
+			source=ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
+				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
+				ctx.path.ant_glob('src/store/*.cpp'),
+			use="basis",
+			target='mericpy',
+			install_path="${PREFIX}/lib",
+			includes=includes,
+		)
+
+		#TIMEPROF Python Wrapper
+		ctx.shlib(
+			source       = ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + ctx.path.ant_glob('src/timeprof/*.cpp'),
+			target       = "timeprofpy",
+			use          = "basis",
+			install_path = "${PREFIX}/lib",
+			includes=includes,
+		)
+
 		#TIMEPROF
 		ctx.stlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
@@ -391,7 +402,29 @@ def build(ctx):
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
+
+	#MERIC-Python Wrapper
+	ctx.shlib(
+		source=ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
+			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
+			ctx.path.ant_glob('src/store/*.cpp'),
+		use="basis",
+		target='mericmpipy',
+		install_path="${PREFIX}/lib",
+		env          = ctx.all_envs["mpi"],
+		includes=includes,
+	)
 	
+	#TIMEPROF Python Wrapper
+	ctx.shlib(
+		source       = ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + ctx.path.ant_glob('src/timeprof/*.cpp'),
+		target       = "timeprofmpipy",
+		use          = "basis",
+		install_path = "${PREFIX}/lib",
+		env          = ctx.all_envs["mpi"],
+		includes=includes,
+	)
+
 	#TIMEPROF MPI
 	ctx.stlib(
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
