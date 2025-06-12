@@ -27,7 +27,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
  7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric#7-meric-input-parameters)
  8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric#8-content-of-test-folder-and-example-application-run)
  9. [Code dynamism investigation](https://code.it4i.cz/vys0053/meric#9-code-dynamism-investigation)
-10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric#10-meric-with-a-fortran-code)
+10. [MERIC language support](https://code.it4i.cz/vys0053/meric#10-meric-language-support)
 11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric#11-tool-for-static-tuning)
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric#12-acknowledgement)
 
@@ -578,12 +578,66 @@ done
 ```
 
 --------------------------------------------------------------------------------
-#      10] MERIC with a Fortran code                                           #
+#      10] MERIC language support                                           #
 --------------------------------------------------------------------------------
+### Fortran binding
 There are Fortran module and interface in the include directory. To instrument a Fortran application the Dyninst tool for static binary instrumentation can be used, also manual instrumentation is available.
 
 To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
-	
+t
+---
+
+### Python binding
+
+There is Python module in the `lib` directory named libmericpy.so and libmericmpipy.so.
+
+To allow MERIC manual instrumentation in your Python application, `include libmericpy` to your code. Usual `MERIC_*` calls replaced to camalCase version `libmeric.*`, i.e `MERIC_MeasureStart(..)` to `libmeric.measureStart(..)`. Provided API functions given below. Meric repository contains a code example `test/sleep_test.py` to show how the API can be used.
+
+```
+Help on module libmericpy:
+
+NAME
+    libmericpy - Python bindings for MERIC API functions
+
+FUNCTIONS
+    close(...) method of builtins.PyCapsule instance
+        close() -> None
+        
+        Close MERIC
+    
+    ignoreStart(...) method of builtins.PyCapsule instance
+        ignoreStart() -> None
+        
+        Start ignoring measurements
+    
+    ignoreStop(...) method of builtins.PyCapsule instance
+        ignoreStop() -> None
+        
+        Stop ignoring measurements
+    
+    init(...) method of builtins.PyCapsule instance
+        init() -> None
+        
+        Initialize MERIC
+    
+    measureStart(...) method of builtins.PyCapsule instance
+        measureStart(region: str) -> None
+        
+        Start measuring a region
+    
+    measureStop(...) method of builtins.PyCapsule instance
+        measureStop(region: str) -> float
+        
+        Stop measuring a region and return elapsed time
+    
+    measureStopStart(...) method of builtins.PyCapsule instance
+        measureStopStart(stop_region: str, start_region: str) -> float
+        
+        Stop one region and start another, return stop duration
+
+```
+
+
 --------------------------------------------------------------------------------
 #     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
