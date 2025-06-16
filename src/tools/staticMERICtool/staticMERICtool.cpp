@@ -159,20 +159,44 @@ struct EnergyRecords<HWMON_S>
 
 		double duration = (HWMON_S::endTime.tv_sec - HWMON_S::startTime.tv_sec) + (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec) / 1.0e9;
 
-		std::vector<double> energy(HWMON::vrSensorLabel.size(), 0);
-		std::vector<double> minWatts(HWMON::vrSensorLabel.size(), 0);
-		std::vector<double> maxWatts(HWMON::vrSensorLabel.size(), 0);
+		std::vector<double> energy(HWMON::PROBE_NUMBER, 0);
+		std::vector<double> minWatts(HWMON::PROBE_NUMBER, 0);
+		std::vector<double> maxWatts(HWMON::PROBE_NUMBER, 0);
 
 		size_t firstBlade, lastBlade, firstVR, lastVR;
 		HWMON::getData(HWMON_S::startTime.tv_sec + HWMON_S::startTime.tv_nsec / 1.0e9, duration,
 					   &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
 
 		std::cout << "Runtime [s] = " << std::fixed << duration << "\n";
+		// double summary = 0.0;
+		// for (auto &&i : energy)
+		// {
+		// 	summary += (i / (lastVR - firstVR) * duration);
+		// }
+
 		double summary = 0.0;
-		for (auto &&i : energy)
+		double avgWatts = 0.0;
+		double energyConsumption = 0.0;
+		for (unsigned int sensorID = 1; sensorID < HWMON::vrSensorLabel.size(); sensorID++)
 		{
-			summary += (i / (lastVR - firstVR) * duration);
+			if (HWMON::vrSensorLabel[sensorID].find("Grace_Power_Socket") == std::string::npos)
+				continue;
+
+			avgWatts = energy[sensorID] / (lastVR - firstVR);
+			energyConsumption = duration * avgWatts;
+			summary += energyConsumption;
+
+			// std::cout << "sensorID:" << sensorID << "\n";
+			// std::cout << "# SAMPLES - " << HWMON::getSourceLabel() << " (" << HWMON::vrSensorLabel[sensorID] << "):\n"
+			// 		  << HWMON::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision(6) << energyConsumption << '\n'
+			// 		  << "MAX power [W]" << "," << maxWatts[sensorID] << '\n'
+			// 		  << "MIN power [W]" << "," << minWatts[sensorID] << '\n'
+			// 		  << "AVG power [W]" << "," << avgWatts << '\n'
+			// 		  << "ID of first sample" << "," << firstVR << '\n'
+			// 		  << "ID of last sample" << "," << lastVR - 1 << std::endl
+			// 		  << std::endl;
 		}
+
 		std::cout << std::endl
 				  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
 		std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
