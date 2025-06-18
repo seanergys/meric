@@ -107,6 +107,10 @@ def configure(ctx):
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
 		OCCavailable = True
 		ctx.env.append_unique("DEFINES", [ "HAVE_OCC=1" ])
+
+	# check for sysfs rapl.
+	if os.access("/sys/class/powercap/intel-rapl", os.R_OK):
+		ctx.env.append_unique("DEFINES", [ "HAVE_SYSFS_RAPL=1" ])
 	
 	# check for HW-tuning software
 	if not ctx.options.sbi:

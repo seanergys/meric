@@ -21,7 +21,6 @@
 
 #include "../basis/cpu_optimisations.h"
 
-
 /*
     --------- Compilation Unit Only Method Declerations ---------
 
@@ -32,9 +31,12 @@
 struct ExtlibEnergyTimeStamp *initEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
 
-template <typename Tmode> static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
-template <typename Tmode> static void close();
-template <typename Tmode> static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
+template <typename Tmode>
+static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
+template <typename Tmode>
+static void close();
+template <typename Tmode>
+static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
 /* --------------------------------------------------------------- */
 
@@ -174,7 +176,8 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL)))
     {
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+
+#if defined HAVE_SYSFS_RAPL || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || HAVE_LINUX_PERF_EVENT_H
         meric::RAPL::init(is_detailed);
         meric::RAPL::initCountersUnits();
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
@@ -316,7 +319,6 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
             else
                 printf("[INFO]: ExtlibEnergy is NOT initialised correctly! Domain %s's energyMeasurementFns is NOT set! \n", printDomainName(domain));
         }
-         
     }
     return timestamp;
 }
@@ -454,8 +456,8 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
                 perror("[ERROR]: Failed to allocate memory for energy_per_counter");
                 extlib_free_energy_timestamp(result); // Free any previously allocated memory
                 return NULL;
-            } 
- 
+            }
+
             result->domain_data[i].counter_name = (char **)malloc(begin->domain_data[i].arr_size * sizeof(char *));
             if (OPT_UNLIKELY(result->domain_data[i].counter_name == NULL))
             {
