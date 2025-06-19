@@ -22,6 +22,18 @@
 #include "../basis/cpu_optimisations.h"
 
 /*
+    --------- Compilation Unit Only Variable Declerations ---------
+
+    These methods are not present in the header file &
+    may or maynot be called indirectly by the extlib_* methods
+
+*/
+
+static std::vector<ExtlibEnergyTimeStamp> static_memory;
+static size_t static_memory_size; // in num of elements
+static bool use_static_memory = false;
+
+/*
     --------- Compilation Unit Only Method Declerations ---------
 
     These methods are not present in the header file &
@@ -150,6 +162,18 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     {
         perror("[ERROR]: No Domain Selected!\n");
         return;
+    }
+
+    if (enabled_domains->use_static_memory)
+    {
+        use_static_memory = true;
+        static_memory_size = enabled_domains->static_memory_size;
+        static_memory.reserve(static_memory_size); // reserve memory
+        printf("[INFO]: Using static memory for %d elements. [OK]\n", static_memory_size);
+    }
+    else
+    {
+        printf("[INFO]: Using dyamic memory. [OK]\n");
     }
 
     meric::Environment::initHWSizes();
@@ -292,6 +316,9 @@ void extlib_close(ExtlibEnergy *enabled_domains)
             }
         }
     }
+
+    if (use_static_memory)
+        static_memory.clear();
 }
 
 ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains)
@@ -323,25 +350,75 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
     return timestamp;
 }
 
+/**
+ * if use_static_memory, try to add to the end of the vector.
+ * if you reach the end, check whole vector for a free memory location. if not found, exit with error.
+ */
 struct ExtlibEnergyTimeStamp *initEnergyTimeStamp()
 {
-    struct ExtlibEnergyTimeStamp *energy_timestamp = (struct ExtlibEnergyTimeStamp *)malloc(sizeof(struct ExtlibEnergyTimeStamp));
-    if (OPT_UNLIKELY(energy_timestamp == NULL))
+    if (use_static_memory)
     {
-        perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp");
-        exit(EXIT_FAILURE);
+        if (static_memory.size() + 1 > static_memory_size)
+        {
+            // Search for reusable slot (id == 0 means previously cleared)
+            for (auto &entry : static_memory)
+            {
+                if (entry.id == 0)
+                {
+                    // std::cout << "reusing slot!\n";
+                    struct ExtlibEnergyTimeStamp *ptr = &entry;
+                    std::memset(ptr, 0, sizeof(struct ExtlibEnergyTimeStamp));
+
+                    for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; ++i)
+                        ptr->domain_data[i].domain_id = 1 << i;
+
+                    struct timespec tt;
+                    clock_gettime(CLOCK_REALTIME, &tt);
+                    ptr->id = meric::mutils::timeToDouble(tt);
+
+                    return ptr;
+                }
+            }
+            // If no reusable slot found
+            std::cerr << "[ERR]: static memory exhausted, and no reusable slot found!\n";
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            // std::cout << "pushed back!\n";
+            static_memory.emplace_back();
+            struct ExtlibEnergyTimeStamp *ptr = &static_memory.back();
+            std::memset(ptr, 0, sizeof(struct ExtlibEnergyTimeStamp));
+
+            for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; ++i)
+                ptr->domain_data[i].domain_id = 1 << i;
+
+            struct timespec tt;
+            clock_gettime(CLOCK_REALTIME, &tt);
+            ptr->id = meric::mutils::timeToDouble(tt);
+            return ptr;
+        }
     }
+    else
+    {
+        struct ExtlibEnergyTimeStamp *energy_timestamp = (struct ExtlibEnergyTimeStamp *)malloc(sizeof(struct ExtlibEnergyTimeStamp));
+        if (OPT_UNLIKELY(energy_timestamp == NULL))
+        {
+            perror("[ERROR]: Failed to allocate memory for the EnergyTimeStamp");
+            exit(EXIT_FAILURE);
+        }
 
-    memset(energy_timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp)); // Correct: clears struct fields
+        memset(energy_timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp)); // Correct: clears struct fields
 
-    // set domain id, this is important for printing the structure (otherwise no_domain_selected is printed)
-    for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; i++)
-        energy_timestamp->domain_data[i].domain_id = 1 << i;
+        // set domain id, this is important for printing the structure (otherwise no_domain_selected is printed)
+        for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; i++)
+            energy_timestamp->domain_data[i].domain_id = 1 << i;
 
-    struct timespec tt;
-    clock_gettime(CLOCK_REALTIME, &tt);
-    energy_timestamp->id = meric::mutils::timeToDouble(tt);
-    return energy_timestamp;
+        struct timespec tt;
+        clock_gettime(CLOCK_REALTIME, &tt);
+        energy_timestamp->id = meric::mutils::timeToDouble(tt);
+        return energy_timestamp;
+    }
 }
 
 void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size_t print_limit)
@@ -383,9 +460,7 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
 {
 
     if (timestamp == NULL)
-    {
-        return; // Nothing to free
-    }
+        return;
 
     // Iterate over each domain
     for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
@@ -395,17 +470,16 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
         {
             for (size_t j = 0; j < timestamp->domain_data[i].arr_size; j++)
             {
-                free(timestamp->domain_data[i].counter_name[j]); // Free each string
+                if (timestamp->domain_data[i].counter_name[j] != NULL)
+                    free(timestamp->domain_data[i].counter_name[j]); // Free each string
             }
             free(timestamp->domain_data[i].counter_name); // Free the array of pointers
         }
-
         // Free the counter_value array
         if (OPT_LIKELY(timestamp->domain_data[i].counter_value != NULL))
         {
             free(timestamp->domain_data[i].counter_value);
         }
-
         // Free the energy_per_counter array
         if (OPT_LIKELY(timestamp->domain_data[i].energy_per_counter != NULL))
         {
@@ -413,8 +487,33 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
         }
     }
 
-    // Finally, free the entire timestamp structure
-    free(timestamp);
+    if (!use_static_memory)
+    {
+        free(timestamp); // Heap-allocated
+    }
+    else
+    {
+        // Static pool case: erase value from the vector.
+        auto it = std::find_if(static_memory.begin(), static_memory.end(),
+                               [timestamp](const ExtlibEnergyTimeStamp &ts)
+                               {
+                                   return &ts == timestamp; // compare addresses.
+                               });
+        if (it == static_memory.end())
+        {
+            perror("[ERR]: Object is not found in the static_memory, there could be a bug related please notify the author!\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            // do not erase the object since it may cause memory re-allocation of remanining elements, causing pointer invalidation.
+            // instead, set 0 to all of its fields and set is_free flag true.
+            
+            // std::cout << "found object:" << it->id << "\n";
+            memset(&(*it), 0, sizeof(struct ExtlibEnergyTimeStamp));
+            // since id is 0, it means it is an available field.
+        }
+    }
 }
 
 struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergyTimeStamp *begin, struct ExtlibEnergyTimeStamp *end)
