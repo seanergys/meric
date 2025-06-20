@@ -32,6 +32,8 @@ struct ExtlibEnergyTimeStamp
     } domain_data[EXTLIB_NUM_DOMAINS]; // Array per domain (indexed by mutils::countTrailingZeros)
 
     double energy_total; // Combined total energy across all domains
+
+    size_t static_memory_index; // used to store the location in static_memory.
 };
 
 typedef struct ExtlibEnergy
@@ -49,8 +51,8 @@ typedef struct ExtlibEnergy
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                            // Close enabled domains
+    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***, size_t, size_t); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                            // Close enabled domains
     bool use_static_memory;
     size_t static_memory_size;
 
@@ -59,10 +61,10 @@ typedef struct ExtlibEnergy
 // Helper macros for bitwise operations
 
 // To measure energy consumption, you need 2 EnergyTimeStamp and +1 created when returning from extlib_calc_energy_consumption(..)
-// So in total, you need to allocate (2x + x) elements where x-> energy measurement count
-#define EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(enabled_domains, static_memory_size_) \
-    (enabled_domains).use_static_memory = true;                                  \
-    (enabled_domains).static_memory_size = static_memory_size_
+// So in total, you need to allocate (2x + x) = 3x elements where x-> energy measurement count
+#define EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(enabled_domains, total_measurements) \
+    (enabled_domains).use_static_memory = true;                                 \
+    (enabled_domains).static_memory_size = 3 * total_measurements
 
 #define EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
 #define EXTLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
