@@ -82,7 +82,7 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
         }
 
         size_t offset = static_memory_index * arr_size;
-        std::cout << "offset is ->" << offset << "\n";
+        // std::cout << "offset is ->" << offset << "\n";
 
         *values = &map.counter_value[offset];
         *labels = map.counter_name;
@@ -355,7 +355,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         // IMPORTANT: DO NOT CHANGE THIS!
         // I set this at the end, since I need a normal extlib_read_energy_measurements() read at the beginning (no static_map available at that time.) I first need the numbers.
         use_static_memory = true;
-        std::cout << "extlib_init set use_static_memory:" << use_static_memory << "\n";
+        // std::cout << "extlib_init set use_static_memory:" << use_static_memory << "\n";
     }
     else
     {
@@ -401,31 +401,30 @@ void extlib_close(ExtlibEnergy *enabled_domains)
 {
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
+        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain))
         {
-            int index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
-            if (use_static_memory)
+            int index = meric::mutils::countTrailingZeros(domain);
+            if (use_static_memory && domain_pointer_map.count(index))
             {
                 DomainMemoryMap &dm = domain_pointer_map[index];
-                std::cout << "HERE-Begin:" << index << "\n";
                 if (dm.counter_name)
                 {
                     for (size_t i = 0; i < dm.arr_size; ++i)
                         if (dm.counter_name[i])
                             free(dm.counter_name[i]);
                     free(dm.counter_name);
+                    dm.counter_name = nullptr;
                 }
-                std::cout << "\t" << "clear counter_name" << "\n";
-
                 if (dm.counter_value)
+                {
                     free(dm.counter_value);
-                std::cout << "\t" << "clear counter_value" << "\n";
-
+                    dm.counter_value = nullptr;
+                }
                 if (dm.energy_per_counter)
+                {
                     free(dm.energy_per_counter);
-                std::cout << "\t" << "clear energy_per_counter" << "\n";
-
-                std::cout << "HERE-END:" << index << "\n";
+                    dm.energy_per_counter = nullptr;
+                }
             }
 
             if (enabled_domains->closeFns[index])
@@ -436,9 +435,9 @@ void extlib_close(ExtlibEnergy *enabled_domains)
         }
     }
 
-    domain_pointer_map.clear(); // Remove all domain entries
-    static_memory.clear();      // Clear the static timestamp vector
-    use_static_memory = false;  // Reset the mode flag
+    domain_pointer_map.clear();
+    static_memory.clear();
+    use_static_memory = false;
 }
 
 ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains)
@@ -453,7 +452,7 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
             if (OPT_LIKELY(enabled_domains->energyMeasurementFns[domain_index]))
             {
 
-                std::cout << "extlib_read_energy_measurements-> reading for dynamic memory\n";
+                // std::cout << "extlib_read_energy_measurements-> reading for dynamic memory\n";
                 timestamp->domain_data[domain_index].domain_id = domain;
                 enabled_domains->energyMeasurementFns[domain_index](
                     &timestamp->domain_data[domain_index].arr_size,
@@ -477,7 +476,7 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
  */
 struct ExtlibEnergyTimeStamp *initEnergyTimeStamp()
 {
-    std::cout << "initEnergyTimeStamp()\n";
+    // std::cout << "initEnergyTimeStamp()\n";
     if (use_static_memory)
     {
         if (static_memory.size() + 1 > static_memory_size)
@@ -492,6 +491,7 @@ struct ExtlibEnergyTimeStamp *initEnergyTimeStamp()
                     std::memset(ptr, 0, sizeof(struct ExtlibEnergyTimeStamp));
 
                     ptr->static_memory_index = i;
+                    std::cout << "memory index is set to:" << ptr->static_memory_index << "\n";
 
                     for (size_t i = 0; i < EXTLIB_NUM_DOMAINS; ++i)
                         ptr->domain_data[i].domain_id = (1 << i);
@@ -597,52 +597,55 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
                 for (size_t j = 0; j < timestamp->domain_data[i].arr_size; j++)
                 {
                     if (timestamp->domain_data[i].counter_name[j] != NULL)
+                    {
                         free(timestamp->domain_data[i].counter_name[j]); // Free each string
+                        timestamp->domain_data[i].counter_name[j] = NULL;
+                    }
                 }
                 free(timestamp->domain_data[i].counter_name); // Free the array of pointers
+                timestamp->domain_data[i].counter_name = NULL;
             }
             // Free the counter_value array
             if (OPT_LIKELY(timestamp->domain_data[i].counter_value != NULL))
             {
                 free(timestamp->domain_data[i].counter_value);
+                timestamp->domain_data[i].counter_value = NULL;
             }
             // Free the energy_per_counter array
             if (OPT_LIKELY(timestamp->domain_data[i].energy_per_counter != NULL))
             {
                 free(timestamp->domain_data[i].energy_per_counter);
+                timestamp->domain_data[i].energy_per_counter = NULL;
             }
         }
         free(timestamp); // Heap-allocated
     }
     else
     {
-        std::cout << "extlib_free_energy_timestamp -> static_memory_erase\n";
+        // std::cout << "extlib_free_energy_timestamp -> static_memory_erase\n";
         // IMPORTANT: do not erase the object since it may cause memory re-allocation of remanining elements, causing pointer invalidation.
         // For each domain, clear its static memory slice for this timestamp index
         for (int domain_i = 0; domain_i < EXTLIB_NUM_DOMAINS; domain_i++)
         {
-            size_t offset = timestamp->domain_data[domain_i].arr_size * timestamp->static_memory_index;
-
-            // no need to free these since it is the same all the time.
-            // if (dm.counter_name)
-            // {
-            //     for (size_t i = 0; i < dm.arr_size; i++)
-            //         memset(dm.counter_name[i], 0, MAX_DOMAIN_NAME_LENGTH);
-            // }
+            size_t arr_size = timestamp->domain_data[domain_i].arr_size;
+            if (arr_size == 0)
+                continue;
+            size_t offset = arr_size * timestamp->static_memory_index;
 
             // just clear the values.
-            if (timestamp->domain_data[domain_i].counter_value)
+            if (OPT_LIKELY(timestamp->domain_data[domain_i].counter_value))
             {
-                memset(&timestamp->domain_data[domain_i].counter_value[offset], 0, timestamp->domain_data[domain_i].arr_size * sizeof(uint64_t));
+                memset(&timestamp->domain_data[domain_i].counter_value, 0, arr_size * sizeof(uint64_t));
             }
-            if (timestamp->domain_data[domain_i].energy_per_counter)
+            if (OPT_LIKELY(timestamp->domain_data[domain_i].energy_per_counter))
             {
-                memset(&timestamp->domain_data[domain_i].energy_per_counter[offset], 0, timestamp->domain_data[domain_i].arr_size * sizeof(double));
+                memset(&timestamp->domain_data[domain_i].energy_per_counter, 0, arr_size * sizeof(uint64_t));
             }
         }
 
         // Clear the ExtlibEnergyTimeStamp struct itself
         memset(timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp));
+        timestamp->id = 0; // Mark as available
         timestamp->static_memory_index = -1;
     }
 }
@@ -681,21 +684,21 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
         {
             result->domain_data[i].arr_size = begin->domain_data[i].arr_size;
             result->domain_data[i].domain_id = begin->domain_data[i].domain_id;
-            std::cout << "\tarr_size: " << result->domain_data[i].arr_size << " domain_id:" << (int)result->domain_data[i].domain_id << "\n";
+            // std::cout << "\tarr_size: " << result->domain_data[i].arr_size << " domain_id:" << (int)result->domain_data[i].domain_id << "\n";
 
             if (use_static_memory)
             {
-                std::cout << "\textlib_calc_energy_consumption use_static_memory\n";
+                // std::cout << "\textlib_calc_energy_consumption use_static_memory\n";
                 DomainMemoryMap &map = domain_pointer_map[i];
                 size_t offset = map.arr_size * result->static_memory_index;
-                std::cout << "\textlib_calc_energy_consumption --> offset:" << offset << "\n";
+                // std::cout << "\toffset:" << offset << " -- map.arr_size:" << map.arr_size << " -- " << "static memory index:" << result->static_memory_index << "\n";
                 result->domain_data[i].counter_name = map.counter_name; // this is okay, all will point to the same memory location.
                 result->domain_data[i].counter_value = &map.counter_value[offset];
                 result->domain_data[i].energy_per_counter = &map.energy_per_counter[offset];
             }
             else
             {
-                std::cout << "\textlib_calc_energy_consumption use_dynamic_memory\n";
+                // std::cout << "\textlib_calc_energy_consumption use_dynamic_memory\n";
                 result->domain_data[i].energy_per_counter = (double *)malloc(begin->domain_data[i].arr_size * sizeof(double));
                 if (OPT_UNLIKELY(result->domain_data[i].energy_per_counter == NULL))
                 {
