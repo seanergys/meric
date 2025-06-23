@@ -6,6 +6,7 @@
 #include <meric_ext.h>
 #include "work_c.h"
 
+#define ITER 1
 int main(int argc, char **argv)
 {
     /*
@@ -13,13 +14,14 @@ int main(int argc, char **argv)
         Create ExtlibEnergy object and set energy domains you want to measure
     */
     ExtlibEnergy energy_domains = {0};
+    // EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(energy_domains, 1);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_A64FX);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_RAPL);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_NVML);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_HDEEM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_ROCM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_HWMON);
-    
+
     // EXTLIB_ENERGY_DISABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_NVML);
 
     /*
@@ -36,44 +38,53 @@ int main(int argc, char **argv)
      */
     extlib_init(&energy_domains, true);
 
-    /*
-        -------------- STEP(4) --------------
-        Get an EnergyTimeStamp for reference before to begin measuring energy of a code.
-     */
-    struct ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
-    // extlib_print_energy_timestamp(ts, 5);
+    // for (size_t i = 0; i < ITER; i++)
+    // {
+        /*
+            -------------- STEP(4) --------------
+            Get an EnergyTimeStamp for reference before to begin measuring energy of a code.
+         */
+        struct ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
+        // printf("***********************************domain_id:%d\n",ts->domain_data[0].domain_id);
+        extlib_print_energy_timestamp(ts, 5);
+        // exit(0);
+        // extlib_free_energy_timestamp(ts);
+        // extlib_close(&energy_domains);
+        // exit(0);
 
-    
-    //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
-     
-#pragma omp parallel
-    do_work(20.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+        //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
 
-    // END JOB
-     
+// #pragma omp parallel
+        do_work(1.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
-    /*
-        -------------- STEP(5) --------------
-        Get Another Energy reading to measure the span.
-     */
-    struct ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
-    // extlib_print_energy_timestamp(ts2, 5);
+        // END JOB
 
-    /*
-        -------------- STEP(6) --------------
-        Calculate the consumed energy for enabled domains.
-     */
+        /*
+            -------------- STEP(5) --------------
+            Get Another Energy reading to measure the span.
+         */
+        struct ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
+        extlib_print_energy_timestamp(ts2, 5);
+        // extlib_free_energy_timestamp(ts2);
+        // extlib_close(&energy_domains);
+        // exit(0);
 
-    struct ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts, ts2);
-    extlib_print_energy_timestamp(result, 5);
+        /*
+            -------------- STEP(6) --------------
+            Calculate the consumed energy for enabled domains.
+         */
 
-    /*
-        -------------- STEP(7) --------------
-         Do NOT forget to free the timestamps
-     */
-    extlib_free_energy_timestamp(ts);
-    extlib_free_energy_timestamp(ts2);
-    extlib_free_energy_timestamp(result);
+        struct ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts, ts2);
+        extlib_print_energy_timestamp(result, 5);
+
+        /*
+            -------------- STEP(7) --------------
+             Do NOT forget to free the timestamps
+         */
+        extlib_free_energy_timestamp(ts);
+        extlib_free_energy_timestamp(ts2);
+        extlib_free_energy_timestamp(result);
+    // }
 
     /*
         -------------- STEP(8) --------------

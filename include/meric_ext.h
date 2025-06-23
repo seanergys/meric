@@ -1,24 +1,24 @@
 // ====================================================================
-// MERIC ext - library directly exposing MERIC internal implementation 
+// MERIC ext - library directly exposing MERIC internal implementation
 // --------------------------------------------------------------------
-// Library providing energy measurement for 3rd party tools 
+// Library providing energy measurement for 3rd party tools
 //
 // Author: Osman Yasal <osman.yasal@vsb.cz>
 // Version: 1.0.0
 // License: BSD-3
 // ====================================================================
 
-
 #ifndef SRC_EXTLIB_MERIC_EXT_H_
 #define SRC_EXTLIB_MERIC_EXT_H_
 
 #include <stdbool.h>
 #include <stdint.h> // Include this header for uint64_t
+#include <stdio.h>  // If you also need I/O functions
 
-#define EXTLIB_NUM_DOMAINS 6  // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#define EXTLIB_NUM_DOMAINS 6 // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 struct ExtlibEnergyTimeStamp
 {
-    double id; // Timestamp identifier
+    double id; // Timestamp identifier, also implies if the memory location in static_memory is available or not. if 0, it is available for an entry otherwise is NOT.
 
     // Embedded DomainData structure for each domain (a64fx, rapl, nvml, rocm, hdeem)
     struct
@@ -32,29 +32,40 @@ struct ExtlibEnergyTimeStamp
     } domain_data[EXTLIB_NUM_DOMAINS]; // Array per domain (indexed by mutils::countTrailingZeros)
 
     double energy_total; // Combined total energy across all domains
+
+    size_t static_memory_index; // used to store the location in static_memory.
 };
 
 typedef struct ExtlibEnergy
 {
-    enum Domains  // TODO HDEEM-C vs HDEEM-S <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    enum Domains // TODO HDEEM-C vs HDEEM-S <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     {
-        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0,      // 0000000 No Domains Selected
-        EXTLIB_ENERGY_DOMAIN_A64FX        = 1 << 0, // 0000001
-        EXTLIB_ENERGY_DOMAIN_RAPL         = 1 << 1, // 0000010
-        EXTLIB_ENERGY_DOMAIN_NVML         = 1 << 2, // 0000100
-        EXTLIB_ENERGY_DOMAIN_ROCM         = 1 << 3, // 0001000
-        EXTLIB_ENERGY_DOMAIN_HDEEM        = 1 << 4, // 0010000
-        EXTLIB_ENERGY_DOMAIN_HWMON        = 1 << 5, // 0100000
-        EXTLIB_ENERGY_DOMAIN_END          = 1 << 6  // 1000000 END of Domains.
+        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0, // 0000000 No Domains Selected
+        EXTLIB_ENERGY_DOMAIN_A64FX = 1 << 0,   // 0000001
+        EXTLIB_ENERGY_DOMAIN_RAPL = 1 << 1,    // 0000010
+        EXTLIB_ENERGY_DOMAIN_NVML = 1 << 2,    // 0000100
+        EXTLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 0001000
+        EXTLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 0010000
+        EXTLIB_ENERGY_DOMAIN_HWMON = 1 << 5,   // 0100000
+        EXTLIB_ENERGY_DOMAIN_END = 1 << 6      // 1000000 END of Domains.
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                            // Close enabled domains
+    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***, size_t, size_t); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                            // Close enabled domains
+    bool use_static_memory;
+    size_t static_memory_size;
 
 } ExtlibEnergy;
 
 // Helper macros for bitwise operations
+
+// To measure energy consumption, you need 2 EnergyTimeStamp and +1 created when returning from extlib_calc_energy_consumption(..)
+// So in total, you need to allocate (2x + x) = 3x elements where x-> energy measurement count
+#define EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(enabled_domains, total_measurements) \
+    (enabled_domains).use_static_memory = true;                                 \
+    (enabled_domains).static_memory_size = 3 * total_measurements
+
 #define EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
 #define EXTLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
 #define EXTLIB_ENERGY_HAS_DOMAIN(enabled_domains, domain) (((enabled_domains).value & (domain)) != 0)
