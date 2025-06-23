@@ -385,12 +385,12 @@ void PERFEVENT::initL3CacheSizes()
 //		}
 //		else
 //		{
-//			std::cerr << "PERFEVENT error - uncore_imc PMUs not found in directory " << pathToPMUsDir << "\n";
+//			std::cerr << "MERIC WARNING: PERFEVENT - uncore_imc PMUs not found in directory " << pathToPMUsDir << "\n";
 //		}
 //	}
 //	else
 //	{
-//		std::cerr << "PERFEVENT error - failed to open directory " << pathToPMUsDir << "\n";
+//		std::cerr << "MERIC WARNING: PERFEVENT - failed to open directory " << pathToPMUsDir << "\n";
 //	}
 //}
 #endif
