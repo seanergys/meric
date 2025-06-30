@@ -315,8 +315,8 @@ const std::string RAPL_SUM_ENERGY = "ENERGY_CONSUMPTION";
 
 static std::map<const std::string, CounterDef_t> counterDefs = {
 #ifdef _INTEL_
-	{ "PCKG", { {}, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
-	{ "RAM", { {}, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
+	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
+	{ "RAM", { { "power", "energy-ram" }, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
 	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #else // _AMD_
 	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
