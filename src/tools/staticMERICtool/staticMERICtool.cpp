@@ -62,7 +62,7 @@ struct EnergyRecords
 
 		if (verbose)
 		{
-			std::cout << "Runtime [s] = " << std::fixed << runtime << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+			std::cout << "Runtime [s] = " << std::fixed << std::setprecision(3) << runtime << std::endl;
 
 			// Print each counter value
 			for (auto &kv : recordEnergy[0])
@@ -78,7 +78,7 @@ struct EnergyRecords
 		}
 		else
 		{
-			std::cout << std::fixed << std::setprecision(3) << summary << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+			std::cout << std::fixed << std::setprecision(3) << summary << std::endl;
 		}
 	}
 
@@ -157,23 +157,51 @@ struct EnergyRecords<HWMON_S>
 		HWMON::fillTime(HWMON_S::endTime);
 		HWMON::stop(HWMON_S::endTime);
 
-		double duration = (HWMON_S::endTime.tv_sec - HWMON_S::startTime.tv_sec);
+		double duration = (HWMON_S::endTime.tv_sec - HWMON_S::startTime.tv_sec) + (HWMON_S::endTime.tv_nsec - HWMON_S::startTime.tv_nsec) / 1.0e9;
 
-		std::vector<double> energy(HWMON::vrSensorLabel.size(), 0);
-		std::vector<double> minWatts(HWMON::vrSensorLabel.size(), 0);
-		std::vector<double> maxWatts(HWMON::vrSensorLabel.size(), 0);
+		std::vector<double> energy(HWMON::PROBE_NUMBER, 0);
+		std::vector<double> minWatts(HWMON::PROBE_NUMBER, 0);
+		std::vector<double> maxWatts(HWMON::PROBE_NUMBER, 0);
 
 		size_t firstBlade, lastBlade, firstVR, lastVR;
-		HWMON::getData(HWMON_S::startTime.tv_sec, duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
+		HWMON::getData(HWMON_S::startTime.tv_sec + HWMON_S::startTime.tv_nsec / 1.0e9, duration,
+		               &firstBlade, &lastBlade, &firstVR, &lastVR, energy.data(), minWatts.data(), maxWatts.data());
 
 		std::cout << "Runtime [s] = " << std::fixed << duration << "\n";
+		// double summary = 0.0;
+		// for (auto &&i : energy)
+		// {
+		// 	summary += (i / (lastVR - firstVR) * duration);
+		// }
+
 		double summary = 0.0;
-		for (auto &&i : energy)
+		double avgWatts = 0.0;
+		double energyConsumption = 0.0;
+		for (unsigned int sensorID = 1; sensorID < HWMON::vrSensorLabel.size(); sensorID++)
 		{
-			summary += i;
+			if (HWMON::vrSensorLabel[sensorID].find("Grace_Power_Socket") == std::string::npos)
+			{
+				continue;
+			}
+
+			avgWatts = energy[sensorID] / (lastVR - firstVR);
+			energyConsumption = duration * avgWatts;
+			summary += energyConsumption;
+
+			// std::cout << "sensorID:" << sensorID << "\n";
+			// std::cout << "# SAMPLES - " << HWMON::getSourceLabel() << " (" << HWMON::vrSensorLabel[sensorID] << "):\n"
+			// 		  << HWMON::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision(6) << energyConsumption << '\n'
+			// 		  << "MAX power [W]" << "," << maxWatts[sensorID] << '\n'
+			// 		  << "MIN power [W]" << "," << minWatts[sensorID] << '\n'
+			// 		  << "AVG power [W]" << "," << avgWatts << '\n'
+			// 		  << "ID of first sample" << "," << firstVR << '\n'
+			// 		  << "ID of last sample" << "," << lastVR - 1 << std::endl
+			// 		  << std::endl;
 		}
-		std::cout << '\n' << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << '\n'
-		          << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+		std::cout << '\n'
+		          << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << '\n'
+		          << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << '\n'
+		          << std::endl;
 
 		HWMON::close();
 	}
@@ -192,7 +220,7 @@ void printHelp()
 			  << "\t mericStatic parameters:\n"
 			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
-			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON, or A64FX\n"
+			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON-C, HWMON-S, or A64FX\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-t = #OpenMP threads\n"
@@ -590,12 +618,12 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<A64FX>);
 				prints.push_back(EnergyRecords<A64FX>::printValues);
 			}
-			else if (token == "HWMON_C") // counting mode
+			else if (token == "HWMON-C") // counting mode
 			{
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(EnergyRecords<HWMON>::printValues);
 			}
-			else if (token == "HWMON_S") // sampling mode for grace11
+			else if (token == "HWMON-S") // sampling mode for grace11
 			{
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
