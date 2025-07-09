@@ -7,10 +7,10 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits>
-#include <csignal>
 #include <unistd.h>
 #include <errno.h>
+#include <limits>
+#include <csignal>
 #include <iomanip>
 
 using namespace meric;
@@ -30,7 +30,7 @@ struct EnergyRecords
 	{
 		if (recordTime.size() < 2)
 		{
-			std::cerr << "ERROR missing samples\n";
+			std::cerr << "MERIC ERROR: Missing measurement samples\n";
 			exit(2);
 		}
 
@@ -220,7 +220,7 @@ void printHelp()
 			  << "\t mericStatic parameters:\n"
 			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
-			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON-C, HWMON-S, or A64FX\n"
+			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON-C, HWMON-S, or A64FX\n" // TODO only partial ROCM support; TODO only one system or comma separated list
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-t = #OpenMP threads\n"
@@ -229,18 +229,17 @@ void printHelp()
 			  << "\t-s = GPU SM frequency [Hz]\n"
 			  << "\t-r = GPU memory frequency [Hz]\n"
 			  << "\t-g = GPU power capping power limit [mW]\n"
-			  << "\t-b = single node baseline (static) power consumption [W]\n"
+			  << "\t-b = single node baseline (static) power consumption [W]\n" // TODO missing multi-node support
 			  << "\t-q = print the overall consumed energy only [J]\n"
 			  << "\t-o = output directory, ./mericStaticMeasurements by default\n"
 			  << std::endl;
 	exit(1);
 }
-
+// TODO header file
 bool isJobRunning(const std::string &jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath);
 double extractMaxRuntime(const std::string &filepath);
-bool createDirectoryIfNotExists(const std::string &path);
 
 enum class TOOL_MODE
 {
@@ -311,11 +310,11 @@ int main(int argc, char **argv)
 	{
 		job_id = std::atoi(job_id_env);
 	}
-	printf("job_id :%d\n", job_id);
+	std::cout << "job_id :" << job_id << std::endl; //TODO rename "job_id" to "measurement_id"
 
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
-		std::cerr << "missing machine hostname\n";
+		std::cerr << "MERIC ERROR: Missing machine hostname\n"; //TODO alternative solution instead of error
 		exit(1);
 	}
 	setupSignalHandlers();
@@ -552,7 +551,9 @@ int main(int argc, char **argv)
 				}
 			}
 			else
+			{
 				printHelp();
+			}
 		}
 		else
 		{
@@ -564,18 +565,18 @@ int main(int argc, char **argv)
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
 	{
-		createDirectoryIfNotExists(outputDirectory);
+		meric::mutils::createDir(outputDirectory);
 
 		// redirect the output to the file created.
 		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
 		outfile.open(filename, std::ios::out | std::ios::trunc);
 		if (outfile.is_open())
 		{
-			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
+			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to a file
 		}
 		else
 		{
-			std::cerr << "Error creating the file:" << filename << "\n";
+			std::cerr << "MERIC ERROR: Cannot create file:" << filename << "\n"; // TODO exit ?
 		}
 	}
 
@@ -623,14 +624,14 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(EnergyRecords<HWMON>::printValues);
 			}
-			else if (token == "HWMON-S") // sampling mode for grace11
+			else if (token == "HWMON-S") // sampling mode
 			{
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
 			}
 			else
 			{
-				std::cerr << "ERROR: unknown energy measurement system '" + token + "'\n\n";
+				std::cerr << "MERIC ERROR: Unknown energy measurement system '" + token + "'\n\n";
 				printHelp();
 			}
 		}
@@ -658,7 +659,7 @@ int main(int argc, char **argv)
 			execvp(args[0], args); // Replace with the command, use execvp to search in PATH
 
 			// If execvp fails, print an error
-			std::cerr << "Error: " << strerror(errno) << std::endl;
+			std::cerr << "MERIC ERROR: " << strerror(errno) << std::endl; // TODO user needs more info
 			exit(1);
 		}
 		else if (pid > 0) // parent
@@ -674,7 +675,7 @@ int main(int argc, char **argv)
 
 				if (result == -1)
 				{
-					std::cerr << "Error: " << strerror(errno) << std::endl;
+					std::cerr << "MERIC ERROR: " << strerror(errno) << std::endl; // TODO user needs more info
 					exit(1);
 				}
 				else if (result == 0)
@@ -720,8 +721,8 @@ int main(int argc, char **argv)
 			}
 		}
 		else
-		{ // error
-			std::cerr << "Fork failed: " << strerror(errno) << std::endl;
+		{
+			std::cerr << "MERIC ERROR: Fork failed - " << strerror(errno) << std::endl;
 			exit(1);
 		}
 	}
@@ -766,15 +767,14 @@ int main(int argc, char **argv)
 	{
 		if (std::system(applicationCommand.c_str()) != 0)
 		{
-			std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+			std::cerr << "MERIC ERROR: Could not run `" << applicationCommand << "`\n";
 		}
 	}
 	else if (toolMode == TOOL_MODE::EVAL)
 	{
-
 		if (isJobRunning("mericStatic"))
 		{
-			std::cout << "Job is not yet completed!\n";
+			std::cout << "MERIC ERROR: Job is not yet completed!\n"; //TODO this is probably not an error
 		}
 		else
 		{
@@ -785,8 +785,8 @@ int main(int argc, char **argv)
 				{"RAPL", 0.0},
 				{"NVML", 0.0},
 				{"A64FX", 0.0},
-				{"HWMON", 0.0},
-				{"ROCM", 0.0},
+				{"HWMON", 0.0}, // TODO HWMON vs HWMON-S vs HWMON-C ?
+				{"ROCM", 0.0}, // TODO
 			};
 			double maxRuntime = 0.0;
 			for (const auto &filepath : files)
@@ -799,10 +799,9 @@ int main(int argc, char **argv)
 
 				double localRuntime = extractMaxRuntime(filepath);
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
-				// std::cout << filepath << "\n";
 			}
 			std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
-			// std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+			
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
@@ -830,6 +829,7 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
 double extractMaxRuntime(const std::string &filepath)
 {
 	std::ifstream file(filepath);
@@ -850,7 +850,7 @@ double extractMaxRuntime(const std::string &filepath)
 			}
 		}
 	}
-	return maxRuntime; // Will be 0.0 if not found
+	return maxRuntime; // 0.0 if not found
 }
 
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
@@ -906,12 +906,12 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 
 bool isJobRunning(const std::string &jobName)
 {
-	std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
+	std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'"; //TODO strong dependency on slurm which we MUST avoid
 
 	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe)
 	{
-		std::cerr << "Failed to run command.\n";
+		std::cerr << "MERIC ERROR: Failed to run command\n"; // TODO what command?
 		return false;
 	}
 
@@ -922,26 +922,6 @@ bool isJobRunning(const std::string &jobName)
 	{
 		result += buffer;
 	}
-	// std::cout << result << "\n";
 	return !result.empty();
 }
 
-bool createDirectoryIfNotExists(const std::string &path)
-{
-	struct stat st;
-	if (stat(path.c_str(), &st) != 0)
-	{
-		// Directory does not exist
-		if (mkdir(path.c_str(), 0755) != 0)
-		{
-			std::cerr << "Failed to create directory '" << path << "': " << strerror(errno) << "\n";
-			return false;
-		}
-	}
-	else if (!S_ISDIR(st.st_mode))
-	{
-		std::cerr << "'" << path << "' exists but is not a directory.\n";
-		return false;
-	}
-	return true;
-}
