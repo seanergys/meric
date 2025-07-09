@@ -33,7 +33,8 @@ struct ExtlibEnergyTimeStamp
 
     double energy_total; // Combined total energy across all domains
 
-    size_t static_memory_index; // used to store the location in static_memory.
+    size_t reserved_memory_page;  // used to store the size of static_memory.
+    size_t reserved_memory_index; // used to store the location in static_memory.
 };
 
 typedef struct ExtlibEnergy
@@ -51,10 +52,10 @@ typedef struct ExtlibEnergy
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***, size_t, size_t); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                            // Close enabled domains
-    bool use_static_memory;
-    size_t static_memory_size;
+    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***, size_t, size_t, size_t); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                                    // Function pointer to close energy measurement settings for enabled domains
+    bool use_reserved_memory;
+    size_t reserved_memory_size;
 
 } ExtlibEnergy;
 
@@ -62,9 +63,9 @@ typedef struct ExtlibEnergy
 
 // To measure energy consumption, you need 2 EnergyTimeStamp and +1 created when returning from extlib_calc_energy_consumption(..)
 // So in total, you need to allocate (2x + x) = 3x elements where x-> energy measurement count
-#define EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(enabled_domains, total_measurements) \
-    (enabled_domains).use_static_memory = true;                                 \
-    (enabled_domains).static_memory_size = 3 * total_measurements
+#define EXTLIB_ENERGY_USE_RESERVED_MEMORY(enabled_domains, total_measurements) \
+    (enabled_domains).use_reserved_memory = true;                              \
+    (enabled_domains).reserved_memory_size = 3 * total_measurements
 
 #define EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
 #define EXTLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
