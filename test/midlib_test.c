@@ -6,7 +6,7 @@
 #include <meric_ext.h>
 #include "work_c.h"
 
-#define ITER 1
+#define ITER 5
 int main(int argc, char **argv)
 {
     /*
@@ -14,7 +14,7 @@ int main(int argc, char **argv)
         Create ExtlibEnergy object and set energy domains you want to measure
     */
     ExtlibEnergy energy_domains = {0};
-    // EXTLIB_ENERGY_ENABLE_STATIC_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_A64FX);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_RAPL);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_NVML);
@@ -38,8 +38,8 @@ int main(int argc, char **argv)
      */
     extlib_init(&energy_domains, true);
 
-    // for (size_t i = 0; i < ITER; i++)
-    // {
+    for (size_t i = 0; i < ITER; i++)
+    {
         /*
             -------------- STEP(4) --------------
             Get an EnergyTimeStamp for reference before to begin measuring energy of a code.
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
         //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
 
 // #pragma omp parallel
-        do_work(1.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+        do_work(5.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
         // END JOB
 
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
         extlib_free_energy_timestamp(ts);
         extlib_free_energy_timestamp(ts2);
         extlib_free_energy_timestamp(result);
-    // }
+    }
 
     /*
         -------------- STEP(8) --------------
