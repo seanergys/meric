@@ -768,12 +768,10 @@ bool RAPL_SYSFS::isAvailable()
 	{
 		return false;
 	}
-
 	if(access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK) != 0)
 	{
 		return false;
 	}
-
 	return true;
 }
 
@@ -932,9 +930,35 @@ void RAPL_PERF_EVENT::init(bool detailed)
 		return true;
 	};
 
+	auto FindCounterByName = [&](CounterDef_t &def) {
+		const std::string basePath = "/sys/bus/event_source/devices/";
+		if(def.name.size() < 2)
+		{
+			return true;
+		}
+		if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/type", def.type))
+		{
+			return false;
+		}
+		std::string event;
+		if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/events/" + def.name[1], event))
+		{
+			return false;
+		}
+		if(sscanf(event.c_str(), "event=%lx", &def.config) < 1)
+		{
+			return false;
+		}
+		return true;
+	};
+
 	for(const auto &counterDef: counterDefs)
 	{
-		const auto &def = counterDef.second;
+		auto def = counterDef.second;
+		if(!FindCounterByName(def))
+		{
+			continue;
+		}
 
 		switch(def.domain)
 		{
@@ -1045,13 +1069,12 @@ double RAPL_PERF_EVENT::getUnit(std::string counter)
 	{
 		return it->second.unit;
 	}
-
 	return -1.0;
 }
 
 bool RAPL_PERF_EVENT::isAvailable()
 {
-	int value = 2;
+	int value = 2;	//TODO is level 1 enough?!
 	if(!sysfsutils::ReadValue("/proc/sys/kernel/perf_event_paranoid", value))
 	{
 		return false;
