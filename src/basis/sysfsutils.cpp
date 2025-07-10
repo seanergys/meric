@@ -18,9 +18,7 @@ std::string MakeCounterName(const std::string &name,
 		return MakeCounterName(name, "", "", nums);
 	}
 
-	return MakeCounterName(name, 
-		labelIt->second.first, labelIt->second.second,
-		nums);
+	return MakeCounterName(name, labelIt->second.first, labelIt->second.second, nums);
 }
 
 std::string MakeCounterName(const std::string &name, 

@@ -587,11 +587,193 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 --------------------------------------------------------------------------------
 #     11] Tool for static tuning                                               #
 --------------------------------------------------------------------------------
-MERIC repository also contains utility, based on MERIC source code, for static energy measurement and system parameters tuning. It is located in the `bin/` directory.
 
-Binaries `energyMeasureStart` and `energyMeasureStop` provide RAPL or NVML energy measurement for a single node. If one wants to do measurement on several nodes multiNodeStaticMeasureStart/Stop.sh scripts are located in the same directory. Since there is no multi-node HDEEM measurement tool, this script provides the option for both energy measurement interfaces. To select which one should be used, the script takes one argument `--rapl` or `--hdeem`.
+## mericStatic
 
-For a static analysis of a selected application, the directory with the utilities contains `staticAnalysis.sh` bash script too. It not only runs the application in a variety of available hardware settings, but also stores the results in format similar to MERIC, so the results can be analysed using RADAR library.
+`mericStatic` is a tool built on the power monitoring system interface of `meric` that enables command-line energy measurement for any program provided as a parameter.
+
+### Usage
+
+The basic usage of the `mericStatic` tool is as follows:
+
+```
+mericStatic [mericStatic parameters] -- ./application [application parameters]
+```
+
+### Application
+
+The application can be any user-provided program; however, if the user provides the following special commands, the behavior of `mericStatic` will change accordingly.
+> Users can override start, stop, or eval command behavior by using `./<start | stop | eval>`, provided they have a program with the same name. In other words, "`-- ./start`" and "`-- start`" are two different things.
+
+- `start`: Starts measuring energy until the `mericStatic -- stop` command is issued.
+- `stop`: Sends the SIGTERM signal to stop the `mericStatic` commands.
+- `eval`: Reads all dump files and aggregates total energy consumption.
+
+> ⚠️ **Warning:** The `start`, `stop`, and `eval` commands must be executed **only once per node**, regardless of how many tasks are requested per node. Please see the example use-cases related to multi-host multi-task execution.
+
+
+<!-- 
+### mericStatic Parameters
+
+- `-i`: ID of the execution. Used to separate measurements. If not specified, defaults to *Slurm, PBS or Flux job id if exists else 0*.
+- `-e`: One of the supported energy measurement systems: `RAPL`, `NVML`, `HWMON`, or `A64FX`.
+- `-c`: CPU core frequency in Hz (default: Hz, can specify units like GHz, MHz, or kHz).
+- `-u`: CPU uncore frequency in Hz (default: Hz, can specify units like GHz, MHz, or kHz).
+- `-t`: Number of OpenMP threads.
+- `-p`: CPU power capping limit in mW.
+- `-w`: CPU power capping time window in ms.
+- `-s`: GPU SM frequency in Hz.
+- `-r`: GPU memory frequency in Hz.
+- `-g`: GPU power capping limit in mW.
+- `-b`: Single node baseline (static) power consumption in W.
+- `-q`: Print the overall consumed energy only in Joules (J).
+- `-o`: Output directory, `./mericStaticMeasurements` by default. -->
+
+### Output Format
+
+By default, `mericStatic` creates a folder named `mericStaticMeasurements` and saves the measurement files there, unless a different name is specified using the `-o` option. The measurement file is named using the format `mericStatic_<ID>_$(hostname).data`, where `ID` corresponds to one of the environment variables `SLURM_JOB_ID`, `PBS_JOB_ID`, or `FLUX_JOB_ID`. If none of these are defined, the ID defaults to `0`, unless explicitly provided by the user using the `-i` option.
+
+### Example Usecase
+
+`mericStatic` can be used in different scenarios including *program measurement*, *general measurement*, and *multi-host measurement*. Results are saved per node and the `mericStatic` Eval command can be used to calculate the total sum.
+
+#### **Program Measurement**
+
+In this setup, we measure RAPL and NVML energy consumption for `sleep 5` for a single node.
+
+```
+mericStatic -e RAPL,NVML -- sleep 5
+```
+
+```
+$ ./mericStatic -e RAPL,NVML -- sleep 5
+job_id :1289568
+
+$ cat mericStaticMeasurements/mericStatic_1289568_cn195.barbora.it4i.cz.data 
+Runtime [s] = 5.00656
+RAM_0 [J] = 35.4023
+RAM_1 [J] = 20.939
+PCKG_0 [J] = 239.969
+PCKG_1 [J] = 239.376
+
+RAPL Energy consumption [J] = 535.686
+Watt-hour (Energy[J] / 3600) = 0.1488016
+
+
+Runtime [s] = 5.00656
+GPU_0 [J] = 207.016
+GPU_1 [J] = 209.552
+GPU_2 [J] = 199.66
+GPU_3 [J] = 204.812
+
+NVML Energy consumption [J] = 821.04
+Watt-hour (Energy[J] / 3600) = 0.228066
+```
+
+#### **General Measurement**
+
+Similar to *program execution*, user can start measuring until further notice.
+
+```
+mericStatic -e RAPL,NVML -- start 
+mericStatic -e RAPL,NVML -- start &  # optionally.
+```
+
+This command will start collecting energy measurements every 60 seconds. It handles counter-overflow internally. User may terminate the measurement with SIGTERM or SIGINT, but it is advised to use `-- stop`.
+
+```
+mericStatic -e RAPL,NVML -- stop
+```
+
+`-- stop` can be used in conjunction with `-- start` or independently to end long-running energy measurements. It sends a kill signal to the `mericStatic` program run by the current user, which then forwards the signal to the program it is monitoring, and subsequently dumps the energy measurements.
+
+#### **Eval**
+
+`eval` assumes that all result files are accessible to the user. It filters files using the pattern `mericStatic_<job_id>*`. While it sums the total energy fields, reports the maximum execution time along with watt-hours. For the earlier example:
+
+```
+$ ./mericStatic -- eval
+Max Runtime [s] = 5.00656
+A64FX Energy consumption [J] = 0
+HWMON Energy consumption [J] = 0
+NVML Energy consumption [J] = 821.04
+RAPL Energy consumption [J] = 535.686
+ROCM Energy consumption [J] = 0
+Total Energy = 1356.73
+Total Watt-hour (Total Energy[J] / 3600) = 0.376868
+
+
+```
+
+#### **Multi-Host Measurement**
+
+So far we've used a single host, but `mericStatic` can also be used by the job scheduler. The example below is for a Slurm environment.
+> `mericStatic -- eval` assumes a NAS system exists in the cluster. Otherwise, user must ensure access to the results (e.g., by copying them).
+
+**Executing for a program and evaluating the result**
+
+```
+$ srun ./mericStatic -e RAPL,NVML -- ./application [application parameters]
+$ ./mericStatic -- eval
+```
+
+**Executing for a program, early termination and result evaluation**
+
+```
+$ srun --overlap ./mericStatic -e RAPL,NVML -- ./application [application parameters] &
+$ srun ./mericStatic -- stop
+$ ./mericStatic -- eval
+```
+Note that `--overlap` is slurm specific, allowing to execute other srun commands simultaniously, with this we could issue `stop`
+
+**Long-run start, stop, and evaluation**
+
+```
+$ srun --overlap ./mericStatic -e RAPL,NVML -- start &
+------------------ after some time ------------------
+$ srun ./mericStatic -- stop
+$ ./mericStatic -- eval
+```
+
+**Real Use-Case for Multi-Host Multi-Task Execution**
+
+Following is an sbatch script for a dummy benchmark. Note that in the benchmark we allocate 16 nodes with 8 gpus where each to create 8 instances of the program and each to have 16 cpus.
+
+Below example is written both for slurm and srun. based on the slurm configurations, sometimes it is not possible to request single instance per node with --overlap. In such cases one can use mpirun for that.
+```
+#!/bin/bash
+#SBATCH --account OPEN-XX-YY
+#SBATCH --job-name namd_gpu_1N_test
+#SBATCH --partition qgpu
+#SBATCH --nodes 16
+#SBATCH --ntasks-per-node 8
+#SBATCH --cpus-per-task 16
+#SBATCH --gpus-per-node 8
+#SBATCH --time 00:20:00
+#SBATCH --output=out-%x.%j.txt
+
+#SBATCH --mail-user=john_doe@gmail.com
+#SBATCH --mail-type=BEGIN,END,FAIL
+
+nnodes=16
+
+
+mkdir mericStaticMeasurements
+
+# srun --overlap --ntasks-per-node 1 --nodes $nnodes /path-to/mericStatic -e RAPL,NVML -o ./mericStaticMeasurements/$nnodes -- start &
+mpirun -np $nnodes --map-by ppr:1:node /path-to/mericStatic -e RAPL,NVML -o ./mericStaticMeasurements/$nnodes -- start &
+
+srun /path-to/benchmark [params]
+
+mpirun -np $nnodes --map-by ppr:1:node /path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- stop
+# srun  --ntasks-per-node 1 --nodes 4 /path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- stop
+
+/path-to/mericStatic -o ./mericStaticMeasurements/$nnodes -- eval
+
+out_file="./out-${SLURM_JOB_NAME}.${SLURM_JOB_ID}.txt"
+mv "$out_file" "mericStaticMeasurements/$nnodes/$out_file"
+
+```
 
 --------------------------------------------------------------------------------
 #     12] Acknowledgement                                                      #

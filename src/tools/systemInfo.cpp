@@ -54,14 +54,14 @@ enum MODE	//this application keeps this order
 
 std::string readFile(const std::string &filePath)
 {
-    std::ifstream file(filePath);
-    std::string content;
-    if (file.is_open())
-    {
-        std::getline(file, content);
-        file.close();
-    }
-    return content;
+	std::ifstream file(filePath);
+	std::string content;
+	if (file.is_open())
+	{
+		std::getline(file, content);
+		file.close();
+	}
+	return content;
 }
 
 /*
@@ -71,27 +71,38 @@ std::string readFile(const std::string &filePath)
 std::string getAMDGPUName(const std::string hex)
 {
 	std::string name;
-	if(hex == "0x686c")
-		name = "Mi25";
-	else if(hex == "0x66a1")
-		name = "Mi50/Mi60";
-	else if(hex == "0x738c")
-		name = "Mi100";
-	else if(hex == "0x740f")
-		name = "Mi210";
-	else if(hex == "0x740c" || hex == "7408")
-		name = "Mi250X/Mi250";
-	else if(hex == "0x74a0")
-		name = "Mi300A";
-	else if(hex == "0x74a1")
-		name = "Mi300X";
-	else if(hex == "0x7485")
-		name = "Mi300X VF";
-	else
-		name = "Unknown AMD GPU type";
+	switch (hex)
+	{
+		case "0x686c":
+		  	name = "Mi25";
+		  	break;
+		case "0x66a1":
+			name = "Mi50/Mi60";
+			break;
+		case "0x738c":
+			name = "Mi100";
+			break;
+		case "0x740f":
+			name = "Mi210";
+			break;
+		case "0x740c":
+		case "7408": //TODO 
+			name = "Mi250X/Mi250";
+			break;
+		case "0x74a0":
+			name = "Mi300A";
+			break;
+		case "0x74a1":
+			name = "Mi300X";
+			break;
+		case "0x7485":
+			name = "Mi300X VF";
+			break;
+		default:
+			name = "Unknown AMD GPU type";
+	}
 	return name;	
 }
-
 
 void sysInfoSize(bool detailed = false)
 {
@@ -233,11 +244,11 @@ void sysInfoSize(bool detailed = false)
 				}
 			}
 		}
-	        if (modelName != "")
+		if (modelName != "")
 		{
 			std::cout << "\tGPU name:         " << modelName << '\n';
 		}
-	        if (GPUDeviceCount)
+		if (GPUDeviceCount)
 		{
 			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
 			          << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
@@ -292,8 +303,8 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		if (HWP)
 		{
 			std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq\n";
+			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq\n";
 		}
 		else
 		{
@@ -304,15 +315,15 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			if (scalingDriver == "intel_pstate")
 			{
 				std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
-					      << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
+				          << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
+				          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+				          << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
 			}
 			struct stat info;
 			if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", &info) == 0)
 			{	
 				std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";
+				          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";
 				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
 				{
 					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
@@ -1169,7 +1180,6 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-
 	uint64_t min_power_limit, max_power_limit, current_power_limit, default_power_limit;
 	rsmi_status_t ret;
 
@@ -1192,12 +1202,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	{
 		std::cout << "\tGPU power limit:         " << current_power_limit / 1e6 << " W\n";
 	}
-
 #endif
-
-
-
-
 	return ok;
 }
 
@@ -1423,7 +1428,7 @@ int main(int argc, char **argv)
 		else if (!systemInTheDefaultSettings)
 		{
 			std::cerr << "\n\tWARNING: system not in the default settings!"
-				      << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+			          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
 		}
 	}
 
