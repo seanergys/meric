@@ -7,10 +7,10 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits>
-#include <csignal>
 #include <unistd.h>
 #include <errno.h>
+#include <limits>
+#include <csignal>
 #include <iomanip>
 
 using namespace meric;
@@ -30,7 +30,7 @@ struct EnergyRecords
 	{
 		if (recordTime.size() < 2)
 		{
-			std::cerr << "ERROR missing samples\n";
+			std::cerr << "MERIC ERROR: Missing measurement samples\n";
 			exit(2);
 		}
 
@@ -62,7 +62,7 @@ struct EnergyRecords
 
 		if (verbose)
 		{
-			std::cout << "Runtime [s] = " << std::fixed << runtime << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+			std::cout << "Runtime [s] = " << std::fixed << std::setprecision(3) << runtime << std::endl;
 
 			// Print each counter value
 			for (auto &kv : recordEnergy[0])
@@ -72,13 +72,13 @@ struct EnergyRecords
 			if (Tmode::getSummaryCounterName() != "")
 			{
 				std::cout << std::endl
-						  << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << summary << std::endl;
-				std::cout << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+						  << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << Tmode::getSummaryCounterName() << " = " << summary << "\n"
+						  << std::fixed << std::setprecision(3) << Tmode::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
 			}
 		}
 		else
 		{
-			std::cout << std::fixed << std::setprecision(3) << summary << std::endl; // TODO: prevent scientific format, that's with e234 etc.
+			std::cout << std::fixed << std::setprecision(3) << summary << std::endl;
 		}
 	}
 
@@ -180,7 +180,9 @@ struct EnergyRecords<HWMON_S>
 		for (unsigned int sensorID = 1; sensorID < HWMON::vrSensorLabel.size(); sensorID++)
 		{
 			if (HWMON::vrSensorLabel[sensorID].find("Grace_Power_Socket") == std::string::npos)
+			{
 				continue;
+			}
 
 			avgWatts = energy[sensorID] / (lastVR - firstVR);
 			energyConsumption = duration * avgWatts;
@@ -196,10 +198,10 @@ struct EnergyRecords<HWMON_S>
 			// 		  << "ID of last sample" << "," << lastVR - 1 << std::endl
 			// 		  << std::endl;
 		}
-
-		std::cout << std::endl
-				  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << std::endl;
-		std::cout << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+		std::cout << '\n'
+				  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << HWMON::getSummaryCounterName() << " = " << summary << '\n'
+				  << std::fixed << std::setprecision(3) << HWMON::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << '\n'
+				  << std::endl;
 
 		HWMON::close();
 	}
@@ -230,12 +232,11 @@ void printHelp()
 			  << std::endl;
 	exit(EXIT_FAILURE);
 }
-
+// TODO header file
 bool isJobRunning(const std::string &jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath);
 double extractMaxRuntime(const std::string &filepath);
-bool createDirectoryIfNotExists(const std::string &path);
 
 enum class TOOL_MODE
 {
@@ -253,11 +254,11 @@ void signalHandler(int signal)
 	if (signal == SIGINT)
 	{
 		// write(STDOUT_FILENO, "Interrupt signal (Ctrl+C) received\n", 36);
-
 		if (child_pid > 0)
 		{
-			kill(child_pid, SIGINT); // Forward signal to child process
-									 // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// Forward signal to child process
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			kill(child_pid, SIGINT);
 		}
 		else
 		{
@@ -269,11 +270,11 @@ void signalHandler(int signal)
 	else if (signal == SIGTERM)
 	{
 		// write(STDOUT_FILENO, "Termination signal received.\n", 30);
-
 		if (child_pid > 0)
 		{
-			kill(child_pid, SIGTERM); // Forward signal to child process
-									  // write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			// Forward signal to child process
+			// write(STDOUT_FILENO, "Signal forwarded to the child process\n", 39);
+			kill(child_pid, SIGTERM);
 		}
 		else
 		{
@@ -576,7 +577,9 @@ int main(int argc, char **argv)
 				}
 			}
 			else
+			{
 				printHelp();
+			}
 		}
 		else
 		{
@@ -590,13 +593,15 @@ int main(int argc, char **argv)
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
 	{
-		createDirectoryIfNotExists(outputDirectory);
+		meric::mutils::createDir(outputDirectory);
 
 		// redirect the output to the file created.
 		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(measurement_id) + "_" + hostname + ".data";
 		outfile.open(filename, std::ios::out | std::ios::trunc);
 		if (outfile.is_open())
-			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
+		{
+			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to a file
+		}
 		else
 		{
 			std::cerr << "MERIC ERROR: Cannot create file:" << filename << "\n";
@@ -648,14 +653,14 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<HWMON>);
 				prints.push_back(EnergyRecords<HWMON>::printValues);
 			}
-			else if (token == "HWMON-S") // sampling mode for grace11
+			else if (token == "HWMON-S") // sampling mode
 			{
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
 			}
 			else
 			{
-				std::cerr << "ERROR: unknown energy measurement system '" + token + "'\n\n";
+				std::cerr << "MERIC ERROR: Unknown energy measurement system '" + token + "'\n\n";
 				printHelp();
 			}
 		}
@@ -869,13 +874,15 @@ int main(int argc, char **argv)
 	else if (toolMode == TOOL_MODE::STOP && !applicationCommand.empty())
 	{
 		if (std::system(applicationCommand.c_str()) != 0)
-			std::cerr << "MERIC static ERROR: could not run `" << applicationCommand << "`\n";
+		{
+			std::cerr << "MERIC ERROR: Could not run `" << applicationCommand << "`\n";
+		}
 	}
 	else if (toolMode == TOOL_MODE::EVAL)
 	{
-
 		if (isJobRunning("mericStatic"))
 			std::cout << "MERIC INFO: Job is not yet completed!\n";
+
 		else
 		{
 			// check if all files are there, if so aggregate the total energy
@@ -893,25 +900,28 @@ int main(int argc, char **argv)
 			{
 				auto energies = extractEnergyConsumption(filepath);
 				for (const auto &entry : energies)
+				{
 					totalEnergy[entry.first] += entry.second;
+				}
 
 				double localRuntime = extractMaxRuntime(filepath);
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
-				// std::cout << filepath << "\n";
 			}
 			std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
-			// std::cout << "Total Energy consumption [J] = " << totalEnergy << "\n";
+
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
 				if (entry.second == 0.0)
+				{
 					continue;
+				}
 				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << std::setprecision(3) << entry.second << "\n";
 				totalSum += entry.second;
 			}
-			std::cout << "\n";
-			std::cout << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n";
-			std::cout << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
+			std::cout << "\n"
+					  << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n"
+					  << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
 		}
 	}
 
@@ -926,6 +936,7 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
 double extractMaxRuntime(const std::string &filepath)
 {
 	std::ifstream file(filepath);
@@ -946,7 +957,7 @@ double extractMaxRuntime(const std::string &filepath)
 			}
 		}
 	}
-	return maxRuntime; // Will be 0.0 if not found
+	return maxRuntime; // 0.0 if not found
 }
 
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
@@ -983,7 +994,9 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	std::vector<std::string> result;
 	DIR *dir = opendir(directory.c_str());
 	if (!dir)
+	{
 		return result;
+	}
 
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != nullptr)
@@ -997,6 +1010,7 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	closedir(dir);
 	return result;
 }
+
 bool isJobRunning(const std::string &jobName)
 {
 	std::string cmd = "srun --overlap ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
@@ -1015,26 +1029,5 @@ bool isJobRunning(const std::string &jobName)
 	{
 		result += buffer;
 	}
-	// std::cout << result << "\n";
 	return !result.empty();
-}
-
-bool createDirectoryIfNotExists(const std::string &path)
-{
-	struct stat st;
-	if (stat(path.c_str(), &st) != 0)
-	{
-		// Directory does not exist
-		if (mkdir(path.c_str(), 0755) != 0)
-		{
-			std::cerr << "Failed to create directory '" << path << "': " << strerror(errno) << "\n";
-			return false;
-		}
-	}
-	else if (!S_ISDIR(st.st_mode))
-	{
-		std::cerr << "'" << path << "' exists but is not a directory.\n";
-		return false;
-	}
-	return true;
 }
