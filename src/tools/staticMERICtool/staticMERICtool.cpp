@@ -908,7 +908,6 @@ int main(int argc, char **argv)
 				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
 			}
 			std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
-
 			double totalSum = 0;
 			for (const auto &entry : totalEnergy)
 			{
