@@ -16,7 +16,7 @@
 using namespace meric;
 
 int POWER_BASELINE = 0;
-int job_id; // id specific to the execution.
+int measurement_id; // id specific to the execution.
 
 //----------------------------------------------------------------------------//
 
@@ -208,30 +208,27 @@ struct EnergyRecords<HWMON_S>
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
-			  // TODO	          << "Run energyMeasureStart to start the energy measurement and change system parameters\n"
-			  // TODO	          << "Run energyMeasureStop to stop energy measurement, restore system settings and print the result energy consumption to std::cout\n"
-			  // TODO	          << "\nenergy measurement mode (-e) is the only mandatory parameter\n\n"
 			  << "\t mericStatic [mericStatic parameters] -- ./application [application parameters]\n"
 			  << "\t mericStatic [mericStatic parameters] -- start: Starts measuring energy untill mericStatic -- stop command issued.\n"
 			  << "\t mericStatic [mericStatic parameters] -- stop: Sends SIGTERM signal to stop mericStatic commands.\n"
 			  << "\t mericStatic [mericStatic parameters] -- eval: Reads all dump files and aggregates total energy consumption.\n"
 			  << "\t mericStatic parameters:\n"
-			  //	          << "\t-e = comma separated list of energy measurement systems: RAPL,NVML,A64FX\n"
+			  << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON-C, HWMON-S, or A64FX\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
-			  << "\t-e = one energy measurement systems from supported: RAPL, NVML, HWMON-C, HWMON-S, or A64FX\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-t = #OpenMP threads\n"
+			  << "\t-T = Sampling period, default 60 in seconds.\n"
 			  << "\t-p = CPU power capping power limit [mW]\n"
 			  << "\t-w = CPU power capping time window [ms]\n"
 			  << "\t-s = GPU SM frequency [Hz]\n"
 			  << "\t-r = GPU memory frequency [Hz]\n"
 			  << "\t-g = GPU power capping power limit [mW]\n"
-			  << "\t-b = single node baseline (static) power consumption [W]\n"
+			  << "\t-b = Baseline (static) power consumption [W]\n"
 			  << "\t-q = print the overall consumed energy only [J]\n"
 			  << "\t-o = output directory, ./mericStaticMeasurements by default\n"
 			  << std::endl;
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 bool isJobRunning(const std::string &jobName);
@@ -302,17 +299,30 @@ int main(int argc, char **argv)
 	std::string applicationCommand = "";
 	std::string outputDirectory = "mericStaticMeasurements";
 
-	const char *job_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
-																					 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
-																												  : "0";
-	if (job_id_env)
-		job_id = std::atoi(job_id_env);
-	printf("job_id :%d\n", job_id);
+	const char *measurement_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
+																							 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
+																														  : "0";
+	if (measurement_id_env)
+		measurement_id = std::atoi(measurement_id_env);
+	printf("measurement_id :%d\n", measurement_id);
 
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
-		std::cerr << "missing machine hostname\n";
-		exit(1);
+		std::cerr << "MERIC WARNING: gethostname failed (" << strerror(errno) << "), trying /etc/hostname\n";
+		std::ifstream hostname_file("/etc/hostname");
+		if (hostname_file.is_open())
+		{
+			std::string line;
+			std::getline(hostname_file, line);
+			std::strncpy(hostname, line.c_str(), HOST_NAME_MAX);
+			hostname[HOST_NAME_MAX - 1] = '\0';
+		}
+		else
+		{
+			std::cerr << "MERIC ERROR: Cannot get hostname from /etc/hostname. Using fallback to \"unknown_host\".\n";
+			std::strncpy(hostname, "unknown_host", HOST_NAME_MAX);
+			hostname[HOST_NAME_MAX - 1] = '\0';
+		}
 	}
 	setupSignalHandlers();
 	RegionParameters defaultParameter;
@@ -362,6 +372,24 @@ int main(int argc, char **argv)
 				try
 				{
 					defaultParameter.nthreads = std::stoi(argv[++i]);
+				}
+				catch (std::exception const &e)
+				{
+					printHelp();
+				}
+			}
+			else
+			{
+				printHelp();
+			}
+		}
+		else if (arg == "-T")
+		{
+			if (i + 1 < argc)
+			{
+				try
+				{
+					defaultParameter.samplingPeriod = std::stoi(argv[++i]);
 				}
 				catch (std::exception const &e)
 				{
@@ -501,7 +529,7 @@ int main(int argc, char **argv)
 		{
 			if (i + 1 < argc)
 			{
-				job_id = std::atoi(argv[++i]);
+				measurement_id = std::atoi(argv[++i]);
 			}
 			else
 			{
@@ -556,6 +584,8 @@ int main(int argc, char **argv)
 		}
 	}
 
+	// std::cout << "SAMPLING PERIOD ->" << defaultParameter.samplingPeriod << " s\n";
+
 	std::ofstream outfile;
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
@@ -563,12 +593,15 @@ int main(int argc, char **argv)
 		createDirectoryIfNotExists(outputDirectory);
 
 		// redirect the output to the file created.
-		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(job_id) + "_" + hostname + ".data";
+		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(measurement_id) + "_" + hostname + ".data";
 		outfile.open(filename, std::ios::out | std::ios::trunc);
 		if (outfile.is_open())
 			std::cout.rdbuf(outfile.rdbuf()); // Redirect cout to file
 		else
-			std::cerr << "Error creating the file:" << filename << "\n";
+		{
+			std::cerr << "MERIC ERROR: Cannot create file:" << filename << "\n";
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	std::vector<void (*)(bool, double)> measurements;
@@ -649,9 +682,55 @@ int main(int argc, char **argv)
 			char *const args[] = {(char *)"sh", (char *)"-c", (char *)applicationCommand.c_str(), nullptr};
 			execvp(args[0], args); // Replace with the command, use execvp to search in PATH
 
-			// If execvp fails, print an error
-			std::cerr << "Error: " << strerror(errno) << std::endl;
-			exit(1);
+			// If execvp fails, print an error and exit
+			std::cerr << "MERIC ERROR: Failed to launch application command: \"" << applicationCommand << "\"\n";
+			std::cerr << "Reason (errno " << errno << "): " << strerror(errno) << std::endl;
+
+			switch (errno)
+			{
+			case E2BIG:
+				std::cerr << "Hint: The command or its arguments are too long for the system to handle.\n";
+				break;
+			case EACCES:
+				std::cerr << "Hint: Permission denied.\n"
+						  << " - Ensure the shell or script is executable.\n"
+						  << " - Check execute permissions using `chmod +x`.\n";
+				break;
+			case EFAULT:
+				std::cerr << "Hint: Command or arguments point to an invalid memory location (corrupted input).\n";
+				break;
+			case EINVAL:
+				std::cerr << "Hint: Invalid ELF executable or argument array. (Very rare for `sh -c`.)\n";
+				break;
+			case ENAMETOOLONG:
+				std::cerr << "Hint: The command path is too long.\n";
+				break;
+			case ENOENT:
+				std::cerr << "Hint: Shell ('sh') not found in PATH, or command inside 'sh -c' is invalid.\n"
+						  << " - Verify '/bin/sh' exists.\n"
+						  << " - Check spelling of the application command.\n";
+				break;
+			case ENOEXEC:
+				std::cerr << "Hint: The file is not a valid executable format.\n"
+						  << " - Possibly missing shebang (#!/bin/bash) in scripts.\n";
+				break;
+			case ENOMEM:
+				std::cerr << "Hint: Not enough memory to run the process.\n"
+						  << " - Try freeing memory or reducing load.\n";
+				break;
+			case ENOTDIR:
+				std::cerr << "Hint: A component of the command path is not a directory.\n";
+				break;
+			case ELOOP:
+				std::cerr << "Hint: Too many symbolic links in the command path.\n"
+						  << " - Try resolving symlinks manually with `readlink -f`.\n";
+				break;
+			default:
+				std::cerr << "Hint: Unhandled error. Refer to system documentation or use `strace` to debug.\n";
+				break;
+			}
+
+			exit(EXIT_FAILURE);
 		}
 		else if (pid > 0) // parent
 		{
@@ -666,8 +745,41 @@ int main(int argc, char **argv)
 
 				if (result == -1)
 				{
-					std::cerr << "Error: " << strerror(errno) << std::endl;
-					exit(1);
+					std::cerr << "MERIC ERROR: waitpid failed for child PID " << child_pid
+							  << " (errno " << errno << "): " << strerror(errno) << std::endl;
+
+					switch (errno)
+					{
+					case ECHILD:
+						std::cerr << "Hint: No child process exists with the specified PID.\n"
+								  << " - The process may have already terminated and been reaped.\n"
+								  << " - Or the PID provided is not a child of the current process.\n";
+						break;
+
+					case EINTR:
+						std::cerr << "Hint: The call was interrupted by a signal before any child exited.\n"
+								  << " - This can happen if a signal handler (e.g., SIGINT or SIGCHLD) interrupted waitpid.\n"
+								  << " - Consider retrying the call in a loop or using signal-safe handling.\n";
+						break;
+
+					case EINVAL:
+						std::cerr << "Hint: Invalid arguments provided to waitpid.\n"
+								  << " - The options may be incorrect or unsupported on this system.\n"
+								  << " - Common mistake: misusing WNOHANG or combining incompatible flags.\n";
+						break;
+
+					case EFAULT:
+						std::cerr << "Hint: The status pointer points to an invalid memory address.\n"
+								  << " - This usually indicates memory corruption or an uninitialized pointer.\n"
+								  << " - Check if '&status' is correctly defined and not a dangling pointer.\n";
+						break;
+
+					default:
+						std::cerr << "Hint: Unknown error. errno value not recognized by standard waitpid errors.\n"
+								  << " - Refer to the system's documentation or inspect surrounding code for issues.\n";
+						break;
+					}
+					exit(EXIT_FAILURE);
 				}
 				else if (result == 0)
 				{
@@ -675,7 +787,7 @@ int main(int argc, char **argv)
 					clock_gettime(CLOCK_REALTIME, &timestamp);
 					timeNow = mutils::timeToDouble(timestamp);
 
-					if (timeNow - waitTime > 60) // TODO: application input parameter
+					if (timeNow - waitTime > defaultParameter.samplingPeriod)
 					{
 						for (auto measureEnergyGeneral : measurements)
 						{
@@ -714,7 +826,7 @@ int main(int argc, char **argv)
 		else
 		{ // error
 			std::cerr << "Fork failed: " << strerror(errno) << std::endl;
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 	else if (toolMode == TOOL_MODE::START)
@@ -725,7 +837,7 @@ int main(int argc, char **argv)
 			clock_gettime(CLOCK_REALTIME, &timestamp);
 			timeNow = mutils::timeToDouble(timestamp);
 
-			if (timeNow - waitTime > 60) // TODO: application input parameter
+			if (timeNow - waitTime > defaultParameter.samplingPeriod)
 			{
 				for (auto measureEnergyGeneral : measurements)
 				{
@@ -763,17 +875,17 @@ int main(int argc, char **argv)
 	{
 
 		if (isJobRunning("mericStatic"))
-			std::cout << "Job is not yet completed!\n";
+			std::cout << "MERIC INFO: Job is not yet completed!\n";
 		else
 		{
 			// check if all files are there, if so aggregate the total energy
-			std::string prefix = "mericStatic_" + std::to_string(job_id);
+			std::string prefix = "mericStatic_" + std::to_string(measurement_id);
 			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
 			std::map<std::string, double> totalEnergy = {
 				{"RAPL", 0.0},
 				{"NVML", 0.0},
 				{"A64FX", 0.0},
-				{"HWMON", 0.0},
+				{"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
 				{"ROCM", 0.0},
 			};
 			double maxRuntime = 0.0;
@@ -887,12 +999,12 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 }
 bool isJobRunning(const std::string &jobName)
 {
-	std::string cmd = "srun ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
+	std::string cmd = "srun --overlap ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
 
 	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe)
 	{
-		std::cerr << "Failed to run command.\n";
+		std::cerr << "MERIC ERROR: Failed to run command: " << cmd << "\n";
 		return false;
 	}
 

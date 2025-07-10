@@ -117,6 +117,7 @@ struct RegionParameters { //must be able to carry -1
 	long frequencyGPU = 0;    //Hz
 	long frequencyGPUmem = 0; //Hz
 	long powerCapGPU = 0;     //mW
+	long samplingPeriod = 60; //s - default sampling period
 };
 
 

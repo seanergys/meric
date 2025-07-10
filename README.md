@@ -721,7 +721,7 @@ $ ./mericStatic -- eval
 
 ```
 $ srun --overlap ./mericStatic -e RAPL,NVML -- ./application [application parameters] &
-$ srun ./mericStatic -- stop
+$ srun --overlap ./mericStatic -- stop
 $ ./mericStatic -- eval
 ```
 Note that `--overlap` is slurm specific, allowing to execute other srun commands simultaniously, with this we could issue `stop`
@@ -731,7 +731,7 @@ Note that `--overlap` is slurm specific, allowing to execute other srun commands
 ```
 $ srun --overlap ./mericStatic -e RAPL,NVML -- start &
 ------------------ after some time ------------------
-$ srun ./mericStatic -- stop
+$ srun --overlap ./mericStatic -- stop
 $ ./mericStatic -- eval
 ```
 
