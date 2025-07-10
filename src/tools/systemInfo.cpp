@@ -68,41 +68,31 @@ std::string readFile(const std::string &filePath)
  * GPU id and name can be obtained through command: rocminfo | grep -Ei "Chip ID|Marketing name"
  *   - note: this command may output also AMD CPUs
  */
+
 std::string getAMDGPUName(const std::string hex)
 {
 	std::string name;
-	switch (hex)
-	{
-		case "0x686c":
-		  	name = "Mi25";
-		  	break;
-		case "0x66a1":
-			name = "Mi50/Mi60";
-			break;
-		case "0x738c":
-			name = "Mi100";
-			break;
-		case "0x740f":
-			name = "Mi210";
-			break;
-		case "0x740c":
-		case "7408": //TODO 
-			name = "Mi250X/Mi250";
-			break;
-		case "0x74a0":
-			name = "Mi300A";
-			break;
-		case "0x74a1":
-			name = "Mi300X";
-			break;
-		case "0x7485":
-			name = "Mi300X VF";
-			break;
-		default:
-			name = "Unknown AMD GPU type";
-	}
+	if(hex == "0x686c")
+		name = "Mi25";
+	else if(hex == "0x66a1")
+		name = "Mi50/Mi60";
+	else if(hex == "0x738c")
+		name = "Mi100";
+	else if(hex == "0x740f")
+		name = "Mi210";
+	else if(hex == "0x740c" || hex == "7408")
+		name = "Mi250X/Mi250";
+	else if(hex == "0x74a0")
+		name = "Mi300A";
+	else if(hex == "0x74a1")
+		name = "Mi300X";
+	else if(hex == "0x7485")
+		name = "Mi300X VF";
+	else
+		name = "Unknown GPU type";
 	return name;	
 }
+
 
 void sysInfoSize(bool detailed = false)
 {
