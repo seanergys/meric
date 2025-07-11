@@ -40,12 +40,12 @@ int main(int argc, char **argv)
 
     for (size_t i = 0; i < ITER; i++)
     {
+        printf("\titer:%d\n", i);
         /*
             -------------- STEP(4) --------------
             Get an EnergyTimeStamp for reference before to begin measuring energy of a code.
          */
         struct ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
-        // printf("***********************************domain_id:%d\n",ts->domain_data[0].domain_id);
         extlib_print_energy_timestamp(ts, 5);
         // exit(0);
         // extlib_free_energy_timestamp(ts);
@@ -54,8 +54,8 @@ int main(int argc, char **argv)
 
         //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
 
-// #pragma omp parallel
-        do_work(5.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+        // #pragma omp parallel
+        do_work(1.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
         // END JOB
 
@@ -81,9 +81,12 @@ int main(int argc, char **argv)
             -------------- STEP(7) --------------
              Do NOT forget to free the timestamps
          */
-        extlib_free_energy_timestamp(ts);
-        extlib_free_energy_timestamp(ts2);
-        extlib_free_energy_timestamp(result);
+        if (i >= 3)
+        {
+            extlib_free_energy_timestamp(ts);
+            extlib_free_energy_timestamp(ts2);
+            extlib_free_energy_timestamp(result);
+        }
     }
 
     /*
