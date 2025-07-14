@@ -12,6 +12,7 @@ int Environment::CORES_PER_SOCKET = 1;
 int Environment::THREADS_PER_CORE = 1;
 std::map<int, std::vector<int>> Environment::mapThreadsToCore;
 std::map<int, std::vector<int>> Environment::mapCoresToSocket;
+std::map<int, std::vector<uint64_t> > Environment::mapCoresToTIDs;
 SYSTEM_TYPE Environment::systemType = SYS_OTHER;
 
 std::string Environment::scalingGovernor = "";

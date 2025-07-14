@@ -172,6 +172,7 @@ public:
 	
 	static std::map<int, std::vector<int>> mapThreadsToCore;
 	static std::map<int, std::vector<int>> mapCoresToSocket;
+	static std::map<int, std::vector<uint64_t> > mapCoresToTIDs;
 
 	static SYSTEM_TYPE systemType;
 

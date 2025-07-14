@@ -1,10 +1,26 @@
 
 #include "meric.h"
+#include "cpu_affinity_map.h"
+#include <memory>
 
 using namespace meric;
 
 SharedMeric::SharedMeric()
 {
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>());
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity();
+	m_pAffinityMap->BindThreads();
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
+
+	/*for(const auto &item: Environment::mapCoresToTIDs)
+	{
+		std::cout << item.first << ": ";
+		for(auto t: item.second)
+			std::cout << t << " ";
+		std::cout << std::endl;
+	}*/
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
 	{
 		HDEEM::init(Meric::DETAILED);
