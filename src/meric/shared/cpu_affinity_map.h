@@ -1,8 +1,9 @@
 #pragma once
 
-#ifndef __CPU_AFFINITY_MAP_SHARED_H__
-#define __CPU_AFFINITY_MAP_SHARED_H__
+#ifndef SRC_MERIC_SHARED_CPU_AFFINITY_MAP_H_
+#define SRC_MERIC_SHARED_CPU_AFFINITY_MAP_H_
 
+#include <iostream>
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -42,16 +43,11 @@ public:
         m_threadIds.resize(m_threadCount * m_rankCount);
     }
     
-    virtual void ComputeAffinity()
+    virtual void ComputeAffinity(const std::string &mode)
     {
         CollectAffinity();
-        BindFirstFree();
+        ComputeBinding(mode);
         BuildCoreToThreadMap();
-    }
-
-    virtual void BindThreads()
-    {
-        SetThreadsAffinity(m_affinityMap, m_threadCount * m_rankIdx);
     }
     
     virtual const CoreToThreadMap_t &GetCoreToThreadMap() const { return m_coreMap; }
@@ -121,6 +117,16 @@ protected:
     
     void BuildCoreToThreadMap() {
         auto coreMap = m_affinityMap.Transposed();
+
+        /*if(m_rankIdx == 0)
+        {
+            for(const auto &v: m_threadIds)
+                std::cout << v << " ";
+            std::cout << std::endl;
+
+            for(size_t i = 0; i < coreMap.rows; ++i)
+                std::cout << coreMap.GetRowView(i) << std::endl;
+        }*/
         
         m_coreMap.clear();
         for(size_t i = 0; i < m_coreCount; ++i)
@@ -150,6 +156,14 @@ protected:
         GetThreadsAffinity(m_affinityMap, m_affinityMap.rowsPerRank * m_rankIdx);
         GetThreadIds(m_threadIds, m_affinityMap.rowsPerRank * m_rankIdx);
     }
+
+    void ComputeBinding(const std::string &mode) {
+        if(mode == "NONE")
+            return;
+
+        BindFirstFree();
+        SetThreadsAffinity(m_affinityMap, m_threadCount * m_rankIdx);
+    }
     
     int m_coreCount;
     int m_threadCount;
@@ -163,4 +177,4 @@ protected:
 }
 }
 
-#endif // __CPU_AFFINITY_MAP_SHARED_H__
+#endif // SRC_MERIC_SHARED_CPU_AFFINITY_MAP_H_

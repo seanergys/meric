@@ -541,6 +541,7 @@ protected:
 	static std::string BARRIERS;
 	static std::string MEASURE;
 	static std::vector<mode> MONITORS;
+	static std::string THREAD_PIN_MODE;
 
 	std::unique_ptr<meric::cpu_affinity_map::CPUAffinityMap_t> m_pAffinityMap;
 };

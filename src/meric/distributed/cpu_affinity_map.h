@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __CPU_AFFINITY_MAP_DIST_H__
-#define __CPU_AFFINITY_MAP_DIST_H__
+#ifndef SRC_MERIC_DISTRIBUTED_CPU_AFFINITY_MAP_H_
+#define SRC_MERIC_DISTRIBUTED_CPU_AFFINITY_MAP_H_
 
 #include <mpi.h>
 
@@ -86,7 +86,7 @@ public:
         }, true, &m_threadIdsMergeOp);
     }
     
-    virtual void ComputeAffinity()
+    virtual void ComputeAffinity(const std::string &mode)
     {
         this->CollectAffinity();
         
@@ -95,7 +95,7 @@ public:
         MPI_Allreduce(this->m_threadIds.data(), this->m_threadIds.data(), 
                       1, m_threadIdsType, m_threadIdsMergeOp, m_nodeLocalComm);
         
-        this->BindFirstFree();
+        this->ComputeBinding(mode);
         this->BuildCoreToThreadMap();
     }
     
@@ -111,4 +111,4 @@ protected:
 }
 }
 
-#endif // __CPU_AFFINITY_MAP_DIST_H__
+#endif // SRC_MERIC_DISTRIBUTED_CPU_AFFINITY_MAP_H_

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __CPU_AFFINITY_SET_H__
-#define __CPU_AFFINITY_SET_H__
+#ifndef SRC_BASIS_CPU_AFFINITY_SET_H_
+#define SRC_BASIS_CPU_AFFINITY_SET_H_
 
 #include <cstdint>
 #include <algorithm>
@@ -39,12 +39,12 @@ public:
         for(size_t i = 0; i < GetSize(); ++i)
         {
             T elem = value ? GetElem(i) : (~GetElem(i));
-            while(elem != 0)
+            size_t offset = 0;
+
+            while((elem >> offset) != 0)
             {
-                size_t offset = __builtin_ctzg(elem);
-                elem = elem >> (offset + 1);
-                
-                f(i*sizeof(T) + offset);
+                offset += __builtin_ctzg(elem) + 1;
+                f(i*sizeof(T) + offset - 1);
             }
         }
         
@@ -319,4 +319,4 @@ void BindFirstFree(D &affinity, M &mask)
 }
 }
 
-#endif // __CPU_AFFINITY_SET_H__
+#endif // SRC_BASIS_CPU_AFFINITY_SET_H_

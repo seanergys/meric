@@ -7,12 +7,6 @@ using namespace meric;
 
 SharedMeric::SharedMeric()
 {
-	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>());
-	m_pAffinityMap->CollectMachineInfo();
-	m_pAffinityMap->ComputeAffinity();
-	m_pAffinityMap->BindThreads();
-	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
-
 	/*for(const auto &item: Environment::mapCoresToTIDs)
 	{
 		std::cout << item.first << ": ";
@@ -127,6 +121,11 @@ SharedMeric::SharedMeric()
 	{
 		currentState.socket[socket] = defaultParameter;
 	}
+
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>());
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
 
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called

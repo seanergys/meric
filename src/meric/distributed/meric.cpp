@@ -55,23 +55,6 @@ DistributedMeric::DistributedMeric()
 	int nodeFirst = (_MPInodeRank) ? 0 : 1;
 	MPI_Scan(&nodeFirst, &_nodeId, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	_nodeId--;
-
-	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(_currentNode));
-	m_pAffinityMap->CollectMachineInfo();
-	m_pAffinityMap->ComputeAffinity();
-	m_pAffinityMap->BindThreads();
-	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
-
-	/*if(nodeFirst)
-	{
-		for(const auto &item: Environment::mapCoresToTIDs)
-		{
-			std::cout << item.first << ": ";
-			for(auto t: item.second)
-				std::cout << t << " ";
-			std::cout << std::endl;
-		}
-	}*/
 	
 //STORE
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
@@ -306,6 +289,22 @@ DistributedMeric::DistributedMeric()
 	for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 	{
 		currentState.socket[socket] = defaultParameter;
+	}
+
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(_currentNode));
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
+
+	if(nodeFirst)
+	{
+		for(const auto &item: Environment::mapCoresToTIDs)
+		{
+			std::cout << item.first << ": ";
+			for(auto t: item.second)
+				std::cout << t << " ";
+			std::cout << std::endl;
+		}
 	}
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
