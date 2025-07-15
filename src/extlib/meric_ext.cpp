@@ -59,6 +59,18 @@ static void close();
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
+const int empty_slot_threshold_for_page_removal = 3; // 1 energy reading at least.
+static int count_total_empty_slots_before(int page)
+{
+    int empty_slots = 0;
+    for (auto &&i : energyts_metadata_entry_length)
+    {
+        if (i.first < page)
+            empty_slots += (reserved_memory_size - i.second);
+    }
+    std::cout << "total empty slots :" << empty_slots << " before page :" << page << "\n";
+    return empty_slots;
+}
 /* --------------------------------------------------------------- */
 
 template <typename Tmode, typename TmapVal>
@@ -72,7 +84,6 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
 
     if (use_reserved_memory)
     {
-        // TODO: get cell of domain_index since it is an array now.
         std::cout << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
         DomainMemoryMap &map = energyts_domain_data.at(domain_index).at(page);
         size_t arr_size = map.arr_size;
@@ -413,7 +424,6 @@ void extlib_close(ExtlibEnergy *enabled_domains)
             int domain_id = meric::mutils::countTrailingZeros(domain);
             if (use_reserved_memory && energyts_domain_data.count(domain_id))
             {
-                // TODO: Keep it as is but traverse (since it is a list now.)
                 std::unordered_map<int, DomainMemoryMap> &dm_map = energyts_domain_data[domain_id];
 
                 for (auto &pair : dm_map)
@@ -557,7 +567,6 @@ struct ExtlibEnergyTimeStamp *newEnergyTimeStamp()
         energyts_metadata_entry_length[new_page_id] = 1;
         std::cout << "reserved_memory_size: " << reserved_memory_size << " for page " << new_page_id << "\n";
 
-        // TODO: need to allocate memory for the new page element pointers. (like we do with init)
         // traverse energyts_domain_data variable and first page, based on the reserved_memory_size and allocations, create another one for the new page
         for (auto &&i : energyts_domain_data)
         {
@@ -568,7 +577,7 @@ struct ExtlibEnergyTimeStamp *newEnergyTimeStamp()
             DomainMemoryMap map;
             map.arr_size = domain_map[0].arr_size;                       // page 0's arr_size is the same for all pages.
             size_t total_elements = map.arr_size * reserved_memory_size; // this will store whole records.
-            
+
             std::cout << "total_elements: " << total_elements << " for domain_id: " << domain_id << "\n";
             // Allocate flat arrays for all timestamps
             map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));  // allocate space for each sample
@@ -700,24 +709,39 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
             }
         }
 
+        int page = timestamp->reserved_memory_page;
         // Remove the timestamp from the metadata vector
         // if it becomes empty, remove the page from the metadata memory map.
-        auto &vec = energyts_metadata[timestamp->reserved_memory_page];
-        std::cout << "\t length of page before removal: " << energyts_metadata_entry_length[timestamp->reserved_memory_page] << "\n";
+        auto &vec = energyts_metadata[page];
+        std::cout << "\t before removal: page: " << page << " length: " << energyts_metadata_entry_length[page] << "\n";
 
-        // if page-vector is empty when entry removed, delete the page.
-        if (timestamp->reserved_memory_page != 0 && (energyts_metadata_entry_length[timestamp->reserved_memory_page] == 1)) // if it is the last entry in the page
+        // if it is not the default page (page 0)
+        // if there is no remaining entry in the page
+        // if you are the last page.
+        // if previous pages has empty entry slots (for optimization) > than the threshold.
+        // remove the page.
+        if (page != 0 &&
+            (energyts_metadata_entry_length[page] == 1) &&
+            page == energyts_metadata_entry_length.size() - 1 &&
+            count_total_empty_slots_before(timestamp->reserved_memory_page) >= empty_slot_threshold_for_page_removal) // if it is the last entry in the page
         {
-            energyts_metadata_entry_length[timestamp->reserved_memory_page] -= 1; // Decrease the length of the page vector
+            std::cout << "FREEING PAGE:" << page << "\n";
+            energyts_metadata_entry_length[page] -= 1; // Decrease the length of the page vector
 
-            energyts_metadata.erase(timestamp->reserved_memory_page);
+            std::cout << "\t\tclear timestamp at index " << timestamp->reserved_memory_index << " from page: " << page << "\n";
+            memset(timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp));
+            timestamp->id = 0; // Mark as available
+            timestamp->reserved_memory_index = -1;
+            timestamp->reserved_memory_page = -1; // Mark as available (max number)
+
+            energyts_metadata.erase(page);
             // free the memory locations pointing from the metadata
             for (int domain_id = 0; domain_id < EXTLIB_NUM_DOMAINS; domain_id++)
             {
-                if(energyts_domain_data.count(domain_id) == 0)
+                if (energyts_domain_data.count(domain_id) == 0)
                     continue; // skip if no data for this domain
 
-                auto &mmap = energyts_domain_data[domain_id][timestamp->reserved_memory_page];
+                auto &mmap = energyts_domain_data[domain_id][page];
                 if (mmap.counter_value)
                 {
                     free(mmap.counter_value);
@@ -729,16 +753,16 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
                     mmap.energy_per_counter = nullptr;
                 }
                 // don't free counter_name, since it is shared across all timestamps.
-                std::cout << "\t Domain " << printDomainName(timestamp->domain_data[domain_id].domain_id) << " erased from page: " << timestamp->reserved_memory_page << "\n";
-                energyts_domain_data[domain_id].erase(timestamp->reserved_memory_page); // Remove the page from the domain data map
+                std::cout << "\t Domain " << printDomainName(1 << domain_id) << " erased from page: " << page << "\n";
+                energyts_domain_data[domain_id].erase(page); // Remove the page from the domain data map
             }
         }
         else
         {
-            energyts_metadata_entry_length[timestamp->reserved_memory_page] -= 1; // Decrease the length of the page vector
+            energyts_metadata_entry_length[page] -= 1; // Decrease the length of the page vector
 
             // Clear the ExtlibEnergyTimeStamp struct itself
-            std::cout << "Clear timestamp at index " << timestamp->reserved_memory_index << " from page " << timestamp->reserved_memory_page << "\n";
+            std::cout << "\t\tclear timestamp at index " << timestamp->reserved_memory_index << " from page " << page << "\n";
             memset(timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp));
             timestamp->id = 0; // Mark as available
             timestamp->reserved_memory_index = -1;
@@ -787,9 +811,8 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
             {
                 // std::cout << "\textlib_calc_energy_consumption use_reserved_memory\n";
 
-                if(energyts_domain_data.count(domain_iter) == 0)
+                if (energyts_domain_data.count(domain_iter) == 0)
                     continue; // skip if no data for this domain
-                // TODO: Since it returns a vector now, get "cell of domain_iter" not just domain_iter.
                 DomainMemoryMap &map = energyts_domain_data[domain_iter][result->reserved_memory_page];
                 size_t offset = map.arr_size * result->reserved_memory_index;
                 // std::cout << "\toffset:" << offset << " -- map.arr_size:" << map.arr_size << " -- " << "static memory index:" << result->reserved_memory_index << "\n";
