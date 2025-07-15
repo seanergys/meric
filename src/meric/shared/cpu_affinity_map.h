@@ -145,10 +145,24 @@ protected:
     void BindFirstFree() {
         CPUSetDynamic_t<T> mask(m_affinityMap.cols);
         
-        for(size_t i = 0; i < m_affinityMap.rows; ++i)
+        for(size_t i = 0; i < m_threadCount*m_rankCount; ++i)
         {
             CPUSetView_t<T> view = m_affinityMap.GetRowView(i);
             meric::cpu_affinity_set::BindFirstFree(view, mask);
+
+            if(mask.Count() >= m_coreCount)
+                mask.Clear();
+        }
+    }
+
+    void BindWithSpread(size_t spread) {
+        spread = std::max(spread, size_t(1));
+
+        for(size_t i = 0; i < m_threadCount*m_rankCount; ++i)
+        {
+            CPUSetView_t<T> view = m_affinityMap.GetRowView(i);
+            view.Clear();
+            view.Set((i*spread) % m_coreCount, true);
         }
     }
     
@@ -158,10 +172,22 @@ protected:
     }
 
     void ComputeBinding(const std::string &mode) {
-        if(mode == "NONE")
+        if(mode == "none")
             return;
 
-        BindFirstFree();
+        if(mode == "close")
+        {
+            BindWithSpread(1);
+        }
+        else if(mode == "spread")
+        {
+            BindWithSpread(m_coreCount / (m_threadCount*m_rankCount));
+        }
+        else
+        {
+            BindFirstFree();
+        }
+
         SetThreadsAffinity(m_affinityMap, m_threadCount * m_rankIdx);
     }
     

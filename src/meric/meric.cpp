@@ -14,7 +14,7 @@ std::string Meric::BARRIERS        = mutils::getenv<std::string>("MERIC_BARRIERS
 std::string Meric::OUTPUT_DIR      = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
 std::string Meric::REGION_OPTIONS  = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
 std::string Meric::MEASURE         = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
-std::string Meric::THREAD_PIN_MODE = mutils::getenv<std::string>("MERIC_PIN_MODE", "DEFAULT");
+std::string Meric::THREAD_PIN_MODE = mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
 
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
