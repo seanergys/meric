@@ -3,6 +3,7 @@
 #include "../../wrapper/nvmlwrapper.h"
 #include "../../wrapper/a64fxwrapper.h"
 #include "../../wrapper/hwmonwrapper.h"
+#include "../../wrapper/rocmwrapper.h"
 #include "../../basis/utils.h"
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -126,6 +127,35 @@ void measureEnergy(bool verbose, double timeNow = 0.0)
 	EnergyRecords<Tmode>::recordTime.push_back(timeNow);
 }
 
+template <>
+void measureEnergy<ROCM>(bool verbose, double timeNow)
+{
+	if (EnergyRecords<ROCM>::recordEnergy.empty())
+	{
+		ROCM::init(true);
+	}
+
+	if (timeNow == 0.0)
+	{
+		struct timespec timestamp;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
+		timeNow = mutils::timeToDouble(timestamp);
+	}
+
+	std::map<std::string, uint64_t> energyNow;
+	ROCM::getCounterValues(energyNow);
+
+	// Convert int64_t map to unsigned long long int map for compatibility
+	std::map<std::string, unsigned long long int> energyConverted;
+	for (const auto &kv : energyNow)
+	{
+		energyConverted[kv.first] = static_cast<unsigned long long int>(kv.second);
+	}
+
+	EnergyRecords<ROCM>::recordEnergy.push_back(energyConverted);
+	EnergyRecords<ROCM>::recordTime.push_back(timeNow);
+}
+
 struct HWMON_S
 {
 	static timespec startTime; // this is dummy.
@@ -233,7 +263,6 @@ void printHelp()
 	exit(EXIT_FAILURE);
 }
 // TODO header file
-bool isJobRunning(const std::string &jobName);
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory = ".");
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath);
 double extractMaxRuntime(const std::string &filepath);
@@ -658,6 +687,11 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
 			}
+			else if (token == "ROCM") // sampling mode
+			{
+				measurements.push_back(&measureEnergy<ROCM>);
+				prints.push_back(EnergyRecords<ROCM>::printValues);
+			}
 			else
 			{
 				std::cerr << "MERIC ERROR: Unknown energy measurement system '" + token + "'\n\n";
@@ -880,48 +914,42 @@ int main(int argc, char **argv)
 	}
 	else if (toolMode == TOOL_MODE::EVAL)
 	{
-		if (isJobRunning("mericStatic"))
-			std::cout << "MERIC INFO: Job is not yet completed!\n";
-
-		else
+		// check if all files are there, if so aggregate the total energy
+		std::string prefix = "mericStatic_" + std::to_string(measurement_id);
+		std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
+		std::map<std::string, double> totalEnergy = {
+			{"RAPL", 0.0},
+			{"NVML", 0.0},
+			{"A64FX", 0.0},
+			{"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
+			{"ROCM", 0.0},
+		};
+		double maxRuntime = 0.0;
+		for (const auto &filepath : files)
 		{
-			// check if all files are there, if so aggregate the total energy
-			std::string prefix = "mericStatic_" + std::to_string(measurement_id);
-			std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
-			std::map<std::string, double> totalEnergy = {
-				{"RAPL", 0.0},
-				{"NVML", 0.0},
-				{"A64FX", 0.0},
-				{"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
-				{"ROCM", 0.0},
-			};
-			double maxRuntime = 0.0;
-			for (const auto &filepath : files)
+			auto energies = extractEnergyConsumption(filepath);
+			for (const auto &entry : energies)
 			{
-				auto energies = extractEnergyConsumption(filepath);
-				for (const auto &entry : energies)
-				{
-					totalEnergy[entry.first] += entry.second;
-				}
+				totalEnergy[entry.first] += entry.second;
+			}
 
-				double localRuntime = extractMaxRuntime(filepath);
-				maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
-			}
-			std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
-			double totalSum = 0;
-			for (const auto &entry : totalEnergy)
-			{
-				if (entry.second == 0.0)
-				{
-					continue;
-				}
-				std::cout << entry.first << " Energy consumption [J] = " << std::fixed << std::setprecision(3) << entry.second << "\n";
-				totalSum += entry.second;
-			}
-			std::cout << "\n"
-					  << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n"
-					  << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
+			double localRuntime = extractMaxRuntime(filepath);
+			maxRuntime = localRuntime > maxRuntime ? localRuntime : maxRuntime;
 		}
+		std::cout << "Max Runtime [s] = " << std::fixed << std::setprecision(3) << maxRuntime << "\n";
+		double totalSum = 0;
+		for (const auto &entry : totalEnergy)
+		{
+			if (entry.second == 0.0)
+			{
+				continue;
+			}
+			std::cout << entry.first << " Energy consumption [J] = " << std::fixed << std::setprecision(3) << entry.second << "\n";
+			totalSum += entry.second;
+		}
+		std::cout << "\n"
+				  << "Total Energy consumption [J] = " << std::fixed << std::setprecision(3) << totalSum << "\n"
+				  << "Total Energy consumption [Wh] = " << std::fixed << std::setprecision(3) << (totalSum / 3600.0) << "\n";
 	}
 
 	Environment::restoreSystemSettings();
@@ -959,11 +987,17 @@ double extractMaxRuntime(const std::string &filepath)
 	return maxRuntime; // 0.0 if not found
 }
 
+
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
 {
 	std::ifstream file(filepath);
-	std::string line;
+	if (!file.is_open())
+	{
+		std::cerr << "MERIC ERROR: Unable to open energy file: " << filepath << "\n";
+		exit(EXIT_FAILURE);
+	}
 
+	std::string line;
 	std::map<std::string, double> energyValues = {
 		{"RAPL", 0.0},
 		{"NVML", 0.0},
@@ -975,6 +1009,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
 	std::smatch match;
 
+	bool found = false;
 	while (std::getline(file, line))
 	{
 		if (std::regex_search(line, match, pattern))
@@ -982,11 +1017,26 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 			std::string source = match[1];
 			double value = std::stod(match[2]);
 			energyValues[source] = value;
+			found = true;
 		}
+	}
+
+	if (!found)
+	{
+		char hostname[HOST_NAME_MAX];
+		if (gethostname(hostname, HOST_NAME_MAX) != 0)
+		{
+			std::strncpy(hostname, "unknown_host", HOST_NAME_MAX);
+			hostname[HOST_NAME_MAX - 1] = '\0';
+		}
+		std::cerr << "MERIC ERROR: Job is not completed or energy data missing for: \n";
+		std::cerr << "\tHostname: " << hostname << "\n";
+		exit(EXIT_FAILURE);
 	}
 
 	return energyValues;
 }
+
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
 {
@@ -1008,25 +1058,4 @@ std::vector<std::string> listMatchingFiles(const std::string &prefix, const std:
 	}
 	closedir(dir);
 	return result;
-}
-
-bool isJobRunning(const std::string &jobName)
-{
-	std::string cmd = "srun --overlap ps -u $USER -o args= | grep " + jobName + " | grep -v grep | grep -v ' -- eval'";
-
-	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-	if (!pipe)
-	{
-		std::cerr << "MERIC ERROR: Failed to run command: " << cmd << "\n";
-		return false;
-	}
-
-	char buffer[256];
-	std::string result;
-
-	while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr)
-	{
-		result += buffer;
-	}
-	return !result.empty();
 }
