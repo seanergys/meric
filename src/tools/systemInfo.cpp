@@ -71,25 +71,63 @@ std::string readFile(const std::string &filePath)
 
 std::string getAMDGPUName(const std::string hex)
 {
-	std::string name;
-	if(hex == "0x686c")
-		name = "Mi25";
-	else if(hex == "0x66a1")
-		name = "Mi50/Mi60";
-	else if(hex == "0x738c")
-		name = "Mi100";
-	else if(hex == "0x740f")
-		name = "Mi210";
-	else if(hex == "0x740c" || hex == "7408")
-		name = "Mi250X/Mi250";
-	else if(hex == "0x74a0")
-		name = "Mi300A";
-	else if(hex == "0x74a1")
-		name = "Mi300X";
-	else if(hex == "0x7485")
-		name = "Mi300X VF";
-	else
-		name = "Unknown GPU type";
+	long version = 0;
+	try
+	{
+		long version = std::stol(hex, nullptr, 16);
+	}
+	catch
+	{
+		return "Unknown AMD GPU type";
+	}
+	
+	switch (version)
+	{
+		case 0x686c:
+		  	name = "AMD Instinct MI25";
+		  	break;
+		case 0x66a1:
+			name = "AMD Instinct MI50/MI60";
+			break;
+		case 0x738c:
+			name = "AMD Instinct MI100";
+			break;
+		case 0x740f:
+			name = "AMD Instinct MI210";
+			break;
+		case 0x7408: 
+			name = "AMD Instinct MI250X";
+			break;
+		case 0x740c:
+			name = "AMD Instinct MI250X/MI250";
+			break;
+		case 0x74a0:
+			name = "AMD Instinct MI300A";
+			break;
+		case 0x74a1:
+			name = "AMD Instinct MI300X";
+			break;
+		case 0x74A2:
+			name = "AMD Instinct MI308X";
+			break;
+		case 0x74A5: 
+			name = "AMD Instinct MI325X";
+			break;
+		case 0x74A9:
+			name = "AMD Instinct MI300X HF";
+			break;
+		case 0x74B5:
+			name = "AMD Instinct MI300X VF";
+			break;
+		case 0x74B6:
+			name = "AMD Instinct MI308X";
+			break;
+		case 0x74BD:
+			name = "AMD Instinct MI300X HF";
+			break;
+		default:
+			name = "Unknown AMD GPU type";
+	}
 	return name;	
 }
 
