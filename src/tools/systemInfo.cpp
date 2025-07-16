@@ -76,11 +76,12 @@ std::string getAMDGPUName(const std::string hex)
 	{
 		long version = std::stol(hex, nullptr, 16);
 	}
-	catch
+	catch (...)
 	{
 		return "Unknown AMD GPU type";
 	}
-	
+
+	std::string name;
 	switch (version)
 	{
 		case 0x686c:
@@ -340,7 +341,7 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 			std::cout << "\t\t install one the following libraries:\n"
 	#ifdef _INTEL_
 			          << "\t\t - msr_safe / cpufreq / GEOPM\n";
-	#else ifdef _AMD_
+	#elif defined _AMD_
 			          << "\t\t - esmi_ib / msr_safe / cpufreq\n";
 	#endif
 #endif
