@@ -6,7 +6,9 @@
 #include <meric_ext.h>
 #include "work_c.h"
 
-#define ITER 5
+#define ITER 4
+
+struct ExtlibEnergyTimeStamp *buffer[6];
 int main(int argc, char **argv)
 {
     /*
@@ -77,15 +79,32 @@ int main(int argc, char **argv)
         struct ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts, ts2);
         extlib_print_energy_timestamp(result, 5);
 
+        printf("\t\t*** PAGES %d %d %d\n", ts->reserved_memory_page, ts2->reserved_memory_page, result->reserved_memory_page);
+
         /*
             -------------- STEP(7) --------------
              Do NOT forget to free the timestamps
          */
-        if (i >= 3)
+        if (i == 2)
         {
+            printf("Freeing page %d for iter %d\n", 0, i);
+            printf("\t\t*** PAGES %d %d %d\n", buffer[0]->reserved_memory_page, buffer[1]->reserved_memory_page, buffer[2]->reserved_memory_page);
+            // printf("\t\t*** PAGES %d %d %d\n", buffer[3]->reserved_memory_page, buffer[4]->reserved_memory_page, buffer[5]->reserved_memory_page);
+
+            extlib_free_energy_timestamp(buffer[0]);
+            extlib_free_energy_timestamp(buffer[1]);
+            extlib_free_energy_timestamp(buffer[2]);
+
             extlib_free_energy_timestamp(ts);
             extlib_free_energy_timestamp(ts2);
             extlib_free_energy_timestamp(result);
+        }
+        else if (i == 0 || i == 1) // add iter 0 and 1
+        {
+            printf("\tAdding to buffer for iter %d\n", i);
+            buffer[i * 3] = ts;
+            buffer[i * 3 + 1] = ts2;
+            buffer[i * 3 + 2] = result;
         }
     }
 
