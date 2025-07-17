@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits.h>
 #include <iostream>
+#include <numeric>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -125,6 +126,26 @@ inline std::ostream& operator<<(std::ostream& os, const timespec &time)
 {
 	os << time.tv_sec << "." << std::setfill('0') << std::setw(9) << time.tv_nsec;
 	return os;
+}
+
+template<typename OutIt>
+void explode(const std::string &input, char sep, OutIt output) {
+    std::istringstream buffer(input);
+
+    std::string temp;
+    while(std::getline(buffer, temp, sep))
+        *output++ = temp;
+}
+
+template<typename InputIt, typename T>
+std::string join(InputIt first, InputIt last, const T &delimiter) {
+    if(first == last)
+        return T();
+        
+    return std::accumulate(std::next(first), last, *first,
+        [&delimiter](const T &a, const T &b) {
+            return a + delimiter + b;
+        });
 }
 
 }
