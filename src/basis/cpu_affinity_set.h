@@ -148,6 +148,22 @@ CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)> operator^(const CPUSetEx
     return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) { return a ^ b; });
 }
 
+template<typename T, typename E1, typename E2>
+bool operator==(const CPUSetExpr_t<T, E1> &u, const CPUSetExpr_t<T, E2> &v) {
+    for(size_t i = 0; i < std::min(u.GetSize(), v.GetSize()); ++i)
+    {
+        if(u.GetElem(i) != v.GetElem(i))
+            return false;
+    }
+
+    return true;
+}
+
+template<typename T, typename E1, typename E2>
+bool operator!=(const CPUSetExpr_t<T, E1> &u, const CPUSetExpr_t<T, E2> &v) {
+    return !(u == v);
+}
+
 template<typename T = uint64_t>
 class CPUSetDynamic_t : public CPUSet_t<T, CPUSetDynamic_t<T> > {
 public:
