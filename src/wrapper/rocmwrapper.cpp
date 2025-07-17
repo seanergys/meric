@@ -199,7 +199,7 @@ double ROCM::getResultValue(uint64_t startValue, uint64_t stopValue, double runt
 
 std::string ROCM::getSummaryCounterName()
 {
-	return "Energy Consumption [J]";
+	return "Energy consumption [J]";
 }
 
 std::string ROCM::getCounterLabel(std::string counter)

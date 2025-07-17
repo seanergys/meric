@@ -330,11 +330,13 @@ int main(int argc, char **argv)
 	std::string outputDirectory = "mericStaticMeasurements";
 
 	const char *measurement_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
-																							 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
-																														  : "0";
+	                                                                                           : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
+	                                                                                           : "0";
 	if (measurement_id_env)
+	{
 		measurement_id = std::atoi(measurement_id_env);
-	printf("measurement_id :%d\n", measurement_id);
+	}
+	std::cout << "measurement_id : " << measurement_id << std::endl;
 
 	if (gethostname(hostname, HOST_NAME_MAX) != 0)
 	{
@@ -616,8 +618,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	// std::cout << "SAMPLING PERIOD ->" << defaultParameter.samplingPeriod << " s\n";
-
 	std::ofstream outfile;
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
@@ -633,7 +633,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			std::cerr << "MERIC ERROR: Cannot create file:" << filename << "\n";
+			std::cerr << "MERIC ERROR: Cannot create file: " << filename << "\n";
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -687,7 +687,7 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<HWMON_S>);
 				prints.push_back(EnergyRecords<HWMON_S>::printValues);
 			}
-			else if (token == "ROCM") // sampling mode
+			else if (token == "ROCM")
 			{
 				measurements.push_back(&measureEnergy<ROCM>);
 				prints.push_back(EnergyRecords<ROCM>::printValues);
@@ -722,8 +722,8 @@ int main(int argc, char **argv)
 			execvp(args[0], args); // Replace with the command, use execvp to search in PATH
 
 			// If execvp fails, print an error and exit
-			std::cerr << "MERIC ERROR: Failed to launch application command: \"" << applicationCommand << "\"\n";
-			std::cerr << "Reason (errno " << errno << "): " << strerror(errno) << std::endl;
+			std::cerr << "MERIC ERROR: Failed to launch application command: \"" << applicationCommand << "\"\n"
+			          << "Reason (errno " << errno << "): " << strerror(errno) << std::endl;
 
 			switch (errno)
 			{
@@ -1006,7 +1006,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		{"ROCM", 0.0},
 	};
 
-	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM|ROCMSMI)\s+Energy [Cc]onsumption\s+\[J\]\s+=\s+([0-9.]+))");
+	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy [Cc]onsumption\s+\[J\]\s+=\s+([0-9.]+))");
 	std::smatch match;
 
 	bool found = false;
@@ -1015,10 +1015,6 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		if (std::regex_search(line, match, pattern))
 		{
 			std::string source = match[1];
-			// Map ROCMSMI to ROCM for consistency
-			if (source == "ROCMSMI") {
-				source = "ROCM";
-			}
 			double value = std::stod(match[2]);
 			energyValues[source] = value;
 			found = true;
@@ -1033,8 +1029,8 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 			std::strncpy(hostname, "unknown_host", HOST_NAME_MAX);
 			hostname[HOST_NAME_MAX - 1] = '\0';
 		}
-		std::cerr << "MERIC ERROR: Job is not completed or energy data missing for: \n";
-		std::cerr << "\tHostname: " << hostname << "\n";
+		std::cerr << "MERIC ERROR: Job is not completed or energy data missing for: \n"
+		          << "\tHostname: " << hostname << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
