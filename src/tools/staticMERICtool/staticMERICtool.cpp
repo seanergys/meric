@@ -21,10 +21,10 @@ int measurement_id; // id specific to the execution.
 
 //----------------------------------------------------------------------------//
 
-template <typename Tmode>
+template <typename Tmode, typename Tenergy>
 struct EnergyRecords
 {
-	static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
+	static std::vector<std::map<std::string, Tenergy>> recordEnergy;
 	static std::vector<double> recordTime;
 
 	static void printValues(bool verbose)
@@ -89,26 +89,26 @@ struct EnergyRecords
 		recordTime.clear();
 	}
 
-	static std::vector<std::map<std::string, unsigned long long int>> getData()
+	static std::vector<std::map<std::string, Tenergy>> getData()
 	{
 		return recordEnergy;
 	}
 };
 
-template <typename Tmode>
-std::vector<std::map<std::string, unsigned long long int>> EnergyRecords<Tmode>::recordEnergy;
+template <typename Tmode, typename Tenergy>
+std::vector<std::map<std::string, Tenergy>> EnergyRecords<Tmode, Tenergy>::recordEnergy;
 
-template <typename Tmode>
-std::vector<double> EnergyRecords<Tmode>::recordTime;
+template <typename Tmode, typename Tenergy>
+std::vector<double> EnergyRecords<Tmode, Tenergy>::recordTime;
 
 //----------------------------------------------------------------------------//
 //----------------------------------------------------------------- MAIN -----//
 //----------------------------------------------------------------------------//
 
-template <typename Tmode>
+template <typename Tmode, typename Tenergy>
 void measureEnergy(bool verbose, double timeNow = 0.0)
 {
-	if (EnergyRecords<Tmode>::recordEnergy.empty())
+	if (EnergyRecords<Tmode, Tenergy>::recordEnergy.empty())
 	{
 		Tmode::init(true);
 	}
@@ -120,40 +120,11 @@ void measureEnergy(bool verbose, double timeNow = 0.0)
 		timeNow = mutils::timeToDouble(timestamp);
 	}
 
-	std::map<std::string, unsigned long long int> energyNow;
+	std::map<std::string, Tenergy> energyNow;
 	Tmode::getCounterValues(energyNow);
 
-	EnergyRecords<Tmode>::recordEnergy.push_back(energyNow);
-	EnergyRecords<Tmode>::recordTime.push_back(timeNow);
-}
-
-template <>
-void measureEnergy<ROCM>(bool verbose, double timeNow)
-{
-	if (EnergyRecords<ROCM>::recordEnergy.empty())
-	{
-		ROCM::init(true);
-	}
-
-	if (timeNow == 0.0)
-	{
-		struct timespec timestamp;
-		clock_gettime(CLOCK_REALTIME, &timestamp);
-		timeNow = mutils::timeToDouble(timestamp);
-	}
-
-	std::map<std::string, uint64_t> energyNow;
-	ROCM::getCounterValues(energyNow);
-
-	// Convert int64_t map to unsigned long long int map for compatibility
-	std::map<std::string, unsigned long long int> energyConverted;
-	for (const auto &kv : energyNow)
-	{
-		energyConverted[kv.first] = static_cast<unsigned long long int>(kv.second);
-	}
-
-	EnergyRecords<ROCM>::recordEnergy.push_back(energyConverted);
-	EnergyRecords<ROCM>::recordTime.push_back(timeNow);
+	EnergyRecords<Tmode, Tenergy>::recordEnergy.push_back(energyNow);
+	EnergyRecords<Tmode, Tenergy>::recordTime.push_back(timeNow);
 }
 
 struct HWMON_S
@@ -167,7 +138,7 @@ timespec HWMON_S::endTime = {0, 0};
 
 // following will be called many times but init only once.
 template <>
-void measureEnergy<HWMON_S>(bool verbose, double timeNow)
+void measureEnergy<HWMON_S, unsigned long long int>(bool verbose, double timeNow)
 {
 	static bool is_init = false;
 	if (is_init == false)
@@ -180,7 +151,7 @@ void measureEnergy<HWMON_S>(bool verbose, double timeNow)
 }
 
 template <>
-struct EnergyRecords<HWMON_S>
+struct EnergyRecords<HWMON_S, unsigned long long int>
 {
 	static void printValues(bool verbose)
 	{
@@ -664,33 +635,33 @@ int main(int argc, char **argv)
 
 			if (token == "RAPL")
 			{
-				measurements.push_back(&measureEnergy<RAPL>);
-				prints.push_back(EnergyRecords<RAPL>::printValues);
+				measurements.push_back(&measureEnergy<RAPL, unsigned long long int>);
+				prints.push_back(EnergyRecords<RAPL, unsigned long long int>::printValues);
 			}
 			else if (token == "NVML")
 			{
-				measurements.push_back(&measureEnergy<NVML>);
-				prints.push_back(EnergyRecords<NVML>::printValues);
+				measurements.push_back(&measureEnergy<NVML, unsigned long long int>);
+				prints.push_back(EnergyRecords<NVML, unsigned long long int>::printValues);
 			}
 			else if (token == "A64FX")
 			{
-				measurements.push_back(&measureEnergy<A64FX>);
-				prints.push_back(EnergyRecords<A64FX>::printValues);
+				measurements.push_back(&measureEnergy<A64FX, unsigned long long int>);
+				prints.push_back(EnergyRecords<A64FX, unsigned long long int>::printValues);
 			}
 			else if (token == "HWMON-C") // counting mode
 			{
-				measurements.push_back(&measureEnergy<HWMON>);
-				prints.push_back(EnergyRecords<HWMON>::printValues);
+				measurements.push_back(&measureEnergy<HWMON, unsigned long long int>);
+				prints.push_back(EnergyRecords<HWMON, unsigned long long int>::printValues);
 			}
 			else if (token == "HWMON-S") // sampling mode
 			{
-				measurements.push_back(&measureEnergy<HWMON_S>);
-				prints.push_back(EnergyRecords<HWMON_S>::printValues);
+				measurements.push_back(&measureEnergy<HWMON_S, unsigned long long int>);
+				prints.push_back(EnergyRecords<HWMON_S, unsigned long long int>::printValues);
 			}
 			else if (token == "ROCM") // sampling mode
 			{
-				measurements.push_back(&measureEnergy<ROCM>);
-				prints.push_back(EnergyRecords<ROCM>::printValues);
+				measurements.push_back(&measureEnergy<ROCM, uint64_t>);
+				prints.push_back(EnergyRecords<ROCM, uint64_t>::printValues);
 			}
 			else
 			{
@@ -987,7 +958,6 @@ double extractMaxRuntime(const std::string &filepath)
 	return maxRuntime; // 0.0 if not found
 }
 
-
 std::map<std::string, double> extractEnergyConsumption(const std::string &filepath)
 {
 	std::ifstream file(filepath);
@@ -1016,7 +986,8 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		{
 			std::string source = match[1];
 			// Map ROCMSMI to ROCM for consistency
-			if (source == "ROCMSMI") {
+			if (source == "ROCMSMI")
+			{
 				source = "ROCM";
 			}
 			double value = std::stod(match[2]);
@@ -1040,7 +1011,6 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 
 	return energyValues;
 }
-
 
 std::vector<std::string> listMatchingFiles(const std::string &prefix, const std::string &directory)
 {
