@@ -985,14 +985,11 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		if (std::regex_search(line, match, pattern))
 		{
 			std::string source = match[1];
-<<<<<<< HEAD
-=======
 			// Map ROCMSMI to ROCM for consistency
 			if (source == "ROCMSMI")
 			{
 				source = "ROCM";
 			}
->>>>>>> ec21b3e414430f7b89d730b7f36fe9b79b611990
 			double value = std::stod(match[2]);
 			energyValues[source] = value;
 			found = true;
