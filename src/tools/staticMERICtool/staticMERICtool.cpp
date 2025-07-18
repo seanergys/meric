@@ -13,6 +13,7 @@
 #include <limits>
 #include <csignal>
 #include <iomanip>
+#include <cstring>
 
 using namespace meric;
 
