@@ -41,6 +41,7 @@ std::map<std::string, double> unit;
 std::map <uint64_t,uint64_t> currentWhitelist;
 std::string CPUname = "";
 int CORES_PER_SOCKET = 0;
+int SOCKETS_PER_NODE = 0;
 
 enum MODE	//this application keeps this order
 {
@@ -135,7 +136,7 @@ std::string getAMDGPUName(const std::string hex)
 
 void sysInfoSize(bool detailed = false)
 {
-	int SOCKETS_PER_NODE, THREADS_PER_CORE;
+	int THREADS_PER_CORE;
 	std::vector <int> onlineThreads;
 	meric::Environment::initHWSizes(SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE, onlineThreads);
 	meric::Environment::getCPUbrandString(CPUname);
@@ -1248,7 +1249,24 @@ void sysEnergyMeasurement()
 	std::cout << "\tRAPL\n";
 	systems++;
 #elif defined __x86_64
-	if (access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK ) != -1 )
+	bool raplAvailable = false;
+	for (int i = 0; i < SOCKETS_PER_NODE; i++)
+	{
+		std::string path1 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/energy_uj";
+		std::string path2 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/name";
+		std::string path3 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/max_energy_range_uj";
+
+		if (access(path1.c_str(), R_OK ) != -1 && access(path2.c_str(), R_OK ) != -1 && access(path3.c_str(), R_OK ) != -1)
+		{
+			raplAvailable = true;
+		}
+		else
+		{
+			raplAvailable = false;
+			break;
+		}
+	}
+	if (raplAvailable)
 	{
 		std::cout << "\tRAPL\n";
 		systems++;

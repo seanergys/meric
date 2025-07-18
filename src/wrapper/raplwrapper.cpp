@@ -631,10 +631,21 @@ void RAPL_SYSFS::init(bool detailed)
 			std::string sysfsName;
 			uint64_t maxCounterRange = 0;
 
-			bool state = sysfsutils::ReadValue(dieRootPath + pszDomainName + "/name", sysfsName);
-			state = state && sysfsutils::ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange);
-			if(!state)
+			if(!sysfsutils::ReadValue(dieRootPath + pszDomainName + "/name", sysfsName))
 			{
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/name") << std::endl;
+				continue;
+			}
+
+			if(!sysfsutils::ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange))
+			{
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/max_energy_range_uj") << std::endl;
+				continue;
+			}
+
+			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK ) != -1)
+			{
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/energy_uj") << std::endl;
 				continue;
 			}
 
@@ -768,12 +779,10 @@ bool RAPL_SYSFS::isAvailable()
 	{
 		return false;
 	}
-
 	if(access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK) != 0)
 	{
 		return false;
 	}
-
 	return true;
 }
 
@@ -920,7 +929,9 @@ void RAPL_PERF_EVENT::init(bool detailed)
 
 		if(!res.first->second.open(def.type, def.config, cpu))
 		{
-			std::cerr << "PERF_EVENT: Failed to open perf event" << std::endl;
+			std::cerr << "MERIC ERROR: Failed to open perf event" 
+			          << join(def.name.begin(), def.name.end(), std::string("/")) 
+			          << " for " << fullName << std::endl;
 			return false;
 		}
 
@@ -932,9 +943,35 @@ void RAPL_PERF_EVENT::init(bool detailed)
 		return true;
 	};
 
+	auto FindCounterByName = [&](CounterDef_t &def) {
+		const std::string basePath = "/sys/bus/event_source/devices/";
+		if(def.name.size() < 2)
+		{
+			return true;
+		}
+		if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/type", def.type))
+		{
+			return false;
+		}
+		std::string event;
+		if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/events/" + def.name[1], event))
+		{
+			return false;
+		}
+		if(sscanf(event.c_str(), "event=%lx", &def.config) < 1)
+		{
+			return false;
+		}
+		return true;
+	};
+
 	for(const auto &counterDef: counterDefs)
 	{
-		const auto &def = counterDef.second;
+		auto def = counterDef.second;
+		if(!FindCounterByName(def))
+		{
+			continue;
+		}
 
 		switch(def.domain)
 		{
@@ -974,7 +1011,7 @@ void RAPL_PERF_EVENT::getCounterValues(CounterRecord_t &record)
 		Values_t<> values;
 		if(!it->second.read(values))
 		{
-			std::cerr << "PERF_EVENT: Failed to read perf event" << std::endl;
+			std::cerr << "MERIC ERROR: Failed to read perf event" << std::endl;
 			record[it->first] = 0;
 			continue;
 		}
@@ -1045,18 +1082,19 @@ double RAPL_PERF_EVENT::getUnit(std::string counter)
 	{
 		return it->second.unit;
 	}
-
 	return -1.0;
 }
 
 bool RAPL_PERF_EVENT::isAvailable()
 {
 	int value = 2;
+	
 	if(!sysfsutils::ReadValue("/proc/sys/kernel/perf_event_paranoid", value))
 	{
 		return false;
 	}
-	return (value <= 1);
+
+	return (value <= 0);
 }
 
 RAPL::Base *RAPL::getImpl()

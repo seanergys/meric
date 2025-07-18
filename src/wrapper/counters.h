@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <vector>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -301,6 +302,7 @@ struct CounterDef_t {
 		FLAG_ACCUMULATIVE_BIT = 1 << 0
 	};
 
+	std::vector<std::string> name;
 	std::string label;
 	std::string unit;
 	Domain_t    domain;
@@ -313,13 +315,13 @@ const std::string RAPL_SUM_ENERGY = "ENERGY_CONSUMPTION";
 
 static std::map<const std::string, CounterDef_t> counterDefs = {
 #ifdef _INTEL_
-	{ "PCKG", { "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
-	{ "RAM", { "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
-	{ RAPL_SUM_ENERGY, { "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
+	{ "RAM", { { "power", "energy-ram" }, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
+	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #else // _AMD_
-	{ "PCKG", { "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 10, 0x2 } },
-	{ "CORE", { "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, 11, 0x1 }},
-	{ RAPL_SUM_ENERGY, { "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
+	{ "CORE", { { "power_core", "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #endif
 };
 }

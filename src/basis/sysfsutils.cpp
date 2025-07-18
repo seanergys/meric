@@ -1,6 +1,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <unistd.h>
 #include "sysfsutils.h"
 
 namespace meric {
