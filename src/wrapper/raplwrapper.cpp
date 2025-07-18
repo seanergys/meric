@@ -1087,12 +1087,14 @@ double RAPL_PERF_EVENT::getUnit(std::string counter)
 
 bool RAPL_PERF_EVENT::isAvailable()
 {
-	int value = 2;	//TODO is level 1 enough?!
+	int value = 2;
+	
 	if(!sysfsutils::ReadValue("/proc/sys/kernel/perf_event_paranoid", value))
 	{
 		return false;
 	}
-	return (value <= 1);
+
+	return (value <= 0);
 }
 
 RAPL::Base *RAPL::getImpl()
