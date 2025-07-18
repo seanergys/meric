@@ -7,11 +7,6 @@
 namespace meric {
 namespace sysfsutils {
 
-bool CheckAccess(const std::string &filename)
-{
-	return (access(filename.c_str(), R_OK) == 0);
-}
-
 std::string MakeCounterName(const std::string &name, 
 	std::map<const std::string, std::pair<std::string, std::string> > &counterLabels,
 	const std::vector<std::pair<int, int>> &nums, 

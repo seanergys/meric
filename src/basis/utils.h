@@ -2,15 +2,16 @@
 #ifndef SRC_BASIS_UTILS_H_
 #define SRC_BASIS_UTILS_H_
 
-#include <string>
-#include <cstdlib>
-#include <sstream>
-#include <iomanip>
 #include <sys/stat.h>
-#include <algorithm>
 #include <limits.h>
+
+#include <algorithm>
+#include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
+#include <sstream>
+#include <string>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -39,9 +40,11 @@
 	#endif
 #endif
 
-namespace meric {
+namespace meric 
+{
 
-struct mutils {
+struct mutils 
+{
 
 	template <typename Ttype>
 	static Ttype getenv(const std::string &param, Ttype defaultValue);
@@ -54,23 +57,37 @@ struct mutils {
 	static long frequencyToHz(const std::string &data)
 	{
 		if (data == "" || data.find_first_of("0123456789") != 0)
+		{
 			return -1;
+		}
 		size_t const n = data.find_first_not_of("0123456789");
 		if (n == std::string::npos)
+		{
 			return std::stol(data);
+		}
 		const long frequency = std::stol(data.substr(0,n));
 		std::string units = data.substr(n, data.size()-n);
 		std::transform(units.begin(), units.end(), units.begin(), ::toupper);
 		if (units == "HZ")
+		{
 			return frequency;
+		}
 		else if (units == "KHZ")
-			return frequency * 1000;
+		{
+			return frequency * 1e3;
+		}
 		else if (units == "MHZ")
-			return frequency * 1000000;
+		{
+			return frequency * 1e6;
+		}
 		else if (units == "GHZ")
-			return frequency * 1000000000;
+		{
+			return frequency * 1e9;
+		}
 		else
+		{
 			return -1;
+		}
 	}
 
 	static timespec stringToTime(const std::string &data)
@@ -91,17 +108,23 @@ struct mutils {
 			std::stringstream ss;
 			ss << "mkdir -p \"" + dir + "\"";
 			if (std::system(ss.str().c_str()))
+			{
 				std::cerr << "MERIC ERROR: directory '"<<dir<<"' cannot be created\n";
+			}
 		}
 	}
-};
+}; // namespace mutils
 
 inline bool operator==(const timespec &a, const timespec &b)
 {
 	if (a.tv_sec == b.tv_sec && a.tv_nsec == b.tv_nsec)
+	{
 		return true;
+	}
 	else
+	{
 		return false;
+	}
 }
 
 inline timespec operator-(const timespec &a, const timespec &b)
@@ -109,7 +132,8 @@ inline timespec operator-(const timespec &a, const timespec &b)
 	timespec diff;
 	diff.tv_sec = a.tv_sec - b.tv_sec;
 	diff.tv_nsec = a.tv_nsec - b.tv_nsec;
-	if (diff.tv_nsec < 0) {
+	if (diff.tv_nsec < 0)
+	{
 		diff.tv_nsec += 1e9;
 		diff.tv_sec--;
 	}
@@ -129,23 +153,29 @@ inline std::ostream& operator<<(std::ostream& os, const timespec &time)
 }
 
 template<typename OutIt>
-void explode(const std::string &input, char sep, OutIt output) {
-    std::istringstream buffer(input);
-
-    std::string temp;
-    while(std::getline(buffer, temp, sep))
-        *output++ = temp;
+void explode(const std::string &input, char sep, OutIt output)
+{
+	std::istringstream buffer(input);
+	std::string temp;
+	while(std::getline(buffer, temp, sep))
+	{
+		*output++ = temp;
+	}
 }
 
 template<typename InputIt, typename T>
-std::string join(InputIt first, InputIt last, const T &delimiter) {
-    if(first == last)
-        return T();
-        
-    return std::accumulate(std::next(first), last, *first,
-        [&delimiter](const T &a, const T &b) {
-            return a + delimiter + b;
-        });
+std::string join(InputIt first, InputIt last, const T &delimiter)
+{
+	if(first == last)
+	{
+		return T();
+	}
+
+	return std::accumulate(std::next(first), last, *first,
+		[&delimiter](const T &a, const T &b)
+		{
+			return a + delimiter + b;
+		});
 }
 
 }

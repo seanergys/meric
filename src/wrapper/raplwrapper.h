@@ -51,10 +51,6 @@ public:
         virtual double getUnit(std::string counter) = 0;
 
         static bool isAvailable() { return false; }
-
-        static std::ostream &PrintWarning(const std::string &backendName, const std::string &severity) {
-            return std::cerr << "MERIC " << severity << ": RAPL (" << backendName << ") - ";
-        }
     };
 
     typedef Base::RawCounterValue_t RawCounterValue_t;

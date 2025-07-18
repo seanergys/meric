@@ -64,8 +64,6 @@ bool ReadValue(const std::string &filename, T &out)
 	return ReadValue(fs, out);
 };
 
-bool CheckAccess(const std::string &filename);
-
 template<typename T>
 T ParseString(const std::string &str)
 {

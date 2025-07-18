@@ -631,20 +631,21 @@ void RAPL_SYSFS::init(bool detailed)
 			std::string sysfsName;
 			uint64_t maxCounterRange = 0;
 
-			if(!sysfsutils::ReadValue(dieRootPath + pszDomainName + "/name", sysfsName)) {
-				PrintWarning("SYSFS", "WARNING") << "Failed to open: " << (dieRootPath + pszDomainName + "/name") << std::endl;
+			if(!sysfsutils::ReadValue(dieRootPath + pszDomainName + "/name", sysfsName))
+			{
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/name") << std::endl;
 				continue;
 			}
 
 			if(!sysfsutils::ReadValue(dieRootPath + pszDomainName + "/max_energy_range_uj", maxCounterRange))
 			{
-				PrintWarning("SYSFS", "WARNING") << "Failed to open: " << (dieRootPath + pszDomainName + "/max_energy_range_uj") << std::endl;
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/max_energy_range_uj") << std::endl;
 				continue;
 			}
 
-			if(!sysfsutils::CheckAccess(dieRootPath + pszDomainName + "/energy_uj"))
+			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK ) != -1)
 			{
-				PrintWarning("SYSFS", "WARNING") << "Failed to open: " << (dieRootPath + pszDomainName + "/energy_uj") << std::endl;
+				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/energy_uj") << std::endl;
 				continue;
 			}
 
@@ -774,8 +775,15 @@ double RAPL_SYSFS::getUnit(std::string counter)
 
 bool RAPL_SYSFS::isAvailable()
 {
-	return (sysfsutils::CheckAccess("/sys/class/powercap/intel-rapl:0/name") && 
-		sysfsutils::CheckAccess("/sys/class/powercap/intel-rapl:0/energy_uj"));
+	if(access("/sys/class/powercap/intel-rapl:0/name", R_OK) != 0)
+	{
+		return false;
+	}
+	if(access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK) != 0)
+	{
+		return false;
+	}
+	return true;
 }
 
 class RAPL_PERF_EVENT : public RAPL::Base {
@@ -921,10 +929,9 @@ void RAPL_PERF_EVENT::init(bool detailed)
 
 		if(!res.first->second.open(def.type, def.config, cpu))
 		{
-			PrintWarning("PERF_EVENT", "WARNING") << "Failed to open event " 
-				<< join(def.name.begin(), def.name.end(), std::string("/")) 
-				<< " for " << fullName << std::endl;
-
+			std::cerr << "MERIC ERROR: Failed to open perf event" 
+			          << join(def.name.begin(), def.name.end(), std::string("/")) 
+			          << " for " << fullName << std::endl;
 			return false;
 		}
 
@@ -1004,7 +1011,7 @@ void RAPL_PERF_EVENT::getCounterValues(CounterRecord_t &record)
 		Values_t<> values;
 		if(!it->second.read(values))
 		{
-			std::cerr << "PERF_EVENT: Failed to read perf event" << std::endl;
+			std::cerr << "MERIC ERROR: Failed to read perf event" << std::endl;
 			record[it->first] = 0;
 			continue;
 		}
