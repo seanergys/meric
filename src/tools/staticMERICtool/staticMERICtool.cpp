@@ -976,7 +976,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		{"ROCM", 0.0},
 	};
 
-	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy [Cc]onsumption\s+\[J\]\s+=\s+([0-9.]+))");
+	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
 	std::smatch match;
 
 	bool found = false;
@@ -985,11 +985,6 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		if (std::regex_search(line, match, pattern))
 		{
 			std::string source = match[1];
-			// Map ROCMSMI to ROCM for consistency
-			if (source == "ROCMSMI")
-			{
-				source = "ROCM";
-			}
 			double value = std::stod(match[2]);
 			energyValues[source] = value;
 			found = true;
