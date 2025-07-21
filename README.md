@@ -485,6 +485,8 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 #     8] Content of test folder and example application run                    #
 --------------------------------------------------------------------------------
 * source codes
+	* plain_test.cpp
+		* Simple test with no MERIC regions.
 	* test.cpp
 		* One region, with two another regions inside.
 	* test_mpi.cpp
