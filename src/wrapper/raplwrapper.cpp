@@ -37,6 +37,17 @@ std::string RAPL::RAM_POWER_LIMIT = "";
 std::string RAPL::PLATFORM_POWER_LIMIT = "";
 std::string RAPL::POWER_LIMIT_TIMEWINDOW = "";
 
+const std::string RAPL::SUM_ENERGY_LABEL = "Energy consumption [J]";
+int RAPL::PROBE_NUMBER;
+std::vector<std::string> RAPL::vrSensorLabel;
+
+std::map<std::string, RAPL::SamplerDesc_t> RAPL::s_samplerDesc;
+std::vector<RAPL::SamplerDesc_t *>	       RAPL::s_samplerById;
+
+uint64_t          RAPL::s_samplingPeriod(1000000000ull);
+std::thread       RAPL::s_samplingThread;
+std::atomic<bool> RAPL::s_samplingEnabled(true);
+
 void RAPL::init(bool detailed)
 {
 	getImpl()->init(detailed);
@@ -52,7 +63,7 @@ void RAPL::getCounterValues(CounterRecord_t &record)
 	getImpl()->getCounterValues(record);
 }
 
-double RAPL::getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+double RAPL::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	return getImpl()->getResultValue(startValue, stopValue, runtime, cumulative, counter);
@@ -94,6 +105,162 @@ double RAPL::getUnit(std::string counter)
 	return getImpl()->getUnit(counter);
 }
 
+void RAPL::start(timespec &time)
+{
+	initSamplers();
+}
+
+void RAPL::stop(timespec &time)
+{
+	closeSamplers();
+}
+
+void RAPL::initSamplers()
+{
+	{
+		std::vector<Base::CounterDesc_t *> counters;
+		getImpl()->getCounters(counters);
+
+		std::sort(counters.begin(), counters.end(),
+			[](const Base::CounterDesc_t *pLeft, const Base::CounterDesc_t *pRight) {
+				if(!pLeft)
+				{
+					return true;
+				}
+
+				if(!pRight)
+				{
+					return false;
+				}
+
+				return pLeft->label < pRight->label;
+			});
+		
+		for(Base::CounterDesc_t *pCounterDesc: counters)
+		{
+			vrSensorLabel.push_back(pCounterDesc->label);
+
+			auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->label, SamplerDesc_t()));
+			res.first->second.pCounterDesc = pCounterDesc;
+			res.first->second.lastValue    = 0;
+
+			s_samplerById.push_back(&res.first->second);
+		}
+
+		PROBE_NUMBER = s_samplerById.size();
+	}
+
+	s_samplingThread = std::thread([]() {
+		timespec time;
+		clock_gettime(CLOCK_REALTIME, &time);
+
+		while(s_samplingEnabled.load())
+		{
+			for(auto &desc: s_samplerDesc)
+			{
+				timespec now;
+				clock_gettime(CLOCK_REALTIME, &now);
+				uint64_t value = getImpl()->getCounterValue(desc.second.pCounterDesc);
+				desc.second.samples.push_back({
+					uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
+					value
+				});
+
+				if(desc.second.lastValue < value)
+				{
+					desc.second.pCounterDesc->overflowCount++;
+				}
+
+				desc.second.lastValue = value;
+			}
+
+			{
+				while(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &time, NULL) != 0) {}
+				time.tv_nsec += s_samplingPeriod;
+				if(time.tv_nsec >= 1000000000ull)
+				{
+					time.tv_nsec -= 1000000000ull;
+					time.tv_sec++;
+				}
+			}
+		}
+	});
+}
+
+void RAPL::closeSamplers()
+{
+	s_samplingEnabled.store(false);
+	if(s_samplingThread.joinable())
+	{
+		s_samplingThread.join();
+	}
+}
+
+int RAPL::getSamples()
+{
+	return 0;
+}
+
+void RAPL::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples)
+{
+	if(sensorId >= s_samplerById.size() || !s_samplerById[sensorId])
+	{
+		return;
+	}
+
+	const SamplerDesc_t &desc = *s_samplerById[sensorId];
+	samples.reserve(last - first);
+	for(size_t i = first; i < last; ++i)
+	{
+		samples.push_back(double(desc.samples[i].value) * 1.0e-6);
+	}
+}
+
+std::string RAPL::getData(double startTime, double duration,
+	size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
+	double energy[], double minWatts[], double maxWatts[])
+{
+	uint64_t intervalStart = uint64_t(startTime * 1.0e9);
+	uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
+
+	for(size_t i = 0; i < s_samplerById.size(); ++i)
+	{
+		energy[i]   = 0.0;
+		minWatts[i] = 0.0;
+		maxWatts[i] = 0.0;
+
+		if(!s_samplerById[i])
+		{
+			continue;
+		}
+
+		const SamplerDesc_t &desc = *s_samplerById[i];
+
+		auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart,
+			[](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
+		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
+			[](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
+		
+		energy[i]   = 0.0;
+		minWatts[i] = std::numeric_limits<double>::max();
+		maxWatts[i] = 0.0;
+
+		for(auto it = startIt; it != endIt; ++it)
+		{
+			double power = double(it->value) * 1.0e-6;
+			energy[i] += power;
+			minWatts[i] = std::min(minWatts[i], power);
+			maxWatts[i] = std::max(maxWatts[i], power);
+		}
+
+		*firstVR = std::distance(desc.samples.begin(), startIt);
+		*lastVR  = std::distance(desc.samples.begin(), endIt);
+	}
+
+	*firstBlade = *lastBlade = 0;
+	return "";
+}
+
 class RAPL_NONE : public RAPL::Base
 {
 public:
@@ -101,7 +268,7 @@ public:
 	virtual void close() {}
 
 	virtual void getCounterValues(CounterRecord_t &record) {}
-	virtual double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+	virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "") { return 0.0; }
 
 	virtual std::string summaryCounter() { return ""; }
@@ -128,7 +295,7 @@ public:
 	virtual void close();
 
 	virtual void getCounterValues(CounterRecord_t &record);
-	virtual double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+	virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
 
 	virtual std::string summaryCounter();
@@ -176,14 +343,14 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 	using namespace MSR_RAPL_COUNTERS_NS;
 
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		record[iterator->first] = 0;
 	}
 
 	if (detailedMode)
 	{
-		for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		{
 			uint64_t domainEnergy = 0;
 			std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
@@ -212,7 +379,7 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 	}
 	else
 	{
-		for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+		for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 		{
 #ifdef _AMD_
 			if (iterator->first == RAPL_CORE_ENERGY)
@@ -239,13 +406,13 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 				#elif defined HAVE_GEOPM_H
 					domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
 				#endif
-					record [iterator->first] += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+					record [iterator->first].value += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 				}
 			}
 		}	
 	}
 #elif defined _INTEL_ && defined HAVE_X86_ADAPT_H
-	for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 	{
 		record[iterator->first] = 0;
 	}
@@ -262,7 +429,7 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 //				exit(2);
 			}
    
-			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
 				{
@@ -300,7 +467,7 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
 //				exit(2);
 			}
-			for(std::map<std::string, unsigned long long int>::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+			for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
 			{
 				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
 				x86_adapt_get_setting(fd, itemId, &dieEnergy);
@@ -315,7 +482,7 @@ void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 #endif
 }
 
-double RAPL_MSR::getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+double RAPL_MSR::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	using namespace MSR_RAPL_COUNTERS_NS;
@@ -343,19 +510,19 @@ double RAPL_MSR::getResultValue(RawCounterValue_t startValue, RawCounterValue_t 
 	}
 #endif
 	
-	if (stopValue < startValue)
+	if (stopValue.value < startValue.value)
 	{	
 		if (units.count(counterName))
 		{
 			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< units[counterName] <<" " <<counterName << std::endl;
-			MERIC_INFO << "RAPL REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * units[counterName] << std::endl;
-			return ((COUNTERMAX - startValue) + stopValue) * units[counterName];
+			MERIC_INFO << "RAPL REPAIR " << startValue.value << " .. " << stopValue.value << " = " << ((COUNTERMAX - startValue.value) + stopValue.value) * units[counterName] << std::endl;
+			return ((COUNTERMAX - startValue.value) + stopValue.value) * units[counterName];
 		} //else: unit modifier is missing
 		return 0.0;
 	}
 	else
 	{
-		return (stopValue - startValue) * units[counterName];
+		return (stopValue.value - startValue.value) * units[counterName];
 	}
 }
 
@@ -567,7 +734,7 @@ public:
 	virtual void close();
 
 	virtual void getCounterValues(CounterRecord_t &record);
-	virtual double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+	virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
 
 	virtual std::string summaryCounter();
@@ -584,14 +751,10 @@ public:
 	static bool isAvailable();
 
 protected:
-	struct CounterDesc_t
+	struct CounterDesc_t : public Base::CounterDesc_t
 	{
-		std::string label;
-		uint64_t rangeMax;
-		double unit;
 		std::string path;
 		std::ifstream fs;
-		bool isCumulative;
 	};
 
 	std::string suffix;
@@ -643,7 +806,7 @@ void RAPL_SYSFS::init(bool detailed)
 				continue;
 			}
 
-			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK ) != 0)
+			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK) != 0)
 			{
 				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/energy_uj") << std::endl;
 				continue;
@@ -668,20 +831,21 @@ void RAPL_SYSFS::init(bool detailed)
 
 			units[fullName]    = 1.0e-6;
 			counters[fullName] = 0;
-			counterDesc[fullName] = CounterDesc_t{
-				fullLabel,
-				maxCounterRange,
-				1.0e-6,
-				dieRootPath + pszDomainName + "/energy_uj",
-				std::ifstream(dieRootPath + pszDomainName + "/energy_uj"),
-			#ifdef _INTEL_
-				true
-			#elif defined _AMD_
-				counterBaseName == RAPL_PCKG_ENERGY
+			
+			auto res = counterDesc.insert(std::make_pair(fullName, CounterDesc_t()));
+			res.first->second.label    = fullLabel;
+			res.first->second.rangeMax = maxCounterRange;
+			res.first->second.unit     = 1.0e-6;
+			res.first->second.path     = dieRootPath + pszDomainName + "/energy_uj";
+			res.first->second.fs       = std::ifstream(dieRootPath + pszDomainName + "/energy_uj");
+
+			#if defined(_INTEL_)
+				res.first->second.isCumulative = true;
+			#elif defined(_AMD_)
+				res.first->second.isCumulative = (counterBaseName == RAPL_PCKG_ENERGY);
 			#else
-				false
+				res.first->second.isCumulative = false;
 			#endif
-			};
 		}
 	}
 }
@@ -699,18 +863,18 @@ void RAPL_SYSFS::getCounterValues(CounterRecord_t &record)
 {
 	for(const auto &desc: counterDesc)
 	{
-		record[desc.first] = 0;
+		record[desc.first] = CounterValue_t(0, 0);
 	}
 
 	for(auto &desc: counterDesc)
 	{
 		uint64_t value = 0;
 		sysfsutils::ReadValue(desc.second.fs, value);
-		record[desc.first] = value;
+		record[desc.first] = CounterValue_t(value, desc.second.overflowCount.load());
 	}
 }
 
-double RAPL_SYSFS::getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+double RAPL_SYSFS::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	auto it = counterDesc.find(counter);
@@ -720,12 +884,10 @@ double RAPL_SYSFS::getResultValue(RawCounterValue_t startValue, RawCounterValue_
 	}
 
 	cumulative = it->second.isCumulative ? 1 : 0;
-	if(stopValue < startValue)
-	{
-		return ((it->second.rangeMax - startValue) + stopValue) * it->second.unit;
-	}
+	uint64_t overflow = stopValue.generation - startValue.generation;
+	double res = double(stopValue.value) - double(startValue.value);
 
-	return (stopValue - startValue) * it->second.unit;
+	return (res + overflow * double(it->second.rangeMax)) * it->second.unit;
 }
 
 std::string RAPL_SYSFS::summaryCounter()
@@ -792,7 +954,7 @@ public:
 	virtual void close();
 
 	virtual void getCounterValues(CounterRecord_t &record);
-	virtual double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+	virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
 
 	virtual std::string summaryCounter();
@@ -805,6 +967,9 @@ public:
 
 	virtual void initCountersUnits() {}
 	virtual double getUnit(std::string counter);
+
+	virtual void getCounters(std::vector<Base::CounterDesc_t *> &counters);
+	virtual RawCounterValue_t getCounterValue(CounterDesc_t *pCounterDesc);
 
 	static bool isAvailable();
 
@@ -825,7 +990,7 @@ protected:
 		std::array<value, S> values;
 	};
 
-	struct CounterDesc_t
+	struct CounterDesc_t : public Base::CounterDesc_t
 	{
 		CounterDesc_t()
 			: fd(-1)
@@ -834,10 +999,8 @@ protected:
 		CounterDesc_t(const CounterDesc_t &other) = delete;
 
 		CounterDesc_t(CounterDesc_t &&other)
-			: fd(other.fd)
-			, unit(other.unit)
-			, label(std::move(other.label))
-			, isCumulative(other.isCumulative)
+			: Base::CounterDesc_t(other)
+			, fd(other.fd)
 		{
 			other.fd = -1;
 		}
@@ -890,10 +1053,6 @@ protected:
 		}
 
 		int fd;
-		double unit;
-		std::string label;
-		uint64_t rangeMax;
-		bool isCumulative;
 	};
 
 	std::map<std::string, CounterDesc_t> counterDesc;
@@ -1015,11 +1174,12 @@ void RAPL_PERF_EVENT::getCounterValues(CounterRecord_t &record)
 			record[it->first] = 0;
 			continue;
 		}
-		record[it->first] = values.values[0].value;
+
+		record[it->first] = CounterValue_t(values.values[0].value, it->second.overflowCount.load());
 	}
 }
 
-double RAPL_PERF_EVENT::getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+double RAPL_PERF_EVENT::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	auto it = counterDesc.find(counter);
@@ -1029,12 +1189,10 @@ double RAPL_PERF_EVENT::getResultValue(RawCounterValue_t startValue, RawCounterV
 	}
 
 	cumulative = it->second.isCumulative ? 1 : 0;
-	if(stopValue < startValue)
-	{
-		return ((it->second.rangeMax - startValue) + stopValue) * it->second.unit;
-	}
+	uint64_t overflow = stopValue.generation - startValue.generation;
+	double res = double(stopValue.value) - double(startValue.value);
 
-	return (stopValue - startValue) * it->second.unit;
+	return (res + overflow * double(it->second.rangeMax)) * it->second.unit;
 }
 
 std::string RAPL_PERF_EVENT::summaryCounter()
@@ -1083,6 +1241,28 @@ double RAPL_PERF_EVENT::getUnit(std::string counter)
 		return it->second.unit;
 	}
 	return -1.0;
+}
+
+void RAPL_PERF_EVENT::getCounters(std::vector<Base::CounterDesc_t *> &counters)
+{
+	counters.clear();
+	for(auto &item: counterDesc)
+	{
+		counters.push_back(&item.second);
+	}
+}
+
+RAPL_PERF_EVENT::RawCounterValue_t RAPL_PERF_EVENT::getCounterValue(Base::CounterDesc_t *pCounterDesc)
+{
+	Values_t<> values;
+
+	CounterDesc_t *pDesc = static_cast<CounterDesc_t *>(pCounterDesc);
+	if(!pDesc || !pDesc->read(values))
+	{
+		return 0;
+	}
+
+	return values.values[0].value;
 }
 
 bool RAPL_PERF_EVENT::isAvailable()

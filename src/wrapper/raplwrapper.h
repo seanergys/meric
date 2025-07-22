@@ -3,10 +3,14 @@
 #ifndef SRC_WRAPPER_RAPLWRAPPER_H_
 #define SRC_WRAPPER_RAPLWRAPPER_H_
 
+#include <ctime>
+#include <vector>
 #include <string>
 #include <map>
 #include <memory>
 #include <iostream>
+#include <thread>
+#include <atomic>
 
 #ifdef HAVE_X86_ADAPT_H
 	#include <x86_adapt.h>
@@ -30,13 +34,53 @@ public:
 	class Base {
 	public:
 		typedef unsigned long long int RawCounterValue_t;
-		typedef std::map<std::string, RawCounterValue_t> CounterRecord_t;
+		
+		struct CounterValue_t {
+			CounterValue_t(RawCounterValue_t value = 0)
+				: value(value)
+			{}
+
+			CounterValue_t(RawCounterValue_t value, uint64_t generation)
+				: generation(generation)
+				, value(value)
+			{}
+
+			uint64_t generation;
+			RawCounterValue_t value;
+		};
+		
+		// typedef std::pair<uint64_t, unsigned long long int> CounterValue_t;
+
+		typedef std::map<std::string, CounterValue_t> CounterRecord_t;
+
+		struct CounterDesc_t {
+			CounterDesc_t()
+				: unit(1.0)
+				, rangeMax(0)
+				, overflowCount(0)
+				, isCumulative(false)
+			{}
+
+			CounterDesc_t(const CounterDesc_t &other)
+				: unit(other.unit)
+				, label(other.label)
+				, rangeMax(other.rangeMax)
+				, overflowCount(other.overflowCount.load())
+				, isCumulative(other.isCumulative)
+			{}
+
+			double unit;
+			std::string label;
+			uint64_t rangeMax;
+			std::atomic<uint64_t> overflowCount;
+			bool isCumulative;
+		};
 
 		virtual void init(bool detailed) = 0;
 		virtual void close() = 0;
 
 		virtual void getCounterValues(CounterRecord_t &record) = 0;
-		virtual double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+		virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 			double runtime, int &cumulative, std::string counter, std::string regionName = "") = 0;
 	
 		virtual std::string summaryCounter() = 0;
@@ -50,17 +94,22 @@ public:
 		virtual void initCountersUnits() = 0;
 		virtual double getUnit(std::string counter) = 0;
 
+		virtual void getCounters(std::vector<CounterDesc_t *> &counters) {}
+		virtual RawCounterValue_t getCounterValue(CounterDesc_t *pCounterDesc) { return 0; }
+
 		static bool isAvailable() { return false; }
 	};
 
 	typedef Base::RawCounterValue_t RawCounterValue_t;
-	typedef Base::CounterRecord_t CounterRecord_t;
+	typedef Base::CounterValue_t    CounterValue_t;
+	typedef Base::CounterRecord_t   CounterRecord_t;
 
+    // Counters interface
 	static void init(bool detailed);
 	static void close();
 
 	static void getCounterValues(CounterRecord_t &record);
-	static double getResultValue(RawCounterValue_t startValue, RawCounterValue_t stopValue, 
+	static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
 
 	static std::string summaryCounter();
@@ -74,13 +123,49 @@ public:
 	static void initCountersUnits();
 	static double getUnit(std::string counter);
 
+    // Sampling interface
+	static const std::string SUM_ENERGY_LABEL;
+	static int PROBE_NUMBER;
+	static std::vector<std::string> vrSensorLabel;
+
+    static void start(timespec &time);
+    static void stop(timespec &time);
+    static void initSamplers();
+    static void closeSamplers();
+    static int getSamples();
+    static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
+    static std::string getData(double startTime, double duration,
+        size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
+        double energy[], double minWatts[], double maxWatts[]);
+    static void setTimeAdjustment(timespec &time) {}
+    static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
+    static void deleteSamples() {}
+
+	// RAPL Properties
 	static std::string PCKG_POWER_LIMIT;
 	static std::string RAM_POWER_LIMIT;
 	static std::string PLATFORM_POWER_LIMIT;
 	static std::string POWER_LIMIT_TIMEWINDOW;
 
 protected:
+	struct Sample_t {
+		uint64_t timestamp;
+		uint64_t value;
+	};
+
+	struct SamplerDesc_t {
+		Base::CounterDesc_t *pCounterDesc;
+		uint64_t lastValue;
+		std::vector<Sample_t> samples;
+	};
+
 	static Base *getImpl();
+
+	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
+	static std::vector<SamplerDesc_t *>			s_samplerById;
+    static uint64_t s_samplingPeriod;
+	static std::thread s_samplingThread;
+	static std::atomic<bool> s_samplingEnabled;
 };
 
 }

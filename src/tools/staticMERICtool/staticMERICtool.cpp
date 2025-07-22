@@ -636,8 +636,8 @@ int main(int argc, char **argv)
 
 			if (token == "RAPL")
 			{
-				measurements.push_back(&measureEnergy<RAPL, unsigned long long int>);
-				prints.push_back(EnergyRecords<RAPL, unsigned long long int>::printValues);
+				measurements.push_back(&measureEnergy<RAPL, RAPL::CounterValue_t>);
+				prints.push_back(EnergyRecords<RAPL, RAPL::CounterValue_t>::printValues);
 			}
 			else if (token == "NVML")
 			{
