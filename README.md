@@ -517,6 +517,8 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* In default it is set for blas_test.
 	* region.options.extra
 		* Configuration file, that shows advanced MERIC settings.
+* test-power-monitoring.sh
+	* Script that tests available power monitoring systems using `mericStatic` tool in conjuction with plain_test.cpp
 * run.sh and run-mpi.sh
 	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
 * run-jetson.sh
