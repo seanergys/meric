@@ -643,7 +643,7 @@ void RAPL_SYSFS::init(bool detailed)
 				continue;
 			}
 
-			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK ) != -1)
+			if(access((dieRootPath + pszDomainName + "/energy_uj").c_str(), R_OK ) != 0)
 			{
 				std::cerr << "MERIC WARNING: Failed to open: " << (dieRootPath + pszDomainName + "/energy_uj") << std::endl;
 				continue;
