@@ -52,7 +52,7 @@ fi
 
 echo 'Done'
 
-AVAILABLE_POWER_MONITORING_SYSTEMS=$(echo "$SYSTEM_INFO_OUTPUT" | tr -d "\t" | grep -E -x '(NONE|RAPL|NVML|HWMON|A64FX)')
+AVAILABLE_POWER_MONITORING_SYSTEMS=$(echo "$SYSTEM_INFO_OUTPUT" | sed '1,/^# AVAILABLE POWER MONITORING SYSTEMS$/d' | tr -d '\t')
 echo $HLINE
 echo -e "Available power monitoring systems:\n$AVAILABLE_POWER_MONITORING_SYSTEMS"
 
