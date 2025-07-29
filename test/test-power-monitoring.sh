@@ -124,29 +124,19 @@ do
 		exit 1
 	fi
 
-	ZERO_VALUE_FOUND=0
-	for LINE in $(cat mericStaticMeasurements/mericStatic_${JOB_ID}_${NODE_NAME}.data | grep '=' | tail -n +2 | tr ' ' '#')
+	MEASURED_VALUES=$(cat mericStaticMeasurements/mericStatic_${JOB_ID}_${NODE_NAME}.data | grep -o '[0-9]\+\.[0-9]\+')
+	for MEASURED_VALUE in $MEASURED_VALUES
 	do
-		MERIC_STATIC_DATA=$(echo ${LINE/'#=#'/'='} | tr '#' ' ')
-
-		MEASURED_VALUE=$(echo $MERIC_STATIC_DATA | cut -d '=' -f 2)
 		if [ $(echo "${MEASURED_VALUE}==0" | bc) -eq 1 ]
 		then
-			METRIC=$(echo $MERIC_STATIC_DATA | cut -d '=' -f 1)
-			echo "Metric: $METRIC - measured value is equal to zero"
+			rm -f ${PATH_TO_TESTS}/plainTest
+			rm -rf mericStaticMeasurements
 
-			ZERO_VALUE_FOUND=1
+			echo "ERROR: It has been detected that $POWER_MONITORING_SYSTEM power monitoring system is available, but one or more of the measured values are equal to zero"
+			exit 1
 		fi
 	done
 	rm -rf mericStaticMeasurements
-
-	if [ $ZERO_VALUE_FOUND -eq 1 ]
-	then
-		rm -f ${PATH_TO_TESTS}/plainTest
-
-		echo "ERROR: It has been detected that $POWER_MONITORING_SYSTEM power monitoring system is available, but one or more of the measured values are equal to zero"
-		exit 1
-	fi
 
 	echo 'Done'
 done
