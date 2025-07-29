@@ -22,7 +22,7 @@ SYSTEM_INFO_OUTPUT=$(${PATH_TO_BINARIES}/systemInfo 2> system_info.err)
 RETURN_CODE=$?
 if [ ! -e system_info.err ]
 then
-	echo 'ERROR: Failed to redirect standart error to system_info.err - file is missing'
+	echo 'ERROR: Failed to redirect standard error to system_info.err - file is missing'
 	RETURN_CODE=1
 elif [ $RETURN_CODE -gt 0 ] || [ -s system_info.err ]
 then
@@ -37,7 +37,7 @@ then
 
 	if [ -s system_info.err ]
 	then
-		echo -e "Standart error:\n$(cat system_info.err)"
+		echo -e "Standard error:\n$(cat system_info.err)"
 	fi
 fi
 if [ -e system_info.err ]
@@ -78,7 +78,7 @@ do
 	RETURN_CODE=$?
 	if [ ! -e meric_static.err ]
 	then
-		echo 'ERROR: Failed to redirect standart error to meric_static.err - file is missing'
+		echo 'ERROR: Failed to redirect standard error to meric_static.err - file is missing'
 		RETURN_CODE=1
 	elif [ $RETURN_CODE -gt 0 ] || [ -s meric_static.err ]
 	then
@@ -93,7 +93,7 @@ do
 
 		if [ -s meric_static.err ]
 		then
-			echo -e "Standart error:\n$(cat meric_static.err)"
+			echo -e "Standard error:\n$(cat meric_static.err)"
 		fi
 	fi
 	if [ -e meric_static.err ]
