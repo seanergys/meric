@@ -21,27 +21,7 @@
 #include "../wrapper/hwmonwrapper.h"
 
 #include "../basis/cpu_optimisations.h"
-
-#define MAX_DOMAIN_NAME_LENGTH 50
-/*
-    --------- Compilation Unit Only Variable Declerations ---------
-
-    These methods are not present in the header file &
-    may or maynot be called indirectly by the extlib_* methods
-
-*/
-struct DomainMemoryMap                    //        ---------- PAGE 0 ----------                ----------- PAGE 1 ----------       ....
-{                                         //    index1  index2   index3   index4   index5         index1  index2   index3   index4   index5
-    char **counter_name = nullptr;        // [--------]
-    uint64_t *counter_value = nullptr;    // [--------|--------|--------|--------|--------...] [--------|--------|--------|--------|--------...]
-    double *energy_per_counter = nullptr; // [--------|--------|--------|--------|--------...] [--------|--------|--------|--------|--------...]
-    size_t arr_size = 0;
-};
-static std::unordered_map<int, std::unordered_map<int, DomainMemoryMap>> energyts_domain_data; // domain_id - <page - memory_map>
-static std::unordered_map<int, std::vector<ExtlibEnergyTimeStamp>> energyts_metadata;          // page - ExtlibEnergyTimeStamp metadata
-static std::unordered_map<int, int> energyts_metadata_entry_length;                            // page - num of entries in that page
-static size_t reserved_memory_size;                                                            // in num of elements
-static bool use_reserved_memory = false;
+#include "reserved_memory_manager.h"
 
 /*
     --------- Compilation Unit Only Method Declerations ---------
@@ -59,18 +39,6 @@ static void close();
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit);
 
-const int empty_slot_threshold_for_page_removal = 3; // 1 energy reading at least.
-static int count_total_empty_slots_before(int page)
-{
-    int empty_slots = 0;
-    for (auto &&i : energyts_metadata_entry_length)
-    {
-        if (i.first < page)
-            empty_slots += (reserved_memory_size - i.second);
-    }
-    std::cout << "total empty slots :" << empty_slots << " before page :" << page << "\n";
-    return empty_slots;
-}
 /* --------------------------------------------------------------- */
 
 template <typename Tmode, typename TmapVal>
@@ -82,11 +50,17 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
     *size = energyNow.size();
     std::cout << "" << "\tsize of energyNow: " << *size << "\n";
 
-    if (use_reserved_memory)
+    if (ReservedMemoryManager::is_enabled)
     {
         std::cout << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
-        DomainMemoryMap &map = energyts_domain_data.at(domain_index).at(page);
-        size_t arr_size = map.arr_size;
+        ReservedMemoryManager::DomainMemoryPool *map = ReservedMemoryManager::get_domain_map(domain_index, page);
+        if (map == nullptr)
+        {
+            std::cerr << "[ERROR]: Failed to get domain map for domain " << domain_index << " page " << page << "\n";
+            // exit(EXIT_FAILURE);
+            return;
+        }
+        size_t arr_size = map->arr_size;
 
         // Safety check
         if (*size > arr_size)
@@ -99,8 +73,8 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
         // std::cout << "offset is ->" << offset << "\n";
 
         // get empty space adresses
-        *values = &map.counter_value[offset];
-        *labels = map.counter_name;
+        *values = &map->counter_value[offset];
+        *labels = map->counter_name;
 
         // fill with data, data here is the counter values.
         size_t i = 0;
@@ -129,11 +103,11 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
         for (const auto &entry : energyNow)
         {
             (*values)[i] = static_cast<uint64_t>(entry.second);
-            (*labels)[i] = (char *)malloc(MAX_DOMAIN_NAME_LENGTH);
+            (*labels)[i] = (char *)malloc(EXTLIB_MAX_DOMAIN_NAME_LENGTH);
             if ((*labels)[i])
             {
-                strncpy((*labels)[i], entry.first.c_str(), MAX_DOMAIN_NAME_LENGTH - 1);
-                (*labels)[i][MAX_DOMAIN_NAME_LENGTH - 1] = '\0';
+                strncpy((*labels)[i], entry.first.c_str(), EXTLIB_MAX_DOMAIN_NAME_LENGTH - 1);
+                (*labels)[i][EXTLIB_MAX_DOMAIN_NAME_LENGTH - 1] = '\0';
             }
             ++i;
         }
@@ -318,59 +292,15 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     if (enabled_domains->use_reserved_memory)
     {
         // make a read to see domain array sizes.
-        struct ExtlibEnergyTimeStamp *temp = extlib_read_energy_measurements(enabled_domains);
+        struct ExtlibEnergyTimeStamp *template_timestamp = extlib_read_energy_measurements(enabled_domains);
 
-        int page = 0; // add to the first page
-        reserved_memory_size = enabled_domains->reserved_memory_size;
-        energyts_metadata[page].reserve(reserved_memory_size); // reserve memory for timestamp metadata
-        printf("[INFO]: Using reserved memory for %zu elements. [OK]\n", energyts_metadata[page].capacity());
-        energyts_metadata_entry_length[page] = 0;
+        ReservedMemoryManager::initialize(enabled_domains->reserved_memory_size, template_timestamp);
 
-        // traverse all energy domains and create DomainMemoryMap if domain is enabled
-        // then allocate reserved size for each
-        for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
-        {
-            if (!EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)) // Check if the domain is enabled
-                continue;                                            // Skip unused domains
-
-            int domain_index = meric::mutils::countTrailingZeros(domain); // Get index of the enabled domain
-
-            DomainMemoryMap map;
-            map.arr_size = temp->domain_data[domain_index].arr_size;
-            size_t total_elements = map.arr_size * reserved_memory_size; // this will store whole records.
-
-            // Allocate flat arrays for all timestamps
-            map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));  // allocate space for each sample
-            map.energy_per_counter = (double *)calloc(total_elements, sizeof(double)); // allocate space for each sample.
-            map.counter_name = (char **)calloc(map.arr_size, sizeof(char *));          // allocate space for ONE sample, since all samples will be the same.
-
-            if (!map.counter_value || !map.energy_per_counter || !map.counter_name)
-            {
-                perror("[ERROR]: Failed to allocate reserved memory for domain arrays");
-                exit(EXIT_FAILURE);
-            }
-
-            // Allocate strings for every label slot across all timestamps
-            for (size_t j = 0; j < map.arr_size; j++)
-            {
-                map.counter_name[j] = (char *)calloc(MAX_DOMAIN_NAME_LENGTH, sizeof(char));
-                if (!map.counter_name[j])
-                {
-                    perror("[ERROR]: Failed to allocate memory for counter_name string");
-                    exit(EXIT_FAILURE);
-                }
-
-                strncpy(map.counter_name[j], temp->domain_data[domain_index].counter_name[j], MAX_DOMAIN_NAME_LENGTH - 1);
-                map.counter_name[j][MAX_DOMAIN_NAME_LENGTH - 1] = '\0';
-            }
-            energyts_domain_data[domain_index][page] = std::move(map);
-        }
-
-        extlib_free_energy_timestamp(temp);
+        extlib_free_energy_timestamp(template_timestamp);
 
         // IMPORTANT: DO NOT CHANGE THIS!
         // I set this at the end, since I need a normal extlib_read_energy_measurements() read at the beginning (no static_map available at that time.) I first need the numbers.
-        use_reserved_memory = true;
+        ReservedMemoryManager::is_enabled = true;
         // std::cout << "extlib_init set use_reserved_memory:" << use_reserved_memory << "\n";
     }
     else
@@ -415,45 +345,13 @@ static const char *printDomainName(unsigned int value)
 
 void extlib_close(ExtlibEnergy *enabled_domains)
 {
-    static bool cntr_names_cleared = false;
     std::cout << "\tclosing sequence\n";
+
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
         if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain))
         {
             int domain_id = meric::mutils::countTrailingZeros(domain);
-            if (use_reserved_memory && energyts_domain_data.count(domain_id))
-            {
-                std::unordered_map<int, DomainMemoryMap> &dm_map = energyts_domain_data[domain_id];
-
-                for (auto &pair : dm_map)
-                {
-                    const int page = pair.first;
-                    DomainMemoryMap &dm = pair.second;
-
-                    // counter_name must be deleted only once since it is shared across all timestamps.
-                    if (!cntr_names_cleared && dm.counter_name)
-                    {
-                        for (size_t i = 0; i < dm.arr_size; ++i)
-                            if (dm.counter_name[i])
-                                free(dm.counter_name[i]);
-                        free(dm.counter_name);
-                        dm.counter_name = nullptr;
-                        cntr_names_cleared = true;
-                    }
-                    if (dm.counter_value)
-                    {
-                        free(dm.counter_value);
-                        dm.counter_value = nullptr;
-                    }
-                    if (dm.energy_per_counter)
-                    {
-                        free(dm.energy_per_counter);
-                        dm.energy_per_counter = nullptr;
-                    }
-                }
-            }
-
             if (enabled_domains->closeFns[domain_id])
             {
                 enabled_domains->closeFns[domain_id]();
@@ -462,10 +360,10 @@ void extlib_close(ExtlibEnergy *enabled_domains)
         }
     }
 
-    cntr_names_cleared = false;
-    energyts_domain_data.clear();
-    energyts_metadata.clear();
-    use_reserved_memory = false;
+    std::memset(enabled_domains, 0, sizeof(ExtlibEnergy));
+
+    if (ReservedMemoryManager::is_enabled)
+        ReservedMemoryManager::clear();
 }
 
 ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains)
@@ -502,97 +400,9 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
  */
 struct ExtlibEnergyTimeStamp *newEnergyTimeStamp()
 {
-    auto initialize_timestamp = [](ExtlibEnergyTimeStamp *ptr, size_t page_id, size_t index) -> ExtlibEnergyTimeStamp *
+    if (ReservedMemoryManager::is_enabled)
     {
-        std::memset(ptr, 0, sizeof(ExtlibEnergyTimeStamp));
-
-        ptr->reserved_memory_page = page_id;
-        ptr->reserved_memory_index = index;
-
-        // just init the id and domain_id, rest will be set by callee.
-        for (size_t d = 0; d < EXTLIB_NUM_DOMAINS; ++d)
-            ptr->domain_data[d].domain_id = (1 << d);
-
-        struct timespec tt;
-        clock_gettime(CLOCK_REALTIME, &tt);
-        ptr->id = meric::mutils::timeToDouble(tt);
-        return ptr;
-    };
-
-    if (use_reserved_memory)
-    {
-        int first_non_full_page = -1;
-
-        // Look for cleared slots and track first non-full page
-        for (auto &entry : energyts_metadata)
-        {
-            int page_id = entry.first;
-            auto &vec = entry.second;
-
-            // Check for cleared slots first (higher priority)
-            for (size_t i = 0; i < vec.size(); ++i)
-            {
-                if (vec[i].id == 0)
-                {
-                    std::cout << "Reusing slot: page=" << page_id << ", index=" << i << "\n";
-                    energyts_metadata_entry_length[page_id] += 1;
-                    return initialize_timestamp(&vec[i], page_id, i);
-                }
-            }
-
-            // Track first non-full page for potential expansion
-            if (first_non_full_page == -1 && vec.size() < reserved_memory_size)
-            {
-                first_non_full_page = page_id;
-                // do not break here, I prioritize using empty slots first over expansion.
-            }
-        }
-
-        // If we found a non-full page, append to it
-        if (first_non_full_page != -1)
-        {
-            std::cout << "Appending to page: " << first_non_full_page << "\n";
-            auto &vec = energyts_metadata[first_non_full_page];
-            vec.emplace_back();
-            energyts_metadata_entry_length[first_non_full_page] += 1;
-            return initialize_timestamp(&vec.back(), first_non_full_page, vec.size() - 1);
-        }
-
-        // All pages full, create a new page
-        size_t new_page_id = energyts_metadata.size();
-        std::cout << "Creating new page: " << new_page_id << "\n";
-        auto &new_vec = energyts_metadata[new_page_id];
-        new_vec.reserve(reserved_memory_size); // Reserve space for the metadata.
-        new_vec.emplace_back();                // Add a new timestamp entry.
-        energyts_metadata_entry_length[new_page_id] = 1;
-        std::cout << "reserved_memory_size: " << reserved_memory_size << " for page " << new_page_id << "\n";
-
-        // traverse energyts_domain_data variable and first page, based on the reserved_memory_size and allocations, create another one for the new page
-        for (auto &&i : energyts_domain_data)
-        {
-            int domain_id = i.first;
-            auto &domain_map = i.second;
-
-            // Create a new DomainMemoryMap for the new page
-            DomainMemoryMap map;
-            map.arr_size = domain_map[0].arr_size;                       // page 0's arr_size is the same for all pages.
-            size_t total_elements = map.arr_size * reserved_memory_size; // this will store whole records.
-
-            std::cout << "total_elements: " << total_elements << " for domain_id: " << domain_id << "\n";
-            // Allocate flat arrays for all timestamps
-            map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));  // allocate space for each sample
-            map.energy_per_counter = (double *)calloc(total_elements, sizeof(double)); // allocate space for each sample.
-            map.counter_name = domain_map[0].counter_name;                             // use the same counter_name array as the first page.
-
-            if (!map.counter_value || !map.energy_per_counter || !map.counter_name)
-            {
-                perror("[ERROR]: Failed to allocate reserved memory for domain arrays");
-                exit(EXIT_FAILURE);
-            }
-
-            energyts_domain_data[domain_id][new_page_id] = std::move(map);
-        }
-        return initialize_timestamp(&new_vec.back(), new_page_id, 0);
+        return ReservedMemoryManager::allocate_timestamp();
     }
     else
     {
@@ -630,7 +440,7 @@ void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size
 
     for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
-        char domain_name_buffer[MAX_DOMAIN_NAME_LENGTH];
+        char domain_name_buffer[EXTLIB_MAX_DOMAIN_NAME_LENGTH];
 
         const char *domain_name = printDomainName(timestamp->domain_data[i].domain_id);
 
@@ -654,7 +464,7 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
     if (timestamp == NULL)
         return;
 
-    if (!use_reserved_memory)
+    if (!ReservedMemoryManager::is_enabled)
     {
         // Iterate over each domain
         for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
@@ -690,84 +500,7 @@ void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
     }
     else
     {
-        for (int domain_id = 0; domain_id < EXTLIB_NUM_DOMAINS; domain_id++)
-        {
-            size_t arr_size = timestamp->domain_data[domain_id].arr_size;
-            if (arr_size == 0)
-                continue;
-            size_t offset = arr_size * timestamp->reserved_memory_index;
-
-            // just clear the counter and energy values.
-            // do not clear the name array, since it is shared across all timestamps.
-            if (OPT_LIKELY(timestamp->domain_data[domain_id].counter_value))
-            {
-                memset(timestamp->domain_data[domain_id].counter_value, 0, arr_size * sizeof(uint64_t));
-            }
-            if (OPT_LIKELY(timestamp->domain_data[domain_id].energy_per_counter))
-            {
-                memset(timestamp->domain_data[domain_id].energy_per_counter, 0, arr_size * sizeof(uint64_t));
-            }
-        }
-
-        int page = timestamp->reserved_memory_page;
-        // Remove the timestamp from the metadata vector
-        // if it becomes empty, remove the page from the metadata memory map.
-        auto &vec = energyts_metadata[page];
-        std::cout << "\t before removal: page: " << page << " length: " << energyts_metadata_entry_length[page] << "\n";
-
-        // if it is not the default page (page 0)
-        // if there is no remaining entry in the page
-        // if you are the last page.
-        // if previous pages has empty entry slots (for optimization) > than the threshold.
-        // remove the page.
-        if (page != 0 &&
-            (energyts_metadata_entry_length[page] == 1) &&
-            page == energyts_metadata_entry_length.size() - 1 &&
-            count_total_empty_slots_before(timestamp->reserved_memory_page) >= empty_slot_threshold_for_page_removal) // if it is the last entry in the page
-        {
-            std::cout << "FREEING PAGE:" << page << "\n";
-            energyts_metadata_entry_length[page] -= 1; // Decrease the length of the page vector
-
-            std::cout << "\t\tclear timestamp at index " << timestamp->reserved_memory_index << " from page: " << page << "\n";
-            memset(timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp));
-            timestamp->id = 0; // Mark as available
-            timestamp->reserved_memory_index = -1;
-            timestamp->reserved_memory_page = -1; // Mark as available (max number)
-
-            energyts_metadata.erase(page);
-            // free the memory locations pointing from the metadata
-            for (int domain_id = 0; domain_id < EXTLIB_NUM_DOMAINS; domain_id++)
-            {
-                if (energyts_domain_data.count(domain_id) == 0)
-                    continue; // skip if no data for this domain
-
-                auto &mmap = energyts_domain_data[domain_id][page];
-                if (mmap.counter_value)
-                {
-                    free(mmap.counter_value);
-                    mmap.counter_value = nullptr;
-                }
-                if (mmap.energy_per_counter)
-                {
-                    free(mmap.energy_per_counter);
-                    mmap.energy_per_counter = nullptr;
-                }
-                // don't free counter_name, since it is shared across all timestamps.
-                std::cout << "\t Domain " << printDomainName(1 << domain_id) << " erased from page: " << page << "\n";
-                energyts_domain_data[domain_id].erase(page); // Remove the page from the domain data map
-            }
-        }
-        else
-        {
-            energyts_metadata_entry_length[page] -= 1; // Decrease the length of the page vector
-
-            // Clear the ExtlibEnergyTimeStamp struct itself
-            std::cout << "\t\tclear timestamp at index " << timestamp->reserved_memory_index << " from page " << page << "\n";
-            memset(timestamp, 0, sizeof(struct ExtlibEnergyTimeStamp));
-            timestamp->id = 0; // Mark as available
-            timestamp->reserved_memory_index = -1;
-            timestamp->reserved_memory_page = -1; // Mark as available (max number)
-        }
+        ReservedMemoryManager::deallocate_timestamp(timestamp);
     }
 }
 struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergyTimeStamp *begin, struct ExtlibEnergyTimeStamp *end)
@@ -807,18 +540,18 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
             result->domain_data[domain_iter].domain_id = begin->domain_data[domain_iter].domain_id;
             // std::cout << "\tarr_size: " << result->domain_data[domain_iter].arr_size << " domain_id:" << (int)result->domain_data[domain_iter].domain_id << "\n";
 
-            if (use_reserved_memory)
+            if (ReservedMemoryManager::is_enabled)
             {
                 // std::cout << "\textlib_calc_energy_consumption use_reserved_memory\n";
+                ReservedMemoryManager::DomainMemoryPool *map = ReservedMemoryManager::get_domain_map(domain_iter, result->reserved_memory_page); // energyts_domain_data[domain_iter][result->reserved_memory_page];
+                if (map == nullptr)
+                    continue;
 
-                if (energyts_domain_data.count(domain_iter) == 0)
-                    continue; // skip if no data for this domain
-                DomainMemoryMap &map = energyts_domain_data[domain_iter][result->reserved_memory_page];
-                size_t offset = map.arr_size * result->reserved_memory_index;
+                size_t offset = map->arr_size * result->reserved_memory_index;
                 // std::cout << "\toffset:" << offset << " -- map.arr_size:" << map.arr_size << " -- " << "static memory index:" << result->reserved_memory_index << "\n";
-                result->domain_data[domain_iter].counter_name = map.counter_name; // this is okay, all will point to the same memory location.
-                result->domain_data[domain_iter].counter_value = &map.counter_value[offset];
-                result->domain_data[domain_iter].energy_per_counter = &map.energy_per_counter[offset];
+                result->domain_data[domain_iter].counter_name = map->counter_name; // this is okay, all will point to the same memory location.
+                result->domain_data[domain_iter].counter_value = &map->counter_value[offset];
+                result->domain_data[domain_iter].energy_per_counter = &map->energy_per_counter[offset];
             }
             else
             {

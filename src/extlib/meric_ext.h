@@ -16,6 +16,8 @@
 #include <stdio.h>  // If you also need I/O functions
 
 #define EXTLIB_NUM_DOMAINS 6 // TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#define EXTLIB_MAX_DOMAIN_NAME_LENGTH 50
+
 struct ExtlibEnergyTimeStamp
 {
     double id; // Timestamp identifier, also implies if the memory location in static_memory is available or not. if 0, it is available for an entry otherwise is NOT.

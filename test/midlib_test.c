@@ -6,7 +6,7 @@
 #include <meric_ext.h>
 #include "work_c.h"
 
-#define ITER 4
+#define ITER 3
 
 struct ExtlibEnergyTimeStamp *buffer[6];
 int main(int argc, char **argv)
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         //   BEGIN JOB: REGION THAT WE WANNA MEASURE ITS ENERGY CONSUMPTION
 
         // #pragma omp parallel
-        do_work(1.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+        do_work(5.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
 
         // END JOB
 
@@ -85,29 +85,35 @@ int main(int argc, char **argv)
             -------------- STEP(7) --------------
              Do NOT forget to free the timestamps
          */
-        if (i == 2)
-        {
-            printf("Freeing page %d for iter %d\n", 0, i);
-            printf("\t\t*** PAGES %d %d %d\n", buffer[0]->reserved_memory_page, buffer[1]->reserved_memory_page, buffer[2]->reserved_memory_page);
-            // printf("\t\t*** PAGES %d %d %d\n", buffer[3]->reserved_memory_page, buffer[4]->reserved_memory_page, buffer[5]->reserved_memory_page);
+        // if (i == 1)
+        // {
+        //     printf("Freeing page %d for iter %d\n", 0, i);
+        //     printf("\t\t*** PAGES %d %d %d\n", buffer[0]->reserved_memory_page, buffer[1]->reserved_memory_page, buffer[2]->reserved_memory_page);
+        //     // printf("\t\t*** PAGES %d %d %d\n", buffer[3]->reserved_memory_page, buffer[4]->reserved_memory_page, buffer[5]->reserved_memory_page);
 
-            extlib_free_energy_timestamp(buffer[0]);
-            extlib_free_energy_timestamp(buffer[1]);
-            extlib_free_energy_timestamp(buffer[2]);
+        // extlib_free_energy_timestamp(buffer[0]);
+        // extlib_free_energy_timestamp(buffer[1]);
+        // extlib_free_energy_timestamp(buffer[2]);
 
-            extlib_free_energy_timestamp(ts);
-            extlib_free_energy_timestamp(ts2);
-            extlib_free_energy_timestamp(result);
-        }
-        else if (i == 0 || i == 1) // add iter 0 and 1
-        {
-            printf("\tAdding to buffer for iter %d\n", i);
-            buffer[i * 3] = ts;
-            buffer[i * 3 + 1] = ts2;
-            buffer[i * 3 + 2] = result;
-        }
+        // extlib_free_energy_timestamp(ts);
+        // extlib_free_energy_timestamp(ts2);
+        // extlib_free_energy_timestamp(result);
+        // }
+        // else if (i == 0) // add iter 0 and 1
+        // {
+        printf("\tAdding to buffer for iter %d\n", i);
+        buffer[i * 3] = ts;
+        buffer[i * 3 + 1] = ts2;
+        buffer[i * 3 + 2] = result;
+        // }
     }
 
+    for (int i = 0; i < ITER; i++)
+    {
+        extlib_free_energy_timestamp(buffer[i * 3]);
+        extlib_free_energy_timestamp(buffer[i * 3 + 1]);
+        extlib_free_energy_timestamp(buffer[i * 3 + 2]);
+    }
     /*
         -------------- STEP(8) --------------
         Do NOT forget close extlib for selected energy domains object.
