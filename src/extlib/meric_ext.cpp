@@ -363,7 +363,7 @@ void extlib_close(ExtlibEnergy *enabled_domains)
     std::memset(enabled_domains, 0, sizeof(ExtlibEnergy));
 
     if (ReservedMemoryManager::is_enabled)
-        ReservedMemoryManager::clear();
+        ReservedMemoryManager::close();
 }
 
 ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_domains)

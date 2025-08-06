@@ -28,6 +28,15 @@ struct ExtlibEnergyTimeStamp;
     This class abstracts away the paging system for reserved memory.
     It manages memory pages, timestamp allocation, and cleanup.
     All members and methods are static for global access.
+
+    How it works:
+        Default page is page 0, never removed unless close sequence is called.
+        DomainMemoryPool is a struct that contains arrays for counter names, values, and energy per energy domain.
+        ExtlibEnergyTimeStamp represents a single timestamp with value pointers pointing to memory locations for values.
+        When a ExtlibEnergyTimeStamp is allocated with allocate_timestamp(), it creates ExtlibEnergyTimeStamp and its pointers point to the memory locations in DomainMemoryPool.
+        When a ExtlibEnergyTimeStamp is deallocated, it clears the values.
+        When a page is full, it creates a new page and allocates memory for the new ExtlibEnergyTimeStamp.
+        When a page is empty, it checks if it should be removed based on the EMPTY_SLOT_THRESHOLD, if there are enough empty slots before it then it removes the page.
 */
 class ReservedMemoryManager
 {
@@ -52,10 +61,7 @@ public:
     static ExtlibEnergyTimeStamp *allocate_timestamp();
     static void deallocate_timestamp(ExtlibEnergyTimeStamp *timestamp);
     static DomainMemoryPool *get_domain_map(int domain_id, int page);
-    static void get_domain_arrays(int domain_id, int page, size_t offset,
-                                  uint64_t **counter_values, char ***counter_names,
-                                  double **energy_per_counter, size_t *arr_size);
-    static void clear();
+    static void close();
 
 private:
     ReservedMemoryManager() = delete;

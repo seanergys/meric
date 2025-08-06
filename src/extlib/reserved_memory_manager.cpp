@@ -90,8 +90,6 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
         int page_id = entry.first;
         auto &vec = entry.second;
 
-        std::cout << "page_id:" << page_id << " vec size:" << vec.size() << "!!\n";
-
         // Check for cleared slots first (higher priority)
         for (size_t i = 0; i < vec.size(); ++i)
         {
@@ -99,6 +97,7 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
             {
                 std::cout << "Reusing slot: page=" << page_id << ", index=" << i << "\n";
                 entry_length[page_id] += 1;
+                std::cout << "page_id:" << page_id << " vec size:" << entry_length[page_id] << "!!\n";
                 return initialize_timestamp(&vec[i], page_id, i);
             }
         }
@@ -118,10 +117,11 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
         auto &vec = metadata[first_non_full_page];
         vec.emplace_back();
         entry_length[first_non_full_page] += 1;
+        std::cout << "page_id:" << first_non_full_page << " vec size:" << entry_length[first_non_full_page] << "!!\n";
         return initialize_timestamp(&vec.back(), first_non_full_page, vec.size() - 1);
     }
 
-    // Create new page
+    // As last resort, create a new page
     return create_new_page();
 }
 
@@ -152,8 +152,7 @@ void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestam
     std::cout << "\t before removal: page: " << page << " length: " << entry_length[page] << "\n";
 
     // Check if we should remove the page
-
-    entry_length[page] -= 1;
+    entry_length.at(page) -= 1;
     clear_timestamp(timestamp);
 
     if (should_remove_page(page))
@@ -169,27 +168,7 @@ ReservedMemoryManager::DomainMemoryPool *ReservedMemoryManager::get_domain_map(i
     return &domain_memory_pool[domain_id][page];
 }
 
-void ReservedMemoryManager::get_domain_arrays(int domain_id, int page, size_t offset,
-                                              uint64_t **counter_values, char ***counter_names,
-                                              double **energy_per_counter, size_t *arr_size)
-{
-    auto *domain_map = get_domain_map(domain_id, page);
-    if (domain_map)
-    {
-        *counter_values = &domain_map->counter_value[offset];
-        *counter_names = domain_map->counter_name;
-        *energy_per_counter = &domain_map->energy_per_counter[offset];
-        *arr_size = domain_map->arr_size;
-    }
-    else
-    {
-        *counter_values = nullptr;
-        *counter_names = nullptr;
-        *energy_per_counter = nullptr;
-        *arr_size = 0;
-    }
-}
-void ReservedMemoryManager::clear()
+void ReservedMemoryManager::close()
 {
     static bool cntr_names_cleared = false;
     std::cout << "\tclosing sequence\n";
@@ -267,6 +246,7 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
     new_vec.reserve(ReservedMemoryManager::reserved_memory_size);
     new_vec.emplace_back();
     entry_length[new_page_id] = 1;
+    std::cout << "page_id:" << new_page_id << " vec size:" << entry_length[new_page_id] << "!!\n";
 
     // Create domain maps for new page
     for (auto &&i : domain_memory_pool)
@@ -275,13 +255,13 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
         auto &domain_map = i.second;
 
         DomainMemoryPool map;
-        map.arr_size = domain_map[0].arr_size;
+        map.arr_size = domain_map.at(0).arr_size; // get the first page's arr_size
         size_t total_elements = map.arr_size * ReservedMemoryManager::reserved_memory_size;
         std::cout << "total_elements: " << total_elements << " for domain_id: " << domain_id << "\n";
 
         map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));
         map.energy_per_counter = (double *)calloc(total_elements, sizeof(double));
-        map.counter_name = domain_map[0].counter_name; // Share counter names
+        map.counter_name = domain_map.at(0).counter_name; // Share counter names with the first page.
 
         if (!map.counter_value || !map.energy_per_counter || !map.counter_name)
         {
@@ -289,7 +269,8 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
             exit(EXIT_FAILURE);
         }
 
-        domain_memory_pool[domain_id][new_page_id] = std::move(map);
+        // domain_memory_pool[domain_id][new_page_id] = std::move(map);
+        domain_memory_pool.at(domain_id)[new_page_id] = std::move(map);
     }
 
     return initialize_timestamp(&new_vec.back(), new_page_id, 0);
@@ -312,14 +293,6 @@ void ReservedMemoryManager::remove_page(int page)
 {
     std::cout << "FREEING PAGE:" << page << "\n";
 
-    // Clear timestamp
-    // auto &vec = metadata[page];
-    // if (!vec.empty())
-    // {
-    //     ExtlibEnergyTimeStamp *timestamp = &vec.back();
-    //     clear_timestamp(timestamp);
-    // }
-
     metadata.erase(page);
 
     // Free domain memory pool for this page
@@ -328,7 +301,7 @@ void ReservedMemoryManager::remove_page(int page)
         if (domain_memory_pool.count(domain_id) == 0)
             continue;
 
-        auto &mmap = domain_memory_pool[domain_id][page];
+        auto &mmap = domain_memory_pool.at(domain_id).at(page);
         if (mmap.counter_value)
         {
             free(mmap.counter_value);
@@ -340,8 +313,8 @@ void ReservedMemoryManager::remove_page(int page)
             mmap.energy_per_counter = nullptr;
         }
         // don't free counter_name, since it is shared across all timestamps.
-        std::cout << "\t Domain erased from page: " << page << "\n";
-        domain_memory_pool[domain_id].erase(page);
+        domain_memory_pool.at(domain_id).erase(page);
+        std::cout << "\t Domain: " << domain_id << " erased from page: " << page << "\n";
     }
 }
 

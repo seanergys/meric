@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_NVML);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_HDEEM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_ROCM);
-    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_HWMON);
+    // EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_HWMON);
 
     // EXTLIB_ENERGY_DISABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_NVML);
 
@@ -95,25 +95,25 @@ int main(int argc, char **argv)
         // extlib_free_energy_timestamp(buffer[1]);
         // extlib_free_energy_timestamp(buffer[2]);
 
-        // extlib_free_energy_timestamp(ts);
-        // extlib_free_energy_timestamp(ts2);
-        // extlib_free_energy_timestamp(result);
+        //     extlib_free_energy_timestamp(ts);
+        //     extlib_free_energy_timestamp(ts2);
+        //     extlib_free_energy_timestamp(result);
         // }
         // else if (i == 0) // add iter 0 and 1
         // {
-        printf("\tAdding to buffer for iter %d\n", i);
-        buffer[i * 3] = ts;
-        buffer[i * 3 + 1] = ts2;
-        buffer[i * 3 + 2] = result;
+        // printf("\tAdding to buffer for iter %d\n", i);
+        // buffer[i * 3] = ts;
+        // buffer[i * 3 + 1] = ts2;
+        // buffer[i * 3 + 2] = result;
         // }
     }
 
-    for (int i = 0; i < ITER; i++)
-    {
-        extlib_free_energy_timestamp(buffer[i * 3]);
-        extlib_free_energy_timestamp(buffer[i * 3 + 1]);
-        extlib_free_energy_timestamp(buffer[i * 3 + 2]);
-    }
+    // for (int i = 0; i < ITER; i++)
+    // {
+    //     extlib_free_energy_timestamp(buffer[i * 3]);
+    //     extlib_free_energy_timestamp(buffer[i * 3 + 1]);
+    //     extlib_free_energy_timestamp(buffer[i * 3 + 2]);
+    // }
     /*
         -------------- STEP(8) --------------
         Do NOT forget close extlib for selected energy domains object.
