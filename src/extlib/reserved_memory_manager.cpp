@@ -313,6 +313,7 @@ void ReservedMemoryManager::remove_page(int page)
     std::cout << "FREEING PAGE:" << page << "\n";
 
     metadata.erase(page);
+    entry_length.erase(page);
 
     // Free domain memory pool for this page
     for (int domain_id = 0; domain_id < EXTLIB_NUM_DOMAINS; domain_id++)
