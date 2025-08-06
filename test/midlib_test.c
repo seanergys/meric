@@ -6,9 +6,9 @@
 #include <meric_ext.h>
 #include "work_c.h"
 
-#define ITER 3
+#define ITER 4
 
-struct ExtlibEnergyTimeStamp *buffer[6];
+struct ExtlibEnergyTimeStamp *buffer[12];
 int main(int argc, char **argv)
 {
     /*
@@ -95,25 +95,29 @@ int main(int argc, char **argv)
         // extlib_free_energy_timestamp(buffer[1]);
         // extlib_free_energy_timestamp(buffer[2]);
 
-        //     extlib_free_energy_timestamp(ts);
-        //     extlib_free_energy_timestamp(ts2);
-        //     extlib_free_energy_timestamp(result);
+        // extlib_free_energy_timestamp(ts);
+        // extlib_free_energy_timestamp(ts2);
+        // extlib_free_energy_timestamp(result);
         // }
         // else if (i == 0) // add iter 0 and 1
         // {
-        // printf("\tAdding to buffer for iter %d\n", i);
-        // buffer[i * 3] = ts;
-        // buffer[i * 3 + 1] = ts2;
-        // buffer[i * 3 + 2] = result;
+        printf("\tAdding to buffer for iter %d\n", i);
+        buffer[i * 3] = ts;
+        buffer[i * 3 + 1] = ts2;
+        buffer[i * 3 + 2] = result;
         // }
     }
 
-    // for (int i = 0; i < ITER; i++)
-    // {
-    //     extlib_free_energy_timestamp(buffer[i * 3]);
-    //     extlib_free_energy_timestamp(buffer[i * 3 + 1]);
-    //     extlib_free_energy_timestamp(buffer[i * 3 + 2]);
-    // }
+    printf("*** DONE MEASURING ***\n");
+    for (int i = ITER - 1; i >= 0; i--)
+    {
+        extlib_free_energy_timestamp(buffer[i * 3]);
+        extlib_free_energy_timestamp(buffer[i * 3 + 1]);
+        extlib_free_energy_timestamp(buffer[i * 3 + 2]);
+    }
+
+    printf("*** DONE FREEING ***\n");
+    extlib_shrink_to_fit();
     /*
         -------------- STEP(8) --------------
         Do NOT forget close extlib for selected energy domains object.
