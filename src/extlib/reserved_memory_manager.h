@@ -1,3 +1,13 @@
+// ====================================================================
+// MERIC ext - Management of Reserved Memory for Energy Measurement
+// --------------------------------------------------------------------
+// Written to manage reserved memory for energy measurement timestamps in a EXTLIB library.
+//
+// Author: Osman Yasal <osman.yasal@vsb.cz>
+// Version: 1.0.0
+// License: BSD-3
+// ====================================================================
+
 #ifndef RESERVED_MEMORY_MANAGER_H
 #define RESERVED_MEMORY_MANAGER_H
 

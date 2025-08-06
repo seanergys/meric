@@ -160,19 +160,6 @@ void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestam
         remove_page(page);
     }
 }
-void ReservedMemoryManager::shrink_to_fit()
-{
-    std::cout << "\tshrink_to_fit called\n";
-
-    for (auto &&i : entry_length)
-    {
-        // not page zero and has no entries
-        if (i.first != 0 && i.second == 0)
-        {
-            remove_page(i.first);
-        }
-    }
-}
 
 ReservedMemoryManager::DomainMemoryPool *ReservedMemoryManager::get_domain_map(int domain_id, int page)
 {
@@ -313,6 +300,7 @@ void ReservedMemoryManager::remove_page(int page)
     std::cout << "FREEING PAGE:" << page << "\n";
 
     metadata.erase(page);
+    std::cout << "----------->>>> Entry length for page " << page << " is:" << entry_length.at(page) << ".\n";
     entry_length.erase(page);
 
     // Free domain memory pool for this page
@@ -335,6 +323,31 @@ void ReservedMemoryManager::remove_page(int page)
         // don't free counter_name, since it is shared across all timestamps.
         domain_memory_pool.at(domain_id).erase(page);
         std::cout << "\t Domain: " << domain_id << " erased from page: " << page << "\n";
+    }
+}
+
+void ReservedMemoryManager::shrink_to_fit()
+{
+    std::cout << "\tshrink_to_fit called\n";
+
+    std::vector<int> pages_to_remove;
+
+    // First collect the pages to remove
+    for (const auto &entry : entry_length)
+    {
+        std::cout << "\t\tpage: " << entry.first << " has " << entry.second << " entries.\n";
+
+        // Not page zero and has zero entries
+        if (entry.first != 0 && entry.second == 0)
+        {
+            pages_to_remove.push_back(entry.first);
+        }
+    }
+
+    // Now safely remove them
+    for (int page : pages_to_remove)
+    {
+        remove_page(page);
     }
 }
 
