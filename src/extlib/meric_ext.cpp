@@ -695,3 +695,9 @@ char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains)
     c_str[buffer.size()] = '\0'; // Null-terminate the string
     return c_str;
 }
+
+void extlib_shrink_to_fit()
+{
+    if (ReservedMemoryManager::is_enabled)
+        ReservedMemoryManager::shrink_to_fit();
+}

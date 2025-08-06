@@ -156,7 +156,22 @@ void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestam
     clear_timestamp(timestamp);
 
     if (should_remove_page(page))
+    {
         remove_page(page);
+    }
+}
+void ReservedMemoryManager::shrink_to_fit()
+{
+    std::cout << "\tshrink_to_fit called\n";
+
+    for (auto &&i : entry_length)
+    {
+        // not page zero and has no entries
+        if (i.first != 0 && i.second == 0)
+        {
+            remove_page(i.first);
+        }
+    }
 }
 
 ReservedMemoryManager::DomainMemoryPool *ReservedMemoryManager::get_domain_map(int domain_id, int page)
@@ -239,7 +254,11 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::initialize_timestamp(ExtlibEnergyT
 
 ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
 {
-    size_t new_page_id = metadata.size();
+    // size_t new_page_id = metadata.size();
+    // if middle page is removed, matadata.size() would collide with existing page ids.
+    // So we use a static counter to ensure unique page ids.
+    static size_t new_page_id = 0;
+    new_page_id++;
     std::cout << "Creating new page: " << new_page_id << "\n";
 
     auto &new_vec = metadata[new_page_id];
@@ -280,7 +299,7 @@ bool ReservedMemoryManager::should_remove_page(int page)
 {
     // if it is not the default page (page 0)
     // if there is no remaining entry in the page
-    // if you are the last page.
+    // ## if you are the last page.
     // if previous pages has empty entry slots (for optimization) > than the threshold.
     // remove the page.
     return page != 0 &&

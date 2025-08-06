@@ -26,17 +26,21 @@ struct ExtlibEnergyTimeStamp;
     --------- ReservedMemoryManager Class ---------
 
     This class abstracts away the paging system for reserved memory.
-    It manages memory pages, timestamp allocation, and cleanup.
+    It manages memory pages, energy timestamp allocation, and cleanup.
     All members and methods are static for global access.
 
     How it works:
         Default page is page 0, never removed unless close sequence is called.
         DomainMemoryPool is a struct that contains arrays for counter names, values, and energy per energy domain.
         ExtlibEnergyTimeStamp represents a single timestamp with value pointers pointing to memory locations for values.
-        When a ExtlibEnergyTimeStamp is allocated with allocate_timestamp(), it creates ExtlibEnergyTimeStamp and its pointers point to the memory locations in DomainMemoryPool.
-        When a ExtlibEnergyTimeStamp is deallocated, it clears the values.
+        When a ExtlibEnergyTimeStamp is allocated with allocate_timestamp(), it creates ExtlibEnergyTimeStamp and its pointers point to the memory locations in DomainMemoryPool and marks the slot as occupied.
+        When a ExtlibEnergyTimeStamp is deallocated, it clears (zeros) the values and mark the slot as empty.
         When a page is full, it creates a new page and allocates memory for the new ExtlibEnergyTimeStamp.
-        When a page is empty, it checks if it should be removed based on the EMPTY_SLOT_THRESHOLD, if there are enough empty slots before it then it removes the page.
+        When a page is empty, it checks if it should be removed based on the EMPTY_SLOT_THRESHOLD, if there are enough empty slots before that page, then it removes the page.
+        Note that allocated page size and indexes are fixed. They do not shrink or extend. they are just used or free.
+        allocate_timestamp priarotizes using empty slots over occupying a new slot. if all slots are occupied, it has no chance to create another page with fixed sized reserved memory.
+        All pages in the same domain share the domain names array, since it is the same for all of them.
+        Below, in DomainMemoryPool, one can see the paging structure.
 */
 class ReservedMemoryManager
 {
@@ -61,6 +65,7 @@ public:
     static ExtlibEnergyTimeStamp *allocate_timestamp();
     static void deallocate_timestamp(ExtlibEnergyTimeStamp *timestamp);
     static DomainMemoryPool *get_domain_map(int domain_id, int page);
+    static void shrink_to_fit();
     static void close();
 
 private:

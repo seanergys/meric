@@ -186,6 +186,18 @@ EXTERNC void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestam
 EXTERNC char *extlib_get_enabled_domain_names(ExtlibEnergy *enabled_domains);
 
 /**
+ * @param enabled_domains The object containing enabled domains
+ *
+ * @brief Shrinks the reserved memory to fit the current usage.
+ *
+ * This function is useful for optimizing memory usage after a series of allocations and deallocations.
+ * It will attempt to reduce the size of the reserved memory pool to match the current number of entries.
+ *
+ * @note This function is only effective if reserved memory management is enabled.
+ */
+EXTERNC void extlib_shrink_to_fit();
+
+/**
  *
  * @param begin begin timestamp
  * @param end end timestamp
