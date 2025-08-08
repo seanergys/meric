@@ -109,7 +109,8 @@ int main(int argc, char **argv)
     }
 
     printf("*** DONE MEASURING ***\n");
-    for (int i = ITER - 1; i >= 0; i--)
+    for (int i = 0; i < ITER; i++)
+    // for (int i = ITER - 1; i >= 0; i--)
     {
         extlib_free_energy_timestamp(buffer[i * 3]);
         extlib_free_energy_timestamp(buffer[i * 3 + 1]);
@@ -118,6 +119,28 @@ int main(int argc, char **argv)
 
     printf("*** DONE FREEING ***\n");
     extlib_shrink_to_fit();
+
+    printf("********************* READ AGAIN *********************!!\n");
+    for (size_t i = 0; i < 2; i++)
+    {
+        printf("\titer:%d\n", i);
+        struct ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
+        extlib_print_energy_timestamp(ts, 5);
+
+        do_work(5.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+
+        struct ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
+        extlib_print_energy_timestamp(ts2, 5);
+
+        struct ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts, ts2);
+        extlib_print_energy_timestamp(result, 5);
+
+        printf("\t\t*** PAGES %d %d %d\n", ts->reserved_memory_page, ts2->reserved_memory_page, result->reserved_memory_page);
+
+        extlib_free_energy_timestamp(ts);
+        extlib_free_energy_timestamp(ts2);
+        extlib_free_energy_timestamp(result);
+    }
     /*
         -------------- STEP(8) --------------
         Do NOT forget close extlib for selected energy domains object.
