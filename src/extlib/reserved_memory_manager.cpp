@@ -21,7 +21,7 @@ int ReservedMemoryManager::count_total_empty_slots_before(int page)
         if (i.first < page)
             empty_slots += (reserved_memory_size - i.second);
     }
-    std::cout << "total empty slots :" << empty_slots << " before page :" << page << "\n";
+    std::cout << "total empty slots :" << empty_slots << " before page-id :" << page << "\n";
     return empty_slots;
 }
 
@@ -39,8 +39,7 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
     ReservedMemoryManager::metadata[page].reserve(ReservedMemoryManager::reserved_memory_size);
     ReservedMemoryManager::entry_length[page] = 0;
 
-    printf("[INFO]: Using reserved memory for %zu elements. [OK]\n", ReservedMemoryManager::metadata[page].capacity());
-
+    std::cout << "[INFO]: Using reserved memory for " << ReservedMemoryManager::metadata[page].capacity() << " elements. [OK]" << std::endl;
     // Initialize domain data based on template
     for (int domain_index = 0; domain_index < EXTLIB_NUM_DOMAINS; ++domain_index)
     {
@@ -58,7 +57,7 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
 
         if (!map.counter_value || !map.energy_per_counter || !map.counter_name)
         {
-            perror("[ERROR]: Failed to allocate reserved memory for domain arrays");
+            std::cerr << "[ERROR]: Failed to allocate reserved memory for domain arrays\n";
             exit(EXIT_FAILURE);
         }
 
@@ -68,7 +67,7 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
             map.counter_name[j] = (char *)calloc(EXTLIB_MAX_DOMAIN_NAME_LENGTH, sizeof(char));
             if (!map.counter_name[j])
             {
-                perror("[ERROR]: Failed to allocate memory for counter_name string");
+                std::cerr << "[ERROR]: Failed to allocate memory for counter_name string\n";
                 exit(EXIT_FAILURE);
             }
 
@@ -95,9 +94,9 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
         {
             if (vec[i].id == 0)
             {
-                std::cout << "Reusing slot: page=" << page_id << ", index=" << i << "\n";
+                std::cout << "Reusing slot: page-id=" << page_id << ", index=" << i << "\n";
                 entry_length[page_id] += 1;
-                std::cout << "page_id:" << page_id << " vec size:" << entry_length[page_id] << "!!\n";
+                std::cout << "page-id:" << page_id << " vec size:" << entry_length[page_id] << "!!\n";
                 return initialize_timestamp(&vec[i], page_id, i);
             }
         }
@@ -113,11 +112,11 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
     // If we found a non-full page, append to it
     if (first_non_full_page != -1)
     {
-        std::cout << "Appending to page: " << first_non_full_page << "\n";
+        std::cout << "Appending to page-id: " << first_non_full_page << "\n";
         auto &vec = metadata[first_non_full_page];
         vec.emplace_back();
         entry_length[first_non_full_page] += 1;
-        std::cout << "page_id:" << first_non_full_page << " vec size:" << entry_length[first_non_full_page] << "!!\n";
+        std::cout << "page-id:" << first_non_full_page << " vec size:" << entry_length[first_non_full_page] << "!!\n";
         return initialize_timestamp(&vec.back(), first_non_full_page, vec.size() - 1);
     }
 
@@ -149,7 +148,7 @@ void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestam
 
     int page = timestamp->reserved_memory_page;
 
-    std::cout << "\t before removal: page: " << page << " length: " << entry_length[page] << "\n";
+    std::cout << "\t before removal: page-id: " << page << " length: " << entry_length[page] << "\n";
 
     // Check if we should remove the page
     entry_length.at(page) -= 1;
@@ -246,13 +245,13 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
     // So we use a static counter to ensure unique page ids.
     static size_t new_page_id = 0;
     new_page_id++;
-    std::cout << "Creating new page: " << new_page_id << "\n";
+    std::cout << "Creating new page-id: " << new_page_id << "\n";
 
     auto &new_vec = metadata[new_page_id];
     new_vec.reserve(ReservedMemoryManager::reserved_memory_size);
     new_vec.emplace_back();
     entry_length[new_page_id] = 1;
-    std::cout << "page_id:" << new_page_id << " vec size:" << entry_length[new_page_id] << "!!\n";
+    std::cout << "page-id:" << new_page_id << " vec size:" << entry_length[new_page_id] << "!!\n";
 
     // Create domain maps for new page
     for (auto &&i : domain_memory_pool)
@@ -271,7 +270,7 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
 
         if (!map.counter_value || !map.energy_per_counter || !map.counter_name)
         {
-            perror("[ERROR]: Failed to allocate reserved memory for domain arrays");
+            std::cerr << "[ERROR]: Failed to allocate reserved memory for domain arrays\n";
             exit(EXIT_FAILURE);
         }
 
@@ -297,10 +296,10 @@ bool ReservedMemoryManager::should_remove_page(int page)
 
 void ReservedMemoryManager::remove_page(int page)
 {
-    std::cout << "FREEING PAGE:" << page << "\n";
+    std::cout << "FREEING PAGE-ID:" << page << "\n";
 
     metadata.erase(page);
-    std::cout << "----------->>>> Entry length for page " << page << " is:" << entry_length.at(page) << ".\n";
+    std::cout << "----------->>>> Entry length for page-id " << page << " is:" << entry_length.at(page) << ".\n";
     entry_length.erase(page);
 
     // Free domain memory pool for this page
@@ -322,7 +321,7 @@ void ReservedMemoryManager::remove_page(int page)
         }
         // don't free counter_name, since it is shared across all timestamps.
         domain_memory_pool.at(domain_id).erase(page);
-        std::cout << "\t Domain: " << domain_id << " erased from page: " << page << "\n";
+        std::cout << "\t Domain: " << domain_id << " erased from page-id: " << page << "\n";
     }
 }
 
@@ -335,7 +334,7 @@ void ReservedMemoryManager::shrink_to_fit()
     // First collect the pages to remove
     for (const auto &entry : entry_length)
     {
-        std::cout << "\t\tpage: " << entry.first << " has " << entry.second << " entries.\n";
+        std::cout << "\t\tpage-id: " << entry.first << " has " << entry.second << " entries.\n";
 
         // Not page zero and has zero entries
         if (entry.first != 0 && entry.second == 0)
