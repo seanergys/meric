@@ -192,7 +192,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(EXTLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
-        perror("[ERROR]: No Domain Selected!\n");
+        std::cerr << "[ERROR]: No Domain Selected!" << std::endl;
         return;
     }
 
@@ -427,32 +427,29 @@ struct ExtlibEnergyTimeStamp *newEnergyTimeStamp()
         return ptr;
     }
 }
-
 void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size_t print_limit)
 {
-
     if (OPT_UNLIKELY(timestamp == NULL))
     {
         std::cerr << "[ERROR]: NULL timestamp" << std::endl;
         return;
     }
-    // Print pointer sliceesses and array sizes
+
     std::cout << "------- ExtlibEnergyTimeStamp (id: " << std::fixed << std::setprecision(4) << timestamp->id << ") -------" << std::endl;
 
     for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
-        char domain_name_buffer[EXTLIB_MAX_DOMAIN_NAME_LENGTH];
-
         const char *domain_name = printDomainName(timestamp->domain_data[i].domain_id);
 
-        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_counter_name", domain_name);
-        printArray(domain_name_buffer, timestamp->domain_data[i].counter_name, timestamp->domain_data[i].arr_size, print_limit);
+        // Pure C++ string concatenation instead of snprintf
+        std::string counter_name_label = std::string(domain_name) + "_counter_name";
+        std::string counter_value_label = std::string(domain_name) + "_counter_value";
+        std::string energy_per_counter_label = std::string(domain_name) + "_energy_per_counter";
 
-        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_counter_value", domain_name);
-        printArray(domain_name_buffer, timestamp->domain_data[i].counter_value, timestamp->domain_data[i].arr_size, print_limit);
+        printArray(counter_name_label.c_str(), timestamp->domain_data[i].counter_name, timestamp->domain_data[i].arr_size, print_limit);
+        printArray(counter_value_label.c_str(), timestamp->domain_data[i].counter_value, timestamp->domain_data[i].arr_size, print_limit);
+        printArray(energy_per_counter_label.c_str(), timestamp->domain_data[i].energy_per_counter, timestamp->domain_data[i].arr_size, print_limit);
 
-        snprintf(domain_name_buffer, sizeof(domain_name_buffer), "%s_energy_per_counter", domain_name);
-        printArray(domain_name_buffer, timestamp->domain_data[i].energy_per_counter, timestamp->domain_data[i].arr_size, print_limit);
         std::cout << "| " << domain_name << "_total_energy: " << timestamp->domain_data[i].energy_total << std::endl;
         std::cout << "|" << std::endl;
     }
