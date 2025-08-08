@@ -157,18 +157,7 @@ static void printArray(const char *name, Tmode *arr, size_t size, size_t print_l
     print_limit = (print_limit == static_cast<size_t>(-1)) ? size : print_limit;
     for (size_t i = 0; i < size && i < print_limit; ++i)
     {
-        if (std::is_same<Tmode, double>::value)
-        {
-            std::cout << arr[i];
-        }
-        else if (std::is_same<Tmode, uint64_t>::value)
-        {
-            std::cout << arr[i];
-        }
-        else if (std::is_same<Tmode, char *>::value)
-        {
-            std::cout << arr[i];
-        }
+        std::cout << arr[i];
 
         if (i < size - 1 && i < print_limit - 1)
         {
