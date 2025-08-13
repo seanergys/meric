@@ -11,6 +11,9 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 #ifdef HAVE_X86_ADAPT_H
 	#include <x86_adapt.h>
@@ -64,15 +67,17 @@ public:
 			CounterDesc_t(const CounterDesc_t &other)
 				: unit(other.unit)
 				, label(other.label)
+				, fullName(other.fullName)
 				, rangeMax(other.rangeMax)
-				, overflowCount(other.overflowCount.load())
+				, overflowCount(other.overflowCount)
 				, isCumulative(other.isCumulative)
 			{}
 
 			double unit;
 			std::string label;
+			std::string fullName;
 			uint64_t rangeMax;
-			std::atomic<uint64_t> overflowCount;
+			uint64_t overflowCount;
 			bool isCumulative;
 		};
 
@@ -148,6 +153,8 @@ public:
 	static std::string POWER_LIMIT_TIMEWINDOW;
 
 protected:
+	typedef std::chrono::steady_clock Clock_t;
+
 	struct Sample_t {
 		uint64_t timestamp;
 		uint64_t value;
@@ -163,9 +170,14 @@ protected:
 
 	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
 	static std::vector<SamplerDesc_t *>			s_samplerById;
-    static uint64_t s_samplingPeriod;
-	static std::thread s_samplingThread;
-	static std::atomic<bool> s_samplingEnabled;
+
+    static std::chrono::nanoseconds s_samplingPeriod;
+	static std::thread              s_samplingThread;
+	static std::atomic<bool>        s_samplingWorkerEnabled;
+	static std::condition_variable  s_samplingCond;
+	static std::mutex               s_samplingMutex;
+	static CounterRecord_t          *s_pCounterRecordReq;
+	static bool						s_sampleStoreEnabled;
 };
 
 }

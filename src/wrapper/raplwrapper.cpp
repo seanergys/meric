@@ -44,23 +44,34 @@ std::vector<std::string> RAPL::vrSensorLabel;
 std::map<std::string, RAPL::SamplerDesc_t> RAPL::s_samplerDesc;
 std::vector<RAPL::SamplerDesc_t *>	       RAPL::s_samplerById;
 
-uint64_t          RAPL::s_samplingPeriod(1000000000ull);
-std::thread       RAPL::s_samplingThread;
-std::atomic<bool> RAPL::s_samplingEnabled(true);
+std::chrono::nanoseconds RAPL::s_samplingPeriod(1000000000ull);
+std::thread              RAPL::s_samplingThread;
+std::atomic<bool>        RAPL::s_samplingWorkerEnabled(true);
+std::condition_variable  RAPL::s_samplingCond;
+std::mutex               RAPL::s_samplingMutex;
+RAPL::Base::CounterRecord_t *RAPL::s_pCounterRecordReq(nullptr);
+bool 		 			 RAPL::s_sampleStoreEnabled(false);
 
 void RAPL::init(bool detailed)
 {
 	getImpl()->init(detailed);
+	initSamplers();
 }
 
 void RAPL::close()
 {
+	closeSamplers();
 	getImpl()->close();
 }
 
 void RAPL::getCounterValues(CounterRecord_t &record)
 {
-	getImpl()->getCounterValues(record);
+	// getImpl()->getCounterValues(record);
+	std::unique_lock<std::mutex> lock(s_samplingMutex);
+
+	s_pCounterRecordReq = &record;
+	s_samplingCond.notify_all();
+	s_samplingCond.wait(lock, [&]() { return !s_pCounterRecordReq; });
 }
 
 double RAPL::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
@@ -107,12 +118,22 @@ double RAPL::getUnit(std::string counter)
 
 void RAPL::start(timespec &time)
 {
-	initSamplers();
+	std::unique_lock<std::mutex> lock(s_samplingMutex);
+
+	s_samplingPeriod = std::chrono::milliseconds(25);
+	s_sampleStoreEnabled = true;
+
+	s_samplingCond.notify_all();
 }
 
 void RAPL::stop(timespec &time)
 {
-	closeSamplers();
+	std::unique_lock<std::mutex> lock(s_samplingMutex);
+
+	s_samplingPeriod = std::chrono::seconds(1);
+	s_sampleStoreEnabled = false;
+
+	s_samplingCond.notify_all();
 }
 
 void RAPL::initSamplers()
@@ -133,14 +154,14 @@ void RAPL::initSamplers()
 					return false;
 				}
 
-				return pLeft->label < pRight->label;
+				return pLeft->fullName < pRight->fullName;
 			});
 		
 		for(Base::CounterDesc_t *pCounterDesc: counters)
 		{
-			vrSensorLabel.push_back(pCounterDesc->label);
+			vrSensorLabel.push_back(pCounterDesc->fullName);
 
-			auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->label, SamplerDesc_t()));
+			auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->fullName, SamplerDesc_t()));
 			res.first->second.pCounterDesc = pCounterDesc;
 			res.first->second.lastValue    = 0;
 
@@ -151,45 +172,66 @@ void RAPL::initSamplers()
 	}
 
 	s_samplingThread = std::thread([]() {
-		timespec time;
-		clock_gettime(CLOCK_REALTIME, &time);
+		auto time = Clock_t::now();
 
-		while(s_samplingEnabled.load())
+		while(s_samplingWorkerEnabled.load())
 		{
-			for(auto &desc: s_samplerDesc)
 			{
-				timespec now;
-				clock_gettime(CLOCK_REALTIME, &now);
-				uint64_t value = getImpl()->getCounterValue(desc.second.pCounterDesc);
-				desc.second.samples.push_back({
-					uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
-					value
+				std::unique_lock<std::mutex> lock(s_samplingMutex);
+
+				s_samplingCond.wait_until(lock, time, [&]() {
+					return Clock_t::now() >= time || s_pCounterRecordReq;
 				});
 
-				if(desc.second.lastValue < value)
+				const auto timeNow = Clock_t::now();
+				const bool timeSample = (timeNow >= time);
+
+				for(auto &desc: s_samplerDesc)
 				{
-					desc.second.pCounterDesc->overflowCount++;
+					timespec now;
+					clock_gettime(CLOCK_REALTIME, &now);
+
+					uint64_t value = getImpl()->getCounterValue(desc.second.pCounterDesc);
+
+					if(timeSample && s_sampleStoreEnabled)
+					{
+						desc.second.samples.push_back({
+							uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
+							value
+						});
+					}
+
+					if(value < desc.second.lastValue)
+						desc.second.pCounterDesc->overflowCount++;
+
+					desc.second.lastValue = value;
 				}
 
-				desc.second.lastValue = value;
-			}
-
-			{
-				while(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &time, NULL) != 0) {}
-				time.tv_nsec += s_samplingPeriod;
-				if(time.tv_nsec >= 1000000000ull)
+				if(s_pCounterRecordReq)
 				{
-					time.tv_nsec -= 1000000000ull;
-					time.tv_sec++;
+					for(auto &desc: s_samplerDesc)
+					{
+						(*s_pCounterRecordReq)[desc.first] = CounterValue_t(desc.second.lastValue, desc.second.pCounterDesc->overflowCount);
+					}
+
+					s_pCounterRecordReq = nullptr;
+				}
+
+				if(timeSample)
+				{
+					const uint64_t skipIntervals = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock_t::now() - time).count() / s_samplingPeriod.count();
+					time += (skipIntervals + 1) * s_samplingPeriod;
 				}
 			}
+
+			s_samplingCond.notify_all();
 		}
 	});
 }
 
 void RAPL::closeSamplers()
 {
-	s_samplingEnabled.store(false);
+	s_samplingWorkerEnabled.store(false);
 	if(s_samplingThread.joinable())
 	{
 		s_samplingThread.join();
@@ -285,19 +327,17 @@ public:
 	static bool isAvailable() { return true; }
 };
 
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
 
 class RAPL_MSR : public RAPL::Base {
 public:
-	RAPL_MSR();
-
 	virtual void init(bool detailed);
 	virtual void close();
 
 	virtual void getCounterValues(CounterRecord_t &record);
-	virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
+	virtual double getResultValue(CounterValue_t start, CounterValue_t stop,
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
-
+	
 	virtual std::string summaryCounter();
 	virtual std::string getSummaryCounterName();
 	virtual std::string getSourceLabel();
@@ -305,225 +345,131 @@ public:
 
 	virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop,
 		double runtime, std::map<std::string, double> &ratios) {}
-
-	virtual void initCountersUnits();
+	
+	virtual void initCountersUnits() {}
 	virtual double getUnit(std::string counter);
+
+	virtual void getCounters(std::vector<Base::CounterDesc_t *> &counters);
+	virtual RawCounterValue_t getCounterValue(Base::CounterDesc_t *pCounterDesc);
 
 	static bool isAvailable();
 
 protected:
-	void initMap(CounterRecord_t &record);
+	struct CounterDesc_t : public Base::CounterDesc_t
+	{
+		int cpuid;
+		off_t reg_address;
+	};
 
-	std::string suffix;
+	double getCounterUnit(const std::string &name);
+
 	bool detailedMode;
-	RawCounterValue_t COUNTERMAX;
-	CounterRecord_t counters;
-	std::map<std::string, double> units;
+	std::map<std::string, CounterDesc_t> counterDesc;
 };
-
-RAPL_MSR::RAPL_MSR()
-	: suffix("_")
-	, detailedMode(false)
-	, COUNTERMAX(uint64_t(1) << 32)
-{
-}
 
 void RAPL_MSR::init(bool detailed)
 {
+	using namespace MSR_RAPL_COUNTERS_NS;
+
+	struct CounterDef_t {
+		enum Domain_t {
+			DOMAIN_NONE       = 0,
+			DOMAIN_GLOBAL     = 1,
+			DOMAIN_PER_SOCKET = 2,
+			DOMAIN_PER_CORE   = 3,
+			DOMAIN_PER_THREAD = 4,
+		};
+
+		enum Flags_t {
+			FLAG_NONE_BIT         = 0,
+			FLAG_ACCUMULATIVE_BIT = 1 << 0
+		};
+
+		std::string name;
+		Domain_t domain;
+		uint32_t flags;
+		int count;
+	};
+
+	auto GetCoreID = [](CounterDef_t::Domain_t domain, int counterIdx) {
+		switch(domain)
+		{
+		case CounterDef_t::DOMAIN_PER_SOCKET:
+			return Environment::mapThreadsToCore[counterIdx][0];
+			break;
+		case CounterDef_t::DOMAIN_PER_CORE:
+			return Environment::mapCoresToSocket[counterIdx][0];
+			break;
+		default:
+			return counterIdx;
+		}
+	};
+
 	detailedMode = detailed;
-	initMap(counters);
+	std::vector<CounterDef_t> counterDefs;
+
+#ifdef _INTEL_
+	counterDefs.push_back({ RAPL_PCKG_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
+	counterDefs.push_back({ RAPL_RAM_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
+#elif defined(_AMD_)
+	counterDefs.push_back({ RAPL_PCKG_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
+	counterDefs.push_back({ RAPL_CORE_ENERGY, CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET });
+#endif // Platform
+
+	for(const auto &counterDef: counterDefs)
+	{
+		const int suffixLen       = log10(counterDef.count) + 1;
+		const double counterUnit  = getCounterUnit(counterDef.name);
+		const uint64_t counterMax = uint64_t(1) << 32;
+
+		for(int i = 0; i < counterDef.count; ++i)
+		{
+			const std::string fullName  = sysfsutils::MakeCounterName(counterDef.name, counterLabel, {{ i, suffixLen }});
+			const std::string fullLabel = sysfsutils::MakeCounterName(counterDef.name, counterLabel, {{ i, suffixLen }}, true);
+
+			auto res = counterDesc.insert(std::make_pair(fullName, CounterDesc_t()));
+			CounterDesc_t &desc = res.first->second;
+			desc.label        = fullLabel;
+			desc.fullName     = fullName;
+			desc.rangeMax     = counterMax;
+			desc.unit         = counterUnit;
+			desc.isCumulative = (counterDef.flags & CounterDef_t::FLAG_ACCUMULATIVE_BIT) != 0;
+
+			desc.cpuid       = GetCoreID(counterDef.domain, i);
+			desc.reg_address = counterDefines[counterDef.name];
+		}
+	}
 }
 
 void RAPL_MSR::close()
 {
+
 }
 
 void RAPL_MSR::getCounterValues(CounterRecord_t &record)
 {
-	using namespace MSR_RAPL_COUNTERS_NS;
-
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-	for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
+	for(const auto &desc: counterDesc)
 	{
-		record[iterator->first] = 0;
+		uint64_t value = 0;
+		read_msr(desc.second.cpuid, desc.second.reg_address, &value);
+		record[desc.first] = CounterValue_t(value & MSR_ANYDOMAIN_ENERGY_STATUS_mask, desc.second.overflowCount);
 	}
-
-	if (detailedMode)
-	{
-		for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-		{
-			uint64_t domainEnergy = 0;
-			std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
-			int die = std::stoi(iterator->first.substr(itemName.length()+1));
-
-#ifdef _AMD_
-			if (itemName == RAPL_CORE_ENERGY)
-			{
-			#ifdef HAVE_MSR_SAFE
-				read_msr(Environment::mapThreadsToCore[die][0], counterDefines[itemName], &domainEnergy);
-			#elif defined HAVE_GEOPM_H
-				domainEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapThreadsToCore[die][0]));
-			#endif
-			}
-			else
-#endif
-			{
-			#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
-				read_msr(Environment::mapCoresToSocket[die][0], counterDefines[itemName], &domainEnergy);
-			#elif defined HAVE_GEOPM_H
-				domainEnergy = geopm_signal_to_field(pio.read_signal(itemName, pio.signal_domain_type(itemName), Environment::mapCoresToSocket[die][0]));
-			#endif
-			}
-			record [iterator->first] = (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-		}
-	}
-	else
-	{
-		for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-		{
-#ifdef _AMD_
-			if (iterator->first == RAPL_CORE_ENERGY)
-			{
-				for (int die=0; die<Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET; die++)
-				{
-					uint64_t domainEnergy = 0;
-				#ifdef HAVE_MSR_SAFE
-					read_msr(Environment::mapThreadsToCore[die][0], counterDefines[iterator->first], &domainEnergy);
-				#elif defined HAVE_GEOPM_H
-					domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapThreadsToCore[die][0]));
-				#endif
-					record [iterator->first] += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-				}
-			}
-			else
-#endif
-			{
-				for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
-				{
-					uint64_t domainEnergy = 0;
-				#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
-					read_msr(Environment::mapCoresToSocket[die][0], counterDefines[iterator->first], &domainEnergy);
-				#elif defined HAVE_GEOPM_H
-					domainEnergy = geopm_signal_to_field(pio.read_signal(iterator->first, pio.signal_domain_type(iterator->first), Environment::mapCoresToSocket[die][0]));
-				#endif
-					record [iterator->first].value += (domainEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-				}
-			}
-		}	
-	}
-#elif defined _INTEL_ && defined HAVE_X86_ADAPT_H
-	for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-	{
-		record[iterator->first] = 0;
-	}
-
-	if (detailedMode)
-	{
-		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
-		{
-			uint64_t dieEnergy = 0;
-			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
-			if (fd < 0)
-			{
-				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
-//				exit(2);
-			}
-   
-			for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-			{
-				if (std::stoi(iterator->first.substr(iterator->first.find_last_of('_')+1)) != die)
-				{
-					continue;
-				}
-				std::string itemName = iterator->first.substr(0, iterator->first.find_last_of('_'));
-				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, itemName.c_str());
-				if (itemId < 0) //== -ENXIO
-				{
-					std::cerr << "X86ADAPT RAPL wrong counter name - " << itemName <<std::endl;
-					continue;
-				}
-				if (!units.count(itemName))
-				{
-					std::cerr << "X86ADAPT RAPL missing unit modifier for counter - " << itemName <<" Add modifier in RAPL::init()"<<std::endl;
-					continue;					
-				}
-				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] = (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-			}
-			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
-			{
-				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
-			}
-		}
-	}
-	else
-	{
-		for (int die=0; die<Environment::SOCKETS_PER_NODE; die++)
-		{
-			uint64_t dieEnergy = 0;
-			const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, die);
-			if (fd < 0)
-			{
-				std::cerr << "X86ADAPT RAPL error while accessing file descriptor\n";
-//				exit(2);
-			}
-			for(CounterRecord_t::iterator iterator = counters.begin(); iterator != counters.end(); iterator++)
-			{
-				const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, iterator->first.c_str());
-				x86_adapt_get_setting(fd, itemId, &dieEnergy);
-				record [iterator->first] += (dieEnergy & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
-			}
-			if (x86_adapt_put_device(X86_ADAPT_DIE, die))
-			{
-				std::cerr << "X86ADAPT RAPL error while closing file descriptor\n";
-			}
-		}	
-	}
-#endif
 }
 
-double RAPL_MSR::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
+double RAPL_MSR::getResultValue(CounterValue_t start, CounterValue_t stop,
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
-	using namespace MSR_RAPL_COUNTERS_NS;
-
-	std::string counterName;
-	if (detailedMode)
+	auto it = counterDesc.find(counter);
+	if(it == counterDesc.end())
 	{
-		counterName = counter.substr(0, counter.find_last_of('_'));
-	}
-	else
-	{
-		counterName = counter;
-	}
-
-#ifdef _INTEL_
-	cumulative = 1;
-#else //_AMD_
-	if (counterName == RAPL_PCKG_ENERGY)
-	{
-		cumulative = 1;
-	}
-	else
-	{
-		cumulative = 0;
-	}
-#endif
-	
-	if (stopValue.value < startValue.value)
-	{	
-		if (units.count(counterName))
-		{
-			MERIC_INFO << "RAPL OVERFLOW, MAX VALUE: " <<COUNTERMAX << "*"<< units[counterName] <<" " <<counterName << std::endl;
-			MERIC_INFO << "RAPL REPAIR " << startValue.value << " .. " << stopValue.value << " = " << ((COUNTERMAX - startValue.value) + stopValue.value) * units[counterName] << std::endl;
-			return ((COUNTERMAX - startValue.value) + stopValue.value) * units[counterName];
-		} //else: unit modifier is missing
 		return 0.0;
 	}
-	else
-	{
-		return (stopValue.value - startValue.value) * units[counterName];
-	}
+
+	cumulative = it->second.isCumulative ? 1 : 0;
+	uint64_t overflow = stop.generation - start.generation;
+	double res = double(stop.value) - double(start.value);
+
+	return (res + overflow * double(it->second.rangeMax)) * it->second.unit;
 }
 
 std::string RAPL_MSR::summaryCounter()
@@ -537,18 +483,13 @@ std::string RAPL_MSR::getSummaryCounterName()
 {
 	using namespace MSR_RAPL_COUNTERS_NS;
 
-#ifdef _INTEL_
-	return RAPL_SUM_ENERGY;
-#else // _AMD_
-	if (detailedMode)
+	auto it = counterLabel.find(summaryCounter());
+	if(it != counterLabel.end())
 	{
-		return RAPL_SUM_ENERGY;
+		return it->second.first + " " + it->second.second;
 	}
-	else
-	{
-		return "";
-	}
-#endif
+
+	return summaryCounter();
 }
 
 std::string RAPL_MSR::getSourceLabel()
@@ -560,164 +501,38 @@ std::string RAPL_MSR::getCounterLabel(const std::string counter)
 {
 	using namespace MSR_RAPL_COUNTERS_NS;
 
-	std::map<const std::string, std::string>::iterator it = counterLabel.find(counter);
-	if (it != counterLabel.end())
+	auto it = counterDesc.find(counter);
+	if(it != counterDesc.end())
 	{
-		return it->second;
+		return it->second.label;
 	}
-	else
-	{
-		return counter;
-	}
-}
 
-void RAPL_MSR::initCountersUnits()
-{
-	using namespace MSR_RAPL_COUNTERS_NS;
-
-	RAPL::PCKG_POWER_LIMIT       = RAPL_PCKG_POWER_LIMIT;
-	RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
-	RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
-	RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
-
-	if (units.size())
-	{
-		return; //already initialized
-	}
-	uint64_t MSR_RAPL_POWER_UNIT_bits = 0x0;
-#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_RAPL_POWER_UNIT
-	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
-#elif defined HAVE_X86_ADAPT_H
-	const int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-	if (fd < 0)
-	{
-		std::cerr << "X86ADAPT RAPL INIT error while accessing file descriptor\n";
-		return;
-	}
-	const int itemId = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_Power_Unit");
-	x86_adapt_get_setting(fd, itemId, &MSR_RAPL_POWER_UNIT_bits);
-	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-	{
-		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-	}
-#elif defined HAVE_GEOPM_H
-	MSR_RAPL_POWER_UNIT_bits = geopm_signal_to_field(pio.read_signal("MSR::RAPL_POWER_UNIT#", pio.signal_domain_type("MSR::RAPL_POWER_UNIT#"), 0));
-#endif
-	if (MSR_RAPL_POWER_UNIT_bits != 0)
-	{
-		//power
-		units[RAPL_PCKG_POWER_LIMIT] = 1.0/pow(2,(MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
-		units[RAPL_RAM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
-	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
-		units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
-	#endif
-		//energy
-	#ifdef MSR_PKG_ENERGY_STATUS
-		units[RAPL_PCKG_ENERGY] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
-	#endif
-		//DRAM ENERGY unit is fixed to 15.3uJ
-		//https://www.intel.com/content/dam/www/public/us/en/documents/datasheets/xeon-e5-v3-datasheet-vol-2.pdf
-	#ifdef MSR_DRAM_ENERGY_STATUS
-		units[RAPL_RAM_ENERGY] = 1.0/pow(2,16);
-	#endif
-	#ifdef MSR_PLATFORM_ENERGY_COUNTER
-		units[RAPL_PLATFORM_ENERGY] = units[RAPL_PCKG_ENERGY];
-	#endif
-	#ifdef MSR_CORE_ENERGY_STATUS
-		units[RAPL_CORE_ENERGY] = units[RAPL_PCKG_ENERGY];
-	#endif
-
-		//time
-		units[RAPL_POWER_LIMIT_TIMEWINDOW] = 1.0/pow(2,((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
-		units[MSR_COUNTERS::RAPL_PKG_ACTIVE] = units[RAPL_POWER_LIMIT_TIMEWINDOW];
-	}
+	return counter;
 }
 
 double RAPL_MSR::getUnit(std::string counter)
 {
-	if (units.count(counter))
+	return -1.0;
+}
+
+void RAPL_MSR::getCounters(std::vector<Base::CounterDesc_t *> &counters)
+{
+	counters.clear();
+	for(auto &item: counterDesc)
 	{
-		return units[counter];
-	}
-	else
-	{
-		return -1.0;
+		counters.push_back(&item.second);
 	}
 }
 
-void RAPL_MSR::initMap(CounterRecord_t &dict)
+RAPL_MSR::RawCounterValue_t RAPL_MSR::getCounterValue(Base::CounterDesc_t *pCounterDesc)
 {
-	using namespace MSR_RAPL_COUNTERS_NS;
+	CounterDesc_t *pDesc = static_cast<CounterDesc_t *>(pCounterDesc);
 
-	// fill this vector
-	std::vector <std::string> names;
+	uint64_t value = 0;
+	if(!pDesc || read_msr(pDesc->cpuid, pDesc->reg_address, &value) != 0)
+		return 0;
 
-#ifdef _INTEL_
-	names.push_back(RAPL_PCKG_ENERGY);
-	names.push_back(RAPL_RAM_ENERGY);
-#elif defined _AMD_
-	names.push_back(RAPL_PCKG_ENERGY);
-	if (detailedMode)
-	{
-		names.push_back(RAPL_CORE_ENERGY);
-	}
-	else
-	{
-		counterLabel[RAPL_PCKG_ENERGY] = RAPL_SUM_ENERGY;
-	}
-#endif
-
-	// in detailed mode RAPL gives us values for each cpu 
-	// this is a reason for adding a suffix with number of a socket for each counter
-	if (detailedMode)
-	{
-	#ifdef _AMD_
-		std::vector<std::string>::iterator it = find(names.begin(), names.end(), RAPL_CORE_ENERGY);
-		if (it != names.end())
-		{
-			const int suffixLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE)+1;
-			for(int core = 0; core != Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; core++)
-			{
-				std::ostringstream os;
-				os << std::setfill('0') << std::setw(suffixLength) << core;
-				const std::string counterName = RAPL_CORE_ENERGY + suffix + os.str();
-				dict[counterName] = 0;
-				
-				counterLabel[counterName] = counterLabel[RAPL_CORE_ENERGY].substr(0,counterLabel[RAPL_CORE_ENERGY].find(' '))+suffix + os.str() + counterLabel[RAPL_CORE_ENERGY].substr(counterLabel[RAPL_CORE_ENERGY].find(' '));
-
-			#ifdef HAVE_MSR_SAFE
-				counterDefines[counterName] = counterDefines[RAPL_CORE_ENERGY];
-			#endif
-			}
-			names.erase(it);
-		}
-	#endif
-
-		const int suffixLength = log10(Environment::SOCKETS_PER_NODE)+1;
-		for(int die = 0; die != Environment::SOCKETS_PER_NODE; die++)
-		{
-			for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
-			{
-				std::ostringstream os;
-				os << std::setfill('0') << std::setw(suffixLength) << die;
-				const std::string counterName = *it + suffix + os.str();
-				dict[counterName] = 0;
-				
-				counterLabel[counterName] = counterLabel[*it].substr(0,counterLabel[*it].find(' '))+suffix + os.str() + counterLabel[*it].substr(counterLabel[*it].find(' '));
-
-			#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
-				counterDefines[counterName] = counterDefines[*it];
-			#endif
-			}
-		}
-	}
-	else
-	{
-		for(std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
-		{
-			dict[*it] = 0;
-		}
-	}
+	return (value & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 }
 
 bool RAPL_MSR::isAvailable()
@@ -726,7 +541,28 @@ bool RAPL_MSR::isAvailable()
 
 	return check_whitelist_msr({});
 }
-#endif
+
+double RAPL_MSR::getCounterUnit(const std::string &name)
+{
+	using namespace MSR_RAPL_COUNTERS_NS;
+
+	if(name == RAPL_RAM_ENERGY)
+	{
+		return 1.0 / pow(2, 16);
+	}
+	else if(counterLabel.count(name) > 0)
+	{
+		uint64_t MSR_RAPL_POWER_UNIT_bits = 0;
+		read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
+
+		if(MSR_RAPL_POWER_UNIT_bits != 0)
+			return 1.0 / pow(2, ((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_energy_mask) >> MSR_RAPL_POWER_UNIT_energy_shift));
+	}
+
+	return 0.0;
+}
+
+#endif // RAPL_MSR
 
 class RAPL_SYSFS : public RAPL::Base {
 public:
@@ -747,6 +583,9 @@ public:
 
 	virtual void initCountersUnits() {}
 	virtual double getUnit(std::string counter);
+
+	virtual void getCounters(std::vector<Base::CounterDesc_t *> &counters);
+	virtual RawCounterValue_t getCounterValue(CounterDesc_t *pCounterDesc);
 
 	static bool isAvailable();
 
@@ -834,6 +673,7 @@ void RAPL_SYSFS::init(bool detailed)
 			
 			auto res = counterDesc.insert(std::make_pair(fullName, CounterDesc_t()));
 			res.first->second.label    = fullLabel;
+			res.first->second.fullName = fullName;
 			res.first->second.rangeMax = maxCounterRange;
 			res.first->second.unit     = 1.0e-6;
 			res.first->second.path     = dieRootPath + pszDomainName + "/energy_uj";
@@ -870,7 +710,7 @@ void RAPL_SYSFS::getCounterValues(CounterRecord_t &record)
 	{
 		uint64_t value = 0;
 		sysfsutils::ReadValue(desc.second.fs, value);
-		record[desc.first] = CounterValue_t(value, desc.second.overflowCount.load());
+		record[desc.first] = CounterValue_t(value, desc.second.overflowCount);
 	}
 }
 
@@ -933,6 +773,27 @@ double RAPL_SYSFS::getUnit(std::string counter)
 		return units[counter];
 	}
 	return -1.0;
+}
+
+void RAPL_SYSFS::getCounters(std::vector<Base::CounterDesc_t *> &counters)
+{
+	counters.clear();
+	for(auto &item: counterDesc)
+	{
+		std::cerr << item.first << std::endl;
+		counters.push_back(&item.second);
+	}
+}
+
+RAPL_SYSFS::RawCounterValue_t RAPL_SYSFS::getCounterValue(Base::CounterDesc_t *pCounterDesc)
+{
+	CounterDesc_t *pDesc = static_cast<CounterDesc_t *>(pCounterDesc);
+	uint64_t value = 0;
+
+	if(!pDesc || !sysfsutils::ReadValue(pDesc->fs, value))
+		return 0;
+
+	return value;
 }
 
 bool RAPL_SYSFS::isAvailable()
@@ -1096,6 +957,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
 
 		res.first->second.unit         = 1.0 / double(uint64_t(1) << 32);
 		res.first->second.label        = def.label;
+		res.first->second.fullName     = fullName;
 		res.first->second.rangeMax     = std::numeric_limits<uint64_t>::max();
 		res.first->second.isCumulative = (def.flags & CounterDef_t::FLAG_ACCUMULATIVE_BIT) != 0;
 
@@ -1175,7 +1037,7 @@ void RAPL_PERF_EVENT::getCounterValues(CounterRecord_t &record)
 			continue;
 		}
 
-		record[it->first] = CounterValue_t(values.values[0].value, it->second.overflowCount.load());
+		record[it->first] = CounterValue_t(values.values[0].value, it->second.overflowCount);
 	}
 }
 
@@ -1281,7 +1143,7 @@ RAPL::Base *RAPL::getImpl()
 {
 	auto InitImpl = []() 
 	{
-	#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+	#if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
 		if(RAPL_MSR::isAvailable())
 		{
 			return std::unique_ptr<Base>(new RAPL_MSR());
