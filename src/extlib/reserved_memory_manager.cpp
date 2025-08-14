@@ -323,12 +323,10 @@ bool ReservedMemoryManager::should_remove_page(uint64_t page)
 {
     // if it is not the default page (page 0)
     // if there is no remaining entry in the page
-    // ## if you are the last page.
     // if previous pages has empty entry slots (for optimization) > than the threshold.
     // remove the page.
     return page != 0 &&
            entry_length.at(page) == 0 &&
-           //    page == (uint64_t)(entry_length.size() - 1) &&
            count_total_empty_slots_before(page) >= EXTLIB_EMPTY_SLOT_THRESHOLD;
 }
 
@@ -367,24 +365,19 @@ void ReservedMemoryManager::shrink_to_fit()
 {
     std::cout << "\tshrink_to_fit called\n";
 
-    std::vector<uint64_t> pages_to_remove;
-
-    // First collect the pages to remove
-    for (const auto &entry : entry_length)
+    while (true)
     {
-        std::cout << "\t\tpage-id: " << entry.first << " has " << entry.second << " entries.\n";
+        auto it = empty_page_ids.begin();
+        while (it != empty_page_ids.end() && *it == 0)
+            ++it;
 
-        // Not page zero and has zero entries
-        if (entry.first != 0 && entry.second == 0)
-        {
-            pages_to_remove.push_back(entry.first);
-        }
-    }
+        if (it == empty_page_ids.end())
+            break; // nothing else to remove
 
-    // Now safely remove them
-    for (uint64_t page : pages_to_remove)
-    {
-        remove_page(page);
+        uint64_t page_to_remove = *it;
+        std::cout << "Removing page_id:" << page_to_remove << " from empty_page_ids.\n";
+        empty_page_ids.erase(it);
+        remove_page(page_to_remove);
     }
 }
 
