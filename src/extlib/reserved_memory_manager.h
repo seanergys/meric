@@ -11,15 +11,19 @@
 #ifndef RESERVED_MEMORY_MANAGER_H
 #define RESERVED_MEMORY_MANAGER_H
 
+#include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "../basis/cpu_optimisations.h"
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
 
-// Forward declaration
-struct ExtlibEnergyTimeStamp;
+#include "meric_ext.h"
+#include "../basis/cpu_optimisations.h"
+#include "../basis/utils.h"
 
 #ifndef EXTLIB_MAX_DOMAIN_NAME_LENGTH
 #define EXTLIB_MAX_DOMAIN_NAME_LENGTH 50
@@ -35,6 +39,20 @@ struct ExtlibEnergyTimeStamp;
 
 #ifndef EXTLIB_MAX_ALLOWED_EMPTY_PAGES
 #define EXTLIB_MAX_ALLOWED_EMPTY_PAGES 1 // only allow 1 fully empty page.
+#endif
+
+// the following is temporary, only for testing purposes. will not be on official release.
+#if EXTLIB_TESTING //|| 1
+#define DEBUG_LOG std::cout
+#else
+// An object that ignores everything piped into it
+struct NullBuffer : std::streambuf
+{
+    int overflow(int c) override { return c; }
+};
+static NullBuffer null_buffer;
+static std::ostream null_stream(&null_buffer);
+#define DEBUG_LOG null_stream
 #endif
 
 /*

@@ -44,15 +44,15 @@ static void printArray(const char *name, Tmode *arr, size_t size, size_t print_l
 template <typename Tmode, typename TmapVal>
 static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index)
 {
-    std::cout << "\tmeasureEnergy called for domain_index: " << domain_index << " page: " << page << "\n";
+    // std::cout << "\tmeasureEnergy called for domain_index: " << domain_index << " page: " << page << "\n";
     std::map<std::string, TmapVal> energyNow;
     Tmode::getCounterValues(energyNow);
     *size = energyNow.size();
-    std::cout << "" << "\tsize of energyNow: " << *size << "\n";
+    // std::cout << "" << "\tsize of energyNow: " << *size << "\n";
 
     if (ReservedMemoryManager::is_enabled)
     {
-        std::cout << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
+        // std::cout << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
         ReservedMemoryManager::DomainMemoryPool *map = ReservedMemoryManager::get_domain_map(domain_index, page);
         if (map == nullptr)
         {
@@ -335,7 +335,7 @@ static const char *printDomainName(unsigned int value)
 
 void extlib_close(ExtlibEnergy *enabled_domains)
 {
-    std::cout << "\tclosing sequence\n";
+    // std::cout << "\tclosing sequence\n";
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
