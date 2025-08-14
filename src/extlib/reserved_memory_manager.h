@@ -42,7 +42,7 @@
 #endif
 
 // the following is temporary, only for testing purposes. will not be on official release.
-#if EXTLIB_TESTING //|| 1
+#if VERBOSE //|| 1
 #define DEBUG_LOG std::cout
 #else
 // An object that ignores everything piped into it
