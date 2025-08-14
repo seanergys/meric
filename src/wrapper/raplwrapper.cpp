@@ -346,7 +346,7 @@ public:
 	virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop,
 		double runtime, std::map<std::string, double> &ratios) {}
 	
-	virtual void initCountersUnits() {}
+	virtual void initCountersUnits();
 	virtual double getUnit(std::string counter);
 
 	virtual void getCounters(std::vector<Base::CounterDesc_t *> &counters);
@@ -365,6 +365,10 @@ protected:
 
 	bool detailedMode;
 	std::map<std::string, CounterDesc_t> counterDesc;
+
+	// FIXME: This shouldn't be part of RAPL_MSR as its used for power control knobs,
+	//        not the counters!
+	std::map<std::string, double> units;
 };
 
 void RAPL_MSR::init(bool detailed)
@@ -510,8 +514,52 @@ std::string RAPL_MSR::getCounterLabel(const std::string counter)
 	return counter;
 }
 
+void RAPL_MSR::initCountersUnits()
+{
+	using namespace MSR_RAPL_COUNTERS_NS;
+
+	if(!units.empty())
+		return; // Don't reinitialize units
+
+	RAPL::PCKG_POWER_LIMIT       = RAPL_PCKG_POWER_LIMIT;
+	RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
+	RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
+	RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
+
+	uint64_t MSR_RAPL_POWER_UNIT_bits = 0;
+	read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
+
+	if(MSR_RAPL_POWER_UNIT_bits == 0)
+		return;
+
+	units[RAPL_PCKG_POWER_LIMIT]     = 1.0 / pow(2, (MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
+	units[RAPL_RAM_POWER_LIMIT]      = units[RAPL_PCKG_POWER_LIMIT];
+	units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
+
+	units[RAPL_POWER_LIMIT_TIMEWINDOW]   = 1.0 / pow(2, ((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
+	units[MSR_COUNTERS::RAPL_PKG_ACTIVE] = units[RAPL_POWER_LIMIT_TIMEWINDOW];
+}
+
 double RAPL_MSR::getUnit(std::string counter)
 {
+	// Counter units are assumed to be initialized with RAPL::init(...) call.
+	{
+		auto it = counterDesc.find(counter);
+		if(it != counterDesc.end())
+		{
+			return it->second.unit;
+		}
+	}
+
+	// Power control knob units are initialized by RAPL::initCounterUnits() call.
+	{
+		auto it = units.find(counter);
+		if(it != units.end())
+		{
+			return it->second;
+		}
+	}
+
 	return -1.0;
 }
 
