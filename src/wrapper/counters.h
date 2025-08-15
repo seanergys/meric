@@ -331,7 +331,7 @@ namespace GEOPM_RAPL_COUNTERS {
 const std::string RAPL_PCKG_ENERGY = "MSR::PKG_ENERGY_STATUS#";
 const std::string RAPL_RAM_ENERGY  = "MSR::DRAM_ENERGY_STATUS#";
 // const std::string RAPL_PLATFORM_ENERGY = "MSR::PLATFORM_ENERGY_COUNTER#";
-const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
+const std::string RAPL_SUM_ENERGY  = "ENERGY_CONSUMPTION";	//PCKG+RAM = not a counter to measure
 
 #ifdef _AMD_
 const std::string RAPL_CORE_ENERGY = "";
@@ -343,10 +343,10 @@ const std::string RAPL_PLATFORM_POWER_LIMIT = "MSR::PLATFORM_POWER_LIMIT#";
 const std::string RAPL_RAM_POWER_LIMIT  = "MSR::DRAM_POWER_LIMIT:POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW";
 
-static std::map<const std::string, std::string> counterLabel = {
-	{ RAPL_PCKG_ENERGY,      "PCKG [J]" },
-	{ RAPL_RAM_ENERGY,       "RAM [J]"  },
-	{ RAPL_SUM_ENERGY,       RAPL_SUM_ENERGY }
+static std::map<const std::string, std::pair<std::string, std::string> > counterLabel = {
+	{ RAPL_PCKG_ENERGY,      { "PCKG", "[J]" }},
+	{ RAPL_RAM_ENERGY,       { "RAM", "[J]" }},
+	{ RAPL_SUM_ENERGY,       { "Energy consumption", "[J]" }}
 };
 }
 ////////////////////////////////////////////////////////////////////////////////

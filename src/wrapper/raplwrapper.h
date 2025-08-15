@@ -28,6 +28,7 @@
 #endif
 
 #include "msrs.h" // FIXME: Propagates "msr_whitelist" into "systemInfo.cpp"
+#include "../basis/async_utils.h"
 
 namespace meric {
 
@@ -51,8 +52,6 @@ public:
 			uint64_t generation;
 			RawCounterValue_t value;
 		};
-		
-		// typedef std::pair<uint64_t, unsigned long long int> CounterValue_t;
 
 		typedef std::map<std::string, CounterValue_t> CounterRecord_t;
 
@@ -60,7 +59,6 @@ public:
 			CounterDesc_t()
 				: unit(1.0)
 				, rangeMax(0)
-				, overflowCount(0)
 				, isCumulative(false)
 			{}
 
@@ -69,7 +67,6 @@ public:
 				, label(other.label)
 				, fullName(other.fullName)
 				, rangeMax(other.rangeMax)
-				, overflowCount(other.overflowCount)
 				, isCumulative(other.isCumulative)
 			{}
 
@@ -77,14 +74,13 @@ public:
 			std::string label;
 			std::string fullName;
 			uint64_t rangeMax;
-			uint64_t overflowCount;
 			bool isCumulative;
 		};
 
 		virtual void init(bool detailed) = 0;
 		virtual void close() = 0;
 
-		virtual void getCounterValues(CounterRecord_t &record) = 0;
+		virtual void getCounterValues(CounterRecord_t &record) = 0; // NOTE: This method is obsolete RAPL class uses "getCounterValue" instead.
 		virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 			double runtime, int &cumulative, std::string counter, std::string regionName = "") = 0;
 	
@@ -163,6 +159,7 @@ protected:
 	struct SamplerDesc_t {
 		Base::CounterDesc_t *pCounterDesc;
 		uint64_t lastValue;
+		uint64_t overflowCount;
 		std::vector<Sample_t> samples;
 	};
 
@@ -171,13 +168,10 @@ protected:
 	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
 	static std::vector<SamplerDesc_t *>			s_samplerById;
 
-    static std::chrono::nanoseconds s_samplingPeriod;
-	static std::thread              s_samplingThread;
-	static std::atomic<bool>        s_samplingWorkerEnabled;
-	static std::condition_variable  s_samplingCond;
-	static std::mutex               s_samplingMutex;
-	static CounterRecord_t          *s_pCounterRecordReq;
-	static bool						s_sampleStoreEnabled;
+	static std::chrono::nanoseconds      s_samplingPeriod;
+	static std::chrono::nanoseconds      s_overflowCheckPeriod;
+	static std::atomic<bool> 			 s_sampleStoreEnabled;
+	static AsyncSampler<CounterRecord_t> s_asyncSampler;
 };
 
 }

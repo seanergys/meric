@@ -361,6 +361,11 @@ DistributedMeric::~DistributedMeric()
 	{
 		DAVIDE::close();
 	}
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	{
+		RAPL::close();
+	}
+
 	Environment::close();
 	MPI_Comm_free(&_currentNode);
 	MPI_Comm_free(&_storingProcs);

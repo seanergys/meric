@@ -195,6 +195,9 @@ public:
 			case MODE_HWMON_SAMPLES:
 				HWMON::stop(_stopTime);
 				break;
+			case MODE_RAPL_SAMPLES:
+				RAPL::stop(_stopTime);
+				break;
 			default:
 				break;
 			}

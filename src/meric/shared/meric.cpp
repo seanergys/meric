@@ -36,7 +36,7 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>());
+		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
@@ -155,6 +155,13 @@ SharedMeric::SharedMeric()
 	{
 		MSR::init();
 	}
+
+	if(std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL_SAMPLES) != MONITORS.end())
+	{
+		RAPL::init(Meric::DETAILED);
+		RAPL::start(_startTime);
+		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
+	}
 	
 	setMainRegionName();
 	start(_mainRegion.c_str());
@@ -174,6 +181,11 @@ SharedMeric::~SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
+	}
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	{
+		RAPL::close();
 	}
 	
 	for(unsigned int i=0;i<_storeList.size(); i++)
