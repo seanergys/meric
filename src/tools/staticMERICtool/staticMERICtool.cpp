@@ -82,17 +82,8 @@ struct EnergyRecords
 		{
 			std::cout << std::fixed << std::setprecision(3) << summary << std::endl;
 		}
-	}
 
-	static void clear()
-	{
-		recordEnergy.clear();
-		recordTime.clear();
-	}
-
-	static std::vector<std::map<std::string, Tenergy>> getData()
-	{
-		return recordEnergy;
+		Tmode::close();
 	}
 };
 
@@ -302,8 +293,8 @@ int main(int argc, char **argv)
 	std::string outputDirectory = "mericStaticMeasurements";
 
 	const char *measurement_id_env = std::getenv("SLURM_JOB_ID") ? std::getenv("SLURM_JOB_ID") : std::getenv("PBS_JOBID") ? std::getenv("PBS_JOBID")
-	                                                                                           : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
-	                                                                                           : "0";
+																							 : std::getenv("FLUX_JOB_ID") ? std::getenv("FLUX_JOB_ID")
+																														  : "0";
 	if (measurement_id_env)
 	{
 		measurement_id = std::atoi(measurement_id_env);
@@ -695,7 +686,7 @@ int main(int argc, char **argv)
 
 			// If execvp fails, print an error and exit
 			std::cerr << "MERIC ERROR: Failed to launch application command: \"" << applicationCommand << "\"\n"
-			          << "Reason (errno " << errno << "): " << strerror(errno) << std::endl;
+					  << "Reason (errno " << errno << "): " << strerror(errno) << std::endl;
 
 			switch (errno)
 			{
@@ -1001,7 +992,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 			hostname[HOST_NAME_MAX - 1] = '\0';
 		}
 		std::cerr << "MERIC ERROR: Job is not completed or energy data missing for: \n"
-		          << "\tHostname: " << hostname << std::endl;
+				  << "\tHostname: " << hostname << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
