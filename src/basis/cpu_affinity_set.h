@@ -23,7 +23,7 @@ public:
     size_t Count() const {
         size_t count = 0;
         for(size_t i = 0; i < GetSize(); ++i)
-            count += __builtin_popcountg(GetElem(i));
+            count += __builtin_popcountll(GetElem(i));
         return count;
     }
     
@@ -43,7 +43,7 @@ public:
 
             while((elem >> offset) != 0)
             {
-                offset += __builtin_ctzg(elem) + 1;
+                offset += __builtin_ctzll(elem) + 1;
                 f(i*sizeof(T) + offset - 1);
             }
         }
@@ -301,7 +301,7 @@ void ExtractLSBit(const S &src, D &dst)
 {
     typedef typename D::ElemType_t Elem_t;
     
-    auto GetLSOne = [](Elem_t arg) { return arg == Elem_t(0) ? Elem_t(0) : (Elem_t(1) << (__builtin_ctzg(arg))); };
+    auto GetLSOne = [](Elem_t arg) { return arg == Elem_t(0) ? Elem_t(0) : (Elem_t(1) << (__builtin_ctzll(arg))); };
     
     size_t i;
     for(i = 0; i < src.GetSize(); ++i)
