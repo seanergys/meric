@@ -72,7 +72,7 @@ protected:
         CPUSetView_t<C> GetRowView(size_t row) { return CPUSetView_t<C>(&data[row*cols], cols * sizeof(C)); }
         
         AffinityMap_t<R, C> Transposed() const {
-            AffinityMap_t<R, C> out(rows, cols * sizeof(C), ranks);
+            AffinityMap_t<R, C> out(rows, cols * 8 * sizeof(C), ranks);
             
             BitTranspose2D((R *)out.data.data(), (const R *)data.data(), (sizeof(C) * cols) / sizeof(R), rows / (8*sizeof(R)), true);
             
