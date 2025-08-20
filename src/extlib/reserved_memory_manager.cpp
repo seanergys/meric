@@ -247,6 +247,7 @@ void ReservedMemoryManager::close()
     metadata.clear();
     entry_length.clear();
     empty_page_ids.clear();
+    ReservedMemoryManager::reserved_memory_size = 0;
     ReservedMemoryManager::is_enabled = false;
 }
 

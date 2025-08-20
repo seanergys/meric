@@ -339,7 +339,7 @@ void extlib_close(ExtlibEnergy *enabled_domains)
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain))
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, domain)))
         {
             int domain_id = meric::mutils::countTrailingZeros(domain);
             if (enabled_domains->closeFns[domain_id])
@@ -352,7 +352,7 @@ void extlib_close(ExtlibEnergy *enabled_domains)
 
     std::memset(enabled_domains, 0, sizeof(ExtlibEnergy));
 
-    if (ReservedMemoryManager::is_enabled)
+    if (OPT_LIKELY(ReservedMemoryManager::is_enabled))
         ReservedMemoryManager::close();
 }
 
