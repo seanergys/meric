@@ -27,9 +27,9 @@ template<typename T>
 class CPUAffinityMapShared_t : public CPUAffinityMap_t
 {
 public:
-    CPUAffinityMapShared_t()
-        : m_coreCount(get_nprocs_conf())
-        , m_threadCount(omp_get_max_threads())
+    CPUAffinityMapShared_t(int coreCount, int threadCount)
+        : m_coreCount(coreCount/*get_nprocs_conf()*/)
+        , m_threadCount(threadCount/*omp_get_max_threads()*/)
         , m_rankCount(1)
         , m_rankIdx(0)
     {

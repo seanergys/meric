@@ -291,7 +291,9 @@ DistributedMeric::DistributedMeric()
 		currentState.socket[socket] = defaultParameter;
 	}
 
-	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(_currentNode));
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(
+		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
+		std::max(defaultParameter.nthreads, 1), _currentNode));
 	m_pAffinityMap->CollectMachineInfo();
 	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
 	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();

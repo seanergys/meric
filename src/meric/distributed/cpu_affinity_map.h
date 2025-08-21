@@ -15,8 +15,8 @@ template<typename T>
 class CPUAffinityMapDist_t : public CPUAffinityMapShared_t<T>
 {
 public:
-    CPUAffinityMapDist_t(MPI_Comm &nodeLocalComm)
-        : CPUAffinityMapShared_t<T>()
+    CPUAffinityMapDist_t(int coreCount, int threadCount, MPI_Comm &nodeLocalComm)
+        : CPUAffinityMapShared_t<T>(coreCount, threadCount)
     {
         MPI_Comm_dup(nodeLocalComm, &m_nodeLocalComm);
     }
@@ -36,9 +36,9 @@ public:
     {
         typedef typename CPUAffinityMapShared_t<T>::AffinityMap_t<T, uint8_t> AffinityMap_t;
         
-        MPI_Allreduce(&this->m_coreCount, &this->m_coreCount, 1, 
+        MPI_Allreduce(MPI_IN_PLACE, &this->m_coreCount, 1, 
                       MPI_INT32_T, MPI_MAX, m_nodeLocalComm);
-        MPI_Allreduce(&this->m_threadCount, &this->m_threadCount, 1, 
+        MPI_Allreduce(MPI_IN_PLACE, &this->m_threadCount, 1, 
                       MPI_INT32_T, MPI_MAX, m_nodeLocalComm);
         MPI_Comm_size(m_nodeLocalComm, &this->m_rankCount);
         MPI_Comm_rank(m_nodeLocalComm, &this->m_rankIdx);
@@ -90,9 +90,9 @@ public:
     {
         this->CollectAffinity();
         
-        MPI_Allreduce(this->m_affinityMap.data.data(), this->m_affinityMap.data.data(), 
+        MPI_Allreduce(MPI_IN_PLACE, this->m_affinityMap.data.data(), 
                       1, m_affinityMapType, m_affinityMapOp, m_nodeLocalComm);
-        MPI_Allreduce(this->m_threadIds.data(), this->m_threadIds.data(), 
+        MPI_Allreduce(MPI_IN_PLACE, this->m_threadIds.data(), 
                       1, m_threadIdsType, m_threadIdsMergeOp, m_nodeLocalComm);
         
         this->ComputeBinding(mode);
