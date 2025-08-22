@@ -90,7 +90,7 @@ protected:
     };
     
     void GetThreadsAffinity(AffinityMap_t<T, uint8_t> &affinity, size_t offset) {
-        #pragma omp parallel
+        #pragma omp parallel num_threads(m_threadCount)
         {
             const size_t id = omp_get_thread_num();
             CPUSetView_t<T> view = affinity.GetRowView(offset + id);
@@ -99,7 +99,7 @@ protected:
     }
     
     void SetThreadsAffinity(AffinityMap_t<T, uint8_t> &affinity, size_t offset) {        
-        #pragma omp parallel
+        #pragma omp parallel num_threads(m_threadCount)
         {
             const size_t id = omp_get_thread_num();
             CPUSetView_t<T> view = affinity.GetRowView(offset + id);
@@ -108,7 +108,7 @@ protected:
     }
     
     void GetThreadIds(std::vector<uint64_t> &threadIds, size_t offset) {
-        #pragma omp parallel
+        #pragma omp parallel num_threads(m_threadCount)
         {
             const size_t id = omp_get_thread_num();
             threadIds[offset + id] = syscall(SYS_gettid);
