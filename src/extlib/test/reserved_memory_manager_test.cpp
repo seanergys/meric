@@ -201,6 +201,14 @@ TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
     EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
     EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 0);
 
+    ReservedMemoryManager::remove_page(0);
+
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 1);
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) != ReservedMemoryManager::empty_page_ids.end());
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 0);
+
     extlib_close(&energy_domains);
 
     EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);

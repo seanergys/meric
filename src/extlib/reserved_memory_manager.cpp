@@ -249,6 +249,7 @@ void ReservedMemoryManager::close()
     empty_page_ids.clear();
     ReservedMemoryManager::reserved_memory_size = 0;
     ReservedMemoryManager::is_enabled = false;
+    getset_new_pageid(0);
 }
 
 ExtlibEnergyTimeStamp *ReservedMemoryManager::initialize_timestamp(ExtlibEnergyTimeStamp *ptr, size_t page_id, size_t index)
@@ -270,14 +271,29 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::initialize_timestamp(ExtlibEnergyT
 
     return ptr;
 }
+uint64_t ReservedMemoryManager::getset_new_pageid(uint64_t page)
+{
+    static uint64_t new_page_id = 0;
 
+    if (page == -1) // get next page-id
+    {
+        new_page_id++;
+        DEBUG_LOG << "Creating new page-id: " << new_page_id << "\n";
+        return new_page_id;
+    }
+    else // used for re-setting the counter.
+    {
+        new_page_id = page;
+        DEBUG_LOG << "Setting new page-id: " << new_page_id << "\n";
+        return new_page_id;
+    }
+}
 ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
 {
     // size_t new_page_id = metadata.size();
     // if middle page is removed, matadata.size() would collide with existing page ids.
     // So we use a static counter to ensure unique page ids.
-    static size_t new_page_id = 0;
-    new_page_id++;
+    size_t new_page_id = getset_new_pageid();
     DEBUG_LOG << "Creating new page-id: " << new_page_id << "\n";
 
     auto &new_vec = metadata[new_page_id];
@@ -327,8 +343,13 @@ bool ReservedMemoryManager::should_remove_page(uint64_t page)
 
 void ReservedMemoryManager::remove_page(uint64_t page)
 {
-    DEBUG_LOG << "FREEING PAGE-ID:" << page << "\n";
+    if (OPT_UNLIKELY(page == 0))
+    {
+        DEBUG_LOG << "Page-ID:0 cannot be removed.\n";
+        return;
+    }
 
+    DEBUG_LOG << "FREEING PAGE-ID:" << page << "\n";
     metadata.erase(page);
     DEBUG_LOG << "----------->>>> Entry length for page-id " << page << " is:" << entry_length.at(page) << ".\n";
     entry_length.erase(page);
