@@ -44,7 +44,7 @@ public:
             while((elem >> offset) != 0)
             {
                 offset += __builtin_ctzll(elem) + 1;
-                f(i*sizeof(T) + offset - 1);
+                f(i*sizeof(T)*8 + offset - 1);
             }
         }
         
