@@ -41,7 +41,6 @@
 #define EXTLIB_MAX_ALLOWED_EMPTY_PAGES 1 // only allow 1 fully empty page.
 #endif
 
-// the following is temporary, only for testing purposes. will not be on official release.
 #if VERBOSE //|| 1
 #define DEBUG_LOG std::cout
 #else
@@ -124,6 +123,7 @@ private:
     static bool should_remove_page(uint64_t page);
     static void remove_page(uint64_t page);
     static void clear_timestamp(ExtlibEnergyTimeStamp *timestamp);
+    static uint64_t getset_new_pageid(uint64_t page = -1);
 };
 
 #endif // RESERVED_MEMORY_MANAGER_H

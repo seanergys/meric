@@ -84,6 +84,17 @@ typedef struct ExtlibEnergy
 #define EXTERNC
 #endif
 
+#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                                       \
+    do                                                                                          \
+    {                                                                                           \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);  \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);  \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);  \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); \
+    } while (0)
+
 /**
  *
  * @param enabled_domains Object representing the enabled domains, used to initialize energy readings for the selected domains.
