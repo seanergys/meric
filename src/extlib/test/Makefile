@@ -26,7 +26,7 @@ NVML=-lnvidia-ml -DHAVE_NVML_H
 
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -g -Wall -O0
+CXXFLAGS = -std=c++17 -Wall -O0
 INCLUDES = -I../../../include -I.. -I../basis -Igoogletest/googletest/include
 LDFLAGS = -L../../../lib -Lgoogletest/build/lib
 LIBS = -lgtest -lgtest_main ../../../lib/libmeric_ext.a -lpthread $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
