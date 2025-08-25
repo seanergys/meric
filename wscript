@@ -289,7 +289,7 @@ def build(ctx):
 
 	#MERICext
 	ctx.stlib(
-		source       = ctx.path.ant_glob('src/extlib/*.cpp'),
+		source       = ctx.path.ant_glob('src/extlib/*.cpp', excl='src/extlib/test/**.cpp'),
 		target       = "meric_ext",
 		use          = "basis",
 #		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
