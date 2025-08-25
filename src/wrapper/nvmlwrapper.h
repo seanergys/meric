@@ -14,53 +14,58 @@
 #include <thread>
 
 #ifdef HAVE_NVML_H
-	#include <nvml.h>
+#include <nvml.h>
 #endif
 
+namespace meric
+{
 
-namespace meric {
+	class NVML
+	{
 
-class NVML {
-
-public:
-	static void init(bool detailed = true);
-	static void close() {};
-
-	static void start(unsigned int frequency);
-	static void stop();
-	
-	static void getCounterValues(std::map<std::string, unsigned long long> & record);
-	static void initMap(std::map<std::string, unsigned long long> & dict);
-	static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int & cumulative, std::string counter, std::string regionName = "");
-	static std::string getSummaryCounterName();
-	static std::string getSourceLabel() {return "NVML";};
-	static std::string getCounterLabel(std::string counter);
-	static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
-
-	static inline double getUnit(std::string counterName) { return 0.001; };
+	public:
+		static void init(bool detailed = true);
+		static void close()
+		{
+			counters.clear();
+			samples.clear();
 #ifdef HAVE_NVML_H
-	static nvmlDevice_t getGPUHandle(int id) { return GPUhandles[id]; };
-	static size_t getGPUsPerNode() { return GPUhandles.size(); };
+			GPUhandles.clear();
+#endif
+		};
+
+		static void start(unsigned int frequency);
+		static void stop();
+
+		static void getCounterValues(std::map<std::string, unsigned long long> &record);
+		static void initMap(std::map<std::string, unsigned long long> &dict);
+		static double getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "");
+		static std::string getSummaryCounterName();
+		static std::string getSourceLabel() { return "NVML"; };
+		static std::string getCounterLabel(std::string counter);
+		static void getRatios(std::map<std::string, unsigned long long> &start, std::map<std::string, unsigned long long> &stop, double runtime, std::map<std::string, double> &ratios) {};
+
+		static inline double getUnit(std::string counterName) { return 0.001; };
+#ifdef HAVE_NVML_H
+		static nvmlDevice_t getGPUHandle(int id) { return GPUhandles[id]; };
+		static size_t getGPUsPerNode() { return GPUhandles.size(); };
 #else
-	static size_t getGPUsPerNode() { return 0; };
+		static size_t getGPUsPerNode() { return 0; };
 #endif
 
-private:
-		//list of counters
-	static std::map<std::string, unsigned long long> counters;
-	static unsigned long long COUNTERMAX;
-	static std::thread samplingThread;
-	static void collectSamples(unsigned int frequency);
-	static unsigned long long sampleBeginTimestamp;
-	static std::vector<std::vector<double>> samples;
+	private:
+		// list of counters
+		static std::map<std::string, unsigned long long> counters;
+		static unsigned long long COUNTERMAX;
+		static std::thread samplingThread;
+		static void collectSamples(unsigned int frequency);
+		static unsigned long long sampleBeginTimestamp;
+		static std::vector<std::vector<double>> samples;
 #ifdef HAVE_NVML_H
-	static std::vector <nvmlDevice_t> GPUhandles;
+		static std::vector<nvmlDevice_t> GPUhandles;
 #endif
-};
-
+	};
 
 }
-
-
 
 #endif /* SRC_WRAPPER_NVMLWRAPPER_H_ */
