@@ -21,6 +21,7 @@
 
 #include "counters.h"
 #include "../basis/sysfsutils.h"
+#include "../basis/async_utils.h"
 
 using namespace HWMON_COUNTERS;
 
@@ -28,28 +29,50 @@ namespace meric {
 
 class HWMON {
 public:
+	typedef unsigned long long int RawCounterValue_t;
+	
+	struct CounterValue_t {
+		CounterValue_t(RawCounterValue_t value = 0)
+			: value(value)
+		{}
+
+		CounterValue_t(RawCounterValue_t value, uint64_t generation)
+			: generation(generation)
+			, value(value)
+		{}
+
+		uint64_t generation;
+		RawCounterValue_t value;
+	};
+
+	typedef std::map<std::string, CounterValue_t> CounterRecord_t;
+
+	// Counters interface
 	static void init(bool detailed);
 	static void close();
-	static void getCounterValues(std::map<std::string, unsigned long long int> &record);
+
+	static void getCounterValues(CounterRecord_t &record);
 	static void initCounters();
-	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
+	static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 		double runtime, int &cumulative, std::string counter, std::string regionName = "");
+
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(const std::string counter);
-	static void getRatios(std::map<std::string, unsigned long long int> &start, 
-		std::map<std::string, unsigned long long int> &stop, double runtime,
-		std::map<std::string, double> &ratios) {}
+
+	static void getRatios(CounterRecord_t &start, CounterRecord_t &stop, 
+		double runtime, std::map<std::string, double> &ratios) {}
+
 	static void initCountersUnits() {}
 	static double getUnit(std::string counterName);
 
-	// Sampling
+	// Sampling iterface
 	static const std::string SUM_ENERGY_LABEL;
 	static int PROBE_NUMBER;
 	static std::vector<std::string> vrSensorLabel;
 
-	static void start(timespec &time);
+	static void start(timespec &time, double sampleFreqHz = 0.0);
 	static void stop(timespec &time);
 	static void initSamplers();
 	static void closeSamplers();
@@ -63,36 +86,23 @@ public:
 	static void deleteSamples() {}
 
 protected:
-	struct CounterDesc_t {
-		double unit;
-		std::string path;
-		std::ifstream fs;
-		std::string label;
-		bool isCumulative;
-	};
-
 	struct Sample_t {
 		uint64_t timestamp;
 		uint64_t value;
 	};
 
-	struct SamplerDesc_t {
-		size_t id;
-		double unit;
-		std::string path;
-		std::ifstream fs;
-		std::string label;
-		bool isCumulative;
-		uint64_t period;
-		std::vector<Sample_t> samples;
-	};
+	struct SourceDesc_t;
+	struct CollectSourcesDef_t;
 
-	static std::map<std::string, CounterDesc_t> s_counterDesc;
-	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
-	static std::vector<SamplerDesc_t *>         s_samplerById;
-	static uint64_t s_samplingPeriod;
-	static std::thread s_samplingThread;
-	static std::atomic<bool> s_samplingEnabled;
+	template<typename T, typename F>
+	static void CollectSources(const std::vector<std::string> &paths, const CollectSourcesDef_t &desc, std::vector<T> &counters, F &&f);
+
+	static std::map<std::string, SourceDesc_t> s_sourceDesc;
+	static std::vector<SourceDesc_t *>         s_sourceById;
+
+	static std::chrono::nanoseconds      s_overflowCheckPeriod;
+	static std::atomic<bool>		     s_sampleStoreEnabled;
+	static AsyncSampler<CounterRecord_t> s_asyncSampler;
 };
 }
 

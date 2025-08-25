@@ -77,10 +77,18 @@ public:
     }
 
     std::chrono::nanoseconds GetPeriod() const { return m_period; }
+
     void SetPeriod(const std::chrono::nanoseconds &period) {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_period = period;
         m_cond.notify_all();
+    }
+
+    void SetFrequecy(double frequencyHz) {
+        if(frequencyHz == 0)
+            return;
+
+        SetPeriod(std::chrono::nanoseconds(uint64_t(1.0e9 / frequencyHz)));
     }
     
 protected:

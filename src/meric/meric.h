@@ -527,7 +527,7 @@ protected:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
-	static bool SAMPLES;
+	static double SAMPLES;
 	static bool IGNORE;
 	static bool HDF5;
 	static int MODE;

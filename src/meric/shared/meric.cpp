@@ -12,11 +12,11 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
+			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES != 0.0));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
@@ -26,7 +26,7 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
 		}
 		else
 		{
@@ -37,6 +37,7 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
+		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
@@ -53,19 +54,19 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON_SAMPLES) != MONITORS.end())
 	{
 		HWMON::start(_startTime);
-		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
 	{
@@ -121,6 +122,7 @@ SharedMeric::SharedMeric()
 		{
 		case MODE_RAPL:
 			RAPL::init(Meric::DETAILED);
+			RAPL::start(_startTime, Meric::SAMPLES);
 			break;
 		case MODE_OCC:
 			OCC::init(Meric::DETAILED);
@@ -154,13 +156,6 @@ SharedMeric::SharedMeric()
 	else if (Meric::COUNTERS == "msr")
 	{
 		MSR::init();
-	}
-
-	if(std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL_SAMPLES) != MONITORS.end())
-	{
-		RAPL::init(Meric::DETAILED);
-		RAPL::start(_startTime);
-		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
 	}
 	
 	setMainRegionName();

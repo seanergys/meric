@@ -110,10 +110,18 @@ double RAPL::getUnit(std::string counter)
 	return getImpl()->getUnit(counter);
 }
 
-void RAPL::start(timespec &time)
+void RAPL::start(timespec &time, double sampleFreqHz)
 {
-	s_sampleStoreEnabled.store(true);
-	s_asyncSampler.SetPeriod(s_samplingPeriod);
+	s_sampleStoreEnabled.store(sampleFreqHz != 0.0);
+
+	if(sampleFreqHz != 0)
+	{
+		s_asyncSampler.SetFrequecy(sampleFreqHz);
+	}
+	else
+	{
+		s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
+	}
 }
 
 void RAPL::stop(timespec &time)

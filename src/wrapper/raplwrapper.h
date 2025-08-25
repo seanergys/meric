@@ -129,7 +129,7 @@ public:
 	static int PROBE_NUMBER;
 	static std::vector<std::string> vrSensorLabel;
 
-    static void start(timespec &time);
+    static void start(timespec &time, double sampleFreqHz = 0.0);
     static void stop(timespec &time);
     static void initSamplers();
     static void closeSamplers();

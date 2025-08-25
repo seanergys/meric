@@ -72,20 +72,20 @@ DistributedMeric::DistributedMeric()
 			}
 			else
 			{
-				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0, !_MPInodeRank));
 			}
 		}
 		else
 		{
 			if (Meric::AGGREGATE)
 			{
-				if (Meric::SAMPLES)
+				if (Meric::SAMPLES != 0.0)
 					std::cerr << "MERIC WARNING: HDEEM power samples are available in non-aggregate mode only\n";
 				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 			}
 			else
 			{
-				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
+				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 			}
 		}
 	}
@@ -105,7 +105,7 @@ DistributedMeric::DistributedMeric()
 			}
 			else
 			{
-				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0, !_MPInodeRank));
 			}
 		}
 		else
@@ -177,7 +177,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
 		
@@ -189,7 +189,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
@@ -206,7 +206,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())

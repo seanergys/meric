@@ -3,59 +3,102 @@
 
 using namespace meric;
 
-struct CollectCountersDesc_t {
+struct HWMON::SourceDesc_t {
+	enum Domain_t {
+		DOMAIN_NONE       = 0,
+		DOMAIN_GLOBAL     = 1,
+		DOMAIN_PER_SOCKET = 2,
+		DOMAIN_PER_CORE   = 3,
+		DOMAIN_PER_THREAD = 4,
+	};
+
+	enum Flags_t {
+		FLAG_NONE_BIT         = 0,
+		FLAG_ACCUMULATIVE_BIT = 1 << 0
+	};
+
+	enum Type_t {
+		TYPE_NONE = 0,
+		TYPE_ENERGY,
+		TYPE_POWER,
+	};
+
+	Type_t   type;
+	Domain_t domain;
+	uint32_t flags;
+	
+	double unit;
+	std::string label;
+	std::string fullName;
+	uint64_t rangeMax;
+
+	uint64_t lastValue;
+	uint64_t overflowCount;
+	std::vector<Sample_t> samples;
+
+	std::string path;
+	std::ifstream fs;
+};
+
+struct HWMON::CollectSourcesDef_t {
+	struct SourceDecl_t {
+		SourceDesc_t::Type_t   type;
+		SourceDesc_t::Domain_t domain;
+		uint32_t 			   flags;
+	};
+
 	std::string prefix;
 	std::regex  counterFileRegex;
 	std::regex  labelRegex;
 	std::pair<std::string, std::string> labelFilename;
-	std::set<std::string> counters;
+	std::map<std::string, SourceDecl_t> sources;
 };
-
-template<typename T, typename F>
-void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f);
 
 const std::string HWMON::SUM_ENERGY_LABEL = "Energy consumption [J]";
 int HWMON::PROBE_NUMBER;
 std::vector<std::string> HWMON::vrSensorLabel;
 
-std::map<std::string, HWMON::CounterDesc_t> HWMON::s_counterDesc;
-std::map<std::string, HWMON::SamplerDesc_t> HWMON::s_samplerDesc;
-std::vector<HWMON::SamplerDesc_t *>         HWMON::s_samplerById;
+std::map<std::string, HWMON::SourceDesc_t> HWMON::s_sourceDesc;
+std::vector<HWMON::SourceDesc_t *>         HWMON::s_sourceById;
 
-uint64_t          HWMON::s_samplingPeriod(1000000000ull);
-std::thread       HWMON::s_samplingThread;
-std::atomic<bool> HWMON::s_samplingEnabled(true);
+std::chrono::nanoseconds             HWMON::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::atomic<bool>		             HWMON::s_sampleStoreEnabled(false);
+AsyncSampler<HWMON::CounterRecord_t> HWMON::s_asyncSampler;
 
 void HWMON::init(bool detailed)
 {
 	initCounters();
+	initSamplers();
 }
 
 void HWMON::close()
 {
+	closeSamplers();
 }
 
-void HWMON::getCounterValues(std::map<std::string, unsigned long long int> &record)
+void HWMON::getCounterValues(CounterRecord_t &record)
 {
-	for(auto &desc: s_counterDesc)
-	{
-		uint64_t value = 0;
-		sysfsutils::ReadValue(desc.second.fs, value);
-		record[desc.first] = value;
-	}
+	s_asyncSampler.Sample(&record);
 }
 
 void HWMON::initCounters()
 {
-	struct Counter_t {
+	std::cerr << __PRETTY_FUNCTION__ << std::endl;
+
+	struct SourceDef_t : public CollectSourcesDef_t::SourceDecl_t {
+		SourceDef_t(const CollectSourcesDef_t::SourceDecl_t &decl)
+			: CollectSourcesDef_t::SourceDecl_t(decl)
+		{}
+
 		std::string path;
 		std::string baseLabel;
 		int id;
+		uint64_t period;
 	};
 
 	const std::string hwmonRootPath("/sys/class/hwmon");
-	std::vector<Counter_t> hwmonCounters;
-	std::map<std::string, int> labelsSuffixLen;
+	std::vector<SourceDef_t> hwmonSources;
+
 #ifdef _AMD_
 	{
 		std::vector<std::string> hwmonCounterRoots;
@@ -69,75 +112,130 @@ void HWMON::initCounters()
 			}
 		});
 
-		CollectCountersDesc_t collectDesc;
+		CollectSourcesDef_t collectDesc;
 		collectDesc.prefix           = "";
 		collectDesc.counterFileRegex = "^energy([0-9]+)_input$";
 		collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
 		collectDesc.labelFilename    = { "energy", "_label" };
-		collectDesc.counters         = { HWMON_CORE_ENERGY, HWMON_PCKG_ENERGY };
+		collectDesc.sources[HWMON_CORE_ENERGY] = { SourceDesc_t::TYPE_ENERGY, SourceDesc_t::DOMAIN_PER_CORE, SourceDesc_t::FLAG_NONE_BIT };
+		collectDesc.sources[HWMON_PCKG_ENERGY] = { SourceDesc_t::TYPE_ENERGY, SourceDesc_t::DOMAIN_PER_SOCKET, SourceDesc_t::FLAG_ACCUMULATIVE_BIT };
 
-		CollectCounters(hwmonCounterRoots, collectDesc, hwmonCounters, 
-			[&](Counter_t &out, const std::string &path, 
+		CollectSources(hwmonCounterRoots, collectDesc, hwmonSources, 
+			[&](SourceDef_t &out, const std::string &path, 
 					const std::smatch &counterMatch, const std::smatch &labelMatch) 
 			{
-				// out.samplePeriod = 0.0;
 				return true;
 			});
 		
-		labelsSuffixLen[HWMON_CORE_ENERGY] = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
-		labelsSuffixLen[HWMON_PCKG_ENERGY] = log10(Environment::SOCKETS_PER_NODE) + 1;
-		
 		int socketCount = 0;
-		for(const Counter_t &counter: hwmonCounters)
+		for(const SourceDef_t &source: hwmonSources)
 		{
-			socketCount += (counter.baseLabel == HWMON_PCKG_ENERGY ? 1 : 0);
+			socketCount += (source.baseLabel == HWMON_PCKG_ENERGY ? 1 : 0);
 		}
 
 		int socketStep = socketCount / Environment::SOCKETS_PER_NODE;
-		auto it = hwmonCounters.begin();
-		while(it != hwmonCounters.end())
+		auto it = hwmonSources.begin();
+		while(it != hwmonSources.end())
 		{
 			if(it->baseLabel == HWMON_PCKG_ENERGY)
 			{
 				if((it->id % socketStep) != 0)
 				{
-					it = hwmonCounters.erase(it);
+					it = hwmonSources.erase(it);
 					continue;
 				}
+
 				it->id = it->id / socketStep;
 			}
+
 			++it;
 		}
 	}
+#endif // _AMD_
 
-	for(const Counter_t &counter: hwmonCounters)
 	{
-		const std::string fullName  = sysfsutils::MakeCounterName(counter.baseLabel, counterLabels, {{ counter.id, labelsSuffixLen[counter.baseLabel] }});
-		const std::string fullLabel = sysfsutils::MakeCounterName(counter.baseLabel, counterLabels, {{ counter.id, labelsSuffixLen[counter.baseLabel] }}, true);
+		std::vector<std::string> hwmonCounterRoots;
 
-		s_counterDesc[fullName] = CounterDesc_t{
+		sysfsutils::IterateDir(hwmonRootPath, [&](const std::string &filename) {
+			hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
+		});
+
+		CollectSourcesDef_t collectDesc;
+		collectDesc.prefix           = "/device";
+		collectDesc.counterFileRegex = "^power([0-9]+)_average$";
+		collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
+		collectDesc.labelFilename    = { "power", "_oem_info" };
+		collectDesc.sources          = { 
+			{ "CPU_Power_Socket", { SourceDesc_t::TYPE_POWER, SourceDesc_t::DOMAIN_PER_SOCKET, SourceDesc_t::FLAG_NONE_BIT } },
+			{ "Module_Power_Socket", { SourceDesc_t::TYPE_POWER, SourceDesc_t::DOMAIN_PER_SOCKET, SourceDesc_t::FLAG_NONE_BIT } },
+			{ "SysIO_Power_Socket", { SourceDesc_t::TYPE_POWER, SourceDesc_t::DOMAIN_PER_SOCKET, SourceDesc_t::FLAG_NONE_BIT } },
+			{ "Grace_Power_Socket", { SourceDesc_t::TYPE_POWER, SourceDesc_t::DOMAIN_PER_SOCKET, SourceDesc_t::FLAG_ACCUMULATIVE_BIT } },
+		};
+
+		CollectSources(hwmonCounterRoots, collectDesc, hwmonSources, 
+			[&](SourceDef_t &out, const std::string &path, 
+					const std::smatch &counterMatch, const std::smatch &labelMatch) 
+			{
+				int interval = 0;
+				sysfsutils::ReadValue(path + "/power" + counterMatch[1].str() + "_average_interval", interval);
+				out.period = interval * 1000000ull;
+				return true;
+			});
+	}
+
+	for(const SourceDef_t &source: hwmonSources)
+	{
+		int suffixLen = 0;
+		switch(source.domain)
+		{
+		case SourceDesc_t::DOMAIN_PER_SOCKET:
+			suffixLen = log10(Environment::SOCKETS_PER_NODE) + 1;
+			break;
+		case SourceDesc_t::DOMAIN_PER_CORE:
+			suffixLen = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
+			break;
+		case SourceDesc_t::DOMAIN_PER_THREAD:
+			suffixLen = log10(Environment::THREADS_PER_CORE * Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
+			break;
+		default:
+			break;
+		}
+
+		const std::string fullName  = sysfsutils::MakeCounterName(source.baseLabel, counterLabels, {{ source.id, suffixLen }});
+		const std::string fullLabel = sysfsutils::MakeCounterName(source.baseLabel, counterLabels, {{ source.id, suffixLen }}, true);
+
+		s_sourceDesc[fullName] = SourceDesc_t{
+			source.type,
+			source.domain,
+			source.flags,
+
 			1.0e-6,
-			counter.path,
-			std::ifstream(counter.path),
 			fullLabel,
-			counter.baseLabel == HWMON_PCKG_ENERGY
+			fullName,
+			0,
+			0,
+			0,
+			std::vector<Sample_t>(),
+			source.path,
+			std::ifstream(source.path)
 		};
 	}
-#endif
 }
 
-double HWMON::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
+double HWMON::getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
 	double runtime, int &cumulative, std::string counter, std::string regionName)
 {
-	auto it = s_counterDesc.find(counter);
-	if(it == s_counterDesc.end())
+	auto it = s_sourceDesc.find(counter);
+	if(it == s_sourceDesc.end())
 	{
 		return 0.0;
 	}
-	cumulative = it->second.isCumulative ? 1 : 0;
 
-	// TODO: Handle counter overflow.
-	return (stopValue - startValue) * it->second.unit;
+	cumulative = ((it->second.flags & SourceDesc_t::FLAG_ACCUMULATIVE_BIT) != 0) ? 1 : 0;
+	uint64_t overflow = stopValue.generation - startValue.generation;
+	double res = double(stopValue.value) - double(startValue.value);
+
+	return (res + overflow * double(it->second.rangeMax)) * it->second.unit;
 }
 
 std::string HWMON::summaryCounter()
@@ -162,8 +260,8 @@ std::string HWMON::getSourceLabel()
 
 std::string HWMON::getCounterLabel(const std::string counter)
 {
-	auto it = s_counterDesc.find(counter);
-	if(it != s_counterDesc.end())
+	auto it = s_sourceDesc.find(counter);
+	if(it != s_sourceDesc.end())
 	{
 		return it->second.label;
 	}
@@ -172,174 +270,92 @@ std::string HWMON::getCounterLabel(const std::string counter)
 
 double HWMON::getUnit(std::string counterName)
 {
-	auto it = s_counterDesc.find(counterName);
-	if(it != s_counterDesc.end())
+	auto it = s_sourceDesc.find(counterName);
+	if(it != s_sourceDesc.end())
 	{
 		return it->second.unit;
 	}
 	return -1.0;
 }
 
-void HWMON::start(timespec &time)
+void HWMON::start(timespec &time, double sampleFreqHz)
 {
-	initSamplers();
+	s_sampleStoreEnabled.store(sampleFreqHz != 0.0);
+
+	if(sampleFreqHz != 0)
+	{
+		s_asyncSampler.SetFrequecy(sampleFreqHz);
+	}
+	else
+	{
+		s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
+	}
 }
 
 void HWMON::stop(timespec &time)
 {
-	closeSamplers();
+	s_sampleStoreEnabled.store(false);
+	s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
 }
 
 void HWMON::initSamplers()
 {
-	struct Sampler_t {
-		std::string path;
-		std::string baseLabel;
-		int id;
-		uint64_t period;
-	};
-
-	const std::string hwmonRootPath("/sys/class/hwmon");
-	std::vector<Sampler_t> hwmonCounters;
-	std::map<std::string, int> labelsSuffixLen;
-
+	for(auto &item: s_sourceDesc)
 	{
-		std::vector<std::string> hwmonCounterRoots;
-
-		sysfsutils::IterateDir(hwmonRootPath, [&](const std::string &filename) {
-			hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
-		});
-
-		CollectCountersDesc_t collectDesc;
-		collectDesc.prefix           = "/device";
-		collectDesc.counterFileRegex = "^power([0-9]+)_average$";
-		collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
-		collectDesc.labelFilename    = { "power", "_oem_info" };
-		collectDesc.counters         = { 
-			"CPU_Power_Socket", "Module_Power_Socket", 
-			"SysIO_Power_Socket", "Grace_Power_Socket" 
-		};
-
-		CollectCounters(hwmonCounterRoots, collectDesc, hwmonCounters, 
-			[&](Sampler_t &out, const std::string &path, 
-					const std::smatch &counterMatch, const std::smatch &labelMatch) 
-			{
-				int interval = 0;
-				sysfsutils::ReadValue(path + "/power" + counterMatch[1].str() + "_average_interval", interval);
-				out.period = interval * 1000000ull;
-				return true;
-			});
+		s_sourceById.push_back(&item.second);
 	}
 
-	s_samplerById.push_back(NULL);
-
-	for(const Sampler_t &sampler: hwmonCounters)
-	{
-		const std::string fullName  = sysfsutils::MakeCounterName(sampler.baseLabel, counterLabels, {{ sampler.id, labelsSuffixLen[sampler.baseLabel] }});
-		const std::string fullLabel = sysfsutils::MakeCounterName(sampler.baseLabel, counterLabels, {{ sampler.id, labelsSuffixLen[sampler.baseLabel] }}, true);
-
-		s_samplerDesc[fullName] = SamplerDesc_t{
-			s_samplerById.size(),
-			1.0e-6,
-			sampler.path,
-			std::ifstream(sampler.path),
-			fullLabel,
-			(sampler.baseLabel == "Grace_Power_Socket"),
-			sampler.period,
-		};
-
-		s_samplerById.push_back(&s_samplerDesc[fullName]);
-		if(sampler.period != 0)
-		{
-			s_samplingPeriod = std::min(s_samplingPeriod, sampler.period);
-		}
-	}
-
-	std::sort(s_samplerById.begin(), s_samplerById.end(),
-		[](const SamplerDesc_t *pLeft, const SamplerDesc_t *pRight) {
-			if(!pLeft)
-			{
-				return true;
-			}
-			if(!pRight)
-			{
-				return false;
-			}
-			return pLeft->label < pRight->label;
+	std::sort(s_sourceById.begin(), s_sourceById.end(),
+		[](const SourceDesc_t *pLeft, const SourceDesc_t *pRight) {
+			return pLeft->fullName < pRight->fullName;
 		});
 	
-	for(const SamplerDesc_t *pSamplerDesc: s_samplerById)
+	for(SourceDesc_t *pSourceDesc: s_sourceById)
 	{
-		if(!pSamplerDesc)
-		{
-			vrSensorLabel.push_back("");
-			continue;
-		}
-		vrSensorLabel.push_back(pSamplerDesc->label);
+		vrSensorLabel.push_back(pSourceDesc->fullName);
 	}
 
-	PROBE_NUMBER = s_samplerById.size();
+	PROBE_NUMBER = s_sourceById.size();
 
-	s_samplingPeriod = s_samplingPeriod / 2;
-
-	if(s_samplingPeriod < 1000000ull)
-	{
-		s_samplingPeriod = 1000000ull;
-	}
-
-	s_samplingThread = std::thread([]() {
-		timespec time;
-		clock_gettime(CLOCK_REALTIME, &time);
-
-		while(s_samplingEnabled.load())
+	s_asyncSampler.Start(s_overflowCheckPeriod, [](bool isSampling, CounterRecord_t *pRequest) {
+		for(auto &desc: s_sourceDesc)
 		{
-			for(auto &desc: s_samplerDesc)
+			timespec now;
+			clock_gettime(CLOCK_REALTIME, &now);
+
+			uint64_t value = 0;
+			sysfsutils::ReadValue(desc.second.fs, value);
+
+			if(isSampling && s_sampleStoreEnabled)
 			{
-				timespec now;
-				clock_gettime(CLOCK_REALTIME, &now);
-				uint64_t value = 0;
-				sysfsutils::ReadValue(desc.second.fs, value);
-
 				desc.second.samples.push_back({
 					uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
 					value
 				});
 			}
 
-			{
-				while(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &time, NULL) != 0) {}
-				time.tv_nsec += s_samplingPeriod;
-				if(time.tv_nsec >= 1000000000ull)
-				{
-					time.tv_nsec -= 1000000000ull;
-					time.tv_sec++;
-				}
-			}
+			if(value < desc.second.lastValue && (desc.second.type & SourceDesc_t::TYPE_ENERGY) != 0)
+				desc.second.overflowCount++;
+
+			desc.second.lastValue = value;
+		}
+
+		if(!pRequest)
+			return;
+
+		for(auto &desc: s_sourceDesc)
+		{
+			if((desc.second.type & SourceDesc_t::TYPE_POWER) != 0)
+				continue;
+			
+			(*pRequest)[desc.first] = CounterValue_t(desc.second.lastValue, desc.second.overflowCount);
 		}
 	});
 }
 
 void HWMON::closeSamplers()
 {
-	s_samplingEnabled.store(false);
-	if(s_samplingThread.joinable())
-	{
-		s_samplingThread.join();
-	}
-
-	// Check for number of "0" samples in the sampled data
-	/*for(const auto &samplerDesc: s_samplerDesc)
-	{
-		const SamplerDesc_t &desc = samplerDesc.second;
-		
-		size_t zeroSamples = 0;
-		for(const auto &sample: desc.samples)
-		{
-			zeroSamples += (sample.value == 0) ? 1 : 0;
-		}
-		
-		std::cout << "ZERO_SAMPLES: " << desc.label << " " << double(zeroSamples) / desc.samples.size() << std::endl;
-	}*/
+	s_asyncSampler.Stop();
 }
 
 int HWMON::getSamples()
@@ -349,16 +365,16 @@ int HWMON::getSamples()
 
 void HWMON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples)
 {
-	if(sensorId >= s_samplerById.size() || !s_samplerById[sensorId])
+	if(sensorId >= s_sourceById.size() || !s_sourceById[sensorId])
 	{
 		return;
 	}
 
-	const SamplerDesc_t &desc = *s_samplerById[sensorId];
+	const SourceDesc_t &desc = *s_sourceById[sensorId];
 	samples.reserve(last - first);
 	for(size_t i = first; i < last; ++i)
 	{
-		samples.push_back(double(desc.samples[i].value) * 1.0e-6);
+		samples.push_back(double(desc.samples[i].value) * desc.unit);
 	}
 }
 
@@ -369,18 +385,18 @@ std::string HWMON::getData(double startTime, double duration,
 	uint64_t intervalStart = uint64_t(startTime * 1.0e9);
 	uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
 
-	for(size_t i = 0; i < s_samplerById.size(); ++i)
+	for(size_t i = 0; i < s_sourceById.size(); ++i)
 	{
 		energy[i]   = 0.0;
 		minWatts[i] = 0.0;
 		maxWatts[i] = 0.0;
 
-		if(!s_samplerById[i])
+		if(!s_sourceById[i])
 		{
 			continue;
 		}
 
-		const SamplerDesc_t &desc = *s_samplerById[i];
+		const SourceDesc_t &desc = *s_sourceById[i];
 
 		auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart, 
 			[](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
@@ -407,44 +423,43 @@ std::string HWMON::getData(double startTime, double duration,
 }
 
 template<typename T, typename F>
-void CollectCounters(const std::vector<std::string> &paths, const CollectCountersDesc_t &desc, std::vector<T> &counters, F &&f)
+void HWMON::CollectSources(const std::vector<std::string> &paths, const CollectSourcesDef_t &desc, std::vector<T> &sources, F &&f)
 {
 	for(const std::string &path: paths)
 	{
 		sysfsutils::IterateDir(path + desc.prefix, [&](const std::string &filename){
-			std::smatch counterFileMatch;
-			if(!std::regex_match(filename, counterFileMatch, desc.counterFileRegex))
+			std::smatch sourceFileMatch;
+			if(!std::regex_match(filename, sourceFileMatch, desc.counterFileRegex))
 			{
 				return;
 			}
 
-			std::string hwmonCounterLabel;
-			if(!sysfsutils::ReadValue(path + desc.prefix + "/" + desc.labelFilename.first + counterFileMatch[1].str() + desc.labelFilename.second, hwmonCounterLabel))
+			std::string hwmonSourceLabel;
+			if(!sysfsutils::ReadValue(path + desc.prefix + "/" + desc.labelFilename.first + sourceFileMatch[1].str() + desc.labelFilename.second, hwmonSourceLabel))
 			{
 				return;
 			}
 
-			std::smatch hwmonCounterLabelMatch;
-			if(!std::regex_match(hwmonCounterLabel, hwmonCounterLabelMatch, desc.labelRegex))
+			std::smatch hwmonSourceLabelMatch;
+			if(!std::regex_match(hwmonSourceLabel, hwmonSourceLabelMatch, desc.labelRegex))
 			{
 				return;
 			}
 
-			std::string baseLabel = sysfsutils::NormalizeLabel(hwmonCounterLabelMatch[1]);
+			std::string baseLabel = sysfsutils::NormalizeLabel(hwmonSourceLabelMatch[1]);
 
-			if(desc.counters.count(baseLabel) < 1)
-			{
+			auto it = desc.sources.find(baseLabel);
+			if(it == desc.sources.end())
 				return;
-			}
 
-			T counter;
-			counter.path      = path + desc.prefix + "/" + filename;
-			counter.baseLabel = baseLabel;
-			counter.id        = sysfsutils::ParseString<int>(hwmonCounterLabelMatch[2]);
+			T source(it->second);
+			source.path      = path + desc.prefix + "/" + filename;
+			source.baseLabel = baseLabel;
+			source.id        = sysfsutils::ParseString<int>(hwmonSourceLabelMatch[2]);
 
-			if(f(counter, path + desc.prefix, counterFileMatch, hwmonCounterLabelMatch))
+			if(f(source, path + desc.prefix, sourceFileMatch, hwmonSourceLabelMatch))
 			{
-				counters.push_back(counter);
+				sources.push_back(source);
 			}
 		});
 	}
