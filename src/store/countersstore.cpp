@@ -111,6 +111,7 @@ template class meric::CountersStore <PERFEVENT, unsigned long long int, unsigned
 template class meric::CountersStore <PAPI, unsigned long long int, unsigned long long int>;
 template class meric::CountersStore <MSR, uint64_t, uint64_t>;
 template class meric::CountersStore <RAPL, RAPL::CounterValue_t, double>;
+template class meric::CountersStore <HWMON, HWMON::CounterValue_t, double>;
 template class meric::CountersStore <HDEEM, double, double>;
 template class meric::CountersStore <NVML, unsigned long long, double>;
 template class meric::CountersStore <ROCM, uint64_t, double>;

@@ -83,8 +83,6 @@ void HWMON::getCounterValues(CounterRecord_t &record)
 
 void HWMON::initCounters()
 {
-	std::cerr << __PRETTY_FUNCTION__ << std::endl;
-
 	struct SourceDef_t : public CollectSourcesDef_t::SourceDecl_t {
 		SourceDef_t(const CollectSourcesDef_t::SourceDecl_t &decl)
 			: CollectSourcesDef_t::SourceDecl_t(decl)
