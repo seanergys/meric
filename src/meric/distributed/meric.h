@@ -219,8 +219,11 @@ public:
 				case MODE_DAVIDE:
 					DAVIDE::stop(_stopTime);
 					break;
-				case MODE_HWMON_SAMPLES:
+				case MODE_HWMON:
 					HWMON::stop(_stopTime);
+					break;
+				case MODE_RAPL:
+					RAPL::stop(_stopTime);
 					break;
 				default:
 					break;

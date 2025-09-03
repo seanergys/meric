@@ -51,9 +51,9 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore<ROCM, uint64_t, double>());
 	}
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON_SAMPLES) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		HWMON::start(_startTime);
+		_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
 		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
@@ -123,6 +123,10 @@ SharedMeric::SharedMeric()
 		case MODE_RAPL:
 			RAPL::init(Meric::DETAILED);
 			RAPL::start(_startTime, Meric::SAMPLES);
+			break;
+		case MODE_HWMON:
+			HWMON::init(Meric::DETAILED);
+			HWMON::start(_startTime, Meric::SAMPLES);
 			break;
 		case MODE_OCC:
 			OCC::init(Meric::DETAILED);

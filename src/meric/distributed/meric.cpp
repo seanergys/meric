@@ -125,11 +125,13 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, unsigned long long int, double>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, RAPL::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new SamplesAggregateStore<SamplesStore<RAPL>>(_storingProcs, !_MPInodeRank));
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>(!_MPInodeRank));
+			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
+			_storeList.push_back(new SamplesStore<RAPL>(!_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
@@ -168,15 +170,16 @@ DistributedMeric::DistributedMeric()
 		}
 	}
 	
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON_SAMPLES) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		HWMON::start(_startTime);
 		if (Meric::AGGREGATE)
 		{
+			_storeList.push_back(new CountersAggregateStore<CountersStore<HWMON, HWMON::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
 			_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
 		}
 		else
 		{
+			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
 			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
@@ -326,18 +329,29 @@ DistributedMeric::DistributedMeric()
 	{
 		PERFEVENT::init();
 	}
+
 	if (Meric::COUNTERS == "papi")
 	{
 		PAPI::init();
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		RAPL::init(Meric::DETAILED);
+		RAPL::start(_startTime, Meric::SAMPLES);
 	}
-	else if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
+	{
+		HWMON::init(Meric::DETAILED);
+		HWMON::start(_startTime, Meric::SAMPLES);
+	}
+
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
 		OCC::init(Meric::DETAILED);
 	}
+
 	if (Meric::COUNTERS == "msr")
 	{
 		MSR::init();
