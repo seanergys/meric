@@ -151,6 +151,10 @@ void RAPL::initSamplers()
 				return pLeft->fullName < pRight->fullName;
 			});
 		
+		// NOTE: Simulates HDEEM Blade sensor, which doesn't exist in RAPL
+		vrSensorLabel.push_back("");
+		s_samplerById.push_back(nullptr);
+		
 		for(Base::CounterDesc_t *pCounterDesc: counters)
 		{
 			vrSensorLabel.push_back(pCounterDesc->fullName);

@@ -307,10 +307,13 @@ void HWMON::initSamplers()
 		[](const SourceDesc_t *pLeft, const SourceDesc_t *pRight) {
 			return pLeft->fullName < pRight->fullName;
 		});
+
+	// NOTE: Simulates HDEEM Blade sensor, which doesn't exist in HWMON
+	s_sourceById.insert(s_sourceById.begin(), nullptr);
 	
 	for(SourceDesc_t *pSourceDesc: s_sourceById)
 	{
-		vrSensorLabel.push_back(pSourceDesc->fullName);
+		vrSensorLabel.push_back(pSourceDesc ? pSourceDesc->fullName : "");
 	}
 
 	PROBE_NUMBER = s_sourceById.size();
