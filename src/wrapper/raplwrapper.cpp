@@ -1273,7 +1273,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
 		}
 
 		res.first->second.unit         = 1.0 / double(uint64_t(1) << 32);
-		res.first->second.label        = def.label;
+		res.first->second.label        = fullLabel;
 		res.first->second.fullName     = fullName;
 		res.first->second.rangeMax     = std::numeric_limits<uint64_t>::max();
 		res.first->second.isCumulative = (def.flags & CounterDef_t::FLAG_ACCUMULATIVE_BIT) != 0;
