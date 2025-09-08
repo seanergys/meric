@@ -50,6 +50,17 @@ std::chrono::nanoseconds RAPL::s_overflowCheckPeriod(std::chrono::seconds(10));
 std::atomic<bool> 			 			  RAPL::s_sampleStoreEnabled(false);
 AsyncSampler<RAPL::Base::CounterRecord_t> RAPL::s_asyncSampler;
 
+template<typename T>
+double SampleEnergyToPower(const T &sample, uint64_t rangeMax, const T *pPrevSample) {
+	if(!pPrevSample)
+		return 0.0;
+
+	uint64_t value = (sample.value < pPrevSample->value) ? ((rangeMax - pPrevSample->value) + sample.value) : (sample.value - pPrevSample->value);
+	double dt = 1.0f / (double(sample.timestamp - pPrevSample->timestamp) * 1.0e-9);
+
+	return double(value) * dt;
+};
+
 void RAPL::init(bool detailed)
 {
 	getImpl()->init(detailed);
@@ -181,7 +192,7 @@ void RAPL::initSamplers()
 			if(isSampling && s_sampleStoreEnabled)
 			{
 				desc.second.samples.push_back({
-					uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
+					mutils::timeToNanoSec(now),
 					value
 				});
 			}
@@ -223,7 +234,8 @@ void RAPL::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
 	samples.reserve(last - first);
 	for(size_t i = first; i < last; ++i)
 	{
-		samples.push_back(double(desc.samples[i].value) * desc.pCounterDesc->unit);
+		samples.push_back(SampleEnergyToPower(desc.samples[i], desc.pCounterDesc->rangeMax, 
+			i > 0 ? &desc.samples[i - 1] : nullptr) * desc.pCounterDesc->unit);
 	}
 }
 
@@ -258,7 +270,9 @@ std::string RAPL::getData(double startTime, double duration,
 
 		for(auto it = startIt; it != endIt; ++it)
 		{
-			double power = double(it->value) * desc.pCounterDesc->unit;
+			// double power = double(it->value) * desc.pCounterDesc->unit;
+			double power = SampleEnergyToPower(*it, desc.pCounterDesc->rangeMax, 
+				it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.pCounterDesc->unit;
 			energy[i] += power;
 			minWatts[i] = std::min(minWatts[i], power);
 			maxWatts[i] = std::max(maxWatts[i], power);
@@ -1241,7 +1255,8 @@ void RAPL_PERF_EVENT::init(bool detailed)
 			numbers.push_back({ core, coreSuffixLength });
 		}
 
-		const std::string fullName = sysfsutils::MakeCounterName(def.label, def.label, def.unit, numbers);
+		const std::string fullName  = sysfsutils::MakeCounterName(def.label, "", "", numbers);
+		const std::string fullLabel = sysfsutils::MakeCounterName(def.label, "", def.unit, numbers);
 
 		auto res = counterDesc.insert(std::make_pair(fullName, CounterDesc_t()));
 		if(!res.second)
@@ -1368,15 +1383,7 @@ std::string RAPL_PERF_EVENT::summaryCounter()
 
 std::string RAPL_PERF_EVENT::getSummaryCounterName()
 {
-	using namespace PERF_RAPL_COUNTERS;
-
-	auto it = counterDefs.find(summaryCounter());
-	if(it != counterDefs.end())
-	{
-		return it->second.label + " " + it->second.unit;
-	}
-
-	return summaryCounter();
+	return getCounterLabel(summaryCounter());
 }
 
 std::string RAPL_PERF_EVENT::getSourceLabel()
@@ -1386,10 +1393,8 @@ std::string RAPL_PERF_EVENT::getSourceLabel()
 
 std::string RAPL_PERF_EVENT::getCounterLabel(const std::string counter)
 {
-	using namespace PERF_RAPL_COUNTERS;
-
-	auto it = counterDefs.find(counter);
-	if(it != counterDefs.end())
+	auto it = counterDesc.find(counter);
+	if(it != counterDesc.end())
 	{
 		return it->second.label;
 	}

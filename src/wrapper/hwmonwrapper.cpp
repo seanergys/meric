@@ -65,6 +65,17 @@ std::chrono::nanoseconds             HWMON::s_overflowCheckPeriod(std::chrono::s
 std::atomic<bool>		             HWMON::s_sampleStoreEnabled(false);
 AsyncSampler<HWMON::CounterRecord_t> HWMON::s_asyncSampler;
 
+template<typename T>
+double SampleEnergyToPower(const T &sample, uint64_t rangeMax, const T *pPrevSample) {
+	if(!pPrevSample)
+		return 0.0;
+
+	uint64_t value = (sample.value < pPrevSample->value) ? ((rangeMax - pPrevSample->value) + sample.value) : (sample.value - pPrevSample->value);
+	double dt = 1.0f / (double(sample.timestamp - pPrevSample->timestamp) * 1.0e-9);
+
+	return double(value) * dt;
+};
+
 void HWMON::init(bool detailed)
 {
 	initCounters();
@@ -375,7 +386,15 @@ void HWMON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 	samples.reserve(last - first);
 	for(size_t i = first; i < last; ++i)
 	{
-		samples.push_back(double(desc.samples[i].value) * desc.unit);
+		if(desc.type == SourceDesc_t::TYPE_ENERGY)
+		{
+			samples.push_back(SampleEnergyToPower(desc.samples[i], desc.rangeMax, 
+				i > 0 ? &desc.samples[i - 1] : nullptr) * desc.unit);
+		}
+		else
+		{
+			samples.push_back(double(desc.samples[i].value) * desc.unit);
+		}
 	}
 }
 
@@ -410,7 +429,14 @@ std::string HWMON::getData(double startTime, double duration,
 		
 		for(auto it = startIt; it != endIt; ++it)
 		{
-			double power = (double(it->value) * 1.0e-6);
+			double power = (double(it->value) * desc.unit);
+
+			if(desc.type == SourceDesc_t::TYPE_ENERGY)
+			{
+				power = SampleEnergyToPower(*it, desc.rangeMax, 
+					it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.unit;
+			}
+
 			energy[i]  += power;
 			minWatts[i] = std::min(minWatts[i], power);
 			maxWatts[i] = std::max(maxWatts[i], power);
