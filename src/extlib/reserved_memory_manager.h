@@ -44,6 +44,7 @@
 #if VERBOSE //|| 1
 #define DEBUG_LOG std::cout
 #else
+
 // An object that ignores everything piped into it
 struct NullBuffer : std::streambuf
 {
@@ -85,6 +86,9 @@ public:
         uint64_t *counter_value = nullptr;    // [--------|--------|--------|--------|--------...] [--------|--------|--------|--------|--------...]
         double *energy_per_counter = nullptr; // [--------|--------|--------|--------|--------...] [--------|--------|--------|--------|--------...]
         size_t arr_size = 0;
+        size_t sizeof_energy_per_counter = 0; // total size for all timestamps in this page
+        size_t sizeof_counter_value = 0;      // total size for all timestamps in this page
+        size_t sizeof_counter_name = 0;       // total size for all timestamps in this page
     };
     static bool is_enabled;
     static size_t reserved_memory_size;
@@ -123,7 +127,7 @@ private:
     static bool should_remove_page(uint64_t page);
     static void remove_page(uint64_t page);
     static void clear_timestamp(ExtlibEnergyTimeStamp *timestamp);
-    static uint64_t getset_new_pageid(uint64_t page = -1);
+    static uint64_t getset_new_pageid(uint64_t page = -1); // it will wrap around.
 };
 
 #endif // RESERVED_MEMORY_MANAGER_H

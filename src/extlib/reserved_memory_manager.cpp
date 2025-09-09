@@ -48,6 +48,10 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
         size_t total_elements = map.arr_size * ReservedMemoryManager::reserved_memory_size;
 
         // Allocate flat arrays for all timestamps
+        map.sizeof_energy_per_counter = sizeof(double) * total_elements;
+        map.sizeof_counter_value = sizeof(uint64_t) * total_elements;
+        map.sizeof_counter_name = sizeof(char *) * map.arr_size;
+
         map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));
         map.energy_per_counter = (double *)calloc(total_elements, sizeof(double));
         map.counter_name = (char **)calloc(map.arr_size, sizeof(char *));
@@ -294,7 +298,6 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
     // if middle page is removed, matadata.size() would collide with existing page ids.
     // So we use a static counter to ensure unique page ids.
     size_t new_page_id = getset_new_pageid();
-    DEBUG_LOG << "Creating new page-id: " << new_page_id << "\n";
 
     auto &new_vec = metadata[new_page_id];
     new_vec.reserve(ReservedMemoryManager::reserved_memory_size);
@@ -312,6 +315,10 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::create_new_page()
         map.arr_size = domain_map.at(0).arr_size; // get the first page's arr_size
         size_t total_elements = map.arr_size * ReservedMemoryManager::reserved_memory_size;
         DEBUG_LOG << "total_elements: " << total_elements << " for domain_id: " << domain_id << "\n";
+
+        map.sizeof_energy_per_counter = sizeof(double) * total_elements;
+        map.sizeof_counter_value = sizeof(uint64_t) * total_elements;
+        map.sizeof_counter_name = sizeof(char *) * map.arr_size;
 
         map.counter_value = (uint64_t *)calloc(total_elements, sizeof(uint64_t));
         map.energy_per_counter = (double *)calloc(total_elements, sizeof(double));

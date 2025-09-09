@@ -15,7 +15,7 @@
 
 TEST(MERICExtAPITest, ExistingEnergyDomainsSetUpCorrectly)
 {
-    ExtlibEnergy energy_domains = {0};
+    ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
@@ -70,7 +70,7 @@ TEST(MERICExtAPITest, ExistingDomainsReturnsSomeData)
 
 TEST(MERICExtAPITest, CalcReturnsSomeData)
 {
-    ExtlibEnergy energy_domains = {0};
+    ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
@@ -83,16 +83,21 @@ TEST(MERICExtAPITest, CalcReturnsSomeData)
     do_work(5);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
+
     extlib_print_energy_timestamp(ts1, -1);
     extlib_print_energy_timestamp(ts2, -1);
     extlib_print_energy_timestamp(result, -1);
 
-    // TODO:: check if result has data.
+    // TODO: check if ts1, ts2 and result has data.
 
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(result);
     extlib_close(&energy_domains);
 }
 
 TEST(MERICExtAPITest, MultipleInitCloseHasNoSideEffect)
 {
-    // Test body to be implemented
+    // TODO: call init & close several times, each time check if domains, state variables (calculation functions, close functions etc.) are set correctly.
+    // do it for default usage, not for reserved_memory_usage.
 }
