@@ -54,8 +54,8 @@ typedef struct ExtlibEnergy
     };
     unsigned int value;
 
-    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, char ***, size_t, size_t, size_t); // Function pointers to energy measurements for enabled domains
-    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                                    // Function pointer to close energy measurement settings for enabled domains
+    void (*energyMeasurementFns[EXTLIB_NUM_DOMAINS])(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t); // Function pointers to energy measurements for enabled domains
+    void (*closeFns[EXTLIB_NUM_DOMAINS])();                                                                               // Function pointer to close energy measurement settings for enabled domains
     bool use_reserved_memory;
     size_t reserved_memory_size;
 

@@ -137,7 +137,7 @@ ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
 
 void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestamp)
 {
-    if (!ReservedMemoryManager::is_enabled || !timestamp)
+    if (OPT_UNLIKELY(!timestamp))
         return;
 
     // Clear domain data

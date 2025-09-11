@@ -32,8 +32,8 @@
 */
 struct ExtlibEnergyTimeStamp *newEnergyTimeStamp();
 static const char *printDomainName(unsigned int value);
-template <typename Tmode>
-static uint64_t *measureEnergy(size_t *size, double timeNow = 0.0);
+template <typename Tmode, typename TmapVal>
+static void measureEnergy(size_t *size, uint64_t **counter_values, double **energy_per_counter, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index);
 template <typename Tmode>
 static void close();
 template <typename Tmode>
@@ -42,7 +42,7 @@ static void printArray(const char *name, Tmode *arr, size_t size, size_t print_l
 /* --------------------------------------------------------------- */
 
 template <typename Tmode, typename TmapVal>
-static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index)
+static void measureEnergy(size_t *size, uint64_t **counter_values, double **energy_per_counter, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index)
 {
     // std::cout << "\tmeasureEnergy called for domain_index: " << domain_index << " page: " << page << "\n";
     std::map<std::string, TmapVal> energyNow;
@@ -73,7 +73,8 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
         // std::cout << "offset is ->" << offset << "\n";
 
         // get empty space adresses
-        *values = &map->counter_value[offset];
+        *counter_values = &map->counter_value[offset];
+        *energy_per_counter = &map->energy_per_counter[offset];
         *labels = map->counter_name;
 
         // fill with data, data here is the counter values.
@@ -83,17 +84,17 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
             if (i >= arr_size)
                 break;
 
-            (*values)[i] = static_cast<uint64_t>(entry.second);
+            (*counter_values)[i] = static_cast<uint64_t>(entry.second);
             ++i;
         }
     }
     else
     {
         // Dynamic allocation path
-        *values = (uint64_t *)malloc(*size * sizeof(uint64_t));
+        *counter_values = (uint64_t *)malloc(*size * sizeof(uint64_t));
         *labels = (char **)malloc(*size * sizeof(char *));
 
-        if (!(*values) || !(*labels))
+        if (!(*counter_values) || !(*labels))
         {
             std::cerr << "[ERROR]: Memory allocation failed in dynamic mode!\n";
             return;
@@ -102,7 +103,7 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
         size_t i = 0;
         for (const auto &entry : energyNow)
         {
-            (*values)[i] = static_cast<uint64_t>(entry.second);
+            (*counter_values)[i] = static_cast<uint64_t>(entry.second);
             (*labels)[i] = (char *)malloc(EXTLIB_MAX_DOMAIN_NAME_LENGTH);
             if ((*labels)[i])
             {
@@ -115,12 +116,12 @@ static void measureEnergy(size_t *size, uint64_t **values, char ***labels, size_
 }
 
 // Deliberate template explosion for explicit domains
-template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::RAPL, unsigned long long int>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::HWMON, unsigned long long int>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::RAPL, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::HWMON, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 
 template <typename Tmode>
 static void close()
@@ -370,6 +371,7 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
                 enabled_domains->energyMeasurementFns[domain_index](
                     &timestamp->domain_data[domain_index].arr_size,
                     &timestamp->domain_data[domain_index].counter_value,
+                    &timestamp->domain_data[domain_index].energy_per_counter,
                     &timestamp->domain_data[domain_index].counter_name,
                     timestamp->reserved_memory_page,
                     timestamp->reserved_memory_index,

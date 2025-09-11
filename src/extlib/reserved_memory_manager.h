@@ -41,6 +41,7 @@
 #define EXTLIB_MAX_ALLOWED_EMPTY_PAGES 1 // only allow 1 fully empty page.
 #endif
 
+// #define EXTLIB_TESTING 1
 #if VERBOSE //|| 1
 #define DEBUG_LOG std::cout
 #else
