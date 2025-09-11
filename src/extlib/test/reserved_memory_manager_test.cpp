@@ -362,12 +362,28 @@ TEST(MemoryManagerTest, DeallocateClearsCorrespondingMemorySlotAndMarksAsEmpty)
 
 TEST(MemoryManagerTest, PageIsRemovedWhenConditionIsMet)
 {
-    // Test body to be implemented
+
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    // TODO: Check the should_remove_page logic to see how it works,and create that conditions and make sure page is removed.
+    // perform 2 energy readings (in total 6 timestamps you have), then free the first ones in page0 then remove ones in page1.
+    // you need to see that page1 is removed and page0 is not removed. (by default we never remove it unless it is close sequence.)
+
+    extlib_close(&energy_domains);
 }
 
 TEST(MemoryManagerTest, PageIsNotRemovedIfConditionNotMet)
 {
-    // Test body to be implemented
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    // TODO: Similar to the previous one except this time you remove all entries on page 1 and, leave page 0 as-is. and make sure page 1 is not removed.
+    extlib_close(&energy_domains);
 }
 
 TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
@@ -413,20 +429,15 @@ TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
 // =============================================================================
 // State Consistency Tests
 // =============================================================================
-
-TEST(MemoryManagerTest, MetadataConsistencyAfterPageRemoval)
+TEST(MemoryManagerTest, EmptyPageConsistency)
 {
-    // Test body to be implemented
-}
-
-TEST(MemoryManagerTest, EntryLengthTrackingAccuracyAcrossOperations)
-{
-    // Test body to be implemented
-}
-
-TEST(MemoryManagerTest, EmptyPageSetConsistency)
-{
-    // Test body to be implemented
+    // TODO: After removing a page, none of the fields should have a page id that was removed.
+    /*
+        static std::unordered_map<uint64_t, std::unordered_map<uint64_t, DomainMemoryPool>> domain_memory_pool; // domain_id -> page -> memory_map
+        static std::unordered_map<uint64_t, std::vector<ExtlibEnergyTimeStamp>> metadata;                       // page -> timestamp metadata
+        static std::unordered_map<uint64_t, uint64_t> entry_length;                                             // page -> num of entries
+        static std::unordered_set<uint64_t> empty_page_ids;                                                     // List of empty page IDs for quick access, note that page 0 is NOT added.
+    */
 }
 
 TEST(MemoryManagerTest, CounterNameSharingAcrossPagesInSameDomain)
@@ -469,9 +480,4 @@ TEST(MemoryManagerTest, CounterNameSharingAcrossPagesInSameDomain)
         }
     }
     extlib_close(&energy_domains);
-}
-
-TEST(MemoryManagerTest, OffsetCalculationCorrectnessForDifferentArraySizes)
-{
-    // Test body to be implemented
 }
