@@ -131,7 +131,7 @@ DistributedMeric::DistributedMeric()
 		else
 		{
 			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<RAPL>(!_MPInodeRank));
+			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())

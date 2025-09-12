@@ -382,10 +382,10 @@ void RAPL_MSR::init(bool detailed)
 		switch(domain)
 		{
 		case CounterDef_t::DOMAIN_PER_SOCKET:
-			return Environment::mapThreadsToCore[counterIdx][0];
+			return Environment::mapCoresToSocket[counterIdx][0];
 			break;
 		case CounterDef_t::DOMAIN_PER_CORE:
-			return Environment::mapCoresToSocket[counterIdx][0];
+			return Environment::mapThreadsToCore[counterIdx][0];
 			break;
 		default:
 			return counterIdx;
@@ -577,11 +577,14 @@ double RAPL_MSR::getCounterUnit(const std::string &name)
 {
 	using namespace MSR_RAPL_COUNTERS_NS;
 
+#ifdef _INTEL_
 	if(name == RAPL_RAM_ENERGY)
 	{
 		return 1.0 / pow(2, 16);
 	}
-	else if(counterLabel.count(name) > 0)
+#endif // _INTEL_
+
+	if(counterLabel.count(name) > 0)
 	{
 		uint64_t MSR_RAPL_POWER_UNIT_bits = 0;
 		read_msr(0, MSR_RAPL_POWER_UNIT, &MSR_RAPL_POWER_UNIT_bits);
@@ -1383,7 +1386,15 @@ std::string RAPL_PERF_EVENT::summaryCounter()
 
 std::string RAPL_PERF_EVENT::getSummaryCounterName()
 {
-	return getCounterLabel(summaryCounter());
+	using namespace PERF_RAPL_COUNTERS;
+
+	auto it = counterDefs.find(summaryCounter());
+	if(it != counterDefs.end())
+	{
+		return it->second.label + " " + it->second.unit;
+	}
+	
+	return summaryCounter();
 }
 
 std::string RAPL_PERF_EVENT::getSourceLabel()
