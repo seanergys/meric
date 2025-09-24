@@ -36,7 +36,7 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
     ReservedMemoryManager::entry_length[page] = 0;
     empty_page_ids.insert(page);
 
-    std::cout << "[INFO]: Using reserved memory for " << ReservedMemoryManager::metadata[page].capacity() << " elements. [OK]" << std::endl;
+    MERIC_INFO << "[INFO]: Using reserved memory for " << ReservedMemoryManager::metadata[page].capacity() << " elements. [OK]" << std::endl;
     // Initialize domain data based on template
     for (size_t domain_index = 0; domain_index < EXTLIB_NUM_DOMAINS; ++domain_index)
     {

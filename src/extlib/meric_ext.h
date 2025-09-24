@@ -84,17 +84,23 @@ typedef struct ExtlibEnergy
 #define EXTERNC
 #endif
 
-#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                                       \
-    do                                                                                          \
-    {                                                                                           \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);  \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);  \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);  \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); \
-    } while (0)
+#ifdef __cplusplus
+#define EXTLIB_ENERGY_DOMAIN(domain) ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_##domain
+#else
+#define EXTLIB_ENERGY_DOMAIN(domain) EXTLIB_ENERGY_DOMAIN_##domain
+#endif
 
+// The main macro now uses the helper macro
+#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                                   \
+    do                                                                                      \
+    {                                                                                       \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(A64FX));          \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(RAPL));           \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(NVML));           \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HDEEM));          \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(ROCM));           \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HWMON));          \
+    } while (0)
 /**
  *
  * @param enabled_domains Object representing the enabled domains, used to initialize energy readings for the selected domains.

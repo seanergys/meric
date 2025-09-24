@@ -44,15 +44,15 @@ static void printArray(const char *name, Tmode *arr, size_t size, size_t print_l
 template <typename Tmode, typename TmapVal>
 static void measureEnergy(size_t *size, uint64_t **counter_values, double **energy_per_counter, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index)
 {
-    // std::cout << "\tmeasureEnergy called for domain_index: " << domain_index << " page: " << page << "\n";
+    // MERIC_INFO << "\tmeasureEnergy called for domain_index: " << domain_index << " page: " << page << "\n";
     std::map<std::string, TmapVal> energyNow;
     Tmode::getCounterValues(energyNow);
     *size = energyNow.size();
-    // std::cout << "" << "\tsize of energyNow: " << *size << "\n";
+    // MERIC_INFO << "" << "\tsize of energyNow: " << *size << "\n";
 
     if (ReservedMemoryManager::is_enabled)
     {
-        // std::cout << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
+        // MERIC_INFO << "\tMap is recieved at page: " << page << " domain_index: " << domain_index << "\n";
         ReservedMemoryManager::DomainMemoryPool *map = ReservedMemoryManager::get_domain_map(domain_index, page);
         if (map == nullptr)
         {
@@ -70,7 +70,7 @@ static void measureEnergy(size_t *size, uint64_t **counter_values, double **ener
         }
 
         size_t offset = reserved_memory_index * arr_size;
-        // std::cout << "offset is ->" << offset << "\n";
+        // MERIC_INFO << "offset is ->" << offset << "\n";
 
         // get empty space adresses
         *counter_values = &map->counter_value[offset];
@@ -145,33 +145,33 @@ void close<meric::NVML>()
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
 {
-    std::cout << "| " << std::setw(15) << std::left << name << " (size: " << size << "): ";
+    MERIC_INFO << "| " << std::setw(15) << std::left << name << " (size: " << size << "): ";
 
     if (!arr || size == 0)
     {
-        std::cout << "NULL or empty array" << std::endl;
+        MERIC_INFO << "NULL or empty array" << std::endl;
         return;
     }
 
-    std::cout << "[";
+    MERIC_INFO << "[";
 
     print_limit = (print_limit == static_cast<size_t>(-1)) ? size : print_limit;
     for (size_t i = 0; i < size && i < print_limit; ++i)
     {
-        std::cout << arr[i];
+        MERIC_INFO << arr[i];
 
         if (i < size - 1 && i < print_limit - 1)
         {
-            std::cout << ", ";
+            MERIC_INFO << ", ";
         }
     }
 
     if (size > print_limit)
     {
-        std::cout << ", ..."; // Indicate truncated output
+        MERIC_INFO << ", ..."; // Indicate truncated output
     }
 
-    std::cout << "]" << std::endl;
+    MERIC_INFO << "]" << std::endl;
 }
 
 template static void printArray<double>(const char *, double *, size_t, size_t);
@@ -202,7 +202,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::A64FX>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
 #else
         std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -217,7 +217,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
 #else
         std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
@@ -229,11 +229,11 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         nvmlInit();
         meric::NVML::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
-        // std::cout << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
+        // MERIC_INFO << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
 
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << " is init [OK]" << std::endl;
 #else
         std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
@@ -247,7 +247,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM, uint64_t>;
         enabled_domains->closeFns[index] = close<meric::ROCM>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << " is init [OK]" << std::endl;
 #else
         std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
@@ -261,7 +261,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
         enabled_domains->closeFns[index] = close<meric::HDEEM>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
 #else
         std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
@@ -274,7 +274,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::HWMON>;
-        std::cout << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
     }
 
     // This executes only once.
@@ -292,11 +292,11 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         // IMPORTANT: DO NOT CHANGE THIS!
         // I set this at the end, since I need a normal extlib_read_energy_measurements() read at the beginning (no static_map available at that time.) I first need the numbers.
         ReservedMemoryManager::is_enabled = true;
-        // std::cout << "extlib_init set use_reserved_memory:" << use_reserved_memory << "\n";
+        // MERIC_INFO << "extlib_init set use_reserved_memory:" << use_reserved_memory << "\n";
     }
     else
     {
-        std::cout << "[INFO]: Using dynamic memory. [OK]" << std::endl;
+        MERIC_INFO << "[INFO]: Using dynamic memory. [OK]" << std::endl;
     }
 }
 
@@ -336,7 +336,7 @@ static const char *printDomainName(unsigned int value)
 
 void extlib_close(ExtlibEnergy *enabled_domains)
 {
-    // std::cout << "\tclosing sequence\n";
+    // MERIC_INFO << "\tclosing sequence\n";
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
@@ -346,7 +346,7 @@ void extlib_close(ExtlibEnergy *enabled_domains)
             if (enabled_domains->closeFns[domain_id])
             {
                 enabled_domains->closeFns[domain_id]();
-                std::cout << "[INFO]: Domain " << printDomainName(domain) << " is closed [OK]" << std::endl;
+                MERIC_INFO << "[INFO]: Domain " << printDomainName(domain) << " is closed [OK]" << std::endl;
             }
         }
     }
@@ -377,10 +377,10 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
                     timestamp->reserved_memory_index,
                     domain_index);
 
-                std::cout << "[INFO]: Energy is read from Domain " << printDomainName(timestamp->domain_data[domain_index].domain_id) << " [OK]" << std::endl;
+                MERIC_INFO << "[INFO]: Energy is read from Domain " << printDomainName(timestamp->domain_data[domain_index].domain_id) << " [OK]" << std::endl;
             }
             else
-                std::cout << "[INFO]: ExtlibEnergy is NOT initialised correctly! Domain " << printDomainName(timestamp->domain_data[domain_index].domain_id) << "'s energyMeasurementFns is NOT set!" << std::endl;
+                MERIC_INFO << "[INFO]: ExtlibEnergy is NOT initialised correctly! Domain " << printDomainName(timestamp->domain_data[domain_index].domain_id) << "'s energyMeasurementFns is NOT set!" << std::endl;
         }
     }
     return timestamp;
@@ -426,7 +426,7 @@ void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size
         return;
     }
 
-    std::cout << "------- ExtlibEnergyTimeStamp (id: " << std::fixed << std::setprecision(4) << timestamp->id << ") -------" << std::endl;
+    MERIC_INFO << "------- ExtlibEnergyTimeStamp (id: " << std::fixed << std::setprecision(4) << timestamp->id << ") -------" << std::endl;
 
     for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
@@ -441,11 +441,11 @@ void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size
         printArray(counter_value_label.c_str(), timestamp->domain_data[i].counter_value, timestamp->domain_data[i].arr_size, print_limit);
         printArray(energy_per_counter_label.c_str(), timestamp->domain_data[i].energy_per_counter, timestamp->domain_data[i].arr_size, print_limit);
 
-        std::cout << "| " << domain_name << "_total_energy: " << timestamp->domain_data[i].energy_total << std::endl;
-        std::cout << "|" << std::endl;
+        MERIC_INFO << "| " << domain_name << "_total_energy: " << timestamp->domain_data[i].energy_total << std::endl;
+        MERIC_INFO << "|" << std::endl;
     }
-    std::cout << "| Total_energy consumption: " << timestamp->energy_total << " [J]" << std::endl;
-    std::cout << "-----------------------------------" << std::endl;
+    MERIC_INFO << "| Total_energy consumption: " << timestamp->energy_total << " [J]" << std::endl;
+    MERIC_INFO << "-----------------------------------" << std::endl;
 }
 
 void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
@@ -527,24 +527,24 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
         {
             result->domain_data[domain_iter].arr_size = begin->domain_data[domain_iter].arr_size;
             result->domain_data[domain_iter].domain_id = begin->domain_data[domain_iter].domain_id;
-            // std::cout << "\tarr_size: " << result->domain_data[domain_iter].arr_size << " domain_id:" << (int)result->domain_data[domain_iter].domain_id << "\n";
+            // MERIC_INFO << "\tarr_size: " << result->domain_data[domain_iter].arr_size << " domain_id:" << (int)result->domain_data[domain_iter].domain_id << "\n";
 
             if (ReservedMemoryManager::is_enabled)
             {
-                // std::cout << "\textlib_calc_energy_consumption use_reserved_memory\n";
+                // MERIC_INFO << "\textlib_calc_energy_consumption use_reserved_memory\n";
                 ReservedMemoryManager::DomainMemoryPool *map = ReservedMemoryManager::get_domain_map(domain_iter, result->reserved_memory_page); // energyts_domain_data[domain_iter][result->reserved_memory_page];
                 if (map == nullptr)
                     continue;
 
                 size_t offset = map->arr_size * result->reserved_memory_index;
-                // std::cout << "\toffset:" << offset << " -- map.arr_size:" << map.arr_size << " -- " << "static memory index:" << result->reserved_memory_index << "\n";
+                // MERIC_INFO << "\toffset:" << offset << " -- map.arr_size:" << map.arr_size << " -- " << "static memory index:" << result->reserved_memory_index << "\n";
                 result->domain_data[domain_iter].counter_name = map->counter_name; // this is okay, all will point to the same memory location.
                 result->domain_data[domain_iter].counter_value = &map->counter_value[offset];
                 result->domain_data[domain_iter].energy_per_counter = &map->energy_per_counter[offset];
             }
             else
             {
-                // std::cout << "\textlib_calc_energy_consumption use_dynamic_memory\n";
+                // MERIC_INFO << "\textlib_calc_energy_consumption use_dynamic_memory\n";
                 result->domain_data[domain_iter].energy_per_counter = (double *)malloc(begin->domain_data[domain_iter].arr_size * sizeof(double));
                 if (OPT_UNLIKELY(result->domain_data[domain_iter].energy_per_counter == NULL))
                 {

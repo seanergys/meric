@@ -42,7 +42,7 @@
 #endif
 
 // #define EXTLIB_TESTING 1
-#if VERBOSE //|| 1
+#if EXTLIB_TESTING //|| 1
 #define DEBUG_LOG std::cout
 #else
 
