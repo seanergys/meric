@@ -400,7 +400,11 @@ void RAPL_MSR::init(bool detailed)
 	counterDefs.push_back({ RAPL_RAM_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
 #elif defined(_AMD_)
 	counterDefs.push_back({ RAPL_PCKG_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
-	counterDefs.push_back({ RAPL_CORE_ENERGY, CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET });
+
+	if(detailed)
+	{
+		counterDefs.push_back({ RAPL_CORE_ENERGY, CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET });
+	}
 #endif // Platform
 
 	for(const auto &counterDef: counterDefs)
@@ -688,7 +692,11 @@ void RAPL_GEOPM::init(bool detailed)
 	counterDefs.push_back({ RAPL_RAM_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
 #elif defined(_AMD_)
 	counterDefs.push_back({ RAPL_PCKG_ENERGY, CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, Environment::SOCKETS_PER_NODE });
-	counterDefs.push_back({ RAPL_CORE_ENERGY, CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET });
+
+	if(detailed)
+	{
+		counterDefs.push_back({ RAPL_CORE_ENERGY, CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, Environment::SOCKETS_PER_NODE * Environment::CORES_PER_SOCKET });
+	}
 #endif // Platform
 
 	for(const auto &counterDef: counterDefs)
@@ -936,7 +944,11 @@ void RAPL_SYSFS::init(bool detailed)
 	names.push_back(RAPL_RAM_ENERGY);
 #elif defined _AMD_
 	names.push_back(RAPL_PCKG_ENERGY);
-	names.push_back(RAPL_PCKG_CORES_ENERGY);
+
+	if(detailed)
+	{
+		names.push_back(RAPL_PCKG_CORES_ENERGY);
+	}
 #endif
 
 	const std::string sysfsRAPLRoot("/sys/class/powercap/intel-rapl");
@@ -1313,6 +1325,9 @@ void RAPL_PERF_EVENT::init(bool detailed)
 		{
 			continue;
 		}
+
+		if(!detailed && ((counterDef.second.flags & CounterDef_t::FLAG_DETAILED_ONLY_BIT) != 0))
+			continue;
 
 		switch(def.domain)
 		{

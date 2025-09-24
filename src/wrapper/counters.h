@@ -298,8 +298,9 @@ struct CounterDef_t {
 	};
 
 	enum Flags_t {
-		FLAG_NONE_BIT         = 0,
-		FLAG_ACCUMULATIVE_BIT = 1 << 0
+		FLAG_NONE_BIT          = 0,
+		FLAG_ACCUMULATIVE_BIT  = 1 << 0,
+		FLAG_DETAILED_ONLY_BIT = 1 << 1
 	};
 
 	std::vector<std::string> name;
@@ -320,7 +321,7 @@ static std::map<const std::string, CounterDef_t> counterDefs = {
 	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #else // _AMD_
 	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
-	{ "CORE", { { "power_core", "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+	{ "CORE", { { "power_core", "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_DETAILED_ONLY_BIT, 0, 0x0 }},
 	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #endif
 };
