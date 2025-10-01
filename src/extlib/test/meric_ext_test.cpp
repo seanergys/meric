@@ -12,6 +12,23 @@
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
+TEST(MERICExtAPITest, ReservedMemoryIsNotEnabledByDefault)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    EXPECT_FALSE(energy_domains.use_reserved_memory);
+    EXPECT_EQ(energy_domains.reserved_memory_size, 0);
+
+    extlib_close(&energy_domains);
+}
+
 TEST(MERICExtAPITest, ExistingEnergyDomainsStayEnabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
@@ -92,6 +109,80 @@ TEST(MERICExtAPITest, NonExistingEnergyDomainsAreDisabledAfterInit)
     extlib_close(&energy_domains);
 }
 
+TEST(MERICExtAPITest, ExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = printEnergyDomainName(domain);
+            EXPECT_NE(energy_domains.energyMeasurementFns[domain_idx], nullptr)
+                << domain_name << " energy domain exists but its energy measurement function is not set.";
+            EXPECT_NE(energy_domains.closeFns[domain_idx], nullptr);
+                << domain_name << " energy domain exists but its close function is not set.";
+        }
+    }
+
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, NonExistingEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
+            EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
+        }
+    }
+
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, ExtlibEnergyStructIsResetAfterClose)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    extlib_close(&energy_domains);
+
+    EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION);
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
+        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
+    }
+    EXPECT_FALSE(energy_domains.use_reserved_memory);
+    EXPECT_EQ(energy_domains.reserved_memory_size, 0);
+}
+
 TEST(MERICExtAPITest, ExistingEnergyDomainsReturnSomeData)
 {
     ExtlibEnergy energy_domains = {};
@@ -165,8 +256,8 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
-
     extlib_init(&energy_domains, true);
+
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
     do_work(5);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
@@ -176,7 +267,20 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     extlib_print_energy_timestamp(ts2, -1);
     extlib_print_energy_timestamp(result, -1);
 
-    // TODO: check if ts1, ts2 and result has data.
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            EXPECT_GT(result->domain_data[domain_idx].arr_size, 0);
+            EXPECT_NE(result->domain_data[domain_idx].counter_name, nullptr);
+            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr);
+            EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr);
+        }
+    }
+    EXPECT_GT(result->energy_total, 0.0);
+    EXPECT_EQ(result->reserved_memory_page, 0);
+    EXPECT_EQ(result->reserved_memory_index, 0);
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);
@@ -184,8 +288,39 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, MultipleInitCloseHasNoSideEffect)
+TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDomains)
 {
-    // TODO: call init & close several times, each time check if domains, state variables (calculation functions, close functions etc.) are set correctly.
-    // do it for default usage, not for reserved_memory_usage.
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    do_work(5);
+    auto *ts2 = extlib_read_energy_measurements(&energy_domains);
+    auto *result = extlib_calc_energy_consumption(ts1, ts2);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            EXPECT_GT(result->domain_data[domain_idx].arr_size, 0);
+            EXPECT_NE(result->domain_data[domain_idx].counter_name, nullptr);
+            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr);
+            EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr);
+        }
+    }
+    EXPECT_GT(result->energy_total, 0.0);
+    EXPECT_EQ(result->reserved_memory_page, 0);
+    EXPECT_EQ(result->reserved_memory_index, 0);
+
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(result);
+    extlib_close(&energy_domains);
 }
