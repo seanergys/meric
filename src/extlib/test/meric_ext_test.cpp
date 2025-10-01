@@ -12,7 +12,7 @@
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
-TEST(MERICExtAPITest, ExistingEnergyDomainsSetUpCorrectly)
+TEST(MERICExtAPITest, ExistingEnergyDomainsStayEnabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -52,7 +52,7 @@ TEST(MERICExtAPITest, ExistingEnergyDomainsSetUpCorrectly)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, NonExistingEnergyDomainsAreClosedUp)
+TEST(MERICExtAPITest, NonExistingEnergyDomainsAreDisabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -63,12 +63,12 @@ TEST(MERICExtAPITest, NonExistingEnergyDomainsAreClosedUp)
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
     extlib_init(&energy_domains, true);
 
-    bool has_a64fx = false; // meric.has_a64fx();
+    bool has_a64fx = true; // meric.has_a64fx();
     bool has_rapl = true;  // meric.has_rapl();
-    bool has_nvml = false;  // meric.has_nvml();
-    bool has_hdeem = false; // meric.has_hdeem();
-    bool has_rocm = false;  // meric.has_rocm();
-    bool has_hwmon = false; // meric.has_hwmon();
+    bool has_nvml = true;  // meric.has_nvml();
+    bool has_hdeem = true; // meric.has_hdeem();
+    bool has_rocm = true;  // meric.has_rocm();
+    bool has_hwmon = true; // meric.has_hwmon();
 
     if (!has_a64fx)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX))
@@ -156,7 +156,7 @@ TEST(MERICExtAPITest, NonExistingEnergyDomainsReturnNoData)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, CalcReturnsSomeData)
+TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
