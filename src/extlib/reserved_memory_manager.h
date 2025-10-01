@@ -41,21 +41,6 @@
 #define EXTLIB_MAX_ALLOWED_EMPTY_PAGES 1 // only allow 1 fully empty page.
 #endif
 
-// #define EXTLIB_TESTING 1
-#if EXTLIB_TESTING //|| 1
-#define DEBUG_LOG std::cout
-#else
-
-// An object that ignores everything piped into it
-struct NullBuffer : std::streambuf
-{
-    int overflow(int c) override { return c; }
-};
-static NullBuffer null_buffer;
-static std::ostream null_stream(&null_buffer);
-#define DEBUG_LOG null_stream
-#endif
-
 /*
     --------- ReservedMemoryManager Class ---------
 
@@ -94,7 +79,7 @@ public:
     static bool is_enabled;
     static size_t reserved_memory_size;
 
-#if EXTLIB_TESTING
+#if VERBOSE
 public:
 #else
 private:
@@ -112,7 +97,7 @@ public:
     static void shrink_to_fit();
     static void close();
 
-#if EXTLIB_TESTING
+#ifdef VERBOSE
 public:
 #else
 private:
