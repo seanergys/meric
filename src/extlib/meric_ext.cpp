@@ -182,7 +182,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 {
     if (OPT_UNLIKELY(EXTLIB_ENERGY_NO_SELECTION(*enabled_domains)))
     {
-        std::cerr << "[ERROR]: No Domain Selected!" << std::endl;
+        std::cerr << "[WARN]: No Domain Selected!" << std::endl;
         return;
     }
 
@@ -204,7 +204,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::A64FX>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
 #else
-        std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << ". It is selected but does NOT exists on this machine!" << std::endl;
+        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
 #endif
     }
@@ -219,7 +219,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::RAPL>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
 #else
-        std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << ". It is selected but does NOT exists on this machine!" << std::endl;
+        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
 #endif
     }
@@ -235,7 +235,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::NVML>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << " is init [OK]" << std::endl;
 #else
-        std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << ". It is selected but does NOT exists on this machine!" << std::endl;
+        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
 #endif
     }
@@ -249,7 +249,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::ROCM>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << " is init [OK]" << std::endl;
 #else
-        std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << ". It is selected but does NOT exists on this machine!" << std::endl;
+        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
 
 #endif
@@ -263,7 +263,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->closeFns[index] = close<meric::HDEEM>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
 #else
-        std::cerr << "[ERROR]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << ". It is selected but does NOT exists on this machine!" << std::endl;
+        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
 #endif
     }
