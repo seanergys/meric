@@ -73,7 +73,7 @@ If scaling driver allows to specify `userspace` scaling governor (`/sys/devices/
 
 ##### AMD #####
 
-- AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
+- AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://www.amd.com/en/developer/e-sms.html) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
 - AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
 
 ##### Any (other) CPU with userspace scaling driver #####
