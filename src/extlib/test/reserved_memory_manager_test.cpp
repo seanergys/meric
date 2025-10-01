@@ -6,8 +6,9 @@
 // License: BSD-3
 // =============================================================================
 
+#include <meric_ext.h>
 #include <gtest/gtest.h>
-#include "../meric_ext.h"
+
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
