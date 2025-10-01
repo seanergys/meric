@@ -145,33 +145,33 @@ void close<meric::NVML>()
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
 {
-    MERIC_INFO << "| " << std::setw(15) << std::left << name << " (size: " << size << "): ";
+    std::cout << "| " << std::setw(15) << std::left << name << " (size: " << size << "): ";
 
     if (!arr || size == 0)
     {
-        MERIC_INFO << "NULL or empty array" << std::endl;
+        std::cout << "NULL or empty array" << std::endl;
         return;
     }
 
-    MERIC_INFO << "[";
+    std::cout << "[";
 
     print_limit = (print_limit == static_cast<size_t>(-1)) ? size : print_limit;
     for (size_t i = 0; i < size && i < print_limit; ++i)
     {
-        MERIC_INFO << arr[i];
+        std::cout << arr[i];
 
         if (i < size - 1 && i < print_limit - 1)
         {
-            MERIC_INFO << ", ";
+            std::cout << ", ";
         }
     }
 
     if (size > print_limit)
     {
-        MERIC_INFO << ", ..."; // Indicate truncated output
+        std::cout << ", ..."; // Indicate truncated output
     }
 
-    MERIC_INFO << "]" << std::endl;
+    std::cout << "]" << std::endl;
 }
 
 template static void printArray<double>(const char *, double *, size_t, size_t);
@@ -426,7 +426,7 @@ void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size
         return;
     }
 
-    MERIC_INFO << "------- ExtlibEnergyTimeStamp (id: " << std::fixed << std::setprecision(4) << timestamp->id << ") -------" << std::endl;
+    std::cout << "------- ExtlibEnergyTimeStamp (id: " << std::fixed << std::setprecision(4) << timestamp->id << ") -------" << std::endl;
 
     for (int i = 0; i < EXTLIB_NUM_DOMAINS; i++)
     {
@@ -441,11 +441,11 @@ void extlib_print_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp, size
         printArray(counter_value_label.c_str(), timestamp->domain_data[i].counter_value, timestamp->domain_data[i].arr_size, print_limit);
         printArray(energy_per_counter_label.c_str(), timestamp->domain_data[i].energy_per_counter, timestamp->domain_data[i].arr_size, print_limit);
 
-        MERIC_INFO << "| " << domain_name << "_total_energy: " << timestamp->domain_data[i].energy_total << std::endl;
-        MERIC_INFO << "|" << std::endl;
+        std::cout << "| " << domain_name << "_total_energy: " << timestamp->domain_data[i].energy_total << std::endl;
+        std::cout << "|" << std::endl;
     }
-    MERIC_INFO << "| Total_energy consumption: " << timestamp->energy_total << " [J]" << std::endl;
-    MERIC_INFO << "-----------------------------------" << std::endl;
+    std::cout << "| Total_energy consumption: " << timestamp->energy_total << " [J]" << std::endl;
+    std::cout << "-----------------------------------" << std::endl;
 }
 
 void extlib_free_energy_timestamp(struct ExtlibEnergyTimeStamp *timestamp)
