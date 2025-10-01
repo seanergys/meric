@@ -6,11 +6,43 @@
 // License: BSD-3
 // =============================================================================
 
+#include <string>
 #include <meric_ext.h>
 #include <gtest/gtest.h>
 
 #include "../reserved_memory_manager.h"
 #include "work.h"
+
+std::string getEnergyDomainName(unsigned int domain)
+{
+    std::string domain_name;
+    switch (domain)
+    {
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
+            domain_name = "A64FX";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
+            domain_name = "RAPL";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
+            domain_name = "NVML";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
+            domain_name = "ROCM";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
+            domain_name = "HDEEM";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+            domain_name = "HWMON";
+            break;
+        default:
+            domain_name = "Unknown Domain";
+            break;
+    }
+
+    return domain_name;
+}
 
 TEST(MERICExtAPITest, ReservedMemoryIsNotEnabledByDefault)
 {
@@ -125,10 +157,10 @@ TEST(MERICExtAPITest, ExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
         unsigned int domain = 1 << domain_idx;
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            std::string domain_name = printEnergyDomainName(domain);
+            std::string domain_name = getEnergyDomainName(domain);
             EXPECT_NE(energy_domains.energyMeasurementFns[domain_idx], nullptr)
                 << domain_name << " energy domain exists but its energy measurement function is not set.";
-            EXPECT_NE(energy_domains.closeFns[domain_idx], nullptr);
+            EXPECT_NE(energy_domains.closeFns[domain_idx], nullptr)
                 << domain_name << " energy domain exists but its close function is not set.";
         }
     }
