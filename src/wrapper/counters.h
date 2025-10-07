@@ -300,7 +300,8 @@ struct CounterDef_t {
 	enum Flags_t {
 		FLAG_NONE_BIT          = 0,
 		FLAG_ACCUMULATIVE_BIT  = 1 << 0,
-		FLAG_DETAILED_ONLY_BIT = 1 << 1
+		FLAG_DETAILED_ONLY_BIT = 1 << 1,
+		FLAG_VIRTUAL_BIT       = 1 << 2,
 	};
 
 	std::vector<std::string> name;
