@@ -85,6 +85,8 @@ public:
     static void fillTime(timespec &time)  { clock_gettime(CLOCK_REALTIME, &time); }
     static void deleteSamples() {}
 
+    static bool isAvailable();
+
 protected:
     struct Sample_t {
         uint64_t timestamp;
@@ -106,6 +108,9 @@ protected:
     
     template<typename F>
     static void MakeSources(const SourceDecl_t &sourceDecl, F &&f);
+
+    static const std::string s_rootPath;
+    static const std::vector<std::string> s_checkFiles;
 
     static SourceDescMap_t             s_sourceDesc;
     static SourceNameMap_t             s_sourceByName;

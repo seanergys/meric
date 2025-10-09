@@ -10,6 +10,7 @@
 #include <thread>
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/raplwrapper.h"
+#include "../wrapper/hwmonwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_rapl.h>
@@ -1319,6 +1320,12 @@ void sysEnergyMeasurement()
 		systems++;
 	}
 #endif
+
+	if(meric::HWMON::isAvailable())
+	{
+		std::cout << "\tHWMON\n";
+		systems++;
+	}
 
 	if (systems == 0)
 	{

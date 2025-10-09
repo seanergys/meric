@@ -64,6 +64,9 @@ const std::string HWMON::SUM_ENERGY_LABEL = "Energy consumption [J]";
 int HWMON::PROBE_NUMBER;
 std::vector<std::string> HWMON::vrSensorLabel;
 
+const std::string HWMON::s_rootPath = "/sys/class/hwmon";
+const std::vector<std::string> HWMON::s_checkFiles{ "^energy([0-9]+)_label$", "^power([0-9]+)_oem_info$" };
+
 HWMON::SourceDescMap_t HWMON::s_sourceDesc;
 HWMON::SourceNameMap_t HWMON::s_sourceByName;
 HWMON::SourceIdVec_t   HWMON::s_sourceById;
@@ -132,7 +135,6 @@ void HWMON::initCounters(bool detailed)
         return suffixLen;
     };
 
-    const std::string hwmonRootPath("/sys/class/hwmon");
     std::map<std::string, SourceDecl_t> sourcesDecl;
     std::vector<SourceDef_t> sourcesDef;
 
@@ -140,12 +142,12 @@ void HWMON::initCounters(bool detailed)
     {
         std::vector<std::string> hwmonCounterRoots;
 
-        sysfsutils::IterateDir(hwmonRootPath, [&](const std::string &filename) {
+        sysfsutils::IterateDir(s_rootPath, [&](const std::string &filename) {
             std::string name;
-            sysfsutils::ReadValue(hwmonRootPath + "/" + filename + "/name", name);
+            sysfsutils::ReadValue(s_rootPath + "/" + filename + "/name", name);
             if(name == "amd_energy")
             {
-                hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
+                hwmonCounterRoots.push_back(s_rootPath + "/" + filename);
             }
         });
 
@@ -197,8 +199,8 @@ void HWMON::initCounters(bool detailed)
     {
         std::vector<std::string> hwmonCounterRoots;
 
-        sysfsutils::IterateDir(hwmonRootPath, [&](const std::string &filename) {
-            hwmonCounterRoots.push_back(hwmonRootPath + "/" + filename);
+        sysfsutils::IterateDir(s_rootPath, [&](const std::string &filename) {
+            hwmonCounterRoots.push_back(s_rootPath + "/" + filename);
         });
 
         CollectSources_t collectDesc;
@@ -302,6 +304,9 @@ void HWMON::initCounters(bool detailed)
         }
     }
 
+    // Set appropriate HWMON data sources to accumulative.
+    // NOTE: The "Module_Power_Socket" is top-level power/energy counter for Grace-Hopper, 
+    //       but it doesn't exist on Grace-Grace, where "Grace_Power_Socket" is used instead.
     for(const auto &name: std::vector<std::string>{"Module_Power_Socket", "Grace_Power_Socket"})
     {
         auto res = s_sourceDesc.find(name);
@@ -558,6 +563,36 @@ std::string HWMON::getData(double startTime, double duration,
 
     *firstBlade = *lastBlade = 0;
     return "";
+}
+
+bool HWMON::isAvailable()
+{
+    std::vector<std::pair<std::regex, int> > searchFiles;
+
+    for(const auto &name: s_checkFiles)
+    {
+        searchFiles.push_back(std::make_pair(std::regex(name), 0));
+    }
+
+    sysfsutils::ScanTree(s_rootPath, 3, [&](const std::string &name, const std::string &path) {
+        for(std::pair<std::regex, int> &searchFile: searchFiles)
+        {
+            if(!std::regex_match(name, searchFile.first))
+                continue;
+
+            searchFile.second += (access((path).c_str(), R_OK) == 0 ? 1 : 0);
+        }
+    });
+
+    for(std::pair<std::regex, int> &searchFile: searchFiles)
+    {
+        if(searchFile.second > 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 template<typename T, typename F>
