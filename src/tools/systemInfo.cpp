@@ -1246,6 +1246,13 @@ void sysEnergyMeasurement()
 	int systems = 0;
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 
+	if(meric::RAPL::isAvailable())
+	{
+		std::cout << "\tRAPL\n";
+		systems++;
+	}
+
+/*
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
@@ -1273,6 +1280,7 @@ void sysEnergyMeasurement()
 		systems++;
 	}
 #endif
+*/
 
 #ifdef HAVE_HDEEM_H
 	std::cout << "\tHDEEM\n";

@@ -1472,6 +1472,35 @@ bool RAPL_PERF_EVENT::isAvailable()
 	return (value <= 0);
 }
 
+bool RAPL::isAvailable()
+{
+#if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
+	if(RAPL_MSR::isAvailable())
+	{
+		return true;
+	}
+#endif
+
+#if defined(HAVE_GEOPM_H)
+	if(RAPL_GEOPM::isAvailable())
+	{
+		return true;
+	}
+#endif
+
+	if(RAPL_PERF_EVENT::isAvailable())
+	{
+		return true;
+	}
+
+	if(RAPL_SYSFS::isAvailable())
+	{
+		return true;
+	}
+	
+	return false;
+}
+
 RAPL::Base *RAPL::getImpl()
 {
 	auto InitImpl = []() 

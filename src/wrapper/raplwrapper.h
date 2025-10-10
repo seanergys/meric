@@ -142,6 +142,8 @@ public:
     static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
     static void deleteSamples() {}
 
+	static bool isAvailable();
+
 	// RAPL Properties
 	static std::string PCKG_POWER_LIMIT;
 	static std::string RAM_POWER_LIMIT;
