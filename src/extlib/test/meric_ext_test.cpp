@@ -61,7 +61,7 @@ TEST(MERICExtAPITest, ReservedMemoryIsNotEnabledByDefault)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, ExistingEnergyDomainsStayEnabledAfterInit)
+TEST(MERICExtAPITest, EnabledExistingEnergyDomainsStayEnabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -101,7 +101,7 @@ TEST(MERICExtAPITest, ExistingEnergyDomainsStayEnabledAfterInit)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, NonExistingEnergyDomainsAreDisabledAfterInit)
+TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsAreDisabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -141,7 +141,7 @@ TEST(MERICExtAPITest, NonExistingEnergyDomainsAreDisabledAfterInit)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, ExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
+TEST(MERICExtAPITest, EnabledExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -168,7 +168,7 @@ TEST(MERICExtAPITest, ExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, NonExistingEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
+TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -192,7 +192,7 @@ TEST(MERICExtAPITest, NonExistingEnergyDomainsDoNotHaveTheirFunctionsSetAfterIni
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, ExtlibEnergyStructIsResetAfterClose)
+TEST(MERICExtAPITest, InstanceOfExtlibEnergyIsResetAfterClose)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -215,7 +215,7 @@ TEST(MERICExtAPITest, ExtlibEnergyStructIsResetAfterClose)
     EXPECT_EQ(energy_domains.reserved_memory_size, 0);
 }
 
-TEST(MERICExtAPITest, ExistingEnergyDomainsReturnSomeData)
+TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -247,7 +247,7 @@ TEST(MERICExtAPITest, ExistingEnergyDomainsReturnSomeData)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, NonExistingEnergyDomainsReturnNoData)
+TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
