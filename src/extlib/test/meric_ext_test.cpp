@@ -141,6 +141,24 @@ TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsAreDisabledAfterInit)
     extlib_close(&energy_domains);
 }
 
+TEST(MERICExtAPITest, DisabledEnergyDomainsStayDisabledAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_NO_SELECTION(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    {
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            ADD_FAILURE() << domain_name << " energy domain should be disabled.";
+        }
+    }
+
+    extlib_close(&energy_domains);
+}
+
 TEST(MERICExtAPITest, EnabledExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
 {
     ExtlibEnergy energy_domains = {};
@@ -187,6 +205,21 @@ TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsDoNotHaveTheirFunctionsSetA
             EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
             EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
         }
+    }
+
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, DisabledEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_NO_SELECTION(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
+        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
     }
 
     extlib_close(&energy_domains);
