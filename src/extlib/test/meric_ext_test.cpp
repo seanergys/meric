@@ -81,22 +81,22 @@ TEST(MERICExtAPITest, EnabledExistingEnergyDomainsStayEnabledAfterInit)
 
     if (has_a64fx)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX))
-            ADD_FAILURE() << "Domain:" << "A64FX" << " exists, but is not enabled.";
+            ADD_FAILURE() << "A64FX energy domain exists but is not enabled.";
     if (has_rapl)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL))
-            ADD_FAILURE() << "Domain:" << "RAPL" << " exists, but is not enabled.";        
+            ADD_FAILURE() << "RAPL energy domain exists but is not enabled.";        
     if (has_nvml)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML))
-            ADD_FAILURE() << "Domain:" << "NVML" << " exists, but is not enabled.";
+            ADD_FAILURE() << "NVML energy domain exists but is not enabled.";
     if (has_hdeem)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM))
-            ADD_FAILURE() << "Domain:" << "HDEEM" << " exists, but is not enabled.";
+            ADD_FAILURE() << "HDEEM energy domain exists but is not enabled.";
     if (has_rocm)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM))
-            ADD_FAILURE() << "Domain:" << "ROCM" << " exists, but is not enabled.";
+            ADD_FAILURE() << "ROCM energy domain exists but is not enabled.";
     if (has_hwmon)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON))
-            ADD_FAILURE() << "Domain:" << "HWMON" << " exists, but is not enabled.";
+            ADD_FAILURE() << "HWMON energy domain exists but is not enabled.";
 
     extlib_close(&energy_domains);
 }
@@ -121,22 +121,22 @@ TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsAreDisabledAfterInit)
 
     if (!has_a64fx)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX))
-            ADD_FAILURE() << "Domain:" << "A64FX" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "A64FX energy domain does not exist but is enabled";
     if (!has_rapl)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL))
-            ADD_FAILURE() << "Domain:" << "RAPL" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "RAPL energy domain does not exist but is enabled";
     if (!has_nvml)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML))
-            ADD_FAILURE() << "Domain:" << "NVML" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "NVML energy domain does not exist but is enabled";
     if (!has_hdeem)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM))
-            ADD_FAILURE() << "Domain:" << "HDEEM" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "HDEEM energy domain does not exist but is enabled";
     if (!has_rocm)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM))
-            ADD_FAILURE() << "Domain:" << "ROCM" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "ROCM energy domain does not exist but is enabled";
     if (!has_hwmon)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON))
-            ADD_FAILURE() << "Domain:" << "HWMON" << " is enabled, but does not exist.";
+            ADD_FAILURE() << "HWMON energy domain does not exist but is enabled";
 
     extlib_close(&energy_domains);
 }
