@@ -372,15 +372,14 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int domain = 1 << domain_idx;
-        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_GT(result->domain_data[domain_idx].arr_size, 0);
-            EXPECT_NE(result->domain_data[domain_idx].counter_name, nullptr);
+            EXPECT_EQ(result->domain_data[domain_idx].arr_size, 0);
+            EXPECT_EQ(result->domain_data[domain_idx].counter_name, nullptr);
             EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr);
-            EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr);
+            EXPECT_EQ(result->domain_data[domain_idx].energy_per_counter, nullptr);
         }
     }
-    EXPECT_GT(result->energy_total, 0.0);
     EXPECT_EQ(result->reserved_memory_page, 0);
     EXPECT_EQ(result->reserved_memory_index, 0);
 
