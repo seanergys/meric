@@ -186,3 +186,4 @@ template class meric::SamplesStore <THUNDER>;
 template class meric::SamplesStore <DAVIDE>;
 template class meric::SamplesStore <HWMON>;
 template class meric::SamplesStore <RAPL>;
+template class meric::SamplesStore <NVML>;

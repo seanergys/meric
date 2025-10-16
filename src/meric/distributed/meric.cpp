@@ -151,10 +151,12 @@ DistributedMeric::DistributedMeric()
 		if (Meric::AGGREGATE)
 		{
 			_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
+			_storeList.push_back(new SamplesAggregateStore<SamplesStore<NVML>>(_storingProcs, !_MPInodeRank));
 		}
 		else
 		{
 			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
+			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES != 0.0, !_MPInodeRank));
 		}
 	}
 	
@@ -347,6 +349,11 @@ DistributedMeric::DistributedMeric()
 		HWMON::start(_startTime, Meric::SAMPLES);
 	}
 
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		NVML::start(_startTime, Meric::SAMPLES);
+	}
+
 	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
 		OCC::init(Meric::DETAILED);
@@ -378,6 +385,10 @@ DistributedMeric::~DistributedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		RAPL::close();
+	}
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		NVML::close();
 	}
 
 	Environment::close();

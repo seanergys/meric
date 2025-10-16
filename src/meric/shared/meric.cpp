@@ -46,6 +46,7 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
+		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
@@ -144,6 +145,9 @@ SharedMeric::SharedMeric()
 		case MODE_A64FX:
 			A64FX::init();
 			break;
+		case MODE_NVML:
+			NVML::start(_startTime, Meric::SAMPLES);
+			break;
 		default:
 			break;
 		}
@@ -185,6 +189,11 @@ SharedMeric::~SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		RAPL::close();
+	}
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		NVML::close();
 	}
 	
 	for(unsigned int i=0;i<_storeList.size(); i++)
