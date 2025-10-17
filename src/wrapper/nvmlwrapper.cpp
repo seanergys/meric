@@ -3,7 +3,9 @@
 #include <cmath>
 #include <algorithm>
 #include <array>
+#include <regex>
 
+#include "environmentwrapper.h"
 #include "../basis/sysfsutils.h"
 
 using namespace meric;
@@ -86,6 +88,12 @@ void NVML::getCounterValues(CounterRecord_t &record)
 {
 	for(auto &desc: s_sourceByName)
 	{
+		// List only energy counters
+		if(desc.second->type != SourceDecl_t::TYPE_ENERGY)
+		{
+			continue;
+		}
+
 		unsigned long long energy = 0;
 		if(nvmlDeviceGetTotalEnergyConsumption(desc.second->pDeviceDesc->device, &energy) != NVML_SUCCESS)
 		{
@@ -98,11 +106,39 @@ void NVML::getCounterValues(CounterRecord_t &record)
 
 void NVML::initCounters(bool detailed)
 {
-	const std::vector<SourceDecl_t> sourceDecls{
-		{ "GPU_ENERGY",   SourceDecl_t::TYPE_ENERGY,                        0, 0 },
-		{ "GPU_POWER",    SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 },
-		{ "MODULE_POWER", SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1 },
+	auto IsNVPlatform = []() {
+		uint32_t deviceCount = 0;
+		if(nvmlDeviceGetCount(&deviceCount) != NVML_SUCCESS || deviceCount < 1) {
+			return false;
+		}
+
+		nvmlDevice_t deviceHandle;
+		if(nvmlDeviceGetHandleByIndex(0, &deviceHandle) != NVML_SUCCESS) {
+			return false;
+		}
+
+		char name[NVML_DEVICE_NAME_V2_BUFFER_SIZE];
+		if(nvmlDeviceGetName(deviceHandle, name, NVML_DEVICE_NAME_V2_BUFFER_SIZE) != NVML_SUCCESS) {
+			return false;
+		}
+
+		std::regex platformRegex("^NVIDIA (GH|GB|VR)[0-9]+.*$");
+		return bool(std::regex_match(std::string(name), platformRegex));
 	};
+
+	std::vector<SourceDecl_t> sourceDecls;
+
+	if(IsNVPlatform())
+	{
+		sourceDecls.push_back({ "MODULE_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
+		sourceDecls.push_back({ "GPU_POWER",     SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
+		sourceDecls.push_back({ "MODULE_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1 });
+	}
+	else
+	{
+		sourceDecls.push_back({ "GPU_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
+		sourceDecls.push_back({ "GPU_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
+	}
 
 	uint32_t deviceCount = 0;
 
@@ -213,6 +249,11 @@ void NVML::initSamplers(bool detailed)
 {
 	for(auto &desc: s_sourceByName)
 	{
+		if(desc.second->type != SourceDecl_t::TYPE_POWER)
+		{
+			continue;
+		}
+
 		s_sourceById.push_back(desc.second);
 	}
 
@@ -250,7 +291,7 @@ void NVML::initSamplers(bool detailed)
 				{
 					value = fieldValues[i].value.uiVal;
 
-					if(value < sources[i]->lastValue && (sources[i]->type & SourceDecl_t::TYPE_ENERGY) != 0)
+					if(value < sources[i]->lastValue && sources[i]->type == SourceDecl_t::TYPE_ENERGY)
 						sources[i]->overflowCount++;
 
 					sources[i]->lastValue = value;
