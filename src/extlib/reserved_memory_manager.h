@@ -50,7 +50,7 @@
 
     How it works:
         Default page is page 0, never removed unless close sequence is called.
-        DomainMemoryPool is a struct that contains arrays for counter names, values, and energy per energy domain.
+        DomainMemoryPool is a struct that contains pointers for arrays for counter names, values, and energy per energy domain.
         ExtlibEnergyTimeStamp represents a single timestamp with value pointers pointing to memory locations for values.
         When a ExtlibEnergyTimeStamp is allocated with allocate_timestamp(), it creates ExtlibEnergyTimeStamp and its pointers point to the memory locations in DomainMemoryPool and marks the slot as occupied.
         When a ExtlibEnergyTimeStamp is deallocated, it clears (zeros) the values and mark the slot as empty.
@@ -59,7 +59,7 @@
         When a page is full, it creates a new page and allocates memory for the new ExtlibEnergyTimeStamp.
         When a page is empty, it checks if it should be removed based on the ruleset defined in should_remove_page() method.
         Note that allocated page size and indexes are fixed. They do not shrink or extend. they are just used or free.
-        allocate_timestamp priarotizes using empty slots over occupying a new slot. if all slots are occupied, it has no chance to create another page with fixed sized reserved memory.
+        allocate_timestamp prioritizes using empty slots over occupying a new slot. if all slots are occupied, it has no chance to create another page with fixed sized reserved memory.
         All pages in the same domain share the domain names array, since it is the same for all of them.
         Below, in DomainMemoryPool, one can see the paging structure.
 */
@@ -91,7 +91,7 @@ private:
 
 public:
     static void initialize(size_t memory_size, const ExtlibEnergyTimeStamp *template_timestamp);
-    static ExtlibEnergyTimeStamp *allocate_timestamp();
+    static ExtlibEnergyTimeStamp *allocate_timestamp(bool is_result_timestamp = false);
     static void deallocate_timestamp(ExtlibEnergyTimeStamp *timestamp);
     static DomainMemoryPool *get_domain_map(uint64_t domain_id, uint64_t page);
     static void shrink_to_fit();

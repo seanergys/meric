@@ -32,11 +32,12 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
     ReservedMemoryManager::reserved_memory_size = memory_size;
 
     uint64_t page = 0;
-    ReservedMemoryManager::metadata[page].reserve(ReservedMemoryManager::reserved_memory_size);
-    ReservedMemoryManager::entry_length[page] = 0;
-    empty_page_ids.insert(page);
-
-    MERIC_INFO << "[INFO]: Using reserved memory for " << ReservedMemoryManager::metadata[page].capacity() << " elements. [OK]" << std::endl;
+    ReservedMemoryManager::metadata[page].reserve(ReservedMemoryManager::reserved_memory_size + 1); // +1 for result timestamp at index0
+    ReservedMemoryManager::entry_length[page] = 1;                                                  // result timestamp at index0 is considered used
+    metadata[page].emplace_back();                                                                  // reserve space for result timestamp at index0
+    initialize_timestamp(&metadata[0][0], 0, 0);
+    MERIC_INFO << "[INFO]: Using reserved memory for " << ReservedMemoryManager::reserved_memory_size << " elements. [OK]" << std::endl;
+    MERIC_INFO << "[INFO]: Initializing reserved memory for page-id: " << page << " with " << ReservedMemoryManager::metadata[page].capacity() << " entries since index0 is set for results\n";
     // Initialize domain data based on template
     for (size_t domain_index = 0; domain_index < EXTLIB_NUM_DOMAINS; ++domain_index)
     {
@@ -45,7 +46,7 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
 
         DomainMemoryPool map;
         map.arr_size = template_timestamp->domain_data[domain_index].arr_size;
-        size_t total_elements = map.arr_size * ReservedMemoryManager::reserved_memory_size;
+        size_t total_elements = map.arr_size * (ReservedMemoryManager::reserved_memory_size + 1); // +1 for result timestamp at index0
 
         // Allocate flat arrays for all timestamps
         map.sizeof_energy_per_counter = sizeof(double) * total_elements;
@@ -76,63 +77,76 @@ void ReservedMemoryManager::initialize(size_t memory_size, const ExtlibEnergyTim
             map.counter_name[j][EXTLIB_MAX_DOMAIN_NAME_LENGTH - 1] = '\0';
         }
 
+        // init result at index0
         ReservedMemoryManager::domain_memory_pool[domain_index][page] = std::move(map);
     }
 }
 
-ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp()
+ExtlibEnergyTimeStamp *ReservedMemoryManager::allocate_timestamp(bool is_result_timestamp)
 {
-    int first_non_full_page = -1;
-
-    // Look for cleared slots and track first non-full page
-    for (auto &entry : metadata)
+    if (is_result_timestamp)
     {
-        uint64_t page_id = entry.first;
-        auto &vec = entry.second;
+        // get page 0 index 0 for result timestamps and clear it before returning.
+        MERIC_INFO << " \tReturning result timestamp at page-id=0, index=0\n";
+        deallocate_timestamp(&metadata[0][0]); // clear previous data
+        return initialize_timestamp(&metadata[0][0], 0, 0);
+    }
+    else
+    {
+        int first_non_full_page = -1;
 
-        // Check for cleared slots first (higher priority)
-        for (size_t i = 0; i < vec.size(); ++i)
+        // Look for cleared slots and track first non-full page
+        for (auto &entry : metadata)
         {
-            if (vec[i].id == 0)
+            uint64_t page_id = entry.first;
+            auto &vec = entry.second;
+
+            MERIC_INFO << "\tChecking page-id: " << page_id << " with size: " << vec.size() << "\n";
+            // Check for cleared slots first (higher priority)
+            // if page_id is 0, skip index 0 since it is reserved for result timestamps.
+            for (size_t i = (page_id == 0) ? 1 : 0; i < vec.size(); ++i)
             {
-                MERIC_INFO << "Reusing slot: page-id=" << page_id << ", index=" << i << "\n";
-                entry_length[page_id] += 1;
-                MERIC_INFO << "page-id:" << page_id << " vec size:" << entry_length[page_id] << "!!\n";
-                if (empty_page_ids.find(page_id) != empty_page_ids.end())
+                if (vec[i].id == 0)
                 {
-                    MERIC_INFO << "Removing page_id:" << page_id << " from empty_page_ids.\n";
-                    empty_page_ids.erase(page_id);
+                    MERIC_INFO << "Reusing slot: page-id=" << page_id << ", index=" << i << "\n";
+                    entry_length[page_id] += 1;
+                    MERIC_INFO << "page-id:" << page_id << " vec size:" << entry_length[page_id] << "!!\n";
+                    if (empty_page_ids.find(page_id) != empty_page_ids.end())
+                    {
+                        MERIC_INFO << "Removing page_id:" << page_id << " from empty_page_ids.\n";
+                        empty_page_ids.erase(page_id);
+                    }
+                    return initialize_timestamp(&vec[i], page_id, i);
                 }
-                return initialize_timestamp(&vec[i], page_id, i);
+            }
+
+            // Track first non-full page for potential expansion
+            if (first_non_full_page == -1 && vec.size() < (page_id == 0 ? ReservedMemoryManager::reserved_memory_size + 1 : ReservedMemoryManager::reserved_memory_size))
+            {
+                first_non_full_page = page_id;
+                // do not break here, I prioritize using empty slots first over expansion.
             }
         }
 
-        // Track first non-full page for potential expansion
-        if (first_non_full_page == -1 && vec.size() < reserved_memory_size)
+        // If we found a non-full page, append to it
+        if (first_non_full_page != -1)
         {
-            first_non_full_page = page_id;
-            // do not break here, I prioritize using empty slots first over expansion.
+            if (empty_page_ids.find(first_non_full_page) != empty_page_ids.end())
+            {
+                MERIC_INFO << "Removing page_id:" << first_non_full_page << " from empty_page_ids.\n";
+                empty_page_ids.erase(first_non_full_page);
+            }
+            MERIC_INFO << "Appending to page-id: " << first_non_full_page << "\n";
+            auto &vec = metadata[first_non_full_page];
+            vec.emplace_back();
+            entry_length[first_non_full_page] += 1;
+            MERIC_INFO << "page-id:" << first_non_full_page << " vec size:" << entry_length[first_non_full_page] << "!!\n";
+            return initialize_timestamp(&vec.back(), first_non_full_page, vec.size() - 1);
         }
-    }
 
-    // If we found a non-full page, append to it
-    if (first_non_full_page != -1)
-    {
-        if (empty_page_ids.find(first_non_full_page) != empty_page_ids.end())
-        {
-            MERIC_INFO << "Removing page_id:" << first_non_full_page << " from empty_page_ids.\n";
-            empty_page_ids.erase(first_non_full_page);
-        }
-        MERIC_INFO << "Appending to page-id: " << first_non_full_page << "\n";
-        auto &vec = metadata[first_non_full_page];
-        vec.emplace_back();
-        entry_length[first_non_full_page] += 1;
-        MERIC_INFO << "page-id:" << first_non_full_page << " vec size:" << entry_length[first_non_full_page] << "!!\n";
-        return initialize_timestamp(&vec.back(), first_non_full_page, vec.size() - 1);
+        // As last resort, create a new page
+        return create_new_page();
     }
-
-    // As last resort, create a new page
-    return create_new_page();
 }
 
 void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestamp)
@@ -158,6 +172,12 @@ void ReservedMemoryManager::deallocate_timestamp(ExtlibEnergyTimeStamp *timestam
     }
 
     uint64_t page = timestamp->reserved_memory_page;
+    uint64_t index = timestamp->reserved_memory_index;
+    if (page == 0 && index == 0)
+    {
+        MERIC_INFO << "\tEnergyTimestamp is cleared. Skipping deallocation at page-id=0, index=0\n";
+        return;
+    }
 
     MERIC_INFO << "\t before removal: page-id: " << page << " length: " << entry_length[page] << "\n";
 
@@ -282,13 +302,13 @@ uint64_t ReservedMemoryManager::getset_new_pageid(uint64_t page)
     if (page == -1) // get next page-id
     {
         new_page_id++;
-        MERIC_INFO << "Creating new page-id: " << new_page_id << "\n";
+        MERIC_INFO << "\tCreating new page-id: " << new_page_id << "\n";
         return new_page_id;
     }
     else // used for re-setting the counter.
     {
         new_page_id = page;
-        MERIC_INFO << "Setting new page-id: " << new_page_id << "\n";
+        MERIC_INFO << "\tSetting new page-id: " << new_page_id << "\n";
         return new_page_id;
     }
 }
@@ -407,7 +427,7 @@ void ReservedMemoryManager::shrink_to_fit()
 void ReservedMemoryManager::clear_timestamp(ExtlibEnergyTimeStamp *timestamp)
 {
     MERIC_INFO << "\t\tclear timestamp at index " << timestamp->reserved_memory_index
-              << " from page: " << timestamp->reserved_memory_page << "\n";
+               << " from page: " << timestamp->reserved_memory_page << "\n";
     memset(timestamp, 0, sizeof(ExtlibEnergyTimeStamp));
     timestamp->id = 0;
     timestamp->reserved_memory_index = -1;

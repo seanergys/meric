@@ -21,13 +21,14 @@ TEST(MemoryManagerTest, ReservedMemoryManagerEnabledAndSizeIsCorrect)
     extlib_init(&energy_domains, true);
 
     EXPECT_TRUE(ReservedMemoryManager::is_enabled);
-    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 3 * RESERVED_ELEMENT_SIZE);
+    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 2 * RESERVED_ELEMENT_SIZE);
 
     extlib_close(&energy_domains);
 }
 
 TEST(MemoryManagerTest, InitializeCreatesPage0ForAllDomainsWithCorrectSize)
 {
+    // note that since the index0 of page0 is reserved to save result, we have +1 in size.
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
@@ -70,8 +71,8 @@ TEST(MemoryManagerTest, InitializeCreatesPage0ForAllDomainsWithCorrectSize)
             EXPECT_NE(domain_memory_map->energy_per_counter, nullptr);
 
             EXPECT_EQ(domain_memory_map->sizeof_counter_name, domain_arr_size[domain_index] * sizeof(char *));
-            EXPECT_EQ(domain_memory_map->sizeof_counter_value, sizeof(uint64_t) * domain_arr_size[domain_index] * ReservedMemoryManager::reserved_memory_size);
-            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, sizeof(double) * domain_arr_size[domain_index] * ReservedMemoryManager::reserved_memory_size);
+            EXPECT_EQ(domain_memory_map->sizeof_counter_value, sizeof(uint64_t) * domain_arr_size[domain_index] * (ReservedMemoryManager::reserved_memory_size + 1));    // +1 for result timestamp
+            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, sizeof(double) * domain_arr_size[domain_index] * (ReservedMemoryManager::reserved_memory_size + 1)); // +1 for result timestamp
         }
     }
 
@@ -179,13 +180,13 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     ExtlibEnergyTimeStamp *ts3 = extlib_read_energy_measurements(&energy_domains);
 
     EXPECT_EQ(ts1->reserved_memory_page, 0);
-    EXPECT_EQ(ts1->reserved_memory_index, 0);
+    EXPECT_EQ(ts1->reserved_memory_index, 1);
 
     EXPECT_EQ(ts2->reserved_memory_page, 0);
-    EXPECT_EQ(ts2->reserved_memory_index, 1);
+    EXPECT_EQ(ts2->reserved_memory_index, 2);
 
     EXPECT_EQ(result->reserved_memory_page, 0);
-    EXPECT_EQ(result->reserved_memory_index, 2);
+    EXPECT_EQ(result->reserved_memory_index, 0); // result is always at page 0 index 0
 
     // t3 is allocated in new page.
     EXPECT_EQ(ts3->reserved_memory_page, 1);
@@ -195,15 +196,15 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     // this should allocate on page 0 index 2
     extlib_free_energy_timestamp(result);
     ts1 = extlib_read_energy_measurements(&energy_domains);
-    EXPECT_EQ(ts1->reserved_memory_page, 0);
-    EXPECT_EQ(ts1->reserved_memory_index, 2);
+    EXPECT_EQ(ts1->reserved_memory_page, 1);
+    EXPECT_EQ(ts1->reserved_memory_index, 1);
 
     // freeing one slot in page 0, creates available slot. next allocation should go there.
     // this should allocate on page 0 index 1
     extlib_free_energy_timestamp(ts2);
     ts2 = extlib_read_energy_measurements(&energy_domains);
     EXPECT_EQ(ts2->reserved_memory_page, 0);
-    EXPECT_EQ(ts2->reserved_memory_index, 1);
+    EXPECT_EQ(ts2->reserved_memory_index, 2);
 
     extlib_close(&energy_domains);
 }
@@ -220,23 +221,31 @@ TEST(MemoryManagerTest, AllocateTimeStampCreatesNewPageWhenPageIsFull)
     ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
     ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts1, ts2);
 
+    EXPECT_EQ(ts1->reserved_memory_page, 0);
+    EXPECT_EQ(ts1->reserved_memory_index, 1);
+    EXPECT_EQ(ts2->reserved_memory_page, 0);
+    EXPECT_EQ(ts2->reserved_memory_index, 2);
+    EXPECT_EQ(result->reserved_memory_page, 0);
+    EXPECT_EQ(result->reserved_memory_index, 0);
+
+    std::cout << "-------------------------\n";
     // goes to page 1 due to size limit (1)
     ExtlibEnergyTimeStamp *ts3 = extlib_read_energy_measurements(&energy_domains);
     ExtlibEnergyTimeStamp *ts4 = extlib_read_energy_measurements(&energy_domains);
-    ExtlibEnergyTimeStamp *result2 = extlib_read_energy_measurements(&energy_domains);
+    ExtlibEnergyTimeStamp *result2 = extlib_calc_energy_consumption(ts3, ts4);
 
     EXPECT_EQ(ts3->reserved_memory_page, 1);
     EXPECT_EQ(ts3->reserved_memory_index, 0);
     EXPECT_EQ(ts4->reserved_memory_page, 1);
     EXPECT_EQ(ts4->reserved_memory_index, 1);
-    EXPECT_EQ(result2->reserved_memory_page, 1);
-    EXPECT_EQ(result2->reserved_memory_index, 2);
+    EXPECT_EQ(result2->reserved_memory_page, 0);
+    EXPECT_EQ(result2->reserved_memory_index, 0);
 
     EXPECT_TRUE(ReservedMemoryManager::metadata.find(0) != ReservedMemoryManager::metadata.end());
     EXPECT_TRUE(ReservedMemoryManager::metadata.find(1) != ReservedMemoryManager::metadata.end());
 
     EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 3);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(1), 3);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.at(1), 2);
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
@@ -395,29 +404,29 @@ TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
 
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 1);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) != ReservedMemoryManager::empty_page_ids.end());
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0); // index0 is reserved for result timestamps, so page0 is never empty.
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
 
     EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
 
     EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 0);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
 
     ReservedMemoryManager::shrink_to_fit();
 
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 1);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) != ReservedMemoryManager::empty_page_ids.end());
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
     EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
     EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 0);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
 
     ReservedMemoryManager::remove_page(0);
 
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 1);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) != ReservedMemoryManager::empty_page_ids.end());
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
     EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
     EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 0);
+    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
 
     extlib_close(&energy_domains);
 

@@ -64,10 +64,10 @@ typedef struct ExtlibEnergy
 // Helper macros for bitwise operations
 
 // To measure energy consumption, you need 2 EnergyTimeStamp and +1 created when returning from extlib_calc_energy_consumption(..)
-// So in total, you need to allocate (2x + x) = 3x elements where x-> energy measurement count
+// So in total, you need to allocate (2x + 1) elements where x-> energy measurement count. since we use index0 for calculations, 2x is enough here as for general page array size.
 #define EXTLIB_ENERGY_USE_RESERVED_MEMORY(enabled_domains, total_measurements) \
     (enabled_domains).use_reserved_memory = true;                              \
-    (enabled_domains).reserved_memory_size = 3 * total_measurements
+    (enabled_domains).reserved_memory_size = 2 * total_measurements
 
 #define EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value |= (domain))
 #define EXTLIB_ENERGY_DISABLE_DOMAIN(enabled_domains, domain) ((enabled_domains).value &= ~(domain))
@@ -91,15 +91,14 @@ typedef struct ExtlibEnergy
 #endif
 
 // The main macro now uses the helper macro
-#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                                   \
-    do                                                                                      \
-    {                                                                                       \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(A64FX));          \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(RAPL));           \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(NVML));           \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HDEEM));          \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(ROCM));           \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HWMON));          \
+#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                          \
+    do                                                                             \
+    {                                                                              \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(A64FX)); \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(RAPL));  \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(NVML));  \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HDEEM)); \
+        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(ROCM));  \
     } while (0)
 /**
  *

@@ -14,9 +14,9 @@ openmp_flag=-fopenmp
 
 # Compiler settings
 CXX=g++
-CXXFLAGS=-std=c++17 -O0 -Wall $(openmp_flag)
-INCLUDE=-I../../../include
-LDFLAGS=-L../../../lib
+CXXFLAGS=-std=c++17 -O0 -Wall $(openmp_flag) -DVERBOSE
+INCLUDE=-I../../../include -I./googletest/googletest/include
+LDFLAGS=-L../../../lib -L./googletest/build/lib
 LDLIBS=$(meric_ext) $(gtest) $(hdeem) $(x86_adapt) $(nvml) $(libmsr)
 
 # Build directory

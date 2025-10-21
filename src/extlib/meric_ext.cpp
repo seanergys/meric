@@ -30,7 +30,7 @@
     may or maynot be called indirectly by the extlib_* methods
 
 */
-struct ExtlibEnergyTimeStamp *newEnergyTimeStamp();
+struct ExtlibEnergyTimeStamp *newEnergyTimeStamp(bool is_result_timestamp = false);
 static const char *printDomainName(unsigned int value);
 template <typename Tmode, typename TmapVal>
 static void measureEnergy(size_t *size, uint64_t **counter_values, double **energy_per_counter, char ***labels, size_t page, size_t reserved_memory_index, size_t domain_index);
@@ -390,11 +390,12 @@ ExtlibEnergyTimeStamp *extlib_read_energy_measurements(ExtlibEnergy *enabled_dom
  * if use_reserved_memory, try to add to the end of the vector.
  * if you reach the end, check whole vector for a free memory location. if not found, exit with error.
  */
-struct ExtlibEnergyTimeStamp *newEnergyTimeStamp()
+struct ExtlibEnergyTimeStamp *newEnergyTimeStamp(bool is_result_timestamp)
 {
+    MERIC_INFO << "\t\tnewEnergyTimeStamp called. is_result_timestamp:" << is_result_timestamp << "\n";
     if (ReservedMemoryManager::is_enabled)
     {
-        return ReservedMemoryManager::allocate_timestamp();
+        return ReservedMemoryManager::allocate_timestamp(is_result_timestamp); // index0 optimizaion for result timestamps
     }
     else
     {
@@ -517,7 +518,7 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
         }
     }
 
-    struct ExtlibEnergyTimeStamp *result = newEnergyTimeStamp();
+    struct ExtlibEnergyTimeStamp *result = newEnergyTimeStamp(true); // result timestamp
     if (!result)
         return NULL;
 
