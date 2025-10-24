@@ -55,8 +55,10 @@ TEST(MERICExtAPITest, ReservedMemoryIsNotEnabledByDefault)
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
     extlib_init(&energy_domains, true);
 
-    EXPECT_FALSE(energy_domains.use_reserved_memory);
-    EXPECT_EQ(energy_domains.reserved_memory_size, 0);
+    EXPECT_FALSE(energy_domains.use_reserved_memory)
+        << "use_reserved_memory boolean should be false.";
+    EXPECT_EQ(energy_domains.reserved_memory_size, 0)
+        << "reserved_memory_size variable should be 0.";
 
     extlib_close(&energy_domains);
 }
@@ -202,8 +204,11 @@ TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsDoNotHaveTheirFunctionsSetA
         unsigned int domain = 1 << domain_idx;
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
-            EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr)
+                << domain_name << " energy domain does not exist but its energy measurement function is set.";
+            EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr)
+                << domain_name << " energy domain does not exist but its close function is set.";
         }
     }
 
@@ -218,8 +223,12 @@ TEST(MERICExtAPITest, DisabledEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
-        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
-        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
+        unsigned int domain = 1 << domain_idx;
+        std::string domain_name = getEnergyDomainName(domain);
+        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr)
+            << domain_name << " energy domain is disabled but its energy measurement function is set.";
+        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr)
+            << domain_name << " energy domain is disabled but its close function is set.";
     }
 
     extlib_close(&energy_domains);
@@ -238,14 +247,21 @@ TEST(MERICExtAPITest, InstanceOfExtlibEnergyIsResetAfterClose)
 
     extlib_close(&energy_domains);
 
-    EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION);
+    EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
+        << "All energy domains should be disabled.";
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
-        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr);
-        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr);
+        unsigned int domain = 1 << domain_idx;
+        std::string domain_name = getEnergyDomainName(domain);
+        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr)
+            << "Energy measurement function of " << domain_name << " energy domain should not be set.";
+        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr)
+            << "Close function of " << domain_name << " energy domain should not be set.";
     }
-    EXPECT_FALSE(energy_domains.use_reserved_memory);
-    EXPECT_EQ(energy_domains.reserved_memory_size, 0);
+    EXPECT_FALSE(energy_domains.use_reserved_memory)
+        << "use_reserved_memory boolean should be false.";
+    EXPECT_EQ(energy_domains.reserved_memory_size, 0)
+        << "reserved_memory_size variable should be 0.";
 }
 
 TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDomains)
@@ -266,15 +282,23 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDoma
         unsigned int domain = 1 << domain_idx;
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_GT(ts->domain_data[domain_idx].arr_size, 0);
-            EXPECT_NE(ts->domain_data[domain_idx].counter_name, nullptr);
-            EXPECT_NE(ts->domain_data[domain_idx].counter_value, nullptr);
-            EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr);
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_GT(ts->domain_data[domain_idx].arr_size, 0)
+                << domain_name << " energy domain exists but its arr_size variable is 0.";
+            EXPECT_NE(ts->domain_data[domain_idx].counter_name, nullptr)
+                << domain_name << " energy domain exists but its counter_name pointer is NULL/nullptr.";
+            EXPECT_NE(ts->domain_data[domain_idx].counter_value, nullptr)
+                << domain_name << " energy domain exists but its counter_value pointer is NULL/nullptr.";
+            EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr)
+                << "energy_per_counter pointer of " << domain_name << " energy domain should be NULL/nullptr.";
         }
     }
-    EXPECT_EQ(ts->energy_total, 0.0);
-    EXPECT_EQ(ts->reserved_memory_page, 0);
-    EXPECT_EQ(ts->reserved_memory_index, 0);
+    EXPECT_EQ(ts->energy_total, 0.0)
+        << "energy_total variable should be 0.";
+    EXPECT_EQ(ts->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts);
     extlib_close(&energy_domains);
@@ -298,15 +322,23 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDom
         unsigned int domain = 1 << domain_idx;
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_EQ(ts->domain_data[domain_idx].arr_size, 0);
-            EXPECT_EQ(ts->domain_data[domain_idx].counter_name, nullptr);
-            EXPECT_EQ(ts->domain_data[domain_idx].counter_value, nullptr);
-            EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr);
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ts->domain_data[domain_idx].arr_size, 0)
+                << domain_name << " energy domain does not exist but its arr_size variable is greater than 0.";
+            EXPECT_EQ(ts->domain_data[domain_idx].counter_name, nullptr)
+                << domain_name << " energy domain does not exist but its counter_name pointer is not NULL/nullptr.";
+            EXPECT_EQ(ts->domain_data[domain_idx].counter_value, nullptr)
+                << domain_name << " energy domain does not exist but its counter_value pointer is not NULL/nullptr.";
+            EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr)
+                << "energy_per_counter pointer of " << domain_name << " energy domain should be NULL/nullptr.";
         }
     }
-    EXPECT_EQ(ts->energy_total, 0.0);
-    EXPECT_EQ(ts->reserved_memory_page, 0);
-    EXPECT_EQ(ts->reserved_memory_index, 0);
+    EXPECT_EQ(ts->energy_total, 0.0)
+        << "energy_total variable should be 0.";
+    EXPECT_EQ(ts->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts);
     extlib_close(&energy_domains);
@@ -337,15 +369,23 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
         unsigned int domain = 1 << domain_idx;
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_GT(result->domain_data[domain_idx].arr_size, 0);
-            EXPECT_NE(result->domain_data[domain_idx].counter_name, nullptr);
-            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr);
-            EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr);
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_GT(result->domain_data[domain_idx].arr_size, 0)
+                << domain_name << " energy domain exists but its arr_size variable is 0.";
+            EXPECT_NE(result->domain_data[domain_idx].counter_name, nullptr)
+                << domain_name << " energy domain exists but its counter_name pointer is NULL/nullptr.";
+            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr)
+                << "counter_value pointer of " << domain_name << " energy domain should be NULL/nullptr.";
+            EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr)
+                << domain_name << " energy domain exists but its energy_per_counter pointer is NULL/nullptr.";
         }
     }
-    EXPECT_GT(result->energy_total, 0.0);
-    EXPECT_EQ(result->reserved_memory_page, 0);
-    EXPECT_EQ(result->reserved_memory_index, 0);
+    EXPECT_GT(result->energy_total, 0.0)
+        << "energy_total variable should be greater than 0.";
+    EXPECT_EQ(result->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(result->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);
@@ -374,14 +414,21 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
         unsigned int domain = 1 << domain_idx;
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
-            EXPECT_EQ(result->domain_data[domain_idx].arr_size, 0);
-            EXPECT_EQ(result->domain_data[domain_idx].counter_name, nullptr);
-            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr);
-            EXPECT_EQ(result->domain_data[domain_idx].energy_per_counter, nullptr);
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(result->domain_data[domain_idx].arr_size, 0)
+                << domain_name << " energy domain does not exist but its arr_size variable is greater than 0.";
+            EXPECT_EQ(result->domain_data[domain_idx].counter_name, nullptr)
+                << domain_name << " energy domain does not exist but its counter_name pointer is not NULL/nullptr.";
+            EXPECT_EQ(result->domain_data[domain_idx].counter_value, nullptr)
+                << "counter_value pointer of " << domain_name << " energy domain should be NULL/nullptr.";
+            EXPECT_EQ(result->domain_data[domain_idx].energy_per_counter, nullptr)
+                << domain_name << " energy domain does not exist but its energy_per_counter pointer is not NULL/nullptr.";
         }
     }
-    EXPECT_EQ(result->reserved_memory_page, 0);
-    EXPECT_EQ(result->reserved_memory_index, 0);
+    EXPECT_EQ(result->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(result->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);
