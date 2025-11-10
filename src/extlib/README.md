@@ -20,7 +20,7 @@ This library features an advanced **Reserved Memory Manager** designed to optimi
 
 **Note:** The methods `extlib_read_energy_measurements(...)` and `extlib_calc_energy_consumption(...)` retrun the same `ExtlibEnergyTimeStamp` object but the arrays pointing to pre-allocated memory. From the user perspective, everything stays the same, user still needs to use `extlib_free_energy_timestamp(energy_timestamp)` to free.
 
-To enable reserved memory mode, use the `EXTLIB_ENERGY_USE_RESERVED_MEMORY` macro which automatically calculates the required memory size (3x the number of measurements to account for begin/end/result timestamps).
+To enable reserved memory mode, use the `EXTLIB_ENERGY_USE_RESERVED_MEMORY` macro which automatically calculates the required memory size (2x the number of measurements to account for begin/end timestamps and uses a reserved block for result calculation).
 
 An example program is provided below. For the full interface, refer to `meric/src/extlib/meric_ext.h`, and for more comprehensive example see `meric/src/test/extlib_test.c`.
 
@@ -62,8 +62,8 @@ extlib_close(&energy_domains);
 ExtlibEnergy energy_domains = {0};
 EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, EXTLIB_ENERGY_DOMAIN_A64FX);
 
-// Enable reserved memory for 10 measurements (automatically allocates 30 slots)
-// This is the page size, when more read is done, new pages are created with 30 slots and deallocated automatically.
+// Enable reserved memory for 10 measurements (automatically allocates 20 slots)
+// This is the page size, when more read is done, new pages are created with 20 slots and deallocated automatically.
 EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 10);
 
 extlib_init(&energy_domains, true);
