@@ -133,6 +133,7 @@ void NVML::initCounters(bool detailed)
         sourceDecls.push_back({ "MODULE_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
         sourceDecls.push_back({ "GPU_POWER",     SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
         sourceDecls.push_back({ "MODULE_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1 });
+        sourceDecls.push_back({ "MEMORY_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 2 });
     }
     else
     {
@@ -287,7 +288,7 @@ void NVML::initSamplers(bool detailed)
             for(size_t i = 0; i < fieldValues.size(); ++i)
             {
                 uint64_t value = 0;
-                if(ret == NVML_SUCCESS || fieldValues[i].nvmlReturn == NVML_SUCCESS)
+                if(ret == NVML_SUCCESS && fieldValues[i].nvmlReturn == NVML_SUCCESS)
                 {
                     value = fieldValues[i].value.uiVal;
 
