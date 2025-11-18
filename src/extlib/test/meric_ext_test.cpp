@@ -44,7 +44,7 @@ std::string getEnergyDomainName(unsigned int domain)
     return domain_name;
 }
 
-TEST(MERICExtAPITest, ReservedMemoryIsNotEnabledByDefault)
+TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
@@ -234,7 +234,7 @@ TEST(MERICExtAPITest, DisabledEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
     extlib_close(&energy_domains);
 }
 
-TEST(MERICExtAPITest, InstanceOfExtlibEnergyIsResetAfterClose)
+TEST(MERICExtAPITest, EnergyDomainsAreInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
