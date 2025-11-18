@@ -378,6 +378,8 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDoma
                 << domain_name << " energy domain exists but its counter_value pointer is NULL/nullptr.";
             EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr)
                 << "energy_per_counter pointer of " << domain_name << " energy domain should be NULL/nullptr.";
+            EXPECT_EQ(ts->domain_data[domain_idx].energy_total, 0.0)
+                << "energy_total variable of " << domain_name << " energy domain should be 0.";
         }
     }
     EXPECT_EQ(ts->energy_total, 0.0)
@@ -414,6 +416,8 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDom
                 << domain_name << " energy domain does not exist but its counter_value pointer is not NULL/nullptr.";
             EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr)
                 << "energy_per_counter pointer of " << domain_name << " energy domain should be NULL/nullptr.";
+            EXPECT_EQ(ts->domain_data[domain_idx].energy_total, 0.0)
+                << "energy_total variable of " << domain_name << " energy domain should be 0.";
         }
     }
     EXPECT_EQ(ts->energy_total, 0.0)
@@ -457,6 +461,8 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
                 << "counter_value pointer of " << domain_name << " energy domain should be NULL/nullptr.";
             EXPECT_NE(result->domain_data[domain_idx].energy_per_counter, nullptr)
                 << domain_name << " energy domain exists but its energy_per_counter pointer is NULL/nullptr.";
+            EXPECT_GT(result->domain_data[domain_idx].energy_total, 0.0)
+                << domain_name << " energy domain exists but its energy_total variable is 0.";
         }
     }
     EXPECT_GT(result->energy_total, 0.0)
@@ -498,6 +504,8 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
                 << "counter_value pointer of " << domain_name << " energy domain should be NULL/nullptr.";
             EXPECT_EQ(result->domain_data[domain_idx].energy_per_counter, nullptr)
                 << domain_name << " energy domain does not exist but its energy_per_counter pointer is not NULL/nullptr.";
+            EXPECT_GT(result->domain_data[domain_idx].energy_total, 0.0)
+                << domain_name << " energy domain does not exist but its energy_total variable is greater than 0.";
         }
     }
 
