@@ -13,7 +13,7 @@
 #include "work.h"
 
 #define RESERVED_ELEMENT_SIZE 12
-TEST(MemoryManagerTest, ReservedMemoryManagerEnabledAndSizeIsCorrect)
+TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsCorrect)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
@@ -26,7 +26,7 @@ TEST(MemoryManagerTest, ReservedMemoryManagerEnabledAndSizeIsCorrect)
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, InitializeCreatesPage0ForAllDomainsWithCorrectSize)
+TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfterInit)
 {
     // note that since the index0 of page0 is reserved to save result, we have +1 in size.
     ExtlibEnergy energy_domains = {};
