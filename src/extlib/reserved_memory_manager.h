@@ -79,7 +79,7 @@ public:
     static bool is_enabled;
     static size_t reserved_memory_size;
 
-#if VERBOSE
+#if TESTING
 public:
 #else
 private:
@@ -97,7 +97,7 @@ public:
     static void shrink_to_fit();
     static void close();
 
-#ifdef VERBOSE
+#ifdef TESTING
 public:
 #else
 private:
