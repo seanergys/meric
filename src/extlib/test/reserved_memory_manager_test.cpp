@@ -17,11 +17,22 @@ TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsC
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    size_t expected_reserved_memory_size = 2 * RESERVED_ELEMENT_SIZE;
+
+    EXPECT_TRUE(energy_domains.use_reserved_memory)
+        << "use_reserved_memory boolean should be true.";
+    EXPECT_EQ(energy_domains.reserved_memory_size, expected_reserved_memory_size)
+        << "reserved_memory_size variable should be " << expected_reserved_memory_size
+        << " (" << energy_domains.reserved_memory_size << " != " << expected_reserved_memory_size << ").";
+
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
 
-    EXPECT_TRUE(ReservedMemoryManager::is_enabled);
-    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 2 * RESERVED_ELEMENT_SIZE);
+    EXPECT_TRUE(ReservedMemoryManager::is_enabled)
+        << "is_enabled boolean should be true.";
+    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, expected_reserved_memory_size)
+        << "reserved_memory_size variable should be " << expected_reserved_memory_size
+        << " (" << ReservedMemoryManager::reserved_memory_size << " != " << expected_reserved_memory_size << ").";
 
     extlib_close(&energy_domains);
 }
