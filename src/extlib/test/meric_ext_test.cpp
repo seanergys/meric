@@ -264,6 +264,93 @@ TEST(MERICExtAPITest, InstanceOfExtlibEnergyIsResetAfterClose)
         << "reserved_memory_size variable should be 0.";
 }
 
+TEST(MERICExtAPITest, SuccessivelyCreatedEnergyTimeStampsHaveSuccessiveNonZeroIds)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    do_work(2);
+    auto *ts2 = extlib_read_energy_measurements(&energy_domains);
+    auto *result = extlib_calc_energy_consumption(ts1, ts2);
+
+    EXPECT_GT(ts1->id, 0.0)
+        << "ID of the first energy timestamp (ts1) is 0.";
+    EXPECT_GT(ts2->id, ts1->id)
+        << "ID of the second energy timestamp (ts2) is lesser than ID of the first one (ts1).";
+    EXPECT_GT(result->id, ts2->id)
+        << "ID of the third energy timestamp (result) is lesser than ID of the second one (ts2).";
+
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(result);
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, EnergyTimeStampsHaveReservedMemoryVariablesInDefaultState)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+    extlib_init(&energy_domains, true);
+
+    auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    do_work(2);
+    auto *ts2 = extlib_read_energy_measurements(&energy_domains);
+
+    EXPECT_EQ(ts1->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts1->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+    EXPECT_EQ(ts2->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts2->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+
+    auto *ts3 = extlib_read_energy_measurements(&energy_domains);
+    do_work(2);
+    auto *ts4 = extlib_read_energy_measurements(&energy_domains);
+
+    EXPECT_EQ(ts3->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts3->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+    EXPECT_EQ(ts4->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(ts4->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+
+    auto *result1 = extlib_calc_energy_consumption(ts1, ts2);
+    auto *result2 = extlib_calc_energy_consumption(ts3, ts4);
+
+    EXPECT_EQ(result1->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(result1->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+    EXPECT_EQ(result2->reserved_memory_page, 0)
+        << "reserved_memory_page variable should be 0.";
+    EXPECT_EQ(result2->reserved_memory_index, 0)
+        << "reserved_memory_index variable should be 0.";
+
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(ts3);
+    extlib_free_energy_timestamp(ts4);
+    extlib_free_energy_timestamp(result1);
+    extlib_free_energy_timestamp(result2);
+    extlib_close(&energy_domains);
+}
+
 TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
