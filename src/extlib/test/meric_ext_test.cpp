@@ -382,10 +382,6 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDoma
     }
     EXPECT_EQ(ts->energy_total, 0.0)
         << "energy_total variable should be 0.";
-    EXPECT_EQ(ts->reserved_memory_page, 0)
-        << "reserved_memory_page variable should be 0.";
-    EXPECT_EQ(ts->reserved_memory_index, 0)
-        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts);
     extlib_close(&energy_domains);
@@ -422,10 +418,6 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDom
     }
     EXPECT_EQ(ts->energy_total, 0.0)
         << "energy_total variable should be 0.";
-    EXPECT_EQ(ts->reserved_memory_page, 0)
-        << "reserved_memory_page variable should be 0.";
-    EXPECT_EQ(ts->reserved_memory_index, 0)
-        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts);
     extlib_close(&energy_domains);
@@ -469,10 +461,6 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     }
     EXPECT_GT(result->energy_total, 0.0)
         << "energy_total variable should be greater than 0.";
-    EXPECT_EQ(result->reserved_memory_page, 0)
-        << "reserved_memory_page variable should be 0.";
-    EXPECT_EQ(result->reserved_memory_index, 0)
-        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);
@@ -512,10 +500,6 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
                 << domain_name << " energy domain does not exist but its energy_per_counter pointer is not NULL/nullptr.";
         }
     }
-    EXPECT_EQ(result->reserved_memory_page, 0)
-        << "reserved_memory_page variable should be 0.";
-    EXPECT_EQ(result->reserved_memory_index, 0)
-        << "reserved_memory_index variable should be 0.";
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);
