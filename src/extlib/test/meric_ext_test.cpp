@@ -48,14 +48,13 @@ std::string getEnergyDomainName(unsigned int domain)
 TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 {
     ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
 
     EXPECT_FALSE(ReservedMemoryManager::is_enabled)
         << "is_enabled boolean should be false.";
     EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0)
         << "reserved_memory_size variable should be 0.";
-
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
-    extlib_init(&energy_domains, true);
 
     EXPECT_FALSE(energy_domains.use_reserved_memory)
         << "use_reserved_memory boolean should be false.";
