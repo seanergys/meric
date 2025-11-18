@@ -451,7 +451,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
                 << "counter_value pointer of " << domain_name << " energy domain should be NULL/nullptr.";
             EXPECT_EQ(result->domain_data[domain_idx].energy_per_counter, nullptr)
                 << domain_name << " energy domain does not exist but its energy_per_counter pointer is not NULL/nullptr.";
-            EXPECT_GT(result->domain_data[domain_idx].energy_total, 0.0)
+            EXPECT_EQ(result->domain_data[domain_idx].energy_total, 0.0)
                 << domain_name << " energy domain does not exist but its energy_total variable is greater than 0.";
         }
     }
