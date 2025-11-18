@@ -133,7 +133,7 @@ void NVML::initCounters(bool detailed)
         sourceDecls.push_back({ "MODULE_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
         sourceDecls.push_back({ "GPU_POWER",     SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
         sourceDecls.push_back({ "MODULE_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1 });
-        sourceDecls.push_back({ "MEMORY_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 2 });
+        sourceDecls.push_back({ "MEMORY_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_AVERAGE, 2 });
     }
     else
     {
