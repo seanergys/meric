@@ -7,6 +7,7 @@
 // =============================================================================
 
 #include <string>
+
 #include <meric_ext.h>
 #include <gtest/gtest.h>
 
@@ -47,6 +48,12 @@ std::string getEnergyDomainName(unsigned int domain)
 TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 {
     ExtlibEnergy energy_domains = {};
+
+    EXPECT_FALSE(ReservedMemoryManager::is_enabled)
+        << "is_enabled boolean should be false.";
+    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0)
+        << "reserved_memory_size variable should be 0.";
+
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
