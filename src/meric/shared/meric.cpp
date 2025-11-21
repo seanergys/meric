@@ -1,10 +1,20 @@
 
 #include "meric.h"
+#include "cpu_affinity_map.h"
+#include <memory>
 
 using namespace meric;
 
 SharedMeric::SharedMeric()
 {
+	/*for(const auto &item: Environment::mapCoresToTIDs)
+	{
+		std::cout << item.first << ": ";
+		for(auto t: item.second)
+			std::cout << t << " ";
+		std::cout << std::endl;
+	}*/
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
 	{
 		HDEEM::init(Meric::DETAILED);
@@ -113,6 +123,13 @@ SharedMeric::SharedMeric()
 	{
 		currentState.socket[socket] = defaultParameter;
 	}
+
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>(
+		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
+		std::max(defaultParameter.nthreads, 1)));
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
 
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called

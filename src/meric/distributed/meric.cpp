@@ -1,5 +1,6 @@
 
 #include "meric.h"
+#include "cpu_affinity_map.h"
 #include <map>
 
 using namespace meric;
@@ -293,6 +294,24 @@ DistributedMeric::DistributedMeric()
 	for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
 	{
 		currentState.socket[socket] = defaultParameter;
+	}
+
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(
+		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
+		std::max(defaultParameter.nthreads, 1), _currentNode));
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
+
+	if(nodeFirst)
+	{
+		for(const auto &item: Environment::mapCoresToTIDs)
+		{
+			std::cout << item.first << ": ";
+			for(auto t: item.second)
+				std::cout << t << " ";
+			std::cout << std::endl;
+		}
 	}
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
