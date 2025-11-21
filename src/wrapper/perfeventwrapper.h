@@ -7,8 +7,11 @@
 #endif
 #include <map>
 #include <iostream>
+#include <cmath>
 #include <climits>
+#include <dirent.h>
 
+#include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
 
@@ -19,42 +22,76 @@ namespace meric {
 class PERFEVENT {
 
 public:
-
-	static void init();
+	static void init(bool detailed);
 	static void close();
 	
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record);
-	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName);
+	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter = "", std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios);
+
 private:
+	static bool getParanoidLevel(int& paranoidLevel);
 	static void start();
-	static long openCounter(perf_event_attr attr);
+	static __u32 getPMUtype(std::string PMUname);
+	static long openCounter(__u32 type, __u64 config, int cpu);
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
-		//list of counters
-	static std::map<std::string,unsigned long long int> counters;
+
+	#ifdef _AMD_
+	static void initL3CacheSizes();
+
+	//#elif defined _INTEL_
+	//static void initIMCsizes();
+	#endif
+
+	static bool detailedMode;
+	static std::map<const std::string, long> countersFd;
 	static unsigned long long int COUNTERMAX;
+
+	#ifdef _AMD_
+	static int L3_CACHES_PER_SOCKET;
+
+	static std::map<int, std::vector<int>> mapCoresToL3Cache;
+	static std::map<int, std::vector<int>> mapL3CachesToSocket;
+
+	//#elif defined _INTEL_
+	//static int IMCs_PER_SOCKET;
+	#endif
 };
 
 #else
 
 class PERFEVENT {
+
 public:
-	static void init() {};
+	static void init(bool detailed) {};
 	static void close() {};
 	static void start() {};
 	static void stop() {};
 	static void getCounterValues(std::map<std::string, unsigned long long int> & record) {};
-	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName);
+	static unsigned long long getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter = "", std::string regionName = "");
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, unsigned long long int>& start, std::map<std::string, unsigned long long int>& stop, double runtime, std::map <std::string, double> & ratios);
+
 private:
 	static void initMap(std::map<std::string, unsigned long long int> & dict);
+
+	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
+
+	#ifdef _AMD_
+	static int L3_CACHES_PER_SOCKET;
+
+	static std::map<int, std::vector<int>> mapCoresToL3Cache;
+	static std::map<int, std::vector<int>> mapL3CachesToSocket;
+
+	//#elif defined _INTEL_
+	//static int IMCs_PER_SOCKET;
+	#endif
 };
 #endif
 

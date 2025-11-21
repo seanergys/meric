@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <unordered_map>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -55,20 +56,62 @@ static std::map<const std::string, std::string> counterLabel = {
  **/
 namespace PERFEVENT_COUNTERS {
 
-const std::string COUNTER_AVX = "COUNTER_AVX";
-const std::string COUNTER_AVX_ALL = "COUNTER_AVX_ALL";
-const std::string COUNTER_CACHE_MISSES = "COUNTER_CACHE_MISSES";
-const std::string COUNTER_HW_INSTRUCTIONS = "COUNTER_HW_INSTRUCTIONS";
-const std::string COUNTER_FREQ = "PERF_COUNT_HW_CPU_CYCLES";
+const std::string PERFEVENT_CPU_CYCLES = "CPU_CYCLES";
+const std::string PERFEVENT_CPU_INSTS = "CPU_INSTRUCTIONS";
+
+#ifdef _AMD_
+const std::string AMD_CPU_FLOPS = "CPU_FLOPS";
+const std::string AMD_CPU_L3_MISSES = "CPU_L3_MISSES";
+#elif defined _INTEL_
+const std::string INTEL_CPU_CYCLES_AMX_ACTIVE = "CPU_CYCLES_AMX_BUSY";
+const std::string INTEL_CPU_INSTS_SCALAR_FP_DP = "CPU_INST_SCALAR_FP_DP";
+const std::string INTEL_CPU_INSTS_VEC128_FP_DP = "CPU_INST_VEC128_FP_DP";
+const std::string INTEL_CPU_INSTS_VEC256_FP_DP = "CPU_INST_VEC256_FP_DP";
+const std::string INTEL_CPU_INSTS_VEC512_FP_DP = "CPU_INST_VEC512_FP_DP";
+const std::string INTEL_CPU_L3_MISSES = "CPU_L3_MISSES";
+const std::string INTEL_CPU_UNCORE_CYCLES = "CPU_UNCORE_CYCLES";
+const std::string INTEL_CPU_DRAM_BYTES_READ = "CPU_DRAM_READ";
+const std::string INTEL_CPU_DRAM_BYTES_WRITE = "CPU_DRAM_WRITE";
+#endif
 
 static std::map<const std::string, std::string> counterLabel = {
-#if defined(__x86_64__)
-	{ COUNTER_AVX,             "COUNTER_AVX"             },
-	{ COUNTER_AVX_ALL,         "COUNTER_AVX_ALL"         },
-#endif
-	{ COUNTER_CACHE_MISSES,    "COUNTER_CACHE_MISSES"    },
-	{ COUNTER_HW_INSTRUCTIONS, "COUNTER_HW_INSTRUCTIONS" },
-	{ COUNTER_FREQ,            "COUNTER_CPU_CYCLES"      }
+	#ifdef _AMD_
+	{ AMD_CPU_FLOPS,                AMD_CPU_FLOPS                     },
+	{ AMD_CPU_L3_MISSES,            AMD_CPU_L3_MISSES                 },
+	#elif defined _INTEL_
+	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  "CPU_CYCLES_AMX_ACTIVE"           },
+	{ INTEL_CPU_INSTS_SCALAR_FP_DP, "CPU_INSTRUCTIONS_SCALAR_FP_DP"   },
+	{ INTEL_CPU_INSTS_VEC128_FP_DP, "CPU_INSTRUCTIONS_VEC_128B_FP_DP" },
+	{ INTEL_CPU_INSTS_VEC256_FP_DP, "CPU_INSTRUCTIONS_VEC_256B_FP_DP" },
+	{ INTEL_CPU_INSTS_VEC512_FP_DP, "CPU_INSTRUCTIONS_VEC_512B_FP_DP" },
+	{ INTEL_CPU_L3_MISSES,          INTEL_CPU_L3_MISSES               },
+	{ INTEL_CPU_UNCORE_CYCLES,      INTEL_CPU_UNCORE_CYCLES           },
+	{ INTEL_CPU_DRAM_BYTES_READ,    "CPU_DRAM_BYTES_READ"             },
+	{ INTEL_CPU_DRAM_BYTES_WRITE,   "CPU_DRAM_BYTES_WRITE"            },
+	#endif
+	{ PERFEVENT_CPU_CYCLES,         PERFEVENT_CPU_CYCLES              },
+	{ PERFEVENT_CPU_INSTS,          PERFEVENT_CPU_INSTS               }
+};
+
+static std::map<const std::string, uint64_t> counterDefines = {
+	#ifdef _AMD_
+	{ AMD_CPU_FLOPS,                0x0f03 },
+	{ AMD_CPU_L3_MISSES,            0x0104 }
+	#elif defined _INTEL_
+	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  0x02b7 },
+	{ INTEL_CPU_INSTS_SCALAR_FP_DP, 0x01c7 },
+	{ INTEL_CPU_INSTS_VEC128_FP_DP, 0x04c7 },
+	{ INTEL_CPU_INSTS_VEC256_FP_DP, 0x10c7 },
+	{ INTEL_CPU_INSTS_VEC512_FP_DP, 0x40c7 },
+	{ INTEL_CPU_L3_MISSES,          0x20d1 }
+	#endif
+};
+
+static std::unordered_map<std::string, int> counterMultipliers = {
+	#ifdef _INTEL_
+	{ INTEL_CPU_DRAM_BYTES_READ,  64 },
+	{ INTEL_CPU_DRAM_BYTES_WRITE, 64 }
+	#endif
 };
 
 }
