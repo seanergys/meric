@@ -6,7 +6,7 @@ meric_ext=-lmeric_ext
 gtest=-lgtest -lgtest_main -lpthread
 #hdeem=-lhdeem -lfreeipmi
 #x86_adapt=-lx86_adapt
-#nvml=-lnvidia-ml
+nvml=-lnvidia-ml
 #libmsr=-lmsr
 
 # OpenMP flag
@@ -15,8 +15,8 @@ openmp_flag=-fopenmp
 # Compiler settings
 CXX=g++
 CXXFLAGS=-std=c++17 -O0 -Wall $(openmp_flag) -DTESTING
-INCLUDE=-I../../../include
-LDFLAGS=-L../../../lib
+INCLUDE=-I../../../include -I./googletest/googletest/include
+LDFLAGS=-L../../../lib -L./googletest/build/lib
 LDLIBS=$(meric_ext) $(gtest) $(hdeem) $(x86_adapt) $(nvml) $(libmsr)
 
 # Build directory
