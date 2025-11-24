@@ -5,9 +5,9 @@
 
 # MERIC energy-efficient runtime system #
 
-Lightweight C/C++ library with Fortran interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
+Lightweight C/C++ library with Fortran and Python interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), and selected ARM systems (e.g. Fujitsu A64FX).
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), selected ARM systems (e.g., Fujitsu A64FX), Nvidia GPUs (Volta, Ampere, Hopper), and AMD GPUs (MI2xx).
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -47,7 +47,6 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 12. [Acknowledgement](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgement)
 -->
 
-
 --------------------------------------------------------------------------------
 #     1] System parameters tuning                                              #
 --------------------------------------------------------------------------------
@@ -55,14 +54,14 @@ MERIC allows to set selected system parameters for the whole application run or 
 
 
 ## CPU core frequency ##
-MERIC provides several ways how to control the CPU core frequency, which highy depends on CPU vendor and available scaling driver.
+MERIC provides several ways how to control the CPU core frequency, which highly depends on CPU vendor and available scaling driver.
 
 ##### Intel #####
 Support for frequency scaling under `Intel Hardware Performance State (HWP)`, `intel_pstate` scaling driver, `intel_cpufreq` scaling driver, or `userspace` scaling governor of any scaling driver.
 
-Under `HWP` requires additional write acess to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq`. 
+Under `HWP` requires additional write access to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq`. 
 
-Under `intel_pstate` scaling driver requires additional write acess to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
+Under `intel_pstate` scaling driver requires additional write access to `/sys/devices/system/cpu/intel_pstate/no_turbo` and `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
 
 Under `intel_cpufreq` requires access to MSRs, or write access to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq`.
 
@@ -74,7 +73,7 @@ If scaling driver allows to specify `userspace` scaling governor (`/sys/devices/
 
 ##### AMD #####
 
-- AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://developer.amd.com/e-sms/) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
+- AMD 19h+ CPU using [EPYC System Management Software (E-SMS)](https://www.amd.com/en/developer/e-sms.html) stack - require [Host System Management Port (HSMP)](https://github.com/amd/amd_hsmp) and [EPYC System Management Interface (E-SMI) In-band Library](https://developer.amd.com/e-sms/e-smi-in-band-library/). **Prefered interface for AMD CPUs.**
 - AMD 17h+ CPU via MSR - require [msr-safe](https://github.com/LLNL/msr-safe).
 
 ##### Any (other) CPU with userspace scaling driver #####
@@ -152,6 +151,17 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 ## NVML ##
 [Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
 
+## ROCm SMI ##
+[ROCm System Management Interface (ROCm SMI)](https://github.com/ROCm/rocm_smi_lib) allows to measure energy consumption of AMD GPUs of MI2xx or newer architectures. 
+
+
+<!--- FUTURE dependency 
+## AMD SMI ##
+[AMD System Management Interface (AMD SMI)](https://github.com/ROCm/amdsmi) library is part of the AMD ROCm. 
+
+## HWMON ##
+- AMD RAPL, Nvidia Grace
+-->
 
 ## OCC ##
 [On Chip Controller (OCC)](https://github.com/open-power/occ) provides power monitoring of compute nodes power by OpenPOWER CPUs. Available from IBM POWER8 processors. The performance counters are updated every 500 us.
@@ -310,12 +320,14 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [libmsr](https://github.com/LLNL/libmsr) - prefered to be used for Intel CPUs parameters tuning
 * optionally - [E-SMI in-band](https://github.com/amd/esmi_ib_library) - prefered interface for AMD 19h CPUs parameters tuning
 * optionally - [HSMP](https://github.com/amd/amd_hsmp) - mandatory for E-SMI in-band library
+* optionally - [OCC](https://github.com/open-power/occ) - mandatory for OpenPOWER CPU power monitoring
 * optionally - [HDEEM](https://tu-dresden.de/zih/forschung/projekte/hdeem?set_language=en)
 * optionally - [FreeIPMI](http://www.gnu.org/software/freeipmi/) - mandatory for the HDEEM power monitoring
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
 * optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the Nvidia GPUs monitoring and tuning
+* optionally - [ROCm]
 * optionally - [numactl](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
