@@ -10,6 +10,7 @@
 #include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
+#include "cpuidsignatures.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_clocks.h>
@@ -43,6 +44,7 @@ private:
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
 	static const int TCC = 100; //Thermal Control Circuitry
+	static CpuidSignatureValues cpu_arch;
 };
 
 #else
@@ -63,6 +65,7 @@ private:
 	static uint64_t COUNTERMAX;
 	static uint64_t nominal_freq;
 	static const int TCC = 100;
+	static CpuidSignatureValues cpu_arch;
 };
 
 

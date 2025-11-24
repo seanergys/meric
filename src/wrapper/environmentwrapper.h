@@ -219,6 +219,7 @@ public:
 //	static void getAvailablePwrCap(std::vector<long> & power, std::vector<long> & time);
 	
 	static void getCPUbrandString(std::string & CPUname);
+	static void getCPUFamilyModelString(std::string & CPUFamilyModelOut);
 	
 #ifdef _INTEL_
 	static bool isHWPactive(std::string &status);
