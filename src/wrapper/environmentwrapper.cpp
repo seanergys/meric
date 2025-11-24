@@ -2483,7 +2483,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 	MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal(RAPL_PCKG_POWER_LIMIT, pio.signal_domain_type(RAPL_PCKG_POWER_LIMIT), 0));
 	#endif
 	
-	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / (1000*RAPL::getUnit(RAPL_PCKG_POWER_LIMIT)))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
+	MSR_PKG_POWER_LIMIT_bits = (MSR_PKG_POWER_LIMIT_bits & (~MSR_PKG_POWER_LIMIT_mask)) | (((uint64_t)(power / (1000*RAPL::getUnit(RAPL::PCKG_POWER_LIMIT)))) & MSR_PKG_POWER_LIMIT_mask) | MSR_PKG_POWER_LIMIT_enable_mask;
 
 
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
@@ -2497,7 +2497,7 @@ void Environment::CPUpowercap(uint64_t power, uint64_t timeWindow, int socket)
 		 **/
 		uint64_t Y = 0;
 		uint64_t Z = 0;
-		timeWindow = timeWindow/(1000 * RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW));
+		timeWindow = timeWindow/(1000 * RAPL::getUnit(RAPL::POWER_LIMIT_TIMEWINDOW));
 		if (timeWindow > 1)
 		{
 			Y = log2(timeWindow);

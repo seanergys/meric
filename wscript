@@ -121,6 +121,9 @@ def configure(ctx):
 			elif ctx.check_cxx(lib="cpupower", uselib_store="cpupower", mandatory=False):
 				ctx.env.append_unique("DEFINES", [ "HAVE_CPUFREQ_H=1", "HAVE_CPUPOWER=1" ])
 				ctx.env.append_unique("LINKFLAGS", [ "-lcpupower" ])
+		if ctx.check_cxx(header_name="geopm_version.h", lib="geopm", uselib_store="geopm", execute=False, mandatory=False):
+			ctx.env.append_unique("DEFINES", [ "HAVE_GEOPM_H=1"])
+			ctx.env.append_unique("LINKFLAGS", [ "-lgeopmd" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
 			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False)
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
@@ -238,6 +241,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
@@ -265,6 +269,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
 		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
@@ -281,6 +286,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",

@@ -32,7 +32,7 @@ public:
 	static void initMap(std::map<std::string, uint64_t> &dict);
 	static double getResultValue(uint64_t startValue, uint64_t stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "");
 	static std::string getSummaryCounterName();
-	static std::string getSourceLabel() { return "ROCMSMI"; };
+	static std::string getSourceLabel() { return "ROCM"; };
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> &ratios) {};
 

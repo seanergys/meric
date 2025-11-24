@@ -19,12 +19,14 @@
 	#include <x86_adapt.h>
 #endif
 
+/* NOTE: We have those in "raplwrapper.h" already
 #ifdef HAVE_GEOPM_H
 	#include <geopm/PlatformTopo.hpp>
 	#include <geopm/PlatformIO.hpp>
 	#include <geopm_hash.h>
 	static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
+*/
 
 #ifdef HAVE_NVML_H
 	#include <nvml.h>
@@ -39,6 +41,7 @@ std::map<std::string, double> unit;
 std::map <uint64_t,uint64_t> currentWhitelist;
 std::string CPUname = "";
 int CORES_PER_SOCKET = 0;
+int SOCKETS_PER_NODE = 0;
 
 enum MODE	//this application keeps this order
 {
@@ -52,48 +55,88 @@ enum MODE	//this application keeps this order
 
 std::string readFile(const std::string &filePath)
 {
-    std::ifstream file(filePath);
-    std::string content;
-    if (file.is_open())
-    {
-        std::getline(file, content);
-        file.close();
-    }
-    return content;
+	std::ifstream file(filePath);
+	std::string content;
+	if (file.is_open())
+	{
+		std::getline(file, content);
+		file.close();
+	}
+	return content;
 }
 
 /*
  * GPU id and name can be obtained through command: rocminfo | grep -Ei "Chip ID|Marketing name"
  *   - note: this command may output also AMD CPUs
  */
+
 std::string getAMDGPUName(const std::string hex)
 {
+	long version = 0;
+	try
+	{
+		long version = std::stol(hex, nullptr, 16);
+	}
+	catch (...)
+	{
+		return "Unknown AMD GPU type";
+	}
+
 	std::string name;
-	if(hex == "0x686c")
-		name = "Mi25";
-	else if(hex == "0x66a1")
-		name = "Mi50/Mi60";
-	else if(hex == "0x738c")
-		name = "Mi100";
-	else if(hex == "0x740f")
-		name = "Mi210";
-	else if(hex == "0x740c" || hex == "7408")
-		name = "Mi250X/Mi250";
-	else if(hex == "0x74a0")
-		name = "Mi300A";
-	else if(hex == "0x74a1")
-		name = "Mi300X";
-	else if(hex == "0x7485")
-		name = "Mi300X VF";
-	else
-		name = "Unknown AMD GPU type";
+	switch (version)
+	{
+		case 0x686c:
+		  	name = "AMD Instinct MI25";
+		  	break;
+		case 0x66a1:
+			name = "AMD Instinct MI50/MI60";
+			break;
+		case 0x738c:
+			name = "AMD Instinct MI100";
+			break;
+		case 0x740f:
+			name = "AMD Instinct MI210";
+			break;
+		case 0x7408: 
+			name = "AMD Instinct MI250X";
+			break;
+		case 0x740c:
+			name = "AMD Instinct MI250X/MI250";
+			break;
+		case 0x74a0:
+			name = "AMD Instinct MI300A";
+			break;
+		case 0x74a1:
+			name = "AMD Instinct MI300X";
+			break;
+		case 0x74A2:
+			name = "AMD Instinct MI308X";
+			break;
+		case 0x74A5: 
+			name = "AMD Instinct MI325X";
+			break;
+		case 0x74A9:
+			name = "AMD Instinct MI300X HF";
+			break;
+		case 0x74B5:
+			name = "AMD Instinct MI300X VF";
+			break;
+		case 0x74B6:
+			name = "AMD Instinct MI308X";
+			break;
+		case 0x74BD:
+			name = "AMD Instinct MI300X HF";
+			break;
+		default:
+			name = "Unknown AMD GPU type";
+	}
 	return name;	
 }
 
 
 void sysInfoSize(bool detailed = false)
 {
-	int SOCKETS_PER_NODE, THREADS_PER_CORE;
+	int THREADS_PER_CORE;
 	std::vector <int> onlineThreads;
 	meric::Environment::initHWSizes(SOCKETS_PER_NODE, CORES_PER_SOCKET, THREADS_PER_CORE, onlineThreads);
 	meric::Environment::getCPUbrandString(CPUname);
@@ -231,11 +274,11 @@ void sysInfoSize(bool detailed = false)
 				}
 			}
 		}
-	        if (modelName != "")
+		if (modelName != "")
 		{
 			std::cout << "\tGPU name:         " << modelName << '\n';
 		}
-	        if (GPUDeviceCount)
+		if (GPUDeviceCount)
 		{
 			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
 			          << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
@@ -290,27 +333,31 @@ bool sysInfoFrequencies(meric::systemLimits& limits, bool detailed = false)
 		if (HWP)
 		{
 			std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq\n";
+			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+			          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq\n";
 		}
 		else
 		{
 #if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) && defined(__x86_64__)
 			std::cout << "\t\t install one the following libraries:\n"
-			          << "\t\t - msr_safe+libmsr / msr_safe / x86_adapt / cpufreq\n";
+	#ifdef _INTEL_
+			          << "\t\t - msr_safe / cpufreq / GEOPM\n";
+	#elif defined _AMD_
+			          << "\t\t - esmi_ib / msr_safe / cpufreq\n";
+	#endif
 #endif
 			if (scalingDriver == "intel_pstate")
 			{
 				std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
-					      << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
+				          << "\t\t - /sys/devices/system/cpu/intel_pstate/no_turbo\n"
+				          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq\n"
+				          << "\t\t or switch scaling driver to one that supports userspace scaling governor and\n";
 			}
 			struct stat info;
 			if(stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", &info) == 0)
 			{	
 				std::cout << "\t\t grant write access to:\n"
-					      << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";
+				          << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor\n";
 				if (stat("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", &info) == 0)
 				{
 					std::cout << "\t\t - /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed\n";
@@ -792,12 +839,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 		}
 
 		std::cout 
-			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
+			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)*1000000 << " us\n"
 			<< "\tPKG max power limit:   " 
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n"
 			
 			<< "\tPKG min power limit:   " 
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n"
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n"
 
 	//		<< "\tPKG max time window:   " 
 	//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
@@ -811,10 +858,10 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 
 		std::cout 
 			<< "\tDRAM max power limit:  "
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n"
 
 			<< "\tDRAM min power limit:  " 
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n"
+			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n"
 
 	//		<< "\tDRAM max time window:  " 
 	//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
@@ -884,12 +931,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< " + clamping "
 					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 					<< std::endl
-					<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
+					<< "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n";
 
 				Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 				Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
 				std::cout << "\tPKG time window #1: "
-						  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << pow(2,Y) * (1.0 + Z/4.0)*meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 
 		#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
@@ -905,12 +952,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< " + clamping "
 					<< (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 					<< std::endl
-					<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_PCKG_POWER_LIMIT) << " W\n";
+					<< "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n";
 
 				Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 				Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
 				std::cout << "\tPKG time window #2: "
-						  << pow(2,Y) * (1.0 + Z/4.0) *meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << pow(2,Y) * (1.0 + Z/4.0) *meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 			}
 
@@ -939,12 +986,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< " + clamping "
 					<< (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 					<< std::endl
-					<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(RAPL_RAM_POWER_LIMIT) << " W\n";
+					<< "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n";
 
 				F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift)/10.0;
 				Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
 				std::cout << "\tDRAM time window:   "
-						  << pow(2,Y) * F * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << pow(2,Y) * F * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 			}
 	#else
@@ -1070,12 +1117,12 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< " + clamping "
 					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift ) == 0 ? "disabled" : "enabled")
 					<< std::endl
-					<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n";
+					<< "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT) << " W\n";
 
 				Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
 				X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
 				std::cout << "\tPLATFORM time window: "
-						  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW)
+						  << pow(2,Y) * (1.0 + X/4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
 						  << " s\n";
 				const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
 
@@ -1085,7 +1132,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 					<< " + clamping "
 					<< (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 					<< std::endl
-					<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(RAPL_PLATFORM_POWER_LIMIT) << " W\n"
+					<< "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT) << " W\n"
 					<< "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") 
 					<< std::endl;
 			}
@@ -1167,7 +1214,6 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-
 	uint64_t min_power_limit, max_power_limit, current_power_limit, default_power_limit;
 	rsmi_status_t ret;
 
@@ -1190,12 +1236,7 @@ bool sysInfoPowercap(meric::systemLimits& limits)
 	{
 		std::cout << "\tGPU power limit:         " << current_power_limit / 1e6 << " W\n";
 	}
-
 #endif
-
-
-
-
 	return ok;
 }
 
@@ -1208,7 +1249,24 @@ void sysEnergyMeasurement()
 	std::cout << "\tRAPL\n";
 	systems++;
 #elif defined __x86_64
-	if (access("/sys/class/powercap/intel-rapl:0/energy_uj", R_OK ) != -1 )
+	bool raplAvailable = false;
+	for (int i = 0; i < SOCKETS_PER_NODE; i++)
+	{
+		std::string path1 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/energy_uj";
+		std::string path2 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/name";
+		std::string path3 = "/sys/class/powercap/intel-rapl:" + std::to_string(i) + "/max_energy_range_uj";
+
+		if (access(path1.c_str(), R_OK ) != -1 && access(path2.c_str(), R_OK ) != -1 && access(path3.c_str(), R_OK ) != -1)
+		{
+			raplAvailable = true;
+		}
+		else
+		{
+			raplAvailable = false;
+			break;
+		}
+	}
+	if (raplAvailable)
 	{
 		std::cout << "\tRAPL\n";
 		systems++;
@@ -1421,7 +1479,7 @@ int main(int argc, char **argv)
 		else if (!systemInTheDefaultSettings)
 		{
 			std::cerr << "\n\tWARNING: system not in the default settings!"
-				      << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+			          << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
 		}
 	}
 

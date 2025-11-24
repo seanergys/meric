@@ -4,6 +4,8 @@
 
 #include <cstdint>
 #include <string>
+#include <map>
+#include <vector>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -152,7 +154,7 @@ namespace OCC_COUNTERS {
  * PWRVDN  = Power consumption for this Processor's Vdn (nest) (calculated from AVSBus readings) (1ms)
  * PWRMEM  = Power consumption for Memory for this Processor read from APSS (500us)
  * PWRAPSSCH0 - PWRAPSSCH15 = Power Provided by APSS channel x (where x=0...15) (500us)
- *	APSS – Analog Power Subsystem Sweep, provide real time power measurements of voltage rails.
+ *	APSS - Analog Power Subsystem Sweep, provide real time power measurements of voltage rails.
  **/
 static std::map<const std::string, std::string> counterLabel = {
 	{ "PWRSYS",  "Energy consumption [J]" },
@@ -285,6 +287,45 @@ static std::map<const std::string, std::pair<std::string, std::string> > counter
 };
 }
 ////////////////////////////////////////////////////////////////////////////////
+namespace PERF_RAPL_COUNTERS {
+struct CounterDef_t {
+	enum Domain_t {
+		DOMAIN_NONE       = 0,
+		DOMAIN_GLOBAL     = 1,
+		DOMAIN_PER_SOCKET = 2,
+		DOMAIN_PER_CORE   = 3,
+		DOMAIN_PER_THREAD = 4,
+	};
+
+	enum Flags_t {
+		FLAG_NONE_BIT         = 0,
+		FLAG_ACCUMULATIVE_BIT = 1 << 0
+	};
+
+	std::vector<std::string> name;
+	std::string label;
+	std::string unit;
+	Domain_t    domain;
+	uint32_t    flags;
+	uint32_t    type;
+	uint64_t    config;
+};
+
+const std::string RAPL_SUM_ENERGY = "ENERGY_CONSUMPTION";
+
+static std::map<const std::string, CounterDef_t> counterDefs = {
+#ifdef _INTEL_
+	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
+	{ "RAM", { { "power", "energy-ram" }, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
+	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+#else // _AMD_
+	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
+	{ "CORE", { { "power_core", "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
+#endif
+};
+}
+////////////////////////////////////////////////////////////////////////////////
 namespace GEOPM_RAPL_COUNTERS {
 
 const std::string RAPL_PCKG_ENERGY = "MSR::PKG_ENERGY_STATUS#";
@@ -292,10 +333,13 @@ const std::string RAPL_RAM_ENERGY  = "MSR::DRAM_ENERGY_STATUS#";
 // const std::string RAPL_PLATFORM_ENERGY = "MSR::PLATFORM_ENERGY_COUNTER#";
 const std::string RAPL_SUM_ENERGY  = "Energy consumption [J]";	//PCKG+RAM = not a counter to measure
 
+#ifdef _AMD_
+const std::string RAPL_CORE_ENERGY = "";
+#endif
 
 const std::string RAPL_PCKG_POWER_LIMIT = "MSR::PKG_POWER_LIMIT#";
 const std::string RAPL_PCKG_POWER_LIMIT_1 = "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT";
-// const std::string RAPL_PLATFORM_POWER_LIMIT = "MSR::PLATFORM_POWER_LIMIT#";
+const std::string RAPL_PLATFORM_POWER_LIMIT = "MSR::PLATFORM_POWER_LIMIT#";
 const std::string RAPL_RAM_POWER_LIMIT  = "MSR::DRAM_POWER_LIMIT:POWER_LIMIT";
 const std::string RAPL_POWER_LIMIT_TIMEWINDOW = "MSR::PKG_POWER_LIMIT:PL1_TIME_WINDOW";
 

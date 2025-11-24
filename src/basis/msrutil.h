@@ -12,6 +12,8 @@
 	#include <unistd.h>
 #endif
 
+#include <vector>
+
 namespace meric {
 
 static int read_msr(int cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits)
@@ -62,6 +64,7 @@ static int write_msr(int cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTE
 #endif
 }
 
+bool check_whitelist_msr(const std::vector<std::pair<uint64_t, uint64_t> > &regs);
 
 }
 

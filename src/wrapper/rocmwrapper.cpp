@@ -58,7 +58,7 @@ void ROCM::init(bool detailed)
 	if (HIP_PRIOR_6_2)
 	{
 		rsmi_shut_down();
-		ret = rsmi_init(0);
+		//ret = rsmi_init(0);
 	}
 	// Initialize the counter map
 	initMap(counters);
@@ -142,10 +142,14 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 	}
 
 	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	if (HIP_PRIOR_6_2 && rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	if (HIP_PRIOR_6_2)
 	{
-		std::cerr << "MERIC ERROR: ROCm SMI initialization failed!\n";
-		return;
+		rsmi_status_t ret = rsmi_init(0);
+		if(ret != RSMI_STATUS_SUCCESS)
+		{
+			std::cerr << "MERIC ERROR: ROCm SMI initialization failed!\n";
+			return;
+		}
 	}
 	for (size_t i = 0; i < GPUindices.size(); i++)
 	{
@@ -165,7 +169,7 @@ void ROCM::getCounterValues(std::map<std::string, uint64_t> &record)
 	if (HIP_PRIOR_6_2)
 	{
 		rsmi_shut_down();
-		rsmi_init(0);
+		//rsmi_init(0);
 	}
 	#endif
 }
@@ -195,7 +199,7 @@ double ROCM::getResultValue(uint64_t startValue, uint64_t stopValue, double runt
 
 std::string ROCM::getSummaryCounterName()
 {
-	return "Energy Consumption [J]";
+	return "Energy consumption [J]";
 }
 
 std::string ROCM::getCounterLabel(std::string counter)

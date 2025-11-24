@@ -76,7 +76,7 @@ static std::map <const std::string, mode> modeString = {
 	{"HWMON-S", MODE_HWMON_SAMPLES}
 };
 
-enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER};										//TODO remove this enum
+enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER}; //TODO remove this enum
 
 enum DVFS_WAY {
 	NO_DVFS = 0,   // it is not possible to control the CPU core frequency
@@ -117,6 +117,7 @@ struct RegionParameters { //must be able to carry -1
 	long frequencyGPU = 0;    //Hz
 	long frequencyGPUmem = 0; //Hz
 	long powerCapGPU = 0;     //mW
+	long samplingPeriod = 60; //s - default sampling period
 };
 
 
@@ -246,7 +247,6 @@ private:
 	static uint currentGPUMemFreq; //Hz
 	static uint currentGPUSMFreq;  //Hz
 #endif
-
 	static systemLimits defaultSettings;
 	static bool usedDVFS;
 	static bool usedUFS;
