@@ -56,7 +56,7 @@ namespace meric {
 
 enum mode { MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, 
 	MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_ROCM, 
-	MODE_OCC, MODE_A64FX, MODE_HWMON_COUNTERS, MODE_HWMON_SAMPLES };
+	MODE_OCC, MODE_A64FX, MODE_HWMON };
 
 static std::map <const std::string, mode> modeString = {
 	{"NONE", MODE_RUN},
@@ -72,8 +72,7 @@ static std::map <const std::string, mode> modeString = {
 	{"ROCM", MODE_ROCM},
 	{"OCC", MODE_OCC},
 	{"A64FX", MODE_A64FX},
-	{"HWMON-C", MODE_HWMON_COUNTERS},
-	{"HWMON-S", MODE_HWMON_SAMPLES}
+	{"HWMON", MODE_HWMON},
 };
 
 enum SYSTEM_TYPE {SYS_JETSON, SYS_OTHER}; //TODO remove this enum
@@ -173,6 +172,7 @@ public:
 	
 	static std::map<int, std::vector<int>> mapThreadsToCore;
 	static std::map<int, std::vector<int>> mapCoresToSocket;
+	static std::map<int, std::vector<uint64_t> > mapCoresToTIDs;
 
 	static SYSTEM_TYPE systemType;
 

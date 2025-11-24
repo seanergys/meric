@@ -3,18 +3,18 @@
 
 using namespace meric;
 
-int         Meric::MODE           = mutils::getenv<int>("MERIC_MODE", MODE_RUN);
-bool        Meric::DETAILED       = mutils::getenv<bool>("MERIC_DETAILED", false);
-bool        Meric::AGGREGATE      = mutils::getenv<bool>("MERIC_AGGREGATE", true);
-bool        Meric::DEBUG          = mutils::getenv<bool>("MERIC_DEBUG", false);
-bool        Meric::SAMPLES        = mutils::getenv<bool>("MERIC_SAMPLES", false);
-bool        Meric::HDF5           = mutils::getenv<bool>("MERIC_HDF5", true);
-std::string Meric::COUNTERS       = mutils::getenv<std::string>("MERIC_COUNTERS", "none");
-std::string Meric::BARRIERS       = mutils::getenv<std::string>("MERIC_BARRIERS", "all");
-std::string Meric::OUTPUT_DIR     = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
-std::string Meric::REGION_OPTIONS = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
-std::string Meric::MEASURE        = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
-
+int         Meric::MODE            = mutils::getenv<int>("MERIC_MODE", MODE_RUN);
+bool        Meric::DETAILED        = mutils::getenv<bool>("MERIC_DETAILED", false);
+bool        Meric::AGGREGATE       = mutils::getenv<bool>("MERIC_AGGREGATE", true);
+bool        Meric::DEBUG           = mutils::getenv<bool>("MERIC_DEBUG", false);
+double      Meric::SAMPLES         = mutils::getenv<double>("MERIC_SAMPLES", 0.0);
+bool        Meric::HDF5            = mutils::getenv<bool>("MERIC_HDF5", true);
+std::string Meric::COUNTERS        = mutils::getenv<std::string>("MERIC_COUNTERS", "none");
+std::string Meric::BARRIERS        = mutils::getenv<std::string>("MERIC_BARRIERS", "all");
+std::string Meric::OUTPUT_DIR      = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
+std::string Meric::REGION_OPTIONS  = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
+std::string Meric::MEASURE         = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
+std::string Meric::THREAD_PIN_MODE = mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};

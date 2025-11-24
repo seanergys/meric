@@ -1,10 +1,20 @@
 
 #include "meric.h"
+#include "cpu_affinity_map.h"
+#include <memory>
 
 using namespace meric;
 
 SharedMeric::SharedMeric()
 {
+	/*for(const auto &item: Environment::mapCoresToTIDs)
+	{
+		std::cout << item.first << ": ";
+		for(auto t: item.second)
+			std::cout << t << " ";
+		std::cout << std::endl;
+	}*/
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_SAMPLES) != MONITORS.end())
 	{
 		HDEEM::init(Meric::DETAILED);
@@ -12,11 +22,11 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
+			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES != 0.0));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
@@ -26,7 +36,7 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
 		}
 		else
 		{
@@ -36,7 +46,8 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<RAPL, unsigned long long int, double>());
+		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
+		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
@@ -45,36 +56,32 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
+		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<ROCM, uint64_t, double>());
 	}
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON_SAMPLES) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		HWMON::start(_startTime);
-		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
+		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES));
+		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES != 0.0));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>());
-		//because of using perfevent to read energy counters, the performace counters are disabled
-		if (Meric::COUNTERS == "perfevent")
-		{
-			Meric::COUNTERS = "none";
-		}
 	}
 	
 	if (Meric::COUNTERS != "none")
@@ -112,6 +119,13 @@ SharedMeric::SharedMeric()
 		currentState.socket[socket] = defaultParameter;
 	}
 
+	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>(
+		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
+		std::max(defaultParameter.nthreads, 1)));
+	m_pAffinityMap->CollectMachineInfo();
+	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
+	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
+
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called
 
@@ -121,6 +135,11 @@ SharedMeric::SharedMeric()
 		{
 		case MODE_RAPL:
 			RAPL::init(Meric::DETAILED);
+			RAPL::start(_startTime, Meric::SAMPLES);
+			break;
+		case MODE_HWMON:
+			HWMON::init(Meric::DETAILED);
+			HWMON::start(_startTime, Meric::SAMPLES);
 			break;
 		case MODE_OCC:
 			OCC::init(Meric::DETAILED);
@@ -138,6 +157,9 @@ SharedMeric::SharedMeric()
 		case MODE_A64FX:
 			A64FX::init();
 			break;
+		case MODE_NVML:
+			NVML::start(_startTime, Meric::SAMPLES);
+			break;
 		default:
 			break;
 		}
@@ -145,7 +167,7 @@ SharedMeric::SharedMeric()
 
 	if (Meric::COUNTERS == "perfevent")
 	{
-		PERFEVENT::init();
+		PERFEVENT::init(Meric::DETAILED);
 	}
 	else if (Meric::COUNTERS == "papi")
 	{
@@ -174,6 +196,16 @@ SharedMeric::~SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
+	}
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	{
+		RAPL::close();
+	}
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	{
+		NVML::close();
 	}
 	
 	for(unsigned int i=0;i<_storeList.size(); i++)

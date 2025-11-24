@@ -2,6 +2,12 @@
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
   - support for Intel and AMD RAPL energy readings from the intel_rapl / intel_rapl_common kernel module 
   - support for Intel and AMD RAPL energy readings using perf
+  - support for AMD RAPL energy readings using HWMON interface
+  - support for NVIDIA Grace energy and power sampling using HWMON and NVML interfaces
+  - support for measurements with long runtime using RAPL (multiple overflow handling)
+  - support for power sampling in HWMON, RAPL and NVML interfaces (use MERIC_SAMPLES to specify sampling frequency)
+  - support for automatic thread pinning using MERIC_PIN_MODE
+  - support for user specified sampling frequency for power sampling in RAPL, HWMON and NVML interfaces
 
 ### 15.05.2024 #################################################################
   - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop

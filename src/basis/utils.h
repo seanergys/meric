@@ -12,6 +12,7 @@
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <cstdint>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -52,6 +53,11 @@ struct mutils
 	static double timeToDouble(const timespec &time)
 	{
 		return time.tv_sec + time.tv_nsec / 1e9;
+	}
+
+	static uint64_t timeToNanoSec(const timespec &time)
+	{
+		return uint64_t(time.tv_sec) * 1000000000ull + time.tv_nsec;
 	}
 
 	static long frequencyToHz(const std::string &data)

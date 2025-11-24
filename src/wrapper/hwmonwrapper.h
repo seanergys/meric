@@ -21,6 +21,7 @@
 
 #include "counters.h"
 #include "../basis/sysfsutils.h"
+#include "../basis/async_utils.h"
 
 using namespace HWMON_COUNTERS;
 
@@ -28,71 +29,96 @@ namespace meric {
 
 class HWMON {
 public:
-	static void init(bool detailed);
-	static void close();
-	static void getCounterValues(std::map<std::string, unsigned long long int> &record);
-	static void initCounters();
-	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, 
-		double runtime, int &cumulative, std::string counter, std::string regionName = "");
-	static std::string summaryCounter();
-	static std::string getSummaryCounterName();
-	static std::string getSourceLabel();
-	static std::string getCounterLabel(const std::string counter);
-	static void getRatios(std::map<std::string, unsigned long long int> &start, 
-		std::map<std::string, unsigned long long int> &stop, double runtime,
-		std::map<std::string, double> &ratios) {}
-	static void initCountersUnits() {}
-	static double getUnit(std::string counterName);
+    typedef unsigned long long int RawCounterValue_t;
+    
+    struct CounterValue_t {
+        CounterValue_t(RawCounterValue_t value = 0)
+            : value(value)
+        {}
 
-	// Sampling
-	static const std::string SUM_ENERGY_LABEL;
-	static int PROBE_NUMBER;
-	static std::vector<std::string> vrSensorLabel;
+        CounterValue_t(RawCounterValue_t value, uint64_t generation)
+            : generation(generation)
+            , value(value)
+        {}
 
-	static void start(timespec &time);
-	static void stop(timespec &time);
-	static void initSamplers();
-	static void closeSamplers();
-	static int getSamples();
-	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
-	static std::string getData(double startTime, double duration, 
-		size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, 
-		double energy[], double minWatts[], double maxWatts[]);
-	static void setTimeAdjustment(timespec &time) {}
-	static void fillTime(timespec &time)  { clock_gettime(CLOCK_REALTIME, &time); }
-	static void deleteSamples() {}
+        uint64_t generation;
+        RawCounterValue_t value;
+    };
+
+    typedef std::map<std::string, CounterValue_t> CounterRecord_t;
+
+    // Counters interface
+    static void init(bool detailed);
+    static void close();
+
+    static void getCounterValues(CounterRecord_t &record);
+    static void initCounters(bool detailed);
+    static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
+        double runtime, int &cumulative, std::string counter, std::string regionName = "");
+
+    static std::string summaryCounter();
+    static std::string getSummaryCounterName();
+    static std::string getSourceLabel();
+    static std::string getCounterLabel(const std::string counter);
+
+    static void getRatios(CounterRecord_t &start, CounterRecord_t &stop, 
+        double runtime, std::map<std::string, double> &ratios) {}
+
+    static void initCountersUnits() {}
+    static double getUnit(std::string counterName);
+
+    // Sampling iterface
+    static const std::string SUM_ENERGY_LABEL;
+    static int PROBE_NUMBER;
+    static std::vector<std::string> vrSensorLabel;
+
+    static void start(timespec &time, double sampleFreqHz = 0.0);
+    static void stop(timespec &time);
+    static void initSamplers(bool detailed);
+    static void closeSamplers();
+    static int getSamples();
+    static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
+    static std::string getData(double startTime, double duration, 
+        size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, 
+        double energy[], double minWatts[], double maxWatts[]);
+    static void setTimeAdjustment(timespec &time) {}
+    static void fillTime(timespec &time)  { clock_gettime(CLOCK_REALTIME, &time); }
+    static void deleteSamples() {}
+
+    static bool isAvailable();
 
 protected:
-	struct CounterDesc_t {
-		double unit;
-		std::string path;
-		std::ifstream fs;
-		std::string label;
-		bool isCumulative;
-	};
+    struct Sample_t {
+        uint64_t timestamp;
+        uint64_t value;
+    };
 
-	struct Sample_t {
-		uint64_t timestamp;
-		uint64_t value;
-	};
+    struct SourceDecl_t;
+    struct SourceDesc_t;
+    struct CollectSources_t;
 
-	struct SamplerDesc_t {
-		size_t id;
-		double unit;
-		std::string path;
-		std::ifstream fs;
-		std::string label;
-		bool isCumulative;
-		uint64_t period;
-		std::vector<Sample_t> samples;
-	};
+    typedef std::map<std::string, std::map<int, SourceDesc_t> > SourceDescMap_t;
+    typedef std::map<std::string, SourceDesc_t *>               SourceNameMap_t;
+    typedef std::vector<SourceDesc_t *>                         SourceIdVec_t;
 
-	static std::map<std::string, CounterDesc_t> s_counterDesc;
-	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
-	static std::vector<SamplerDesc_t *>         s_samplerById;
-	static uint64_t s_samplingPeriod;
-	static std::thread s_samplingThread;
-	static std::atomic<bool> s_samplingEnabled;
+    template<typename T, typename F>
+    static void CollectSources(const std::vector<std::string> &paths, 
+        const CollectSources_t &desc, const std::map<std::string, SourceDecl_t> &sourcesDecl,
+        std::vector<T> &sourcesDef, F &&f);
+    
+    template<typename F>
+    static void MakeSources(const SourceDecl_t &sourceDecl, F &&f);
+
+    static const std::string s_rootPath;
+    static const std::vector<std::string> s_checkFiles;
+
+    static SourceDescMap_t             s_sourceDesc;
+    static SourceNameMap_t             s_sourceByName;
+    static std::vector<SourceDesc_t *> s_sourceById;
+
+    static std::chrono::nanoseconds      s_overflowCheckPeriod;
+    static std::atomic<bool>             s_sampleStoreEnabled;
+    static AsyncSampler<CounterRecord_t> s_asyncSampler;
 };
 }
 

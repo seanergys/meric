@@ -130,7 +130,7 @@ timespec HWMON_S::endTime = {0, 0};
 
 // following will be called many times but init only once.
 template <>
-void measureEnergy<HWMON_S, unsigned long long int>(bool verbose, double timeNow)
+void measureEnergy<HWMON_S, HWMON::CounterValue_t>(bool verbose, double timeNow)
 {
 	static bool is_init = false;
 	if (is_init == false)
@@ -143,7 +143,7 @@ void measureEnergy<HWMON_S, unsigned long long int>(bool verbose, double timeNow
 }
 
 template <>
-struct EnergyRecords<HWMON_S, unsigned long long int>
+struct EnergyRecords<HWMON_S, HWMON::CounterValue_t>
 {
 	static void printValues(bool verbose)
 	{
@@ -627,8 +627,8 @@ int main(int argc, char **argv)
 
 			if (token == "RAPL")
 			{
-				measurements.push_back(&measureEnergy<RAPL, unsigned long long int>);
-				prints.push_back(EnergyRecords<RAPL, unsigned long long int>::printValues);
+				measurements.push_back(&measureEnergy<RAPL, RAPL::CounterValue_t>);
+				prints.push_back(EnergyRecords<RAPL, RAPL::CounterValue_t>::printValues);
 			}
 			else if (token == "NVML")
 			{
@@ -642,13 +642,13 @@ int main(int argc, char **argv)
 			}
 			else if (token == "HWMON-C") // counting mode
 			{
-				measurements.push_back(&measureEnergy<HWMON, unsigned long long int>);
-				prints.push_back(EnergyRecords<HWMON, unsigned long long int>::printValues);
+				measurements.push_back(&measureEnergy<HWMON, HWMON::CounterValue_t>);
+				prints.push_back(EnergyRecords<HWMON, HWMON::CounterValue_t>::printValues);
 			}
 			else if (token == "HWMON-S") // sampling mode
 			{
-				measurements.push_back(&measureEnergy<HWMON_S, unsigned long long int>);
-				prints.push_back(EnergyRecords<HWMON_S, unsigned long long int>::printValues);
+				measurements.push_back(&measureEnergy<HWMON_S, HWMON::CounterValue_t>);
+				prints.push_back(EnergyRecords<HWMON_S, HWMON::CounterValue_t>::printValues);
 			}
 			else if (token == "ROCM")
 			{

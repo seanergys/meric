@@ -158,10 +158,11 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 <!--- FUTURE dependency 
 ## AMD SMI ##
 [AMD System Management Interface (AMD SMI)](https://github.com/ROCm/amdsmi) library is part of the AMD ROCm. 
+-->
 
 ## HWMON ##
-- AMD RAPL, Nvidia Grace
--->
+[The Linux Hardware Monitoring kernel API](https://docs.kernel.org/hwmon/hwmon-kernel-api.html) allows to measure energy consumption on AMD platforms (exposes AMD RAPL) and NVIDIA platforms (NVIDIA Grace). MERIC can use this interface for both energy measurement and power sampling.
+
 
 ## OCC ##
 [On Chip Controller (OCC)](https://github.com/open-power/occ) provides power monitoring of compute nodes power by OpenPOWER CPUs. Available from IBM POWER8 processors. The performance counters are updated every 500 us.
@@ -438,6 +439,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- HDEEM   = Equals to HDEEM-S option.
 	- RAPL    = Intel RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
+	- HWMON   = Nvidia platform level energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
 	- A64FX   = Fujitsu A64FX energy measurement.
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
@@ -464,8 +466,9 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 * `export MERIC_DETAILED=1`
 	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
 
-* `export MERIC_SAMPLES=1`
+* `export MERIC_SAMPLES=<sample frequency in Hz>`
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
+	- Available for HDEEM-S, RAPL, HWMON and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
 	- WARNING: Output may become very big when measured regions run for a long time.
 

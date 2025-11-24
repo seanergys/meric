@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <vector>
 #include <algorithm>
 #include <ctime>
@@ -27,6 +28,8 @@
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
 #include "../wrapper/hwmonwrapper.h"
+
+#include "cpu_affinity_map.h"
 
 namespace meric {
 
@@ -527,7 +530,7 @@ protected:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
-	static bool SAMPLES;
+	static double SAMPLES;
 	static bool IGNORE;
 	static bool HDF5;
 	static int MODE;
@@ -538,6 +541,9 @@ protected:
 	static std::string BARRIERS;
 	static std::string MEASURE;
 	static std::vector<mode> MONITORS;
+	static std::string THREAD_PIN_MODE;
+
+	std::unique_ptr<meric::cpu_affinity_map::CPUAffinityMap_t> m_pAffinityMap;
 };
 
 }

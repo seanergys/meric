@@ -10,6 +10,7 @@
 #include <thread>
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/raplwrapper.h"
+#include "../wrapper/hwmonwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_rapl.h>
@@ -1245,6 +1246,13 @@ void sysEnergyMeasurement()
 	int systems = 0;
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 
+	if(meric::RAPL::isAvailable())
+	{
+		std::cout << "\tRAPL\n";
+		systems++;
+	}
+
+/*
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 	std::cout << "\tRAPL\n";
 	systems++;
@@ -1272,6 +1280,7 @@ void sysEnergyMeasurement()
 		systems++;
 	}
 #endif
+*/
 
 #ifdef HAVE_HDEEM_H
 	std::cout << "\tHDEEM\n";
@@ -1319,6 +1328,12 @@ void sysEnergyMeasurement()
 		systems++;
 	}
 #endif
+
+	if(meric::HWMON::isAvailable())
+	{
+		std::cout << "\tHWMON\n";
+		systems++;
+	}
 
 	if (systems == 0)
 	{

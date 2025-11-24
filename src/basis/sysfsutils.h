@@ -1,10 +1,14 @@
 #ifndef SRC_BASIS_SYSFSUTILS_H_
 #define SRC_BASIS_SYSFSUTILS_H_
 
+#include <dirent.h>
+#include <sys/types.h>
+#include <fts.h>
+#include <string.h>
+
 #include <string>
 #include <vector>
 #include <map>
-#include <dirent.h>
 #include <fstream>
 #include <sstream>
 
@@ -27,6 +31,35 @@ bool IterateDir(const std::string &path, F &&f)
 	}
 	closedir(pDir);
 	return true;
+}
+
+template<typename F>
+void ScanTree(const std::string &path, int maxDepth, F &&f)
+{
+	char *rootPaths[] = { const_cast<char *>(path.c_str()), NULL };
+
+	FTS *pFs = fts_open(rootPaths, FTS_NOCHDIR | FTS_LOGICAL, 
+		+[](const FTSENT** one, const FTSENT** two) { 
+			return strcmp((*one)->fts_name, (*two)->fts_name); 
+		});
+	
+	if(!pFs)
+		return;
+
+	FTSENT *pNode = nullptr;
+	while((pNode = fts_read(pFs)) != nullptr)
+	{
+		if(pNode->fts_level > maxDepth)
+		{
+			fts_set(pFs, pNode, FTS_SKIP);
+		}
+		else if(pNode->fts_info == FTS_F)
+		{
+			f(std::string(pNode->fts_name), std::string(pNode->fts_path));
+		}
+	}
+
+	fts_close(pFs);
 }
 
 template<typename T>
