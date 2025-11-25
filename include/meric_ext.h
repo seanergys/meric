@@ -43,14 +43,15 @@ typedef struct ExtlibEnergy
 {
     enum Domains // TODO HDEEM-C vs HDEEM-S <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     {
-        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0, // 0000000 No Domains Selected
-        EXTLIB_ENERGY_DOMAIN_A64FX = 1 << 0,   // 0000001
-        EXTLIB_ENERGY_DOMAIN_RAPL = 1 << 1,    // 0000010
-        EXTLIB_ENERGY_DOMAIN_NVML = 1 << 2,    // 0000100
-        EXTLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 0001000
-        EXTLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 0010000
-        EXTLIB_ENERGY_DOMAIN_HWMON = 1 << 5,   // 0100000
-        EXTLIB_ENERGY_DOMAIN_END = 1 << 6      // 1000000 END of Domains.
+        EXTLIB_ENERGY_DOMAIN_NO_SELECTION = 0, // 00000000 No Domains Selected
+        EXTLIB_ENERGY_DOMAIN_A64FX = 1 << 0,   // 00000001
+        EXTLIB_ENERGY_DOMAIN_RAPL = 1 << 1,    // 00000010
+        EXTLIB_ENERGY_DOMAIN_NVML = 1 << 2,    // 00000100
+        EXTLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 00001000
+        EXTLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 00010000
+        EXTLIB_ENERGY_DOMAIN_HWMON = 1 << 5,   // 00100000
+        EXTLIB_ENERGY_DOMAIN_HWMON_S = 1 << 6, // 01000000
+        EXTLIB_ENERGY_DOMAIN_END = 1 << 7      // 10000000 END of Domains.
     };
     unsigned int value;
 

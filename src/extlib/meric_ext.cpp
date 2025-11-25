@@ -142,6 +142,19 @@ void close<meric::NVML>()
 #endif
 }
 
+struct HWMON_S
+{
+    static timespec startTime; // this is dummy.
+    static timespec endTime;   // this is dummy.
+}; // dummy class to seperate from counting.
+timespec HWMON_S::startTime = {0, 0};
+timespec HWMON_S::endTime = {0, 0};
+template <>
+void close<HWMON_S>()
+{
+    meric::HWMON::closeSamplers();
+}
+
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
 {
@@ -275,6 +288,15 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::HWMON>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
+    }
+
+    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S)))
+    {
+        meric::HWMON::initSamplers(is_detailed);
+        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S); // Get index of the enabled domain
+        enabled_domains->energyMeasurementFns[index] = nullptr;                                    // Sampling based, no direct measurement function
+        enabled_domains->closeFns[index] = close<HWMON_S>;
+        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S) << " is init [OK]" << std::endl;
     }
 
     // This executes only once.
