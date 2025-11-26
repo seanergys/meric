@@ -1,13 +1,19 @@
 ### XX.XX.XXXX #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
+  - support for power sampling (use MERIC_SAMPLES to specify sampling frequency [Hz]), current support for HWMON, RAPL and NVML
+  - new python module for MERIC usage with python applications
+  - new static tool supporting multi-node energy measurment, and energy counters overflow handling
+  - support for Nvidia Grace/Grace Hopper energy and power sampling using HWMON and NVML
+  - support for AMD MI250X energy measurment and frequency scaling using AMD ROCm
   - support for Intel and AMD RAPL energy readings from the intel_rapl / intel_rapl_common kernel module 
   - support for Intel and AMD RAPL energy readings using perf
-  - support for AMD RAPL energy readings using HWMON interface
-  - support for NVIDIA Grace energy and power sampling using HWMON and NVML interfaces
-  - support for measurements with long runtime using RAPL (multiple overflow handling)
-  - support for power sampling in HWMON, RAPL and NVML interfaces (use MERIC_SAMPLES to specify sampling frequency)
+  - support for AMD RAPL energy readings using amd_energy interface
+  - support for measurements with a long runtime using RAPL (multiple overflow handling)
   - support for automatic thread pinning using MERIC_PIN_MODE
-  - support for user specified sampling frequency for power sampling in RAPL, HWMON and NVML interfaces
+  - new MERICext library exposing energy measurement for 3rd party tools
+  - support for Intel Sapphire Rapids uncore frequency monitoring
+  - unified set of power management metrics in supported hardware platforms
+  - performance counters reading using perf is now the default interface for metric (MERIC_COUNTERS=perfevent), requires paranoid level = 0
 
 ### 15.05.2024 #################################################################
   - MERIC_MeasureStop and MERIC_MeasureStopStart now requires name of the region to stop
