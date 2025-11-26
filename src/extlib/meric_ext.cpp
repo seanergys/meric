@@ -117,9 +117,9 @@ static void measureEnergy(size_t *size, uint64_t **counter_values, double **ener
 
 // Deliberate template explosion for explicit domains
 template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::RAPL, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::HWMON, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template static void measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 
@@ -140,19 +140,6 @@ void close<meric::NVML>()
     nvmlShutdown();
     meric::NVML::close();
 #endif
-}
-
-struct HWMON_S
-{
-    static timespec startTime; // this is dummy.
-    static timespec endTime;   // this is dummy.
-}; // dummy class to seperate from counting.
-timespec HWMON_S::startTime = {0, 0};
-timespec HWMON_S::endTime = {0, 0};
-template <>
-void close<HWMON_S>()
-{
-    meric::HWMON::closeSamplers();
 }
 
 template <typename Tmode>
@@ -228,7 +215,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         meric::RAPL::init(is_detailed);
         meric::RAPL::initCountersUnits();
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, unsigned long long int>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>;
         enabled_domains->closeFns[index] = close<meric::RAPL>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
 #else
@@ -285,18 +272,9 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     {
         meric::HWMON::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, unsigned long long int>;
+        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>;
         enabled_domains->closeFns[index] = close<meric::HWMON>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
-    }
-
-    if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S)))
-    {
-        meric::HWMON::initSamplers(is_detailed);
-        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = nullptr;                                    // Sampling based, no direct measurement function
-        enabled_domains->closeFns[index] = close<HWMON_S>;
-        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON_S) << " is init [OK]" << std::endl;
     }
 
     // This executes only once.
