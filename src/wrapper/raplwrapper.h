@@ -48,7 +48,7 @@ public:
                     return;
 
                 generation = (value & ~(uint64_t(1) << 63)) >> 32;
-                value      = value & 0xFFFFFFFF;
+                this->value      = value & 0xFFFFFFFF;
             }
 
             CounterValue_t(RawCounterValue_t value, uint64_t generation)
@@ -57,7 +57,7 @@ public:
             {}
 
             operator uint64_t() const {
-                if(generation == 0)
+                if(generation != 0)
                     return (generation << 32) | (value & 0xFFFFFFFF) | (uint64_t(1) << 63);
                 else
                     return value;

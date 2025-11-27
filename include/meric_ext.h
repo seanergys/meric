@@ -50,8 +50,7 @@ typedef struct ExtlibEnergy
         EXTLIB_ENERGY_DOMAIN_ROCM = 1 << 3,    // 00001000
         EXTLIB_ENERGY_DOMAIN_HDEEM = 1 << 4,   // 00010000
         EXTLIB_ENERGY_DOMAIN_HWMON = 1 << 5,   // 00100000
-        EXTLIB_ENERGY_DOMAIN_HWMON_S = 1 << 6, // 01000000
-        EXTLIB_ENERGY_DOMAIN_END = 1 << 7      // 10000000 END of Domains.
+        EXTLIB_ENERGY_DOMAIN_END = 1 << 6      // 01000000 END of Domains.
     };
     unsigned int value;
 
