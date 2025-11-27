@@ -40,14 +40,28 @@ public:
         typedef unsigned long long int RawCounterValue_t;
         
         struct CounterValue_t {
-            CounterValue_t(RawCounterValue_t value = 0)
-                : value(value)
-            {}
+            CounterValue_t(uint64_t value = 0)
+                : generation(0)
+                , value(value)
+            {
+                if((value & (uint64_t(1) << 63)) == 0)
+                    return;
+
+                generation = (value & ~(uint64_t(1) << 63)) >> 32;
+                value      = value & 0xFFFFFFFF;
+            }
 
             CounterValue_t(RawCounterValue_t value, uint64_t generation)
                 : generation(generation)
                 , value(value)
             {}
+
+            operator uint64_t() const {
+                if(generation == 0)
+                    return (generation << 32) | (value & 0xFFFFFFFF) | (uint64_t(1) << 63);
+                else
+                    return value;
+            }
 
             uint64_t generation;
             RawCounterValue_t value;
