@@ -167,7 +167,7 @@ TEST(MERICExtAPITest, DisabledEnergyDomainsStayDisabledAfterInit)
 
     for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
     {
-        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON))
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
         {
             std::string domain_name = getEnergyDomainName(domain);
             ADD_FAILURE() << domain_name << " energy domain should be disabled.";
@@ -370,6 +370,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySe
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    do_work(5);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
