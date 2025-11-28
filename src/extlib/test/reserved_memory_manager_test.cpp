@@ -6,13 +6,47 @@
 // License: BSD-3
 // =============================================================================
 
+#include <string>
+
 #include <meric_ext.h>
 #include <gtest/gtest.h>
 
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
+std::string getEnergyDomainName(unsigned int domain)
+{
+    std::string domain_name;
+    switch (domain)
+    {
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
+            domain_name = "A64FX";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
+            domain_name = "RAPL";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
+            domain_name = "NVML";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
+            domain_name = "ROCM";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
+            domain_name = "HDEEM";
+            break;
+        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+            domain_name = "HWMON";
+            break;
+        default:
+            domain_name = "Unknown Domain";
+            break;
+    }
+
+    return domain_name;
+}
+
 #define RESERVED_ELEMENT_SIZE 12
+
 TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsCorrect)
 {
     ExtlibEnergy energy_domains = {};
@@ -121,6 +155,48 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
     }
 
     extlib_close(&energy_domains);
+}
+
+TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForEnabledNonExistingEnergyDomainsAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_idx, 0);
+
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(domain_memory_map, nullptr)
+                << domain_name << " energy domain does not exist but its reserved memory page 0 is not NULL/nullptr.";
+        }
+    }
+
+    extlib_close(&energy_domains);
+}
+
+TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForDisabledEnergyDomainsAfterInit)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    EXTLIB_ENERGY_NO_SELECTION(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_idx, 0);
+
+        std::string domain_name = getEnergyDomainName(domain);
+        EXPECT_EQ(domain_memory_map, nullptr)
+            << domain_name << " energy domain is disabled but its reserved memory page 0 is not NULL/nullptr.";
+
+    }
 }
 
 TEST(MemoryManagerTest, CloseFreesAllPagesAndLeavesManagerInResetState)

@@ -6,7 +6,7 @@ meric_ext=-lmeric_ext
 gtest=-lgtest -lgtest_main -lpthread
 #hdeem=-lhdeem -lfreeipmi
 #x86_adapt=-lx86_adapt
-nvml=-lnvidia-ml
+#nvml=-lnvidia-ml
 #libmsr=-lmsr
 
 # OpenMP flag
