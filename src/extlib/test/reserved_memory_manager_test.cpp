@@ -186,7 +186,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForDisabledEnergyDomainsA
     }
 }
 
-TEST(MemoryManagerTest, CloseFreesAllPagesAndLeavesManagerInResetState)
+TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
@@ -215,7 +215,7 @@ TEST(MemoryManagerTest, CloseFreesAllPagesAndLeavesManagerInResetState)
         << "size of empty_page_ids container should be 0 after close.";
 }
 
-TEST(MemoryManagerTest, MultipleInitCloseHasNoSideEffect)
+TEST(MemoryManagerTest, MultipleInitAndCloseHaveNoSideEffects)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
