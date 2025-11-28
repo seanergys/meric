@@ -42,8 +42,8 @@ private:
 	#ifdef _AMD_
 	static void initL3CacheSizes();
 
-	//#elif defined _INTEL_
-	//static void initIMCsizes();
+	#elif defined _INTEL_
+	static void initIMCsizes();
 	#endif
 
 	static bool detailedMode;
@@ -56,8 +56,8 @@ private:
 	static std::map<int, std::vector<int>> mapCoresToL3Cache;
 	static std::map<int, std::vector<int>> mapL3CachesToSocket;
 
-	//#elif defined _INTEL_
-	//static int IMCs_PER_SOCKET;
+	#elif defined _INTEL_
+	static int IMCs_PER_SOCKET;
 	#endif
 };
 
@@ -89,8 +89,8 @@ private:
 	static std::map<int, std::vector<int>> mapCoresToL3Cache;
 	static std::map<int, std::vector<int>> mapL3CachesToSocket;
 
-	//#elif defined _INTEL_
-	//static int IMCs_PER_SOCKET;
+	#elif defined _INTEL_
+	static int IMCs_PER_SOCKET;
 	#endif
 };
 #endif

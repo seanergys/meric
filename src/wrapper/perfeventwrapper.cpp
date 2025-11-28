@@ -11,6 +11,7 @@
 // #include <errno.h>
 
 #include "perfeventwrapper.h"
+#include "cpuidsignatures.h"
 #include "../basis/utils.h"
 
 using namespace meric;
@@ -24,8 +25,8 @@ int PERFEVENT::L3_CACHES_PER_SOCKET = 1;
 std::map<int, std::vector<int>> PERFEVENT::mapCoresToL3Cache;
 std::map<int, std::vector<int>> PERFEVENT::mapL3CachesToSocket;
 
-//#elif defined _INTEL_
-//int PERFEVENT::IMCs_PER_SOCKET = 1;
+#elif defined _INTEL_
+int PERFEVENT::IMCs_PER_SOCKET = 1;
 #endif
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
@@ -52,14 +53,14 @@ void PERFEVENT::init(bool detailed)
 
 	#ifdef _AMD_
 	initL3CacheSizes();
-	//#elif defined _INTEL_
-	//initIMCsizes();
+	#elif defined _INTEL_
+	initIMCsizes();
 	#endif
 
 	#ifdef _INTEL_
-	//std::string CPUfamilyModel;
-	//Environment::getCPUFamilyModelString(CPUfamilyModel);
-	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
+	std::string CPUfamilyModel;
+	Environment::getCPUFamilyModelString(CPUfamilyModel);
+	CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
 
 	#elif defined _ARM_
 	std::string CPUname;
@@ -71,39 +72,39 @@ void PERFEVENT::init(bool detailed)
 	#ifdef _AMD_
 	PMU_TYPES["amd_l3"] = getPMUtype("amd_l3");
 
-//	#elif defined _INTEL_
-//	PMU_TYPES["uncore_cha_0"] = getPMUtype("uncore_cha_0");
-//
-//	for(int i = 0; i < PERFEVENT::IMCs_PER_SOCKET; i++)
-//	{
-//		std::string PMUname = "uncore_imc_" + std::to_string(i);
-//		PMU_TYPES[PMUname] = getPMUtype(PMUname);
-//	}
-//
-//	if(cpuidSignature < CpuidSignatureValues::INTEL_06_8FH)
-//	{
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0000;
-//	}
-//	else
-//	{
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0001;
-//	}
-//
-//	if(cpuidSignature < CpuidSignatureValues::INTEL_06_6CH)
-//	{
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0304;
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0x0c04;
-//	}
-//	else if((cpuidSignature >= CpuidSignatureValues::INTEL_06_6CH) && (cpuidSignature < CpuidSignatureValues::INTEL_06_8FH))
-//	{
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0f04;
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0x3004;
-//	}
-//	else
-//	{
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0xcf05;
-//		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0xf005;
-//	}
+	#elif defined _INTEL_
+	PMU_TYPES["uncore_cha_0"] = getPMUtype("uncore_cha_0");
+
+	for(int i = 0; i < PERFEVENT::IMCs_PER_SOCKET; i++)
+	{
+		std::string PMUname = "uncore_imc_" + std::to_string(i);
+		PMU_TYPES[PMUname] = getPMUtype(PMUname);
+	}
+
+	if(cpuidSignature < CpuidSignatureValues::INTEL_06_8FH)
+	{
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0000;
+	}
+	else
+	{
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES] = 0x0001;
+	}
+
+	if(cpuidSignature < CpuidSignatureValues::INTEL_06_6CH)
+	{
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0304;
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0x0c04;
+	}
+	else if((cpuidSignature >= CpuidSignatureValues::INTEL_06_6CH) && (cpuidSignature < CpuidSignatureValues::INTEL_06_8FH))
+	{
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0f04;
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0x3004;
+	}
+	else
+	{
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0xcf05;
+		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0xf005;
+	}
 
 	#elif defined _ARM_
 	if(CPUname == "ARMv8 Neoverse V2")
@@ -119,8 +120,8 @@ void PERFEVENT::init(bool detailed)
 	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
 	#ifdef _AMD_
 	int L3CacheIdxLength = log10(PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
-	//#elif defined _INTEL_
-	//int IMCidxLength = log10(PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	#elif defined _INTEL_
+	int IMCidxLength = log10(PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
 	#endif
 	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 
@@ -192,10 +193,10 @@ void PERFEVENT::init(bool detailed)
 
 			int core = Environment::mapCoresToSocket[i][j];
 
-			//if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
-			//{
-			//	countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
-			//}
+			if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+			{
+				countersFd[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE], core);
+			}
 			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP], core);
 			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP], core);
 			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP], core);
@@ -204,33 +205,33 @@ void PERFEVENT::init(bool detailed)
 		}
 
 		//(per IMC)
-//		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
-//		{
-//			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
-//
-//			std::ostringstream IMCidxFill;
-//			IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
-//			std::string suffixIMCidx = "_" + IMCidxFill.str();
-//
-//			int core = Environment::mapCoresToSocket[i][0];
-//
-//			std::string PMUname = "uncore_imc_" + std::to_string(j);
-//			__u32 PMU_TYPE = PMU_TYPES[PMUname];
-//			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ], core);
-//			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE], core);
-//		}
-//
-//		//(per socket)
-//		int socketIdx = i;
-//
-//		std::ostringstream socketIdxFill;
-//		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
-//		std::string suffixSocketIdx = "_" + socketIdxFill.str();
-//
-//		int core = Environment::mapCoresToSocket[i][0];
-//
-//		__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
-//		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
+		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
+		{
+			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
+
+			std::ostringstream IMCidxFill;
+			IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
+			std::string suffixIMCidx = "_" + IMCidxFill.str();
+
+			int core = Environment::mapCoresToSocket[i][0];
+
+			std::string PMUname = "uncore_imc_" + std::to_string(j);
+			__u32 PMU_TYPE = PMU_TYPES[PMUname];
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ], core);
+			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE], core);
+		}
+
+		//(per socket)
+		int socketIdx = i;
+
+		std::ostringstream socketIdxFill;
+		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+		int core = Environment::mapCoresToSocket[i][0];
+
+		__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
+		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
 	}
 
 	#elif defined _ARM_
@@ -405,49 +406,49 @@ void PERFEVENT::initL3CacheSizes()
 	}
 }
 
-//#elif defined _INTEL_
-//void PERFEVENT::initIMCsizes()
-//{
-//	std::string pathToPMUsDir = "/sys/bus/event_source/devices";
-//
-//	DIR* PMUsDir = opendir(pathToPMUsDir.c_str());
-//	if(PMUsDir != NULL)
-//	{
-//		int TMP_IMCs_PER_SOCKET = 0;
-//
-//		dirent* pPMUsDir = readdir(PMUsDir);
-//		while(pPMUsDir != NULL)
-//		{
-//			std::string PMUname = pPMUsDir->d_name;
-//			size_t suffixStartPos = PMUname.find_last_of('_');
-//			if(suffixStartPos != std::string::npos)
-//			{
-//				std::string PMUbaseName = PMUname.substr(0, suffixStartPos);
-//				if(PMUbaseName == "uncore_imc")
-//				{
-//					TMP_IMCs_PER_SOCKET++;
-//				}
-//			}
-//
-//			pPMUsDir = readdir(PMUsDir);
-//		}
-//
-//		closedir(PMUsDir);
-//
-//		if(TMP_IMCs_PER_SOCKET > 0)
-//		{
-//			PERFEVENT::IMCs_PER_SOCKET = TMP_IMCs_PER_SOCKET;
-//		}
-//		else
-//		{
-//			std::cerr << "MERIC WARNING: PERFEVENT - uncore_imc PMUs not found in directory " << pathToPMUsDir << "\n";
-//		}
-//	}
-//	else
-//	{
-//		std::cerr << "MERIC WARNING: PERFEVENT - failed to open directory " << pathToPMUsDir << "\n";
-//	}
-//}
+#elif defined _INTEL_
+void PERFEVENT::initIMCsizes()
+{
+	std::string pathToPMUsDir = "/sys/bus/event_source/devices";
+
+	DIR* PMUsDir = opendir(pathToPMUsDir.c_str());
+	if(PMUsDir != NULL)
+	{
+		int TMP_IMCs_PER_SOCKET = 0;
+
+		dirent* pPMUsDir = readdir(PMUsDir);
+		while(pPMUsDir != NULL)
+		{
+			std::string PMUname = pPMUsDir->d_name;
+			size_t suffixStartPos = PMUname.find_last_of('_');
+			if(suffixStartPos != std::string::npos)
+			{
+				std::string PMUbaseName = PMUname.substr(0, suffixStartPos);
+				if(PMUbaseName == "uncore_imc")
+				{
+					TMP_IMCs_PER_SOCKET++;
+				}
+			}
+
+			pPMUsDir = readdir(PMUsDir);
+		}
+
+		closedir(PMUsDir);
+
+		if(TMP_IMCs_PER_SOCKET > 0)
+		{
+			PERFEVENT::IMCs_PER_SOCKET = TMP_IMCs_PER_SOCKET;
+		}
+		else
+		{
+			std::cerr << "MERIC WARNING: PERFEVENT - uncore_imc PMUs not found in directory " << pathToPMUsDir << "\n";
+		}
+	}
+	else
+	{
+		std::cerr << "MERIC WARNING: PERFEVENT - failed to open directory " << pathToPMUsDir << "\n";
+	}
+}
 #endif
 
 __u32 PERFEVENT::getPMUtype(std::string PMUname)
@@ -578,9 +579,9 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	int cumulative = 0;
 
 	#ifdef _INTEL_
-	//std::string CPUfamilyModel;
-	//Environment::getCPUFamilyModelString(CPUfamilyModel);
-	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
+	std::string CPUfamilyModel;
+	Environment::getCPUFamilyModelString(CPUfamilyModel);
+	CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
 
 	#elif defined _ARM_
 	std::string CPUname;
@@ -594,9 +595,9 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	int L3_CACHES_PER_NODE = PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int L3CacheIdxLength = log10(L3_CACHES_PER_NODE) + 1;
 
-	//#elif defined _INTEL_
-	//int IMCs_PER_NODE = PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE;
-	//int IMCidxLength = log10(IMCs_PER_NODE) + 1;
+	#elif defined _INTEL_
+	int IMCs_PER_NODE = PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE;
+	int IMCidxLength = log10(IMCs_PER_NODE) + 1;
 	#endif
 
 	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
@@ -611,18 +612,18 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES].reserve(L3_CACHES_PER_NODE);
 
 	#elif defined _INTEL_
-	//if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
-	//{
-	//	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
-	//}
+	if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+	{
+		counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE].reserve(CORES_PER_NODE);
+	}
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC256_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES].reserve(CORES_PER_NODE);
-	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
-	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
-	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
+	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
 
 	#elif defined _ARM_
 	if(CPUname == "ARMv8 Neoverse V2")
@@ -745,13 +746,13 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
 			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-//			if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
-//			{
-//				unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][coreIdx];
-//				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
-//		
-//				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = cycles ? (cyclesAMXActive/cycles)*100 : 0;
-//			}
+			if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
+			{
+				unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][coreIdx];
+				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+		
+				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = cycles ? (cyclesAMXActive/cycles)*100 : 0;
+			}
 
 			unsigned long long int instructionsScalarFpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_SCALAR_FP_DP][coreIdx];
 			unsigned long long int instructionsVec128FpDP = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC128_FP_DP][coreIdx];
@@ -784,40 +785,40 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 			ratios["CPU_COMPUTATIONAL_INTENSITY"+suffixCoreIdx+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
 		}
 
-//		int socketIdx = i;
-//
-//		std::ostringstream socketIdxFill;
-//		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
-//		std::string suffixSocketIdx = "_" + socketIdxFill.str();
-//
-//		unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES][socketIdx];
-//
-//		ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
-//
-//		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
-//		{
-//			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
-//
-//			unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
-//			unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
-//
-//			if(detailedMode)
-//			{
-//				std::ostringstream IMCidxFill;
-//				IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
-//				std::string suffixIMCidx = "_" + IMCidxFill.str();
-//
-//				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixIMCidx+" [B/s]"] = DRAMbytesRead/runtime;
-//				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixIMCidx+" [B/s]"] = DRAMbytesWrite/runtime;
-//				ratios["CPU_DRAM_BANDWIDTH"+suffixIMCidx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
-//			}
-//			else
-//			{
-//				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] += DRAMbytesRead/runtime;
-//				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] += DRAMbytesWrite/runtime;
-//				ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
-//			}
-//		}
+		int socketIdx = i;
+
+		std::ostringstream socketIdxFill;
+		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+		unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES][socketIdx];
+
+		ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
+
+		for(int j = 0; j < PERFEVENT::IMCs_PER_SOCKET; j++)
+		{
+			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
+
+			unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
+			unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
+
+			if(detailedMode)
+			{
+				std::ostringstream IMCidxFill;
+				IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
+				std::string suffixIMCidx = "_" + IMCidxFill.str();
+
+				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixIMCidx+" [B/s]"] = DRAMbytesRead/runtime;
+				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixIMCidx+" [B/s]"] = DRAMbytesWrite/runtime;
+				ratios["CPU_DRAM_BANDWIDTH"+suffixIMCidx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
+			}
+			else
+			{
+				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] += DRAMbytesRead/runtime;
+				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] += DRAMbytesWrite/runtime;
+				ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
+			}
+		}
 	}
 
 	#elif defined _ARM_
