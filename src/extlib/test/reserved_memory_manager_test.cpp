@@ -77,19 +77,19 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
-    ExtlibEnergyTimeStamp *reference_ts = extlib_read_energy_measurements(&energy_domains); // get a dummy timestamp
 
+    ExtlibEnergyTimeStamp *reference_ts = extlib_read_energy_measurements(&energy_domains); // get a dummy timestamp
     // get existing domain sizes, to compare with memory manager allocations
     size_t domain_arr_size[EXTLIB_NUM_DOMAINS] = {0}; // init each domain arr size to 0
-    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
+        unsigned int domain = 1 << domain_idx;
         if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
         {
-            int domain_index = meric::mutils::countTrailingZeros(domain);
-            domain_arr_size[domain_index] = reference_ts->domain_data[domain_index].arr_size;
-            std::cout << "Domain Index: " << domain_index << ", Array Size: " << domain_arr_size[domain_index] << "\n";
+            domain_arr_size[domain_idx] = reference_ts->domain_data[domain_idx].arr_size;
         }
     }
+
     extlib_free_energy_timestamp(reference_ts);
     extlib_close(&energy_domains);
 
@@ -98,59 +98,46 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
 
-    ExtlibEnergyTimeStamp *ts1 = extlib_read_energy_measurements(&energy_domains); // get a dummy timestamp from reserved memory
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty.";
 
-    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
+        unsigned int domain = 1 << domain_idx;
         if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
         {
-            int domain_index = meric::mutils::countTrailingZeros(domain);
-            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_index, 0); // to ensure page 0 is created for all domains.
+            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_idx, 0); // to ensure page 0 is created for all domains.
+
+            std::string domain_name = getEnergyDomainName(domain);
             if (!domain_memory_map)
+            {
+                ADD_FAILURE() << domain_name << " energy domain exists but pointer to its reserved memory page 0 is NULL/nullptr.";
                 continue;
+            }
+            EXPECT_NE(domain_memory_map->counter_name, nullptr)
+                << domain_name << " energy domain exists but counter_name pointer of its reserved memory page 0 is NULL/nullptr.";
+            EXPECT_NE(domain_memory_map->counter_value, nullptr)
+                << domain_name << " energy domain exists but counter_value pointer of its reserved memory page 0 is NULL/nullptr.";
+            EXPECT_NE(domain_memory_map->energy_per_counter, nullptr)
+                << domain_name << " energy domain exists but energy_per_counter pointer of its reserved memory page 0 is NULL/nullptr.";
 
-            EXPECT_EQ(domain_memory_map->arr_size, domain_arr_size[domain_index]);
+            size_t expected_arr_size = domain_arr_size[domain_idx];
+            size_t expected_sizeof_counter_name = sizeof(char *) * domain_arr_size[domain_idx];
+            size_t expected_sizeof_counter_value = sizeof(uint64_t) * domain_arr_size[domain_idx] * (ReservedMemoryManager::reserved_memory_size + 1); // +1 for result timestamp
+            size_t expected_sizeof_energy_per_counter = sizeof(double) * domain_arr_size[domain_idx] * (ReservedMemoryManager::reserved_memory_size + 1);
 
-            EXPECT_NE(domain_memory_map->counter_name, nullptr);
-            EXPECT_NE(domain_memory_map->counter_value, nullptr);
-            EXPECT_NE(domain_memory_map->energy_per_counter, nullptr);
-
-            EXPECT_EQ(domain_memory_map->sizeof_counter_name, domain_arr_size[domain_index] * sizeof(char *));
-            EXPECT_EQ(domain_memory_map->sizeof_counter_value, sizeof(uint64_t) * domain_arr_size[domain_index] * (ReservedMemoryManager::reserved_memory_size + 1));    // +1 for result timestamp
-            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, sizeof(double) * domain_arr_size[domain_index] * (ReservedMemoryManager::reserved_memory_size + 1)); // +1 for result timestamp
-        }
-    }
-
-    // log with gtest
-    std::cout << "Filling page 0 to create another page!\n";
-    for (int i = 0; i < RESERVED_ELEMENT_SIZE; i++)
-    {
-        auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-        auto *ts2 = extlib_read_energy_measurements(&energy_domains);
-        auto *result = extlib_calc_energy_consumption(ts1, ts2);
-        // don't free!
-    }
-    // page 1 must be created.
-    ASSERT_TRUE(ReservedMemoryManager::entry_length.find(1) != ReservedMemoryManager::entry_length.end()) << "Page 1 not found in entry_length map";
-
-    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
-    {
-        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
-        {
-            int domain_index = meric::mutils::countTrailingZeros(domain);
-            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_index, 1); // to ensure page 1 is created for all domains.
-            if (!domain_memory_map)
-                continue;
-
-            EXPECT_EQ(domain_memory_map->arr_size, domain_arr_size[domain_index]);
-
-            EXPECT_NE(domain_memory_map->counter_name, nullptr);
-            EXPECT_NE(domain_memory_map->counter_value, nullptr);
-            EXPECT_NE(domain_memory_map->energy_per_counter, nullptr);
-
-            EXPECT_EQ(domain_memory_map->sizeof_counter_name, domain_arr_size[domain_index] * sizeof(char *));
-            EXPECT_EQ(domain_memory_map->sizeof_counter_value, sizeof(uint64_t) * domain_arr_size[domain_index] * ReservedMemoryManager::reserved_memory_size);
-            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, sizeof(double) * domain_arr_size[domain_index] * ReservedMemoryManager::reserved_memory_size);
+            EXPECT_EQ(domain_memory_map->arr_size, expected_arr_size)
+                << "arr_size variable of reserved memory page 0 for existing " << domain_name << " energy domain should be " << expected_arr_size
+                << " (" << domain_memory_map->arr_size << " != " << expected_arr_size << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_counter_name, expected_sizeof_counter_name)
+                << "sizeof_counter_name variable of reserved memory page 0 for existing " << domain_name << " energy domain should be " << expected_sizeof_counter_name
+                << " (" << domain_memory_map->sizeof_counter_name << " != " << expected_sizeof_counter_name << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_counter_value, expected_sizeof_counter_value)
+                << "sizeof_counter_value variable of reserved memory page 0 for existing " << domain_name << " energy domain should be " << expected_sizeof_counter_value
+                << " (" << domain_memory_map->sizeof_counter_value << " != " << expected_sizeof_counter_value << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, expected_sizeof_energy_per_counter)
+                << "sizeof_energy_per_counter variable of reserved memory page 0 for existing " << domain_name << " energy domain should be " << expected_sizeof_energy_per_counter
+                << " (" << domain_memory_map->sizeof_energy_per_counter << " != " << expected_sizeof_energy_per_counter << ").";
         }
     }
 
