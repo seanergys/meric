@@ -192,50 +192,77 @@ TEST(MemoryManagerTest, CloseFreesAllPagesAndLeavesManagerInResetState)
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
+
+    int n_ts = (RESERVED_ELEMENT_SIZE*2) + 1;
+    for (int i = 0; i < n_ts; i++)
+    {
+        auto *ts = extlib_read_energy_measurements(&energy_domains);
+    }
+
     extlib_close(&energy_domains);
 
-    EXPECT_FALSE(ReservedMemoryManager::is_enabled);
-    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0);
-    EXPECT_EQ(ReservedMemoryManager::domain_memory_pool.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0);
+    EXPECT_FALSE(ReservedMemoryManager::is_enabled)
+        << "is_enabled boolean should be false after close.";
+    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0)
+        << "reserved_memory_size variable should be false after close.";
+    EXPECT_EQ(ReservedMemoryManager::domain_memory_pool.size(), 0)
+        << "size of domain_memory_pool container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 0)
+        << "size of metadata container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 0)
+        << "size of entry_length container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0)
+        << "size of empty_page_ids container should be 0 after close.";
 }
 
 TEST(MemoryManagerTest, MultipleInitCloseHasNoSideEffect)
 {
-
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
-    energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
-    energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
-    // make sure reserved memory manager is clean state.
-    EXPECT_FALSE(ReservedMemoryManager::is_enabled);
-    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0);
-    EXPECT_EQ(ReservedMemoryManager::domain_memory_pool.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 0);
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0);
+    // make sure ReservedMemoryManager is in reset state.
+    EXPECT_FALSE(ReservedMemoryManager::is_enabled)
+        << "is_enabled boolean should be false after close.";
+    EXPECT_EQ(ReservedMemoryManager::reserved_memory_size, 0)
+        << "reserved_memory_size variable should be false after close.";
+    EXPECT_EQ(ReservedMemoryManager::domain_memory_pool.size(), 0)
+        << "size of domain_memory_pool container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 0)
+        << "size of metadata container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 0)
+        << "size of entry_length container should be 0 after close.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0)
+        << "size of empty_page_ids container should be 0 after close.";
 
-    // traverse each byte of energy_domains to ensure it is zeroed out.
-    for (size_t i = 0; i < sizeof(ExtlibEnergy); i++)
+    // make sure energy_domains is in reset state.
+    EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
+        << "All energy domains should be disabled after close.";
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
-        EXPECT_EQ(*((char *)&energy_domains + i), 0) << "Non-zero byte found at position " << i;
+        unsigned int domain = 1 << domain_idx;
+        std::string domain_name = getEnergyDomainName(domain);
+        EXPECT_EQ(energy_domains.energyMeasurementFns[domain_idx], nullptr)
+            << "Energy measurement function of " << domain_name << " energy domain should not be set after close.";
+        EXPECT_EQ(energy_domains.closeFns[domain_idx], nullptr)
+            << "Close function of " << domain_name << " energy domain should not be set after close.";
     }
+    EXPECT_FALSE(energy_domains.use_reserved_memory)
+        << "use_reserved_memory boolean should be false after close.";
+    EXPECT_EQ(energy_domains.reserved_memory_size, 0)
+        << "reserved_memory_size variable should be 0 after close.";
 }
 
 TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
