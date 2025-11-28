@@ -45,6 +45,31 @@ std::string getEnergyDomainName(unsigned int domain)
     return domain_name;
 }
 
+TEST(MERICExtAPITest, NumberOfEnergyDomainsAndTheirIdsAreSetCorrectly)
+{
+    int expected_num_domains = 6;
+    ASSERT_EQ(EXTLIB_NUM_DOMAINS, expected_num_domains)
+        << "EXTLIB_NUM_DOMAINS macro should be " << expected_num_domains
+        << " (" << EXTLIB_NUM_DOMAINS << " != " << expected_num_domains << ").";
+
+    unsigned int domain_ids[EXTLIB_NUM_DOMAINS] = {ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX,
+                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL,
+                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML,
+                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM,
+                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM,
+                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON};
+
+    std::string domain_names[EXTLIB_NUM_DOMAINS] = {"A64FX", "RAPL", "NVML", "ROCM", "HDEEM", "HWMON"};
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int expected_domain_id = 1 << domain_idx;
+        EXPECT_EQ(domain_ids[domain_idx], expected_domain_id)
+            << "ID of " << domain_names[domain_idx] << " energy domain should be " << expected_domain_id
+            << " (" << domain_ids[domain_idx] << " != " << expected_domain_id << ").";
+    }
+}
+
 TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 {
     ExtlibEnergy energy_domains = {};
@@ -314,6 +339,52 @@ TEST(MERICExtAPITest, EnergyTimeStampsHaveReservedMemoryVariablesInDefaultState)
     extlib_free_energy_timestamp(ts4);
     extlib_free_energy_timestamp(result1);
     extlib_free_energy_timestamp(result2);
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsEnergyTimeStampWithCorrectlySetEnergyDomainIds)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    auto *ts = extlib_read_energy_measurements(&energy_domains);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int expected_domain_id = 1 << domain_idx;
+        std::string domain_name = getEnergyDomainName(expected_domain_id);
+        EXPECT_EQ(ts->domain_data[domain_idx].domain_id, expected_domain_id)
+            << "ID of " << domain_name << " energy domain should be " << expected_domain_id
+            << " (" << (unsigned int)ts->domain_data[domain_idx].domain_id << " != " << expected_domain_id << ").";
+    }
+
+    extlib_free_energy_timestamp(ts);
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySetEnergyDomainIds)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    auto *ts2 = extlib_read_energy_measurements(&energy_domains);
+    auto *result = extlib_calc_energy_consumption(ts1, ts2);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int expected_domain_id = 1 << domain_idx;
+        std::string domain_name = getEnergyDomainName(expected_domain_id);
+        EXPECT_EQ(result->domain_data[domain_idx].domain_id, expected_domain_id)
+            << "ID of " << domain_name << " energy domain should be " << expected_domain_id
+            << " (" << (unsigned int)result->domain_data[domain_idx].domain_id << " != " << expected_domain_id << ").";
+    }
+
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(result);
     extlib_close(&energy_domains);
 }
 
