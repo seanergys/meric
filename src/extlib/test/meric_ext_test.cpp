@@ -14,6 +14,15 @@
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
+void enableAllEnergyDomains(ExtlibEnergy& energy_domains)
+{
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+}
+
 std::string getEnergyDomainName(unsigned int domain)
 {
     std::string domain_name;
@@ -73,7 +82,7 @@ TEST(MERICExtAPITest, NumberOfEnergyDomainsAndTheirIdsAreSetCorrectly)
 TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     EXPECT_FALSE(ReservedMemoryManager::is_enabled)
@@ -92,7 +101,7 @@ TEST(MERICExtAPITest, ReservedMemoryIsDisabledByDefault)
 TEST(MERICExtAPITest, EnabledExistingEnergyDomainsStayEnabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     bool has_a64fx = true; // meric.has_a64fx();
@@ -127,7 +136,7 @@ TEST(MERICExtAPITest, EnabledExistingEnergyDomainsStayEnabledAfterInit)
 TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsAreDisabledAfterInit)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     bool has_a64fx = true; // meric.has_a64fx();
@@ -180,7 +189,7 @@ TEST(MERICExtAPITest, DisabledEnergyDomainsStayDisabledAfterInit)
 TEST(MERICExtAPITest, EnabledExistingEnergyDomainsHaveTheirFunctionsSetAfterInit)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
@@ -202,7 +211,7 @@ TEST(MERICExtAPITest, EnabledExistingEnergyDomainsHaveTheirFunctionsSetAfterInit
 TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
@@ -243,7 +252,7 @@ TEST(MERICExtAPITest, DisabledEnergyDomainsDoNotHaveTheirFunctionsSetAfterInit)
 TEST(MERICExtAPITest, EnergyDomainsAreInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     extlib_close(&energy_domains);
@@ -268,7 +277,7 @@ TEST(MERICExtAPITest, EnergyDomainsAreInResetStateAfterClose)
 TEST(MERICExtAPITest, SuccessivelyCreatedEnergyTimeStampsHaveSuccessiveNonZeroIds)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
@@ -292,7 +301,7 @@ TEST(MERICExtAPITest, SuccessivelyCreatedEnergyTimeStampsHaveSuccessiveNonZeroId
 TEST(MERICExtAPITest, EnergyTimeStampsHaveReservedMemoryVariablesInDefaultState)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
@@ -345,7 +354,7 @@ TEST(MERICExtAPITest, EnergyTimeStampsHaveReservedMemoryVariablesInDefaultState)
 TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsEnergyTimeStampWithCorrectlySetEnergyDomainIds)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts = extlib_read_energy_measurements(&energy_domains);
@@ -366,7 +375,7 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsEnergyTimeStampWithCorrectlyS
 TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySetEnergyDomainIds)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
@@ -392,7 +401,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySe
 TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts = extlib_read_energy_measurements(&energy_domains);
@@ -425,7 +434,7 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsSomeDataForExistingEnergyDoma
 TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts = extlib_read_energy_measurements(&energy_domains);
@@ -458,7 +467,7 @@ TEST(MERICExtAPITest, ReadEnergyMeasurementsReturnsNoDataForNonExistingEnergyDom
 TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
@@ -500,7 +509,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
 TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDomains)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);

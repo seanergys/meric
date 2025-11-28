@@ -90,16 +90,6 @@ typedef struct ExtlibEnergy
 #define EXTLIB_ENERGY_DOMAIN(domain) EXTLIB_ENERGY_DOMAIN_##domain
 #endif
 
-// The main macro now uses the helper macro
-#define EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(enabled_domains)                          \
-    do                                                                             \
-    {                                                                              \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(A64FX)); \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(RAPL));  \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(NVML));  \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(HDEEM)); \
-        EXTLIB_ENERGY_ENABLE_DOMAIN(enabled_domains, EXTLIB_ENERGY_DOMAIN(ROCM));  \
-    } while (0)
 /**
  *
  * @param enabled_domains Object representing the enabled domains, used to initialize energy readings for the selected domains.

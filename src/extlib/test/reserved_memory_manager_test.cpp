@@ -14,6 +14,15 @@
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
+void enableAllEnergyDomains(ExtlibEnergy& energy_domains)
+{
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+}
+
 std::string getEnergyDomainName(unsigned int domain)
 {
     std::string domain_name;
@@ -59,7 +68,7 @@ TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsC
         << "reserved_memory_size variable should be " << expected_reserved_memory_size
         << " (" << energy_domains.reserved_memory_size << " != " << expected_reserved_memory_size << ").";
 
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     EXPECT_TRUE(ReservedMemoryManager::is_enabled)
@@ -75,7 +84,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
 {
     // note that since the index0 of page0 is reserved to save result, we have +1 in size.
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     ExtlibEnergyTimeStamp *reference_ts = extlib_read_energy_measurements(&energy_domains); // get a dummy timestamp
@@ -95,7 +104,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
 
     energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
@@ -148,7 +157,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForEnabledNonExistingEner
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
@@ -190,7 +199,7 @@ TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     int n_ts = (RESERVED_ELEMENT_SIZE*2) + 1;
@@ -219,17 +228,17 @@ TEST(MemoryManagerTest, MultipleInitAndCloseHaveNoSideEffects)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
     extlib_close(&energy_domains);
 
@@ -269,7 +278,7 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     // page 0 allocations
@@ -314,7 +323,7 @@ TEST(MemoryManagerTest, AllocateTimeStampCreatesNewPageWhenPageIsFull)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     // page 0 allocations
@@ -365,7 +374,7 @@ TEST(MemoryManagerTest, DeallocateClearsCorrespondingMemorySlotAndMarksAsEmpty)
     // init for all domains
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     // make measurement for 5sec job and save pointers.
@@ -476,7 +485,7 @@ TEST(MemoryManagerTest, PageIsRemovedWhenConditionIsMet)
 
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     // TODO: Check the should_remove_page logic to see how it works,and create that conditions and make sure page is removed.
@@ -490,7 +499,7 @@ TEST(MemoryManagerTest, PageIsNotRemovedIfConditionNotMet)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     // TODO: Similar to the previous one except this time you remove all entries on page 1 and, leave page 0 as-is. and make sure page 1 is not removed.
@@ -502,7 +511,7 @@ TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
 
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0); // index0 is reserved for result timestamps, so page0 is never empty.
@@ -555,7 +564,7 @@ TEST(MemoryManagerTest, CounterNameSharingAcrossPagesInSameDomain)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    EXTLIB_ENERGY_ENABLE_ALL_DOMAINS(energy_domains);
+    enableAllEnergyDomains(energy_domains);
     EXTLIB_ENERGY_DISABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
     extlib_init(&energy_domains, true);
 
