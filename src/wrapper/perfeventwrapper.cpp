@@ -56,11 +56,15 @@ void PERFEVENT::init(bool detailed)
 	//initIMCsizes();
 	#endif
 
-	//#ifdef _INTEL_
-	//std::string cpuFamilyModel;
-	//Environment::getCPUFamilyModelString(cpuFamilyModel);
-	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(cpuFamilyModel);
-	//#endif
+	#ifdef _INTEL_
+	//std::string CPUfamilyModel;
+	//Environment::getCPUFamilyModelString(CPUfamilyModel);
+	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
+
+	#elif defined _ARM_
+	std::string CPUname;
+	Environment::getCPUbrandString(CPUname);
+	#endif
 
 	std::map<std::string, __u32> PMU_TYPES;
 
@@ -100,6 +104,16 @@ void PERFEVENT::init(bool detailed)
 //		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0xcf05;
 //		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0xf005;
 //	}
+
+	#elif defined _ARM_
+	if(CPUname == "ARMv8 Neoverse V2")
+	{
+		for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+		{
+			std::string PMUname = "nvidia_scf_pmu_" + std::to_string(i);
+			PMU_TYPES[PMUname] = getPMUtype(PMUname);
+		}
+	}
 	#endif
 
 	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
@@ -108,9 +122,7 @@ void PERFEVENT::init(bool detailed)
 	//#elif defined _INTEL_
 	//int IMCidxLength = log10(PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
 	#endif
-	//#ifdef _INTEL_
-	//int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
-	//#endif
+	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 
 	//Initialization of per-core monitoring of CPU cycles and CPU instructions
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
@@ -219,6 +231,49 @@ void PERFEVENT::init(bool detailed)
 //
 //		__u32 PMU_TYPE = PMU_TYPES["uncore_cha_0"];
 //		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
+	}
+
+	#elif defined _ARM_
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		//(per core)
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+			int core = Environment::mapCoresToSocket[i][j];
+
+			if(CPUname == "ARMv8 Neoverse V2")
+			{
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_L3_MISSES + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_L3_MISSES], core);
+			}
+		}
+
+		//(per socket)
+		int socketIdx = i;
+
+		std::ostringstream socketIdxFill;
+		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+		int core = Environment::mapCoresToSocket[i][0];
+
+		if(CPUname == "ARMv8 Neoverse V2")
+		{
+			std::string PMUname = "nvidia_scf_pmu_" + std::to_string(i);
+			__u32 PMU_TYPE = PMU_TYPES[PMUname];
+			countersFd[PERFEVENT_COUNTERS::NVIDIA_GRACE_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::NVIDIA_GRACE_CPU_UNCORE_CYCLES], core);
+			countersFd[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_READ + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_READ], core);
+			countersFd[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE], core);
+		}
 	}
 	#endif
 
@@ -522,11 +577,15 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 {
 	int cumulative = 0;
 
-	//#ifdef _INTEL_
-	//std::string cpuFamilyModel;
-	//Environment::getCPUFamilyModelString(cpuFamilyModel);
-	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(cpuFamilyModel);
-	//#endif
+	#ifdef _INTEL_
+	//std::string CPUfamilyModel;
+	//Environment::getCPUFamilyModelString(CPUfamilyModel);
+	//CpuidSignatureValues cpuidSignature = stringToCpuidSignature(CPUfamilyModel);
+
+	#elif defined _ARM_
+	std::string CPUname;
+	Environment::getCPUbrandString(CPUname);
+	#endif
 
 	int CORES_PER_NODE = Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;
 	int coreIdxLength = log10(CORES_PER_NODE) + 1;
@@ -540,9 +599,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	//int IMCidxLength = log10(IMCs_PER_NODE) + 1;
 	#endif
 
-	//#ifdef _INTEL_
-	//int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
-	//#endif
+	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 
 	//Initialization and construction of map counterValues
 	std::map<std::string, std::vector<unsigned long long int>> counterValues;
@@ -566,6 +623,19 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
 	//counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
+
+	#elif defined _ARM_
+	if(CPUname == "ARMv8 Neoverse V2")
+	{
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_L3_MISSES].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_READ].reserve(Environment::SOCKETS_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE].reserve(Environment::SOCKETS_PER_NODE);
+	}
 	#endif
 
 	for(std::map<std::string, std::vector<unsigned long long int>>::iterator iterator = counterValues.begin(); iterator != counterValues.end(); iterator++)
@@ -748,6 +818,60 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 //				ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
 //			}
 //		}
+	}
+
+	#elif defined _ARM_
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	{
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		{
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+			if(CPUname == "ARMv8 Neoverse V2")
+			{
+				unsigned long long int flopsScalarNeon = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON][coreIdx];
+				unsigned long long int flopsSVE = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE][coreIdx];
+				unsigned long long int flops = flopsScalarNeon + flopsSVE;
+
+				ratios["CPU_FLOP"+suffixCoreIdx+" [FLOP/s]"] = flops/runtime;
+
+				unsigned long long int instructionsScalarFp = counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP][coreIdx];
+				unsigned long long int instructionsSVE = counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE][coreIdx];
+
+				unsigned long long int instructions = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
+
+				ratios["CPU_INSTRUCTION SCALAR_FP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsScalarFp/(double)instructions)*100 : 0;
+				ratios["CPU_INSTRUCTION VEC_SVE/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsSVE/(double)instructions)*100 : 0;
+
+				unsigned long long int L3CacheMisses = counterValues[PERFEVENT_COUNTERS::ARM_CPU_L3_MISSES][coreIdx];
+
+				ratios["CPU_COMPUTATIONAL_INTENSITY"+suffixCoreIdx+" [instructions/B]"] = L3CacheMisses ? instructions/((double)L3CacheMisses*64) : 0;
+			}
+		}
+
+		int socketIdx = i;
+
+		std::ostringstream socketIdxFill;
+		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+		if(CPUname == "ARMv8 Neoverse V2")
+		{
+			unsigned long long int uncoreCycles = counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_CPU_UNCORE_CYCLES][socketIdx];
+
+			ratios["CPU_UNCORE_FREQUENCY"+suffixSocketIdx+" [Hz]"] = uncoreCycles/runtime;
+
+			unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_READ][socketIdx];
+			unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE][socketIdx];
+
+			ratios["MEM_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] = DRAMbytesRead/runtime;
+			ratios["MEM_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] = DRAMbytesWrite/runtime;
+			ratios["MEM_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
+		}
 	}
 	#endif
 }
