@@ -135,6 +135,15 @@ void A64FX::close()
 }
 #endif
 
+bool A64FX::isAvailable()
+{
+#if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
+	return true;
+#else
+	return false;
+#endif 
+}
+
 /**
  * each counter has a label, that will represent this counter in the output file
  * returns a label of the input counter

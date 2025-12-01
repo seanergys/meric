@@ -45,6 +45,8 @@ public:
 
 	static inline double getUnit(std::string counterName);
 
+	static bool isAvailable();
+
 private:
 	static void initCountersUnits();
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
