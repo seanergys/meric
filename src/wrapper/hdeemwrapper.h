@@ -33,6 +33,8 @@ public:
 	static std::string getSourceLabel() {return "HDEEM";};
 	static const std::string SUM_ENERGY_LABEL;
 
+	static bool isAvailable();
+
 #ifdef HAVE_HDEEM_H
 	static void init(bool detailed = false)
 	{

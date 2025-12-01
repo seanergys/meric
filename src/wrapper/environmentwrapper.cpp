@@ -1903,14 +1903,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 
 #ifdef HAVE_NVML_H
-	if (nvmlInit() != NVML_SUCCESS)
-	{
-		std::cerr << "NVML ERROR: Unable to initialize\n";
-	}
-	else
-	{
-		NVML::init();
-	}
+	NVML::init();
 #endif
 	
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
@@ -3141,9 +3134,12 @@ void Environment::restoreSystemSettings(bool hardReset)
  **/
 void Environment::close()
 {
+// NOTE: "nvmlShutdown()" is now called as part of NVML::close()
+/*
 #ifdef HAVE_NVML_H
 	nvmlShutdown();
 #endif
+*/
 #ifdef HAVE_X86_ADAPT_H
 	x86_adapt_finalize();
 #endif

@@ -71,7 +71,11 @@ AsyncSampler<NVML::CounterRecord_t> NVML::s_asyncSampler;
 
 void NVML::init(bool detailed)
 {
-    // nvmlInit_v2();
+    if(nvmlInit_v2() != NVML_SUCCESS)
+	{
+		std::cerr << "NVML ERROR: Unable to initialize\n";
+        return;
+	}
 
     initCounters(detailed);
     initSamplers(detailed);
@@ -81,7 +85,7 @@ void NVML::close()
 {
     closeSamplers();
 
-    // nvmlShutdown();
+    nvmlShutdown();
 }
 
 void NVML::getCounterValues(CounterRecord_t &record)

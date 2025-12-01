@@ -8,6 +8,15 @@ std::vector<std::string> HDEEM::vrSensorLabel;
 bool HDEEM::detailedMode = false;
 const std::string HDEEM::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
+bool HDEEM::isAvailable()
+{
+#ifdef HAVE_HDEEM_H
+	return true;
+#else
+	return false;
+#endif // HAVE_HDEEM_H
+}
+
 #ifdef HAVE_HDEEM_H
 
 hdeem_bmc_data_t HDEEM::bmc;

@@ -65,6 +65,15 @@ void ROCM::init(bool detailed)
 	#endif
 }
 
+bool ROCM::isAvailable()
+{
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	return true;	
+#else
+	return false;
+#endif // HAVE_ROCM_SMI_ROCM_SMI_H
+}
+
 
 void ROCM::start(unsigned int sampling_frequency)
 {
