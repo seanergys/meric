@@ -72,6 +72,7 @@ static std::vector<std::pair<uint32_t, uint32_t>> sapphireRapidsUncoreCounterMSR
 
 void MSR::init()
 {
+#ifdef _INTEL_
 	// msr library as well as RAPL units has been already initialized in Environment::init(...)
 	initMap(counters);
 
@@ -138,11 +139,13 @@ void MSR::init()
 		nominal_freq = Environment::getNominalFrequency();
 		// TODO prepare a msr batch
 	}
+#endif
 }
 
 void MSR::close()
 {
 	// library will be finalized in Environment::close()
+#ifdef _INTEL_
 	if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 	{
 		auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter adrresses.
@@ -158,6 +161,7 @@ void MSR::close()
 			}
 		}
 	}
+#endif
 }
 
 void MSR::getCounterValues(std::map<std::string, uint64_t> &record)
