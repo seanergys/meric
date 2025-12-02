@@ -143,7 +143,7 @@ protected:
     }
     
     void BindFirstFree() {
-        CPUSetDynamic_t<T> mask(m_affinityMap.cols);
+        CPUSetDynamic_t<T> mask(m_affinityMap.cols * sizeof(T));
         
         for(size_t i = 0; i < m_threadCount*m_rankCount; ++i)
         {
