@@ -1286,6 +1286,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
         {
             std::cerr << "MERIC ERROR: Failed to open perf event" 
                       << join(def.name.begin(), def.name.end(), std::string("/")) 
+                      << " (" << def.type << ":0x" << std::hex << def.config << std::dec << ")"
                       << " for " << fullName << std::endl;
             return false;
         }
@@ -1337,7 +1338,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
             case CounterDef_t::DOMAIN_PER_SOCKET:
                 for(int i = 0; i < Environment::SOCKETS_PER_NODE; ++i)
                 {
-                    OpenCounter(def, i * Environment::CORES_PER_SOCKET, i, -1);
+                    OpenCounter(def, Environment::mapCoresToSocket[i][0], i, -1);
                 }
                 break;
             case CounterDef_t::DOMAIN_PER_CORE:
