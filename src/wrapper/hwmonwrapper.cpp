@@ -95,6 +95,7 @@ void HWMON::init(bool detailed)
 void HWMON::close()
 {
     closeSamplers();
+    s_sourceByName.clear();
 }
 
 void HWMON::getCounterValues(CounterRecord_t &record)
@@ -484,6 +485,8 @@ void HWMON::initSamplers(bool detailed)
 void HWMON::closeSamplers()
 {
     s_asyncSampler.Stop();
+    s_sourceDesc.clear();
+    s_sourceById.clear();
 }
 
 int HWMON::getSamples()

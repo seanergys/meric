@@ -216,6 +216,8 @@ void RAPL::initSamplers()
 void RAPL::closeSamplers()
 {
     s_asyncSampler.Stop();
+    s_samplerDesc.clear();
+    s_samplerById.clear();
 }
 
 int RAPL::getSamples()
@@ -434,7 +436,7 @@ void RAPL_MSR::init(bool detailed)
 
 void RAPL_MSR::close()
 {
-
+    counterDesc.clear();
 }
 
 void RAPL_MSR::getCounterValues(CounterRecord_t &record)
@@ -726,7 +728,7 @@ void RAPL_GEOPM::init(bool detailed)
 
 void RAPL_GEOPM::close()
 {
-
+    counterDesc.clear();
 }
 
 void RAPL_GEOPM::getCounterValues(CounterRecord_t &record)
@@ -1029,6 +1031,7 @@ void RAPL_SYSFS::close()
         it->second.fs.close();
     }
     counterDesc.clear();
+    counters.clear();
 }
 
 void RAPL_SYSFS::getCounterValues(CounterRecord_t &record)
