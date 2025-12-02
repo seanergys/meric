@@ -1508,6 +1508,7 @@ RAPL::Base *RAPL::getImpl()
     #if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
         if(RAPL_MSR::isAvailable())
         {
+            MERIC_INFO << "MERIC INFO: Using RAPL_MSR for RAPL energy measurements." << std::endl;
             return std::unique_ptr<Base>(new RAPL_MSR());
         }
     #endif
@@ -1515,19 +1516,23 @@ RAPL::Base *RAPL::getImpl()
     #if defined(HAVE_GEOPM_H)
         if(RAPL_GEOPM::isAvailable())
         {
+            MERIC_INFO << "MERIC INFO: Using RAPL_GEOPM for RAPL energy measurements." << std::endl;
             return std::unique_ptr<Base>(new RAPL_GEOPM());
         }
     #endif
 
         if(RAPL_PERF_EVENT::isAvailable())
         {
+            MERIC_INFO << "MERIC INFO: Using RAPL_PERF_EVENT for RAPL energy measurements." << std::endl;
             return std::unique_ptr<Base>(new RAPL_PERF_EVENT());
         }
 
         if(RAPL_SYSFS::isAvailable())
         {
+            MERIC_INFO << "MERIC INFO: Using RAPL_SYSFS for RAPL energy measurements." << std::endl;
             return std::unique_ptr<Base>(new RAPL_SYSFS());
         }
+        MERIC_WARNING << "MERIC WARNING: No RAPL measurement method is available. RAPL measurements will be disabled." << std::endl;
         return std::unique_ptr<Base>(new RAPL_NONE());
     };
 
