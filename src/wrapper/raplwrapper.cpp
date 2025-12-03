@@ -1478,6 +1478,10 @@ bool RAPL_PERF_EVENT::isAvailable()
 
 bool RAPL::isAvailable()
 {
+#if !(defined(_INTEL_) || defined(_AMD_))
+    return false;
+#endif
+
 #if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
     if(RAPL_MSR::isAvailable())
     {

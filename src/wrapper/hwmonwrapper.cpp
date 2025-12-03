@@ -570,6 +570,10 @@ std::string HWMON::getData(double startTime, double duration,
 
 bool HWMON::isAvailable()
 {
+#if defined(_INTEL_)
+    return false;
+#endif
+
     std::vector<std::pair<std::regex, int> > searchFiles;
 
     for(const auto &name: s_checkFiles)
