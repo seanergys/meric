@@ -500,6 +500,8 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 #     8] Content of test folder and example application run                    #
 --------------------------------------------------------------------------------
 * source codes
+	* plain_test.cpp
+		* Simple test with no MERIC regions.
 	* test.cpp
 		* One region, with two another regions inside.
 	* test_mpi.cpp
@@ -530,6 +532,8 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* In default it is set for blas_test.
 	* region.options.extra
 		* Configuration file, that shows advanced MERIC settings.
+* test-power-monitoring.sh
+	* Script that tests available power monitoring systems using `mericStatic` tool in conjuction with plain_test.cpp
 * run.sh and run-mpi.sh
 	* Scripts that runs MERIC anslysis of test.cpp or test_mpi.cpp on Taurus machine.
 * run-jetson.sh

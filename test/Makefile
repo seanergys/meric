@@ -54,16 +54,19 @@ endif
 ################################################################################
 MERIC=-L../lib -I../include 
 LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
-BINARIES=test test_mpi blasTest samples sleepTest fortTest overHead
+BINARIES=plainTest test test_mpi blasTest samples sleepTest fortTest overHead
 ################################################################################
 MKL_PATHS=
 ################################################################################
 
 default: all
 
-all: samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
+all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
 
  ######
+
+plainTest: plain_test.cpp
+	$(CXX) -O0 -g plain_test.cpp $(LIBS) -o plainTest
 
 midlib_test: midlib_test.c
 	$(CC) -O0 -g  midlib_test.c $(LIBS) -lmeric_ext -lstdc++ -lm -o midlibTest
