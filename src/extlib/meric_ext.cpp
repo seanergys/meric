@@ -116,23 +116,23 @@ static void measureEnergy(size_t *size, uint64_t **counter_values, double **ener
 }
 
 // Deliberate template explosion for explicit domains
-template static void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
-template static void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::A64FX, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::NVML, unsigned long long int>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::ROCM, uint64_t>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
+template void measureEnergy<meric::HDEEM, double>(size_t *, uint64_t **, double **, char ***, size_t, size_t, size_t);
 
 template <typename Tmode>
 static void close()
 {
     Tmode::close();
 }
-template static void close<meric::A64FX>();
-template static void close<meric::RAPL>();
-template static void close<meric::ROCM>();
-template static void close<meric::HDEEM>();
-template static void close<meric::HWMON>();
+template void close<meric::A64FX>();
+template void close<meric::RAPL>();
+template void close<meric::ROCM>();
+template void close<meric::HDEEM>();
+template void close<meric::HWMON>();
 template <>
 void close<meric::NVML>()
 {
@@ -174,9 +174,9 @@ static void printArray(const char *name, Tmode *arr, size_t size, size_t print_l
     std::cout << "]" << std::endl;
 }
 
-template static void printArray<double>(const char *, double *, size_t, size_t);
-template static void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
-template static void printArray<char *>(const char *, char **, size_t, size_t);
+template void printArray<double>(const char *, double *, size_t, size_t);
+template void printArray<uint64_t>(const char *, uint64_t *, size_t, size_t);
+template void printArray<char *>(const char *, char **, size_t, size_t);
 
 void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 {
