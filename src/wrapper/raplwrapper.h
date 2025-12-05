@@ -91,6 +91,8 @@ public:
             bool isCumulative;
         };
 
+        virtual ~Base() = default;
+
         virtual void init(bool detailed) = 0;
         virtual void close() = 0;
 
