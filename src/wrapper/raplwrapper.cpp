@@ -1532,7 +1532,7 @@ RAPL::Base *RAPL::getImpl()
             MERIC_INFO << "MERIC INFO: Using RAPL_SYSFS for RAPL energy measurements." << std::endl;
             return std::unique_ptr<Base>(new RAPL_SYSFS());
         }
-        MERIC_WARNING << "MERIC WARNING: No RAPL measurement method is available. RAPL measurements will be disabled." << std::endl;
+        MERIC_INFO << "MERIC WARNING: No RAPL measurement method is available. RAPL measurements will be disabled." << std::endl;
         return std::unique_ptr<Base>(new RAPL_NONE());
     };
 
