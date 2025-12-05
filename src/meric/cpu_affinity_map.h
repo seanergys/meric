@@ -16,6 +16,8 @@ class CPUAffinityMap_t
 public:
     typedef std::map<int, std::vector<uint64_t> > CoreToThreadMap_t;
 
+    virtual ~CPUAffinityMap_t() = default;
+
     virtual void CollectMachineInfo() = 0;
     virtual void ComputeAffinity(const std::string &mode) = 0;
 

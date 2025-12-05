@@ -34,7 +34,7 @@ public:
     
     virtual void CollectMachineInfo()
     {
-        typedef typename CPUAffinityMapShared_t<T>::AffinityMap_t<T, uint8_t> AffinityMap_t;
+        typedef typename CPUAffinityMapShared_t<T>::template AffinityMap_t<T, uint8_t> AffinityMap_t;
         
         MPI_Allreduce(MPI_IN_PLACE, &this->m_coreCount, 1, 
                       MPI_INT32_T, MPI_MAX, m_nodeLocalComm);
