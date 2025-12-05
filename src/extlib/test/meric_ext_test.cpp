@@ -10,17 +10,24 @@
 
 #include <meric_ext.h>
 #include <gtest/gtest.h>
+#include "../../wrapper/environmentwrapper.h"
+#include "../../wrapper/a64fxwrapper.h"
+#include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/nvmlwrapper.h"
+#include "../../wrapper/rocmwrapper.h"
+#include "../../wrapper/hdeemwrapper.h"
+#include "../../wrapper/hwmonwrapper.h"
 
 #include "../reserved_memory_manager.h"
 #include "work.h"
 
-void enableAllEnergyDomains(ExtlibEnergy& energy_domains)
+void enableAllEnergyDomains(ExtlibEnergy &energy_domains)
 {
-        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
-        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
-        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
-        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
-        EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
 }
 
 std::string getEnergyDomainName(unsigned int domain)
@@ -28,27 +35,27 @@ std::string getEnergyDomainName(unsigned int domain)
     std::string domain_name;
     switch (domain)
     {
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
-            domain_name = "A64FX";
-            break;
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
-            domain_name = "RAPL";
-            break;
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
-            domain_name = "NVML";
-            break;
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
-            domain_name = "ROCM";
-            break;
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
-            domain_name = "HDEEM";
-            break;
-        case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
-            domain_name = "HWMON";
-            break;
-        default:
-            domain_name = "Unknown Domain";
-            break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX:
+        domain_name = "A64FX";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL:
+        domain_name = "RAPL";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
+        domain_name = "NVML";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM:
+        domain_name = "ROCM";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
+        domain_name = "HDEEM";
+        break;
+    case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+        domain_name = "HWMON";
+        break;
+    default:
+        domain_name = "Unknown Domain";
+        break;
     }
 
     return domain_name;
@@ -62,11 +69,11 @@ TEST(MERICExtAPITest, NumberOfEnergyDomainsAndTheirIdsAreSetCorrectly)
         << " (" << EXTLIB_NUM_DOMAINS << " != " << expected_num_domains << ").";
 
     unsigned int domain_ids[EXTLIB_NUM_DOMAINS] = {ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX,
-                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL,
-                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML,
-                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM,
-                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM,
-                                                ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON};
+                                                   ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL,
+                                                   ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML,
+                                                   ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM,
+                                                   ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM,
+                                                   ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON};
 
     std::string domain_names[EXTLIB_NUM_DOMAINS] = {"A64FX", "RAPL", "NVML", "ROCM", "HDEEM", "HWMON"};
 
@@ -104,19 +111,19 @@ TEST(MERICExtAPITest, EnabledExistingEnergyDomainsStayEnabledAfterInit)
     enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
-    bool has_a64fx = true; // meric.has_a64fx();
-    bool has_rapl = true;  // meric.has_rapl();
-    bool has_nvml = true;  // meric.has_nvml();
-    bool has_hdeem = true; // meric.has_hdeem();
-    bool has_rocm = true;  // meric.has_rocm();
-    bool has_hwmon = true; // meric.has_hwmon();
+    bool has_a64fx = meric::A64FX::isAvailable(); // meric.has_a64fx();
+    bool has_rapl = meric::RAPL::isAvailable();   // meric.has_rapl();
+    bool has_nvml = meric::NVML::isAvailable();   // meric.has_nvml();
+    bool has_hdeem = meric::HDEEM::isAvailable(); // meric.has_hdeem();
+    bool has_rocm = meric::ROCM::isAvailable();   // meric.has_rocm();
+    bool has_hwmon = meric::HWMON::isAvailable(); // meric.has_hwmon();
 
     if (has_a64fx)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX))
             ADD_FAILURE() << "A64FX energy domain exists but is not enabled.";
     if (has_rapl)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL))
-            ADD_FAILURE() << "RAPL energy domain exists but is not enabled.";        
+            ADD_FAILURE() << "RAPL energy domain exists but is not enabled.";
     if (has_nvml)
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML))
             ADD_FAILURE() << "NVML energy domain exists but is not enabled.";
@@ -139,12 +146,12 @@ TEST(MERICExtAPITest, EnabledNonExistingEnergyDomainsAreDisabledAfterInit)
     enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
-    bool has_a64fx = true; // meric.has_a64fx();
-    bool has_rapl = true;  // meric.has_rapl();
-    bool has_nvml = true;  // meric.has_nvml();
-    bool has_hdeem = true; // meric.has_hdeem();
-    bool has_rocm = true;  // meric.has_rocm();
-    bool has_hwmon = true; // meric.has_hwmon();
+    bool has_a64fx = meric::A64FX::isAvailable(); // meric.has_a64fx();
+    bool has_rapl = meric::RAPL::isAvailable();   // meric.has_rapl();
+    bool has_nvml = meric::NVML::isAvailable();   // meric.has_nvml();
+    bool has_hdeem = meric::HDEEM::isAvailable(); // meric.has_hdeem();
+    bool has_rocm = meric::ROCM::isAvailable();   // meric.has_rocm();
+    bool has_hwmon = meric::HWMON::isAvailable(); // meric.has_hwmon();
 
     if (!has_a64fx)
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX))
