@@ -65,8 +65,8 @@ NVML::SourceNameMap_t NVML::s_sourceByName;
 NVML::SourceIdVec_t   NVML::s_sourceById;
 NVML::DeviceDescMap_t NVML::s_deviceDesc;
 
-std::chrono::nanoseconds              NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
-std::atomic<bool>                      NVML::s_sampleStoreEnabled(false);
+std::chrono::nanoseconds            NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::atomic<bool>                   NVML::s_sampleStoreEnabled(false);
 AsyncSampler<NVML::CounterRecord_t> NVML::s_asyncSampler;
 
 void NVML::init(bool detailed)
@@ -84,6 +84,9 @@ void NVML::init(bool detailed)
 void NVML::close()
 {
     closeSamplers();
+    s_sourceByName.clear();
+    s_sourceDesc.clear();
+    s_deviceDesc.clear();
 
     nvmlShutdown();
 }
@@ -325,6 +328,7 @@ void NVML::initSamplers(bool detailed)
 void NVML::closeSamplers()
 {
     s_asyncSampler.Stop();
+    s_sourceById.clear();
 }
 
 int NVML::getSamples()

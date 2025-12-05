@@ -130,22 +130,22 @@ protected:
 
 template<typename T, typename E>
 CPUSetExprUn_t<T, E, T (*)(const T &)> operator~(const CPUSetExpr_t<T, E> &u) {
-    return CPUSetExprUn_t<T, E, T (*)(const T &)>(static_cast<const E &>(u), +[](const T &a) { return ~a; });
+    return CPUSetExprUn_t<T, E, T (*)(const T &)>(static_cast<const E &>(u), +[](const T &a) -> T { return ~a; });
 }
 
 template<typename T, typename E1, typename E2>
 CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)> operator|(const CPUSetExpr_t<T, E1> &u, const CPUSetExpr_t<T, E2> &v) {
-    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) { return a | b; });
+    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) -> T { return a | b; });
 }
 
 template<typename T, typename E1, typename E2>
 CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)> operator&(const CPUSetExpr_t<T, E1> &u, const CPUSetExpr_t<T, E2> &v) {
-    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) { return a & b; });
+    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) -> T { return a & b; });
 }
 
 template<typename T, typename E1, typename E2>
 CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)> operator^(const CPUSetExpr_t<T, E1> &u, const CPUSetExpr_t<T, E2> &v) {
-    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) { return a ^ b; });
+    return CPUSetExprBin_t<T, E1, E2, T (*)(const T &, const T &)>(static_cast<const E1 &>(u), static_cast<const E2 &>(v), +[](const T &a, const T &b) -> T { return a ^ b; });
 }
 
 template<typename T, typename E1, typename E2>

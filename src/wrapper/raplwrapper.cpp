@@ -216,6 +216,8 @@ void RAPL::initSamplers()
 void RAPL::closeSamplers()
 {
     s_asyncSampler.Stop();
+    s_samplerDesc.clear();
+    s_samplerById.clear();
 }
 
 int RAPL::getSamples()
@@ -434,7 +436,7 @@ void RAPL_MSR::init(bool detailed)
 
 void RAPL_MSR::close()
 {
-
+    counterDesc.clear();
 }
 
 void RAPL_MSR::getCounterValues(CounterRecord_t &record)
@@ -726,7 +728,7 @@ void RAPL_GEOPM::init(bool detailed)
 
 void RAPL_GEOPM::close()
 {
-
+    counterDesc.clear();
 }
 
 void RAPL_GEOPM::getCounterValues(CounterRecord_t &record)
@@ -1029,6 +1031,7 @@ void RAPL_SYSFS::close()
         it->second.fs.close();
     }
     counterDesc.clear();
+    counters.clear();
 }
 
 void RAPL_SYSFS::getCounterValues(CounterRecord_t &record)
@@ -1283,6 +1286,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
         {
             std::cerr << "MERIC ERROR: Failed to open perf event" 
                       << join(def.name.begin(), def.name.end(), std::string("/")) 
+                      << " (" << def.type << ":0x" << std::hex << def.config << std::dec << ")"
                       << " for " << fullName << std::endl;
             return false;
         }
@@ -1334,7 +1338,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
             case CounterDef_t::DOMAIN_PER_SOCKET:
                 for(int i = 0; i < Environment::SOCKETS_PER_NODE; ++i)
                 {
-                    OpenCounter(def, i * Environment::CORES_PER_SOCKET, i, -1);
+                    OpenCounter(def, Environment::mapCoresToSocket[i][0], i, -1);
                 }
                 break;
             case CounterDef_t::DOMAIN_PER_CORE:
@@ -1474,6 +1478,10 @@ bool RAPL_PERF_EVENT::isAvailable()
 
 bool RAPL::isAvailable()
 {
+#if !(defined(_INTEL_) || defined(_AMD_))
+    return false;
+#endif
+
 #if defined(HAVE_MSR_SAFE) || defined(HAVE_MSR_CORE_H)
     if(RAPL_MSR::isAvailable())
     {

@@ -72,45 +72,74 @@ const std::string INTEL_CPU_L3_MISSES = "CPU_L3_MISSES";
 const std::string INTEL_CPU_UNCORE_CYCLES = "CPU_UNCORE_CYCLES";
 const std::string INTEL_CPU_DRAM_BYTES_READ = "CPU_DRAM_READ";
 const std::string INTEL_CPU_DRAM_BYTES_WRITE = "CPU_DRAM_WRITE";
+#elif defined _ARM_
+const std::string ARM_CPU_INSTS_SCALAR_FP = "CPU_INST_SCALAR_FP";
+const std::string ARM_CPU_INSTS_SVE = "CPU_INST_SVE";
+const std::string ARM_CPU_FLOPS_SCALAR_NEON = "CPU_FLOPS_SCALAR_NEON";
+const std::string ARM_CPU_FLOPS_SVE = "CPU_FLOPS_SVE";
+const std::string ARM_CPU_L3_MISSES = "CPU_L3_MISSES";
+const std::string NVIDIA_GRACE_CPU_UNCORE_CYCLES = "CPU_UNCORE_CYCLES";
+const std::string NVIDIA_GRACE_MEM_DRAM_BYTES_READ = "MEM_DRAM_READ";
+const std::string NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE = "MEM_DRAM_BYTES_WRITE";
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
 	#ifdef _AMD_
-	{ AMD_CPU_FLOPS,                AMD_CPU_FLOPS                     },
-	{ AMD_CPU_L3_MISSES,            AMD_CPU_L3_MISSES                 },
+	{ AMD_CPU_FLOPS,                     AMD_CPU_FLOPS                     },
+	{ AMD_CPU_L3_MISSES,                 AMD_CPU_L3_MISSES                 },
 	#elif defined _INTEL_
-	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  "CPU_CYCLES_AMX_ACTIVE"           },
-	{ INTEL_CPU_INSTS_SCALAR_FP_DP, "CPU_INSTRUCTIONS_SCALAR_FP_DP"   },
-	{ INTEL_CPU_INSTS_VEC128_FP_DP, "CPU_INSTRUCTIONS_VEC_128B_FP_DP" },
-	{ INTEL_CPU_INSTS_VEC256_FP_DP, "CPU_INSTRUCTIONS_VEC_256B_FP_DP" },
-	{ INTEL_CPU_INSTS_VEC512_FP_DP, "CPU_INSTRUCTIONS_VEC_512B_FP_DP" },
-	{ INTEL_CPU_L3_MISSES,          INTEL_CPU_L3_MISSES               },
-	{ INTEL_CPU_UNCORE_CYCLES,      INTEL_CPU_UNCORE_CYCLES           },
-	{ INTEL_CPU_DRAM_BYTES_READ,    "CPU_DRAM_BYTES_READ"             },
-	{ INTEL_CPU_DRAM_BYTES_WRITE,   "CPU_DRAM_BYTES_WRITE"            },
+	{ INTEL_CPU_CYCLES_AMX_ACTIVE,       "CPU_CYCLES_AMX_ACTIVE"           },
+	{ INTEL_CPU_INSTS_SCALAR_FP_DP,      "CPU_INSTRUCTIONS_SCALAR_FP_DP"   },
+	{ INTEL_CPU_INSTS_VEC128_FP_DP,      "CPU_INSTRUCTIONS_VEC_128B_FP_DP" },
+	{ INTEL_CPU_INSTS_VEC256_FP_DP,      "CPU_INSTRUCTIONS_VEC_256B_FP_DP" },
+	{ INTEL_CPU_INSTS_VEC512_FP_DP,      "CPU_INSTRUCTIONS_VEC_512B_FP_DP" },
+	{ INTEL_CPU_L3_MISSES,               INTEL_CPU_L3_MISSES               },
+	{ INTEL_CPU_UNCORE_CYCLES,           INTEL_CPU_UNCORE_CYCLES           },
+	{ INTEL_CPU_DRAM_BYTES_READ,         "CPU_DRAM_BYTES_READ"             },
+	{ INTEL_CPU_DRAM_BYTES_WRITE,        "CPU_DRAM_BYTES_WRITE"            },
+	#elif defined _ARM_
+	{ ARM_CPU_INSTS_SCALAR_FP,           "CPU_INSTRUCTIONS_SCALAR_FP"      },
+	{ ARM_CPU_INSTS_SVE,                 "CPU_INSTRUCTIONS_VEC_SVE"        },
+	{ ARM_CPU_FLOPS_SCALAR_NEON,         "CPU_FLOPS_SCALAR_VEC_NEON"       },
+	{ ARM_CPU_FLOPS_SVE,                 "CPU_FLOPS_VEC_SVE"               },
+	{ ARM_CPU_L3_MISSES,                 ARM_CPU_L3_MISSES                 },
+	{ NVIDIA_GRACE_CPU_UNCORE_CYCLES,    NVIDIA_GRACE_CPU_UNCORE_CYCLES    },
+	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ,  "MEM_DRAM_BYTES_READ"             },
+	{ NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE, NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE },
 	#endif
-	{ PERFEVENT_CPU_CYCLES,         PERFEVENT_CPU_CYCLES              },
-	{ PERFEVENT_CPU_INSTS,          PERFEVENT_CPU_INSTS               }
+	{ PERFEVENT_CPU_CYCLES,              PERFEVENT_CPU_CYCLES              },
+	{ PERFEVENT_CPU_INSTS,               PERFEVENT_CPU_INSTS               }
 };
 
 static std::map<const std::string, uint64_t> counterDefines = {
 	#ifdef _AMD_
-	{ AMD_CPU_FLOPS,                0x0f03 },
-	{ AMD_CPU_L3_MISSES,            0x0104 }
+	{ AMD_CPU_FLOPS,                     0x0f03      },
+	{ AMD_CPU_L3_MISSES,                 0x0104      }
 	#elif defined _INTEL_
-	{ INTEL_CPU_CYCLES_AMX_ACTIVE,  0x02b7 },
-	{ INTEL_CPU_INSTS_SCALAR_FP_DP, 0x01c7 },
-	{ INTEL_CPU_INSTS_VEC128_FP_DP, 0x04c7 },
-	{ INTEL_CPU_INSTS_VEC256_FP_DP, 0x10c7 },
-	{ INTEL_CPU_INSTS_VEC512_FP_DP, 0x40c7 },
-	{ INTEL_CPU_L3_MISSES,          0x20d1 }
+	{ INTEL_CPU_CYCLES_AMX_ACTIVE,       0x02b7      },
+	{ INTEL_CPU_INSTS_SCALAR_FP_DP,      0x01c7      },
+	{ INTEL_CPU_INSTS_VEC128_FP_DP,      0x04c7      },
+	{ INTEL_CPU_INSTS_VEC256_FP_DP,      0x10c7      },
+	{ INTEL_CPU_INSTS_VEC512_FP_DP,      0x40c7      },
+	{ INTEL_CPU_L3_MISSES,               0x20d1      }
+	#elif defined _ARM_
+	{ ARM_CPU_INSTS_SCALAR_FP,           0x0075      },
+	{ ARM_CPU_INSTS_SVE,                 0x8006      },
+	{ ARM_CPU_FLOPS_SCALAR_NEON,         0x80c1      },
+	{ ARM_CPU_FLOPS_SVE,                 0x80c0      },
+	{ ARM_CPU_L3_MISSES,                 0x0037      },
+	{ NVIDIA_GRACE_CPU_UNCORE_CYCLES,    0x100000000 },
+	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ,  0x01a5      },
+	{ NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE, 0x01db      }
 	#endif
 };
 
 static std::unordered_map<std::string, int> counterMultipliers = {
 	#ifdef _INTEL_
-	{ INTEL_CPU_DRAM_BYTES_READ,  64 },
-	{ INTEL_CPU_DRAM_BYTES_WRITE, 64 }
+	{ INTEL_CPU_DRAM_BYTES_READ,     64 },
+	{ INTEL_CPU_DRAM_BYTES_WRITE,    64 }
+	#elif defined _ARM_
+	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ, 32 }
 	#endif
 };
 

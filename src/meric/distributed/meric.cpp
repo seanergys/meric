@@ -298,6 +298,7 @@ DistributedMeric::DistributedMeric()
 	m_pAffinityMap->ComputeAffinity(THREAD_PIN_MODE);
 	Environment::mapCoresToTIDs = m_pAffinityMap->GetCoreToThreadMap();
 
+/*
 	if(nodeFirst)
 	{
 		for(const auto &item: Environment::mapCoresToTIDs)
@@ -308,6 +309,7 @@ DistributedMeric::DistributedMeric()
 			std::cout << std::endl;
 		}
 	}
+*/
 
 	//available energy measurement systems on ARM architectures requires short wait to start the measurement - sleep(5)
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
