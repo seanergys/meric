@@ -1932,7 +1932,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #endif
 //ACTIVATE GPU tuning
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
-		if (defaultParameter.frequencyGPU != 0)
+		if (defaultParameter.frequencyGPU != 0 || defaultParameter.powerCapGPU != 0)
 		{
 			getGPUTuningMethod();
 		}
