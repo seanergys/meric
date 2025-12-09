@@ -197,35 +197,37 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX)))
     {
-#if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
-        meric::A64FX::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
-        enabled_domains->closeFns[index] = close<meric::A64FX>;
-        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
-#else
+        if(meric::A64FX::isAvailable()){
+            meric::A64FX::init(is_detailed);
+            int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
+            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
+            enabled_domains->closeFns[index] = close<meric::A64FX>;
+            MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
+    }
+    else{
         std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX);
-#endif
+    }
     }
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL)))
     {
 
-#if defined HAVE_SYSFS_RAPL || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || HAVE_LINUX_PERF_EVENT_H
-        meric::RAPL::init(is_detailed);
-        meric::RAPL::initCountersUnits();
-        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>;
-        enabled_domains->closeFns[index] = close<meric::RAPL>;
-        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
-#else
-        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << ". It is selected but does NOT exists on this machine!" << std::endl;
-        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
-#endif
+        if(meric::RAPL::isAvailable()){
+            meric::RAPL::init(is_detailed);
+            meric::RAPL::initCountersUnits();
+            int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
+            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>;
+            enabled_domains->closeFns[index] = close<meric::RAPL>;
+            MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
+        }
+        else{
+            std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << ". It is selected but does NOT exists on this machine!" << std::endl;
+            EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL);
+        }
     }
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML)))
     {
-#ifdef HAVE_NVML_H
+    if(meric::NVML::isAvailable()){
         nvmlInit();
         meric::NVML::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
@@ -234,47 +236,55 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::NVML, unsigned long long int>;
         enabled_domains->closeFns[index] = close<meric::NVML>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << " is init [OK]" << std::endl;
-#else
+    }
+    else{
         std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
-#endif
+    }
     }
 
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM)))
     {
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+        if(meric::ROCM::isAvailable()){
         meric::ROCM::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM); // Get index of the enabled domain
         enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::ROCM, uint64_t>;
         enabled_domains->closeFns[index] = close<meric::ROCM>;
         MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << " is init [OK]" << std::endl;
-#else
+    }
+    else{
         std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM) << ". It is selected but does NOT exists on this machine!" << std::endl;
         EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
-
-#endif
+    }
     }
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM)))
     {
-#ifdef HAVE_HDEEM_H
-        meric::HDEEM::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
-        enabled_domains->closeFns[index] = close<meric::HDEEM>;
-        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
-#else
-        std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << ". It is selected but does NOT exists on this machine!" << std::endl;
-        EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
-#endif
+        if(meric::HDEEM::isAvailable()){
+            meric::HDEEM::init(is_detailed);
+            int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
+            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
+            enabled_domains->closeFns[index] = close<meric::HDEEM>;
+            MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
+        }
+        else{
+            std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << ". It is selected but does NOT exists on this machine!" << std::endl;
+            EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+        }
     }
 
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON)))
     {
-        meric::HWMON::init(is_detailed);
-        int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
-        enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>;
-        enabled_domains->closeFns[index] = close<meric::HWMON>;
-        MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
+        if(meric::HWMON::isAvailable()){
+            meric::HWMON::init(is_detailed);
+            int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
+            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>;
+            enabled_domains->closeFns[index] = close<meric::HWMON>;
+            MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
+        }
+        else{
+            std::cerr << "[WARN]: Turning off " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << ". It is selected but does NOT exists on this machine!" << std::endl;
+            EXTLIB_ENERGY_DISABLE_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
+        }   
     }
 
     // This executes only once.
