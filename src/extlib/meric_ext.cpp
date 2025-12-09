@@ -133,14 +133,7 @@ template void close<meric::RAPL>();
 template void close<meric::ROCM>();
 template void close<meric::HDEEM>();
 template void close<meric::HWMON>();
-template <>
-void close<meric::NVML>()
-{
-#ifdef HAVE_NVML_H
-    nvmlShutdown();
-    meric::NVML::close();
-#endif
-}
+template void close<meric::NVML>();
 
 template <typename Tmode>
 static void printArray(const char *name, Tmode *arr, size_t size, size_t print_limit)
@@ -227,8 +220,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
     }
     if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML)))
     {
-    if(meric::NVML::isAvailable()){
-        nvmlInit();
+    if(meric::NVML::isAvailable()){ 
         meric::NVML::init(is_detailed);
         int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML); // Get index of the enabled domain
         // MERIC_INFO << "index =" << index << " gpus-per-node:" << meric::NVML::getGPUsPerNode() << "\n";
