@@ -119,6 +119,50 @@ void measureEnergy(bool verbose, double timeNow = 0.0)
 	EnergyRecords<Tmode, Tenergy>::recordTime.push_back(timeNow);
 }
 
+template <>
+void measureEnergy<NVML, unsigned long long int>(bool verbose, double timeNow)
+{
+	// if (EnergyRecords<Tmode, Tenergy>::recordEnergy.empty())
+	// {
+	// 	Tmode::init(true);
+	// }
+
+	if (timeNow == 0.0)
+	{
+		struct timespec timestamp;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
+		timeNow = mutils::timeToDouble(timestamp);
+	}
+
+	std::map<std::string, unsigned long long int> energyNow;
+	NVML::getCounterValues(energyNow);
+
+	EnergyRecords<NVML, unsigned long long int>::recordEnergy.push_back(energyNow);
+	EnergyRecords<NVML, unsigned long long int>::recordTime.push_back(timeNow);
+}
+
+template <>
+void measureEnergy<ROCM, uint64_t>(bool verbose, double timeNow)
+{
+	// if (EnergyRecords<Tmode, Tenergy>::recordEnergy.empty())
+	// {
+	// 	Tmode::init(true);
+	// }
+
+	if (timeNow == 0.0)
+	{
+		struct timespec timestamp;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
+		timeNow = mutils::timeToDouble(timestamp);
+	}
+
+	std::map<std::string, uint64_t> energyNow;
+	ROCM::getCounterValues(energyNow);
+
+	EnergyRecords<ROCM, uint64_t>::recordEnergy.push_back(energyNow);
+	EnergyRecords<ROCM, uint64_t>::recordTime.push_back(timeNow);
+}
+
 struct HWMON_S
 {
 	static timespec startTime; // this is dummy.
