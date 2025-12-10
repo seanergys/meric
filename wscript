@@ -299,7 +299,7 @@ def build(ctx):
 		target       = "meric_ext",
 		use          = "basis",
 #		use          = "msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
-		install_path = ctx.path.abspath()+"/lib/"
+		install_path = "${PREFIX}/lib"
 	)
 	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
 
