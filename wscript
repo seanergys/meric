@@ -247,12 +247,6 @@ def build(ctx):
 		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 		install_path = "${PREFIX}/bin"
 	)
-	ctx.install_files(
-		dest = "${PREFIX}/bin",
-		files = ["src/tools/staticMERICtool/multiNodeStaticMeasureStart.sh",
-		        "src/tools/staticMERICtool/multiNodeStaticMeasureStop.sh"],
-		chmod = 0o755
-	)
 	
 	# MERICwrapper
 	ctx.program(
