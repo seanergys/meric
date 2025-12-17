@@ -193,6 +193,8 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForDisabledEnergyDomainsA
             << domain_name << " energy domain is disabled but its reserved memory page 0 is not NULL/nullptr.";
 
     }
+
+    extlib_close(&energy_domains);
 }
 
 TEST(MemoryManagerTest, EnergyTimeStampMetadataForReservedMemoryPage0AreInitializedAfterInit)
