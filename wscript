@@ -297,33 +297,6 @@ def build(ctx):
 	)
 	shutil.copy("src/extlib/meric_ext.h" , ctx.path.abspath()+"/include/")
 
-	# Check if pybind11 is already installed in the system
-	try:
-		# Try to get pybind11 includes from system Python
-		includes = [
-			i[2:] for i in subprocess.check_output(['python3', '-m', 'pybind11', '--includes'])
-			.decode().split() if i.startswith('-I')
-		]
-	except (subprocess.CalledProcessError, FileNotFoundError):
-		# pybind11 not found in system, create venv
-		venv = ctx.path.find_dir('src/python').make_node('.venv').abspath()
-		if not os.path.exists(venv):
-			ctx.exec_command(f'python3 -m venv {venv}')
-		ctx.exec_command(
-			f'{venv}/bin/pip install "pybind11>=2.9.0"'
-		)
-		python = f'{venv}/bin/python'
-		includes = [
-			i[2:] for i in subprocess.check_output([python, '-m', 'pybind11', '--includes'])
-			.decode().split() if i.startswith('-I')
-		]
-
-	ext = subprocess.check_output([
-		"python3", '-c',
-		'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))'
-	]).decode().strip()
-
-
 	if ctx.env.PREFIX != ctx.path.abspath():
 		#INCLUDE
 		ctx.install_files(
@@ -350,26 +323,6 @@ def build(ctx):
 			target       = "meric",
 			use          = "basis",
 			install_path = "${PREFIX}/lib"
-		)
-
-		#MERIC-Python Wrapper
-		ctx.shlib(
-			source=ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
-				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
-				ctx.path.ant_glob('src/store/*.cpp'),
-			use="basis",
-			target='mericpy',
-			install_path="${PREFIX}/lib",
-			includes=includes,
-		)
-
-		#TIMEPROF Python Wrapper
-		ctx.shlib(
-			source       = ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + ctx.path.ant_glob('src/timeprof/*.cpp'),
-			target       = "timeprofpy",
-			use          = "basis",
-			install_path = "${PREFIX}/lib",
-			includes=includes,
 		)
 
 		#TIMEPROF
@@ -414,28 +367,6 @@ def build(ctx):
 		use          = "basis",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
-	)
-
-	#MERIC-Python Wrapper
-	ctx.shlib(
-		source=ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
-			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
-			ctx.path.ant_glob('src/store/*.cpp'),
-		use="basis",
-		target='mericmpipy',
-		install_path="${PREFIX}/lib",
-		env          = ctx.all_envs["mpi"],
-		includes=includes,
-	)
-	
-	#TIMEPROF Python Wrapper
-	ctx.shlib(
-		source       = ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + ctx.path.ant_glob('src/timeprof/*.cpp'),
-		target       = "timeprofmpipy",
-		use          = "basis",
-		install_path = "${PREFIX}/lib",
-		env          = ctx.all_envs["mpi"],
-		includes=includes,
 	)
 
 	#TIMEPROF MPI
