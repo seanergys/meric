@@ -672,7 +672,7 @@ FUNCTIONS
 ## mericStatic ##
  - Command line energy measurement and hardware power management.
 
-### Usage
+##### Usage #####
 
 The basic usage of the `mericStatic` tool is as follows:
 
@@ -680,7 +680,7 @@ The basic usage of the `mericStatic` tool is as follows:
 mericStatic [mericStatic parameters] -- ./application [application parameters]
 ```
 
-### Application
+##### Application #####
 
 The application can be any user-provided program; however, if the user provides the following special commands, the behavior of `mericStatic` will change accordingly.
 > Users can override start, stop, or eval command behavior by using `./<start | stop | eval>`, provided they have a program with the same name. In other words, "`-- ./start`" and "`-- start`" are two different things.
@@ -709,15 +709,15 @@ The application can be any user-provided program; however, if the user provides 
 - `-q`: Print the overall consumed energy only in Joules (J).
 - `-o`: Output directory, `./mericStaticMeasurements` by default. -->
 
-### Output Format
+##### Output Format #####
 
 By default, `mericStatic` creates a folder named `mericStaticMeasurements` and saves the measurement files there, unless a different name is specified using the `-o` option. The measurement file is named using the format `mericStatic_<ID>_$(hostname).data`, where `ID` corresponds to one of the environment variables `SLURM_JOB_ID`, `PBS_JOB_ID`, or `FLUX_JOB_ID`. If none of these are defined, the ID defaults to `0`, unless explicitly provided by the user using the `-i` option.
 
-### Example Usecase
+##### Example Usecase #####
 
 `mericStatic` can be used in different scenarios including *program measurement*, *general measurement*, and *multi-host measurement*. Results are saved per node and the `mericStatic` Eval command can be used to calculate the total sum.
 
-#### **Program Measurement**
+##### Program Measurement #####
 
 In this setup, we measure RAPL and NVML energy consumption for `sleep 5` for a single node.
 
@@ -750,7 +750,7 @@ NVML Energy consumption [J] = 821.04
 Watt-hour (Energy[J] / 3600) = 0.228066
 ```
 
-#### **General Measurement**
+##### General Measurement #####
 
 Similar to *program execution*, user can start measuring until further notice.
 
@@ -767,7 +767,7 @@ mericStatic -e RAPL,NVML -- stop
 
 `-- stop` can be used in conjunction with `-- start` or independently to end long-running energy measurements. It sends a kill signal to the `mericStatic` program run by the current user, which then forwards the signal to the program it is monitoring, and subsequently dumps the energy measurements.
 
-#### **Eval**
+##### Eval #####
 
 `eval` assumes that all result files are accessible to the user. It filters files using the pattern `mericStatic_<job_id>*`. While it sums the total energy fields, reports the maximum execution time along with watt-hours. For the earlier example:
 
@@ -785,7 +785,7 @@ Total Watt-hour (Total Energy[J] / 3600) = 0.376868
 
 ```
 
-#### **Multi-Host Measurement**
+##### Multi-Host Measurement #####
 
 So far we have used a single host, but `mericStatic` can also be used by the job scheduler. The example below is for a Slurm environment.
 > `mericStatic -- eval` assumes a NAS system exists in the cluster. Otherwise, user must ensure access to the results (e.g., by copying them).
