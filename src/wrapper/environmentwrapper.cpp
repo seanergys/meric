@@ -2678,7 +2678,7 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 		freqSM = currentGPUSMFreq;
 	}
 	//no else branch - if the MEM frequency has changed, the SM frequency may not be available
-	if (freqSM > MEMit->second.front() || freqSM < MEMit->second.back())
+	if (freqSM < MEMit->second.front() || freqSM > MEMit->second.back())
 	{
 		std::cerr << "MERIC ERROR: GPU streaming multiprocessor frequency has not changed to invalid value: " << freqSM << " Hz\n";
 		std::cerr << MEMit->second.front() << " - " << MEMit->second.back() << std::endl;
