@@ -439,6 +439,102 @@ TEST(MemoryManagerTest, NewReservedMemoryPageIsCreatedWhenPage0IsFull)
     extlib_close(&energy_domains);
 }
 
+TEST(MemoryManagerTest, EnergyTimeStampsAreCorrectlyAllocatedInReservedMemoryPage1)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        auto *ts = extlib_read_energy_measurements(&energy_domains);
+    }
+
+    ReservedMemoryManager::DomainMemoryPool *domain_memory_map[EXTLIB_NUM_DOMAINS];
+    for (int i = 0; i < n_ts; i++)
+    {
+        auto *ts = extlib_read_energy_measurements(&energy_domains);
+
+        if (i == 0)
+        {
+            for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+            {
+                unsigned int domain = 1 << domain_idx;
+                if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
+                {
+                    domain_memory_map[domain_idx] = ReservedMemoryManager::get_domain_map(domain_idx, 1);
+                }
+            }            
+        }
+        
+        size_t expected_ts_container_size = i + 1;
+
+        EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2)
+            << "Size of metadata container should remain 2"
+            << " after " << (i + 1) << ". energy timestamp has been created.";
+        ASSERT_EQ(ReservedMemoryManager::metadata[1].size(), expected_ts_container_size)
+            << "Size of container for energy timestamp metadata for reserved memory page 1 should be " << expected_ts_container_size
+            << " after " << (i + 1) << ". energy timestamp has been created"
+            << " (" << ReservedMemoryManager::metadata[1].size() << " != " << expected_ts_container_size << ").";
+        ExtlibEnergyTimeStamp *expected_ts_ptr = &ReservedMemoryManager::metadata[1][i];
+
+        ASSERT_EQ(ts, expected_ts_ptr)
+            << (i + 1) << ". energy timestamp pointer does not point to expected memory location.";
+
+        size_t expected_reserved_memory_index = i;
+        ASSERT_EQ(ts->reserved_memory_page, 1)
+            << "reserved_memory_page variable of " << (i + 1) << ". energy timestamp should be 1.";
+        ASSERT_EQ(ts->reserved_memory_index, expected_reserved_memory_index)
+            << "reserved_memory_index variable of " << (i + 1) << ". energy timestamp should be " << expected_reserved_memory_index
+            << " (" << ts->reserved_memory_index << " != " << expected_reserved_memory_index << ").";
+
+        for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+        {
+            unsigned int domain = 1 << domain_idx;
+            if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+            {   
+                std::string domain_name = getEnergyDomainName(domain);
+                EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 2)
+                    << "Size of container for reserved memory pages of " << domain_name << " energy domain should remain 2"
+                    << " after " << (i + 1) << ". energy timestamp has been created.";
+
+                if (i == 0)
+                {
+                    size_t expected_arr_size = domain_memory_map[domain_idx]->arr_size;
+                    ASSERT_EQ(ts->domain_data[domain_idx].arr_size, expected_arr_size)
+                        << "arr_size variable of " << domain_name << " energy domain of " << (i + 1) << ". energy timestamp should be " << expected_arr_size
+                        << " (" << ts->domain_data[domain_idx].arr_size << " != " << expected_arr_size << ").";
+                }
+
+                int offset = ts->reserved_memory_index * ts->domain_data[domain_idx].arr_size;
+                uint64_t *expected_counter_value_ptr = &domain_memory_map[domain_idx]->counter_value[offset];
+                double *expected_energy_per_counter_ptr = &domain_memory_map[domain_idx]->energy_per_counter[offset];
+
+                EXPECT_EQ(ts->domain_data[domain_idx].counter_value, expected_counter_value_ptr)
+                    << "counter_value pointer of " << domain_name << " energy domain of " << (i + 1) << ". energy timestamp does not point to expected memory location.";
+                EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, expected_energy_per_counter_ptr)
+                    << "energy_per_counter pointer of " << domain_name << " energy domain of " << (i + 1) << ". energy timestamp does not point to expected memory location.";
+            }
+        }
+
+        uint64_t expected_entry_length = i + 1;
+        EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 2)
+            << "Size of entry_length container should remain 2"
+            <<" after " << (i + 1) << ". energy timestamp has been created.";
+        EXPECT_EQ(ReservedMemoryManager::entry_length[1], expected_entry_length)
+            << "Number of entries in reserved memory page 1 should be " << expected_entry_length
+            << " after " << (i + 1) << ". energy timestamp has been created"
+            << " (" << ReservedMemoryManager::entry_length[1] << " != " << expected_entry_length << ").";
+        EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+            << "empty_page_ids container should remain empty"
+            << " after " << (i + 1) << ". energy timestamp has been created.";
+    }
+    
+    extlib_close(&energy_domains);
+}
+
 TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
