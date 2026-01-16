@@ -473,7 +473,7 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, AllocateTimeStampCreatesNewPageWhenPageIsFull)
+TEST(MemoryManagerTest, NewReservedMemoryPageIsCreatedWhenPage0IsFull)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
@@ -714,7 +714,7 @@ TEST(MemoryManagerTest, EmptyPageConsistency)
     */
 }
 
-TEST(MemoryManagerTest, CounterNameSharingAcrossPagesInSameDomain)
+TEST(MemoryManagerTest, EnergyDomainCounterNamesAreSharedAcrossReservedMemoryPages)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
