@@ -120,7 +120,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
             std::string domain_name = getEnergyDomainName(domain);
             if (!domain_memory_map)
             {
-                ADD_FAILURE() << domain_name << " energy domain exists but pointer to its reserved memory page 0 is NULL/nullptr.";
+                FAIL() << domain_name << " energy domain exists but pointer to its reserved memory page 0 is NULL/nullptr.";
                 continue;
             }
             EXPECT_NE(domain_memory_map->counter_name, nullptr)
@@ -206,7 +206,7 @@ TEST(MemoryManagerTest, EnergyTimeStampMetadataForReservedMemoryPage0AreInitiali
 
     EXPECT_EQ(ReservedMemoryManager::metadata.size(), 1)
         << "Size of metadata container should be 1.";
-    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1)
+    ASSERT_EQ(ReservedMemoryManager::metadata.count(0), 1)
         << "Container for energy timestamp metadata for reserved memory page 0 is missing.";
     EXPECT_EQ(ReservedMemoryManager::metadata[0].capacity(), ReservedMemoryManager::reserved_memory_size + 1)
         << "Capacity of container for energy timestamp metadata for reserved memory page 0 should be " << (ReservedMemoryManager::reserved_memory_size + 1)
@@ -254,7 +254,7 @@ TEST(MemoryManagerTest, ResultEnergyTimeStampIsInitializedAtIndex0OfReservedMemo
 
     EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 1)
         << "Size of entry_length container should be 1.";
-    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1)
+    ASSERT_EQ(ReservedMemoryManager::entry_length.count(0), 1)
         << "Number of entries in reserved memory page 0 is missing.";
     EXPECT_EQ(ReservedMemoryManager::entry_length[0], 1)
         << "Number of entries in reserved memory page 0 should be 1.";
