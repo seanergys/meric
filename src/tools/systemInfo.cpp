@@ -1277,7 +1277,6 @@ void listEnergySystemsWithDomains()
 #ifdef HAVE_NVML_H
 	if (meric::NVML::isAvailable())
 	{
-
 		meric::NVML::init(false);
 		std::cout << "\tNVML: ";
 		meric::NVML::CounterRecord_t counter_values;
