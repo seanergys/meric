@@ -40,6 +40,7 @@
 #include "../wrapper/rocmwrapper.h"
 #endif
 
+
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 std::map<uint64_t, uint64_t> currentWhitelist;
