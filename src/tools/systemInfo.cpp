@@ -32,11 +32,14 @@
 
 #ifdef HAVE_NVML_H
 #include <nvml.h>
+#include "../wrapper/nvmlwrapper.h"
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 #include <rocm_smi/rocm_smi.h>
+#include "../wrapper/rocmwrapper.h"
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
