@@ -1242,17 +1242,22 @@ void listEnergySystemsWithDomains()
 {
 	int systems = 0;
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
+	meric::Environment::initHWSizes();
 
 	if (meric::RAPL::isAvailable())
 	{
+		meric::RAPL::init(false);
 		std::cout << "\tRAPL:";
 		meric::RAPL::CounterRecord_t counter_values;
 		meric::RAPL::getCounterValues(counter_values);
 		for (const auto &domain : counter_values)
 		{
-			std::cout << domain.first << ", ";
+			std::cout << domain.first;
+			if (&domain.first != &counter_values.rbegin()->first)
+				std::cout << ", ";
 		}
 		std::cout << "\n";
+		meric::RAPL::close();
 		systems++;
 	}
 
