@@ -341,9 +341,9 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 #if !defined(HAVE_MSR_SAFE) && !defined(HAVE_MSR_CORE_H) && !defined(HAVE_X86_ADAPT_H) && !defined(HAVE_CPUFREQ_H) && defined(__x86_64__)
 			std::cout << "\t\t install one the following libraries:\n";
 #ifdef _INTEL_
-			<< "\t\t - msr_safe / cpufreq / GEOPM\n";
+			std::cout << "\t\t - msr_safe / cpufreq / GEOPM\n";
 #elif defined _AMD_
-			<< "\t\t - esmi_ib / msr_safe / cpufreq\n";
+			std::cout << "\t\t - esmi_ib / msr_safe / cpufreq\n";
 #endif
 #endif
 			if (scalingDriver == "intel_pstate")
