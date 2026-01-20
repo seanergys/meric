@@ -11,8 +11,10 @@
 using namespace meric;
 
 #ifdef HAVE_NVML_H
-struct NVML::SourceDecl_t {
-    enum Type_t {
+struct NVML::SourceDecl_t
+{
+    enum Type_t
+    {
         TYPE_NONE = 0,
         TYPE_ENERGY,
         TYPE_POWER,
@@ -24,18 +26,14 @@ struct NVML::SourceDecl_t {
     uint32_t scopeId;
 };
 
-struct NVML::SourceDesc_t {
-    SourceDesc_t(const SourceDecl_t &decl, 
-        const std::string &label, const std::string &fullName, 
-        DeviceDesc_t *pDeviceDesc, double unit = 1.0e-3)
-        : type(decl.type)
-        , unit(unit)
-        , label(label)
-        , fullName(fullName)
-        , lastValue(0)
-        , overflowCount(0)
-        , pDeviceDesc(pDeviceDesc)
-    {}
+struct NVML::SourceDesc_t
+{
+    SourceDesc_t(const SourceDecl_t &decl,
+                 const std::string &label, const std::string &fullName,
+                 DeviceDesc_t *pDeviceDesc, double unit = 1.0e-3)
+        : type(decl.type), unit(unit), label(label), fullName(fullName), lastValue(0), overflowCount(0), pDeviceDesc(pDeviceDesc)
+    {
+    }
 
     SourceDecl_t::Type_t type;
     double unit;
@@ -49,11 +47,12 @@ struct NVML::SourceDesc_t {
     DeviceDesc_t *pDeviceDesc;
 };
 
-struct NVML::DeviceDesc_t {
+struct NVML::DeviceDesc_t
+{
     nvmlDevice_t device;
 
     std::vector<nvmlFieldValue_t> fieldValues;
-    std::vector<SourceDesc_t *>   sources;
+    std::vector<SourceDesc_t *> sources;
 };
 
 const std::string NVML::SUM_ENERGY_LABEL = "Energy consumption [J]";
@@ -62,20 +61,20 @@ std::vector<std::string> NVML::vrSensorLabel;
 
 NVML::SourceDescMap_t NVML::s_sourceDesc;
 NVML::SourceNameMap_t NVML::s_sourceByName;
-NVML::SourceIdVec_t   NVML::s_sourceById;
+NVML::SourceIdVec_t NVML::s_sourceById;
 NVML::DeviceDescMap_t NVML::s_deviceDesc;
 
-std::chrono::nanoseconds            NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
-std::atomic<bool>                   NVML::s_sampleStoreEnabled(false);
+std::chrono::nanoseconds NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::atomic<bool> NVML::s_sampleStoreEnabled(false);
 AsyncSampler<NVML::CounterRecord_t> NVML::s_asyncSampler;
 
 void NVML::init(bool detailed)
 {
-    if(nvmlInit_v2() != NVML_SUCCESS)
-	{
-		std::cerr << "NVML ERROR: Unable to initialize\n";
+    if (nvmlInit_v2() != NVML_SUCCESS)
+    {
+        std::cerr << "NVML ERROR: Unable to initialize\n";
         return;
-	}
+    }
 
     initCounters(detailed);
     initSamplers(detailed);
@@ -93,16 +92,16 @@ void NVML::close()
 
 void NVML::getCounterValues(CounterRecord_t &record)
 {
-    for(auto &desc: s_sourceByName)
+    for (auto &desc : s_sourceByName)
     {
         // List only energy counters
-        if(desc.second->type != SourceDecl_t::TYPE_ENERGY)
+        if (desc.second->type != SourceDecl_t::TYPE_ENERGY)
         {
             continue;
         }
 
         unsigned long long energy = 0;
-        if(nvmlDeviceGetTotalEnergyConsumption(desc.second->pDeviceDesc->device, &energy) != NVML_SUCCESS)
+        if (nvmlDeviceGetTotalEnergyConsumption(desc.second->pDeviceDesc->device, &energy) != NVML_SUCCESS)
         {
             energy = 0;
         }
@@ -113,19 +112,23 @@ void NVML::getCounterValues(CounterRecord_t &record)
 
 void NVML::initCounters(bool detailed)
 {
-    auto IsNVPlatform = []() {
+    auto IsNVPlatform = []()
+    {
         uint32_t deviceCount = 0;
-        if(nvmlDeviceGetCount(&deviceCount) != NVML_SUCCESS || deviceCount < 1) {
+        if (nvmlDeviceGetCount(&deviceCount) != NVML_SUCCESS || deviceCount < 1)
+        {
             return false;
         }
 
         nvmlDevice_t deviceHandle;
-        if(nvmlDeviceGetHandleByIndex(0, &deviceHandle) != NVML_SUCCESS) {
+        if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) != NVML_SUCCESS)
+        {
             return false;
         }
 
         char name[NVML_DEVICE_NAME_V2_BUFFER_SIZE];
-        if(nvmlDeviceGetName(deviceHandle, name, NVML_DEVICE_NAME_V2_BUFFER_SIZE) != NVML_SUCCESS) {
+        if (nvmlDeviceGetName(deviceHandle, name, NVML_DEVICE_NAME_V2_BUFFER_SIZE) != NVML_SUCCESS)
+        {
             return false;
         }
 
@@ -135,50 +138,50 @@ void NVML::initCounters(bool detailed)
 
     std::vector<SourceDecl_t> sourceDecls;
 
-    if(IsNVPlatform())
+    if (IsNVPlatform())
     {
-        sourceDecls.push_back({ "MODULE_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
-        sourceDecls.push_back({ "GPU_POWER",     SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
-        sourceDecls.push_back({ "MODULE_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1 });
-        sourceDecls.push_back({ "MEMORY_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_AVERAGE, 2 });
+        sourceDecls.push_back({"MODULE_ENERGY", SourceDecl_t::TYPE_ENERGY, 0, 0});
+        sourceDecls.push_back({"GPU_POWER", SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0});
+        sourceDecls.push_back({"MODULE_POWER", SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 1});
+        sourceDecls.push_back({"MEMORY_POWER", SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_AVERAGE, 2});
     }
     else
     {
-        sourceDecls.push_back({ "GPU_ENERGY", SourceDecl_t::TYPE_ENERGY,                        0, 0 });
-        sourceDecls.push_back({ "GPU_POWER",  SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0 });
+        sourceDecls.push_back({"GPU_ENERGY", SourceDecl_t::TYPE_ENERGY, 0, 0});
+        sourceDecls.push_back({"GPU_POWER", SourceDecl_t::TYPE_POWER, NVML_FI_DEV_POWER_INSTANT, 0});
     }
 
     uint32_t deviceCount = 0;
 
-    if(nvmlDeviceGetCount(&deviceCount) != NVML_SUCCESS)
+    if (nvmlDeviceGetCount(&deviceCount) != NVML_SUCCESS)
     {
         return;
     }
 
     int suffixLen = log10(deviceCount) + 1;
 
-    for(uint32_t i = 0; i < deviceCount; ++i)
+    for (uint32_t i = 0; i < deviceCount; ++i)
     {
         nvmlDevice_t deviceHandle;
-        if(nvmlDeviceGetHandleByIndex(i, &deviceHandle) != NVML_SUCCESS)
+        if (nvmlDeviceGetHandleByIndex(i, &deviceHandle) != NVML_SUCCESS)
             continue;
 
-        auto deviceDescRes = s_deviceDesc.insert(std::make_pair(i, DeviceDesc_t{ deviceHandle }));
+        auto deviceDescRes = s_deviceDesc.insert(std::make_pair(i, DeviceDesc_t{deviceHandle}));
         DeviceDesc_t &deviceDesc = deviceDescRes.first->second;
 
-        for(const SourceDecl_t &sourceDecl: sourceDecls)
+        for (const SourceDecl_t &sourceDecl : sourceDecls)
         {
-            const std::string fullName  = sysfsutils::MakeCounterName(sourceDecl.name, "", "", { { i, suffixLen } });
-            const std::string fullLabel = sysfsutils::MakeCounterName(sourceDecl.name, "", "", { { i, suffixLen } });
+            const std::string fullName = sysfsutils::MakeCounterName(sourceDecl.name, "", "", {{i, suffixLen}});
+            const std::string fullLabel = sysfsutils::MakeCounterName(sourceDecl.name, "", "", {{i, suffixLen}});
 
             SourceDesc_t sourceDesc(sourceDecl, fullLabel, fullName, &deviceDesc);
 
             auto baseRes = s_sourceDesc.insert(std::make_pair(sourceDecl.name, std::map<int, SourceDesc_t>()));
-            auto res     = baseRes.first->second.insert(std::make_pair(i, std::move(sourceDesc)));
+            auto res = baseRes.first->second.insert(std::make_pair(i, std::move(sourceDesc)));
 
             s_sourceByName[fullName] = &res.first->second;
 
-            if((sourceDecl.type & SourceDecl_t::TYPE_POWER) != 0)
+            if ((sourceDecl.type & SourceDecl_t::TYPE_POWER) != 0)
             {
                 deviceDesc.fieldValues.push_back(nvmlFieldValue_t{});
                 deviceDesc.fieldValues.back().fieldId = sourceDecl.fieldId;
@@ -190,7 +193,7 @@ void NVML::initCounters(bool detailed)
 }
 
 double NVML::getResultValue(CounterValue_t startValue, CounterValue_t stopValue,
-    double runtime, int &cumulative, std::string counter, std::string regionName)
+                            double runtime, int &cumulative, std::string counter, std::string regionName)
 {
     cumulative = 1;
     return double(stopValue - startValue) * getUnit(counter);
@@ -214,7 +217,7 @@ std::string NVML::getSourceLabel()
 std::string NVML::getCounterLabel(const std::string &counter)
 {
     auto it = s_sourceByName.find(counter);
-    if(it != s_sourceByName.end())
+    if (it != s_sourceByName.end())
     {
         return it->second->label;
     }
@@ -225,7 +228,7 @@ std::string NVML::getCounterLabel(const std::string &counter)
 double NVML::getUnit(std::string counterName)
 {
     auto it = s_sourceByName.find(counterName);
-    if(it != s_sourceByName.end())
+    if (it != s_sourceByName.end())
     {
         return it->second->unit;
     }
@@ -237,7 +240,7 @@ void NVML::start(timespec &time, double sampleFreqHz)
 {
     s_sampleStoreEnabled.store(sampleFreqHz != 0.0);
 
-    if(sampleFreqHz != 0)
+    if (sampleFreqHz != 0)
     {
         s_asyncSampler.SetFrequecy(sampleFreqHz);
     }
@@ -255,9 +258,9 @@ void NVML::stop(timespec &time)
 
 void NVML::initSamplers(bool detailed)
 {
-    for(auto &desc: s_sourceByName)
+    for (auto &desc : s_sourceByName)
     {
-        if(desc.second->type != SourceDecl_t::TYPE_POWER)
+        if (desc.second->type != SourceDecl_t::TYPE_POWER)
         {
             continue;
         }
@@ -266,21 +269,23 @@ void NVML::initSamplers(bool detailed)
     }
 
     std::sort(s_sourceById.begin(), s_sourceById.end(),
-        [](const SourceDesc_t *pLeft, const SourceDesc_t *pRight) {
-            return pLeft->fullName < pRight->fullName;
-        });
-    
+              [](const SourceDesc_t *pLeft, const SourceDesc_t *pRight)
+              {
+                  return pLeft->fullName < pRight->fullName;
+              });
+
     // NOTR: Simulates HDEEM Blade sensor, which doesn't exist in NVML
     s_sourceById.insert(s_sourceById.begin(), nullptr);
 
-    for(SourceDesc_t *pSourceDesc: s_sourceById)
+    for (SourceDesc_t *pSourceDesc : s_sourceById)
     {
         vrSensorLabel.push_back(pSourceDesc ? pSourceDesc->fullName : "");
     }
 
     PROBE_NUMBER = s_sourceById.size();
 
-    s_asyncSampler.Start(s_overflowCheckPeriod, [](bool isSampling, CounterRecord_t *pRequest) {
+    s_asyncSampler.Start(s_overflowCheckPeriod, [](bool isSampling, CounterRecord_t *pRequest)
+                         {
         for(auto &deviceDescIt: s_deviceDesc)
         {
             timespec now;
@@ -321,8 +326,7 @@ void NVML::initSamplers(bool detailed)
         for(auto &desc: s_sourceByName)
         {
             (*pRequest)[desc.second->fullName] = CounterValue_t(desc.second->lastValue);
-        }
-    });
+        } });
 }
 
 void NVML::closeSamplers()
@@ -338,61 +342,63 @@ int NVML::getSamples()
 
 void NVML::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples)
 {
-    if(sensorId >= s_sourceById.size() || !s_sourceById[sensorId])
+    if (sensorId >= s_sourceById.size() || !s_sourceById[sensorId])
     {
         return;
     }
 
     const SourceDesc_t &desc = *s_sourceById[sensorId];
     samples.reserve(last - first);
-    for(size_t i = first; i < last; ++i)
+    for (size_t i = first; i < last; ++i)
     {
-        if((desc.type & SourceDecl_t::TYPE_POWER) != 0)
+        if ((desc.type & SourceDecl_t::TYPE_POWER) != 0)
         {
             samples.push_back(double(desc.samples[i].value) * desc.unit);
         }
     }
 }
 
-std::string NVML::getData(double startTime, double duration, 
-    size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
-    double energy[], double minWatts[], double maxWatts[])
+std::string NVML::getData(double startTime, double duration,
+                          size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
+                          double energy[], double minWatts[], double maxWatts[])
 {
     uint64_t intervalStart = uint64_t(startTime * 1.0e9);
-    uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
+    uint64_t intervalEnd = intervalStart + uint64_t(duration * 1.0e9);
 
-    for(size_t i = 0; i < s_sourceById.size(); ++i)
+    for (size_t i = 0; i < s_sourceById.size(); ++i)
     {
-        energy[i]   = 0.0;
+        energy[i] = 0.0;
         minWatts[i] = 0.0;
         maxWatts[i] = 0.0;
 
-        if(!s_sourceById[i])
+        if (!s_sourceById[i])
         {
             continue;
         }
 
         const SourceDesc_t &desc = *s_sourceById[i];
 
-        auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart, 
-            [](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
-        auto endIt   = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd, 
-            [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
+        auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart,
+                                        [](const Sample_t &sample, uint64_t value)
+                                        { return sample.timestamp < value; });
+        auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
+                                      [](uint64_t value, const Sample_t &sample)
+                                      { return value < sample.timestamp; });
 
-        energy  [i] = 0.0;
+        energy[i] = 0.0;
         minWatts[i] = std::numeric_limits<double>::max();
         maxWatts[i] = 0.0;
-        
-        for(auto it = startIt; it != endIt; ++it)
+
+        for (auto it = startIt; it != endIt; ++it)
         {
             double power = (double(it->value) * desc.unit);
 
-            energy[i]  += power;
+            energy[i] += power;
             minWatts[i] = std::min(minWatts[i], power);
             maxWatts[i] = std::max(maxWatts[i], power);
         }
         *firstVR = std::distance(desc.samples.begin(), startIt);
-        *lastVR  = std::distance(desc.samples.begin(), endIt);
+        *lastVR = std::distance(desc.samples.begin(), endIt);
     }
 
     *firstBlade = *lastBlade = 0;
@@ -401,13 +407,19 @@ std::string NVML::getData(double startTime, double duration,
 
 bool NVML::isAvailable()
 {
-    return true;
+    unsigned long long energy;
+    nvmlDevice_t deviceHandle;
+    if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS && nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS)
+    {
+        return true;
+    }
+    return false;
 }
 
 nvmlDevice_t NVML::getGPUHandle(int id)
 {
     auto it = s_deviceDesc.find(id);
-    if(it == s_deviceDesc.end())
+    if (it == s_deviceDesc.end())
         return nvmlDevice_t{};
     return it->second.device;
 }
@@ -419,13 +431,16 @@ size_t NVML::getGPUsPerNode()
 
 #else
 
-struct NVML::SourceDecl_t {
+struct NVML::SourceDecl_t
+{
 };
 
-struct NVML::SourceDesc_t {
+struct NVML::SourceDesc_t
+{
 };
 
-struct NVML::DeviceDesc_t {
+struct NVML::DeviceDesc_t
+{
 };
 
 const std::string NVML::SUM_ENERGY_LABEL = "Energy consumption [J]";
@@ -434,11 +449,11 @@ std::vector<std::string> NVML::vrSensorLabel;
 
 NVML::SourceDescMap_t NVML::s_sourceDesc;
 NVML::SourceNameMap_t NVML::s_sourceByName;
-NVML::SourceIdVec_t   NVML::s_sourceById;
+NVML::SourceIdVec_t NVML::s_sourceById;
 NVML::DeviceDescMap_t NVML::s_deviceDesc;
 
-std::chrono::nanoseconds              NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
-std::atomic<bool>                      NVML::s_sampleStoreEnabled(false);
+std::chrono::nanoseconds NVML::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::atomic<bool> NVML::s_sampleStoreEnabled(false);
 AsyncSampler<NVML::CounterRecord_t> NVML::s_asyncSampler;
 
 void NVML::init(bool detailed)
@@ -465,7 +480,7 @@ void NVML::initCounters(bool detailed)
 }
 
 double NVML::getResultValue(CounterValue_t startValue, CounterValue_t stopValue,
-    double runtime, int &cumulative, std::string counter, std::string regionName)
+                            double runtime, int &cumulative, std::string counter, std::string regionName)
 {
     return 0.0;
 }
@@ -520,9 +535,9 @@ void NVML::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
 {
 }
 
-std::string NVML::getData(double startTime, double duration, 
-    size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
-    double energy[], double minWatts[], double maxWatts[])
+std::string NVML::getData(double startTime, double duration,
+                          size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
+                          double energy[], double minWatts[], double maxWatts[])
 {
     return "";
 }
