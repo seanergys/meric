@@ -437,9 +437,9 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
 	- HDEEM   = Equals to HDEEM-S option.
-	- RAPL    = Intel RAPL energy measurement.
+	- RAPL    = Intel/AMD RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
-	- HWMON   = Nvidia CPU/platform energy measurement.
+	- HWMON   = Nvidia CPU/platform (requires to store power samples, aggregate mode not supported) or AMD RAPL energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
 	- ROCM    = AMD GPU/APU energy measurement.
 	- A64FX   = Fujitsu A64FX energy measurement.
@@ -455,11 +455,12 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- none = do not use barriers
 
 ## Output format ##
-* `export MERIC_AGGREGATE=0`
+* `export MERIC_AGGREGATE=1`
 	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
+	- WARNING: Aggregate mode is not supported for Nvidia Grace/GraceHopper energy consumption measurement using HWMON.
 
-* `export MERIC_COUNTERS=papi` or `perfevent` or `msr`
+* `export MERIC_COUNTERS=perfevent` or `msr` or `papi`
 	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr.
 	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
 	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
@@ -471,7 +472,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
 	- Available for HDEEM-S, RAPL, HWMON and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
-	- WARNING: Output may become very big when measured regions run for a long time.
+	- WARNING: Storing samples is required for Nvidia Grace/GraceHopper energy consumption measurement using HWMON.
 
 * `export MERIC_DEBUG=1`
 	- Uses HDEEM-S and HDEEM-C energy measurement at the same time.
