@@ -668,6 +668,78 @@ TEST(MemoryManagerTest, ResultEnergyTimeStampsAreAlwaysAllocatedAtIndex0OfReserv
     extlib_close(&energy_domains);
 }
 
+TEST(MemoryManagerTest, EnergyDomainCounterNamesAreSharedAcrossReservedMemoryPages)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE*2];
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[0][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    do_work(2);
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[1][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    auto *result = extlib_calc_energy_consumption(ts_array[0][0], ts_array[1][0]);
+
+
+    ReservedMemoryManager::DomainMemoryPool *domain_memory_map[2][EXTLIB_NUM_DOMAINS];
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
+        {
+            domain_memory_map[0][domain_idx] = ReservedMemoryManager::get_domain_map(domain_idx, 0);
+            domain_memory_map[1][domain_idx] = ReservedMemoryManager::get_domain_map(domain_idx, 1);
+
+            std::string domain_name = getEnergyDomainName(domain);
+            ASSERT_EQ(domain_memory_map[0][domain_idx]->counter_name, domain_memory_map[1][domain_idx]->counter_name)
+                << "counter_name pointers of reserved memory page 0 and 1 of "
+                << domain_name << " energy domain do not point to the same memory location.";
+        }
+    }
+
+    int n_pages = 2;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+            {
+                unsigned int domain = 1 << domain_idx;
+                if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+                {
+                    std::string domain_name = getEnergyDomainName(domain);
+                    char **expected_counter_name_ptr = domain_memory_map[i][domain_idx]->counter_name;
+                    EXPECT_EQ(ts_array[i][j]->domain_data[domain_idx].counter_name, expected_counter_name_ptr)
+                        << "counter_name pointer of " << domain_name << " energy domain of "
+                        << (j + 1) << ". energy timestamp in reserved memory page " << i
+                        << " does not point to expected memory location.";
+                }
+            }
+        }
+    }
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            char **expected_counter_name_ptr = domain_memory_map[0][domain_idx]->counter_name;
+            EXPECT_EQ(result->domain_data[domain_idx].counter_name, expected_counter_name_ptr)
+                << "counter_name pointer of " << domain_name << " energy domain of result energy timestamp does not point to expected memory location.";
+        }
+    }
+
+    extlib_close(&energy_domains);
+}
+
 TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
@@ -981,46 +1053,4 @@ TEST(MemoryManagerTest, EmptyPageConsistency)
         static std::unordered_map<uint64_t, uint64_t> entry_length;                                             // page -> num of entries
         static std::unordered_set<uint64_t> empty_page_ids;                                                     // List of empty page IDs for quick access, note that page 0 is NOT added.
     */
-}
-
-TEST(MemoryManagerTest, EnergyDomainCounterNamesAreSharedAcrossReservedMemoryPages)
-{
-    ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    enableAllEnergyDomains(energy_domains);
-    EXTLIB_ENERGY_DISABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
-    extlib_init(&energy_domains, true);
-
-    ExtlibEnergyTimeStamp *ts1 = extlib_read_energy_measurements(&energy_domains);
-    ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
-    ExtlibEnergyTimeStamp *result1 = extlib_calc_energy_consumption(ts1, ts2);
-
-    // Creates another page
-    ExtlibEnergyTimeStamp *ts3 = extlib_read_energy_measurements(&energy_domains);
-    ExtlibEnergyTimeStamp *ts4 = extlib_read_energy_measurements(&energy_domains);
-    ExtlibEnergyTimeStamp *result2 = extlib_calc_energy_consumption(ts3, ts4);
-
-    EXPECT_TRUE(ReservedMemoryManager::metadata.find(1) != ReservedMemoryManager::metadata.end());
-    EXPECT_TRUE(ReservedMemoryManager::entry_length.find(1) != ReservedMemoryManager::entry_length.end());
-
-    for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
-    {
-        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
-        {
-            int domain_id = meric::mutils::countTrailingZeros(domain);
-            EXPECT_EQ(ts1->domain_data[domain_id].counter_name, ts2->domain_data[domain_id].counter_name);
-            EXPECT_EQ(ts1->domain_data[domain_id].counter_name, ts3->domain_data[domain_id].counter_name);
-            EXPECT_EQ(ts1->domain_data[domain_id].counter_name, ts4->domain_data[domain_id].counter_name);
-            EXPECT_EQ(ts2->domain_data[domain_id].counter_name, ts3->domain_data[domain_id].counter_name);
-            EXPECT_EQ(ts2->domain_data[domain_id].counter_name, ts4->domain_data[domain_id].counter_name);
-
-            // print their adresses for all
-            std::cout << std::hex << "Domain ID: " << domain_id << ",ts1 Counter Name Address: " << (ts1->domain_data[domain_id].counter_name) << "\n";
-            std::cout << std::hex << "Domain ID: " << domain_id << ",ts2 Counter Name Address: " << (ts2->domain_data[domain_id].counter_name) << "\n";
-            std::cout << std::hex << "Domain ID: " << domain_id << ",ts3 Counter Name Address: " << (ts3->domain_data[domain_id].counter_name) << "\n";
-            std::cout << std::hex << "Domain ID: " << domain_id << ",ts4 Counter Name Address: " << (ts4->domain_data[domain_id].counter_name) << "\n";
-            std::cout << std::hex << "--------------\n";
-        }
-    }
-    extlib_close(&energy_domains);
 }
