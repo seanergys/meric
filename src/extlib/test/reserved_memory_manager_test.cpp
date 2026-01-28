@@ -1035,17 +1035,132 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, PageIsRemovedWhenConditionIsMet)
+TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsRemovedWhenConditionIsMet)
 {
-
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
-    // TODO: Check the should_remove_page logic to see how it works,and create that conditions and make sure page is removed.
-    // perform 2 energy readings (in total 6 timestamps you have), then free the first ones in page0 then remove ones in page1.
-    // you need to see that page1 is removed and page0 is not removed. (by default we never remove it unless it is close sequence.)
+    ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE*2];
+    int n_pages = 2;
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            ts_array[i][j] = extlib_read_energy_measurements(&energy_domains);
+        }
+    }
+    ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
+
+    n_ts = EXTLIB_EMPTY_SLOT_THRESHOLD;
+    for (int i = 0; i < n_ts; i++)
+    {
+        extlib_free_energy_timestamp(ts_array[0][i]);
+    }
+
+    uint64_t expected_total_empty_slots_count = EXTLIB_EMPTY_SLOT_THRESHOLD;
+    EXPECT_EQ(ReservedMemoryManager::count_total_empty_slots_before(1), expected_total_empty_slots_count)
+        << "Number of total empty slots in reserved memory page 0 should be " << expected_total_empty_slots_count
+        << " (" << ReservedMemoryManager::count_total_empty_slots_before(1) << " != " << expected_total_empty_slots_count << ").";
+
+    n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        extlib_free_energy_timestamp(ts_array[1][i]);
+    }
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 2)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 2"
+                << " after reserved memory page 1 has been removed.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(1), 0)
+                << "Reserved memory page 1 of " << domain_name << " energy domain should be removed.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2)
+        << "Size of metadata container should be 2"
+        << " after reserved memory page 1 has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(1), 0)
+        << "Container for energy timestamp metadata for reserved memory page 1 should be removed"
+        << " after the page has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 2)
+        << "Size of entry_length container should be 2"
+        << " after reserved memory page 1 has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(1), 0)
+        << "Number of entries in reserved memory page 1 should be removed"
+        << " after the page has been removed.";
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty"
+        << " after reserved memory page 1 has been removed.";
+
+    extlib_close(&energy_domains);
+
+    energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            ts_array[i][j] = extlib_read_energy_measurements(&energy_domains);
+        }
+    }
+    ts = extlib_read_energy_measurements(&energy_domains);
+
+    n_ts = EXTLIB_EMPTY_SLOT_THRESHOLD - 1;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            extlib_free_energy_timestamp(ts_array[i][j]);
+        }
+    }
+
+    expected_total_empty_slots_count = (EXTLIB_EMPTY_SLOT_THRESHOLD - 1) * n_pages;
+    EXPECT_EQ(ReservedMemoryManager::count_total_empty_slots_before(2), expected_total_empty_slots_count)
+        << "Number of total empty slots in reserved memory pages 0 and 1 should be " << expected_total_empty_slots_count
+        << " (" << ReservedMemoryManager::count_total_empty_slots_before(2) << " != " << expected_total_empty_slots_count << ").";
+
+    extlib_free_energy_timestamp(ts);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 2)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 2"
+                << " after reserved memory page 2 has been removed.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(2), 0)
+                << "Reserved memory page 2 of " << domain_name << " energy domain should be removed.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2)
+        << "Size of metadata container should be 2"
+        << " after reserved memory page 2 has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(2), 0)
+        << "Container for energy timestamp metadata for reserved memory page 2 should be removed"
+        << " after the page has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 2)
+        << "Size of entry_length container should be 2"
+        << " after reserved memory page 2 has been removed.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(2), 0)
+        << "Number of entries in reserved memory page 2 should be removed"
+        << " after the page has been removed.";
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty"
+        << " after reserved memory page 2 has been removed.";
 
     extlib_close(&energy_domains);
 }
@@ -1099,18 +1214,4 @@ TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
     EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
     EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 0);
     EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 0);
-}
-
-// =============================================================================
-// State Consistency Tests
-// =============================================================================
-TEST(MemoryManagerTest, EmptyPageConsistency)
-{
-    // TODO: After removing a page, none of the fields should have a page id that was removed.
-    /*
-        static std::unordered_map<uint64_t, std::unordered_map<uint64_t, DomainMemoryPool>> domain_memory_pool; // domain_id -> page -> memory_map
-        static std::unordered_map<uint64_t, std::vector<ExtlibEnergyTimeStamp>> metadata;                       // page -> timestamp metadata
-        static std::unordered_map<uint64_t, uint64_t> entry_length;                                             // page -> num of entries
-        static std::unordered_set<uint64_t> empty_page_ids;                                                     // List of empty page IDs for quick access, note that page 0 is NOT added.
-    */
 }
