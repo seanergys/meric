@@ -864,7 +864,7 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, DeallocateClearsCorrespondingMemorySlotAndMarksAsEmpty)
+TEST(MemoryManagerTest, FreeEnergyTimestampCorrectlyDeallocatesEnergyTimeStamps)
 {
     // init for all domains
     ExtlibEnergy energy_domains = {};
