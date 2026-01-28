@@ -1367,7 +1367,7 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, Page0IsNeverRemovedUnlessCloseSequenceIsCalled)
+TEST(MemoryManagerTest, EmptyReservedMemoryPage0IsNeverRemoved)
 {
 
     ExtlibEnergy energy_domains = {};
