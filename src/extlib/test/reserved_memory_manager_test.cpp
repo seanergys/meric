@@ -740,6 +740,177 @@ TEST(MemoryManagerTest, EnergyDomainCounterNamesAreSharedAcrossReservedMemoryPag
     extlib_close(&energy_domains);
 }
 
+TEST(MemoryManagerTest, FreeEnergyTimestampCorrectlyDeallocatesEnergyTimeStamps)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE*2];
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[0][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    do_work(2);
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[1][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    auto *result = extlib_calc_energy_consumption(ts_array[0][0], ts_array[1][0]);
+
+    int n_pages = 2;
+    for (int i = (n_pages - 1); i >= 0; i--)
+    {
+        ReservedMemoryManager::DomainMemoryPool *domain_memory_map[EXTLIB_NUM_DOMAINS];
+        for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+        {
+            unsigned int domain = 1 << domain_idx;
+            if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+            {
+                domain_memory_map[domain_idx] = ReservedMemoryManager::get_domain_map(domain_idx, i);
+            }
+        }
+
+        for (int j = 0; j < n_ts; j++)
+        {
+            ExtlibEnergyTimeStamp *ts = ts_array[i][j];
+
+            extlib_free_energy_timestamp(ts_array[i][j]);
+
+            size_t expected_ts_container_size = (i == 0) ? ((RESERVED_ELEMENT_SIZE*2) + 1) : (RESERVED_ELEMENT_SIZE*2);
+            ASSERT_EQ(ReservedMemoryManager::metadata[i].size(), expected_ts_container_size)
+                << "Size of container for energy timestamp metadata for reserved memory page " << i << " should remain " << expected_ts_container_size
+                << " after " << (j + 1) << ". energy timestamp has been freed"
+                << " (" << ReservedMemoryManager::metadata[i].size() << " != " << expected_ts_container_size << ").";
+
+            EXPECT_EQ(ts->id, 0.0)
+                << "ID of " << (j + 1) << ". energy timestamp in reserved memory page " << i
+                << " should be 0 after the timestamp has been freed.";
+            for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+            {
+                unsigned int domain = 1 << domain_idx;
+                std::string domain_name = getEnergyDomainName(domain);
+                EXPECT_EQ(ts->domain_data[domain_idx].domain_id, 0)
+                    << "domain_id variable of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be 0 after the timestamp has been freed.";
+                EXPECT_EQ(ts->domain_data[domain_idx].arr_size, 0)
+                    << "arr_size variable of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be 0 after the timestamp has been freed.";
+                EXPECT_EQ(ts->domain_data[domain_idx].counter_name, nullptr)
+                    << "counter_name pointer of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be NULL/nullptr after the timestamp has been freed.";
+                EXPECT_EQ(ts->domain_data[domain_idx].counter_value, nullptr)
+                    << "counter_value pointer of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be NULL/nullptr after the timestamp has been freed.";
+                EXPECT_EQ(ts->domain_data[domain_idx].energy_per_counter, nullptr)
+                    << "energy_per_counter pointer of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be NULL/nullptr after the timestamp has been freed.";
+                EXPECT_EQ(ts->domain_data[domain_idx].energy_total, 0.0)
+                    << "energy_total variable of " << domain_name << " energy domain of "
+                    << (j + 1) << ". energy timestamp in reserved memory page " << i
+                    << " should be 0 after the timestamp has been freed.";
+            }
+            EXPECT_EQ(ts->energy_total, 0.0)
+                << "energy_total variable of "
+                << (j + 1) << ". energy timestamp in reserved memory page " << i
+                << " should be 0 after the timestamp has been freed.";
+            EXPECT_EQ(ts->reserved_memory_page, -1)
+                << "reserved_memory_page variable of "
+                << (j + 1) << ". energy timestamp in reserved memory page " << i
+                << " should be -1 after the timestamp has been freed.";
+            EXPECT_EQ(ts->reserved_memory_index, -1)
+                << "reserved_memory_index variable of "
+                << (j + 1) << ". energy timestamp in reserved memory page " << i
+                << " should be -1 after the timestamp has been freed.";
+
+            for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+            {
+                unsigned int domain = 1 << domain_idx;
+                if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+                {
+                    int offset = ((i == 0) ? (j + 1) : j) * domain_memory_map[domain_idx]->arr_size;
+                    uint64_t *counter_value = &domain_memory_map[domain_idx]->counter_value[offset];
+                    double *energy_per_counter = &domain_memory_map[domain_idx]->energy_per_counter[offset];
+
+                    std::string domain_name = getEnergyDomainName(domain);
+                    for (int k = 0; k < domain_memory_map[domain_idx]->arr_size; k++)
+                    {
+                        EXPECT_EQ(counter_value[k], 0)
+                            << "Value at index " << k << " of array to which counter_value pointer of "
+                            << domain_name << " energy domain of " << (j + 1) << ". energy timestamp in reserved memory page " << i
+                            << " pointed to should be 0 after the timestamp has been freed.";
+                        EXPECT_EQ(energy_per_counter[k], 0.0)
+                            << "Value at index " << k << " of array to which energy_per_counter pointer of "
+                            << domain_name << " energy domain of " << (j + 1) << ". energy timestamp in reserved memory page " << i
+                            << " pointed to should be 0 after the timestamp has been freed.";
+                    }
+                }
+            }
+
+            uint64_t expected_entry_length = ((i == 0) ? ((RESERVED_ELEMENT_SIZE*2) + 1) : (RESERVED_ELEMENT_SIZE*2)) - (j + 1);
+            EXPECT_EQ(ReservedMemoryManager::entry_length[i], expected_entry_length)
+                << "Number of entries in reserved memory page " << i << " should be " << expected_entry_length
+                << " after " << (j + 1) << ". energy timestamp has been freed"
+                << " (" << ReservedMemoryManager::entry_length[i] << " != " << expected_entry_length << ").";
+        }
+    }
+
+    ExtlibEnergyTimeStamp *result_ts = result;
+
+    extlib_free_energy_timestamp(result);
+
+    size_t expected_ts_container_size = (RESERVED_ELEMENT_SIZE*2) + 1;
+    ASSERT_EQ(ReservedMemoryManager::metadata[0].size(), expected_ts_container_size)
+        << "Size of container for energy timestamp metadata for reserved memory page 0 should remain " << expected_ts_container_size
+        << " after result energy timestamp has been freed"
+        << " (" << ReservedMemoryManager::metadata[0].size() << " != " << expected_ts_container_size << ").";
+
+    EXPECT_EQ(result_ts->reserved_memory_page, 0)
+        << "reserved_memory_page variable of result energy timestamp should be 0"
+        << " after the timestamp has been freed.";
+    EXPECT_EQ(result_ts->reserved_memory_index, 0)
+        << "reserved_memory_index variable of result energy timestamp should be 0"
+        << " after the timestamp has been freed.";
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_idx, 0);
+
+            uint64_t *counter_value = &domain_memory_map->counter_value[0];
+            double *energy_per_counter = &domain_memory_map->energy_per_counter[0];
+
+            std::string domain_name = getEnergyDomainName(domain);
+            for (int k = 0; k < domain_memory_map->arr_size; k++)
+            {
+                EXPECT_EQ(counter_value[k], 0)
+                    << "Value at index " << k << " of array to which counter_value pointer of "
+                    << domain_name << " energy domain of result energy timestamp pointed to should be 0"
+                    << " after the timestamp has been freed.";
+                EXPECT_EQ(energy_per_counter[k], 0.0)
+                    << "Value at index " << k << " of array to which energy_per_counter pointer of "
+                    << domain_name << " energy domain of result energy timestamp pointed to should be 0"
+                    << " after the timestamp has been freed.";
+            }
+        }
+    }
+
+    EXPECT_EQ(ReservedMemoryManager::entry_length[0], 1)
+        << "Number of entries in reserved memory page 0 should remain 1"
+        << " after result energy timestamp has been freed.";
+
+    extlib_close(&energy_domains);
+}
+
 TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
@@ -861,117 +1032,6 @@ TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
     EXPECT_EQ(ts2->reserved_memory_page, 0);
     EXPECT_EQ(ts2->reserved_memory_index, 2);
 
-    extlib_close(&energy_domains);
-}
-
-TEST(MemoryManagerTest, FreeEnergyTimestampCorrectlyDeallocatesEnergyTimeStamps)
-{
-    // init for all domains
-    ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
-    enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
-
-    // make measurement for 5sec job and save pointers.
-    ExtlibEnergyTimeStamp *ts_array[6];
-    ExtlibEnergyTimeStamp *ts1 = extlib_read_energy_measurements(&energy_domains);
-    extlib_print_energy_timestamp(ts1, -1);
-
-    do_work(5.0);
-
-    ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
-    extlib_print_energy_timestamp(ts2, -1);
-
-    ExtlibEnergyTimeStamp *result = extlib_calc_energy_consumption(ts1, ts2);
-    extlib_print_energy_timestamp(result, -1);
-
-    ts_array[0] = ts1;
-    ts_array[1] = ts2;
-    ts_array[2] = result;
-
-    ts1 = extlib_read_energy_measurements(&energy_domains);
-    extlib_print_energy_timestamp(ts1, -1);
-
-    do_work(5.0);
-
-    ts2 = extlib_read_energy_measurements(&energy_domains);
-    extlib_print_energy_timestamp(ts2, -1);
-
-    result = extlib_calc_energy_consumption(ts1, ts2);
-    extlib_print_energy_timestamp(result, -1);
-
-    ts_array[3] = ts1;
-    ts_array[4] = ts2;
-    ts_array[5] = result;
-
-    // for each timestamp;
-    // ->> first save the adresses energy_ts pointing to
-    // ->> then free the timestamp
-    // ->> then check if the memory locations are cleared (zeroed out)
-    for (int i = 0; i < 6; ++i)
-    {
-        size_t domain_arr_size[EXTLIB_NUM_DOMAINS] = {};
-        double *energy_per_counter[EXTLIB_NUM_DOMAINS] = {};
-        uint64_t *counter_value[EXTLIB_NUM_DOMAINS] = {};
-        size_t reserved_memory_page = ts_array[i]->reserved_memory_page;
-        size_t reserved_memory_index = ts_array[i]->reserved_memory_index;
-
-        std::cout << "-------------------\n";
-        std::cout << "Timestamp ID:" << ts_array[i]->id << "\n";
-        std::cout << "Checking timestamp at page:" << reserved_memory_page << " index:" << reserved_memory_index << "\n";
-
-        for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
-        {
-            if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
-            {
-                int domain_id = meric::mutils::countTrailingZeros(domain);
-                std::cout << "domain-id:" << domain_id << "\n";
-                domain_arr_size[domain_id] = ts_array[i]->domain_data[domain_id].arr_size;
-                energy_per_counter[domain_id] = ts_array[i]->domain_data[domain_id].energy_per_counter; // get the reference to the pre-allocated memory
-                counter_value[domain_id] = ts_array[i]->domain_data[domain_id].counter_value;           // get the reference to the pre-allocated memory
-                std::cout << "start index of counter_value[" << domain_id << "]:" << counter_value[domain_id] << "\n";
-                std::cout << "start index of energy_per_counter[" << domain_id << "]:" << energy_per_counter[domain_id] << "\n";
-            }
-        }
-
-        extlib_free_energy_timestamp(ts_array[i]); // now free the timestamp, we expect those fields to be zero
-        for (unsigned int domain = 1; domain < ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_END; domain <<= 1)
-        {
-            if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
-            {
-                int domain_id = meric::mutils::countTrailingZeros(domain);
-                size_t offset = reserved_memory_index * domain_arr_size[domain_id];
-                ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_id, reserved_memory_page);
-                if (!domain_memory_map)
-                {
-                    std::cout << "Requested page:" << reserved_memory_page << " for domain:" << domain_id << " not found!\n";
-                    continue;
-                }
-                for (int i = 0; i < domain_arr_size[domain_id]; i++)
-                {
-                    if (i == 0)
-                    {
-                        std::cout << "Checking start index of counter_value[" << domain_id << "]:" << counter_value[domain_id] << "\n";
-                        std::cout << "Checking start index of energy_per_counter[" << domain_id << "]:" << energy_per_counter[domain_id] << "\n";
-
-                        EXPECT_EQ(counter_value[domain_id], &domain_memory_map->counter_value[offset + i]);
-                        EXPECT_EQ(energy_per_counter[domain_id], &domain_memory_map->energy_per_counter[offset + i]);
-                    }
-
-                    EXPECT_EQ(domain_memory_map->energy_per_counter[offset + i], 0.0);
-                    EXPECT_EQ(domain_memory_map->counter_value[offset + i], 0);
-
-                    std::cout << "Checking counter_value to be 0 for domain[" << domain_id << "]:" << (counter_value[domain_id] + i) << "\n";
-                    std::cout << "Checking energy_per_counter to be 0 for domain[" << domain_id << "]:" << (energy_per_counter[domain_id] + i) << "\n";
-
-                    EXPECT_EQ(*(counter_value[domain_id] + i), 0);
-                    EXPECT_EQ(*(energy_per_counter[domain_id] + i), 0);
-                }
-            }
-        }
-    }
-
-    // ADD_FAILURE() << "TODO: Check if the page is marked as empty in empty_page_ids set";
     extlib_close(&energy_domains);
 }
 
