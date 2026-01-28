@@ -1165,14 +1165,98 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsRemovedWhenCondit
     extlib_close(&energy_domains);
 }
 
-TEST(MemoryManagerTest, PageIsNotRemovedIfConditionNotMet)
+TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsNotRemovedWhenConditionIsNotMet)
 {
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
-    // TODO: Similar to the previous one except this time you remove all entries on page 1 and, leave page 0 as-is. and make sure page 1 is not removed.
+    ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE*2];
+    int n_pages = 2;
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            ts_array[i][j] = extlib_read_energy_measurements(&energy_domains);
+        }
+    }
+    ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
+
+    for (int i = 0; i < n_ts; i++)
+    {
+        extlib_free_energy_timestamp(ts_array[1][i]);
+    }
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 3)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 3.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(1), 1)
+                << "Reserved memory page 1 of " << domain_name << " energy domain is missing.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 3)
+        << "Size of metadata container should be 3.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(1), 1)
+        << "Container for energy timestamp metadata for reserved memory page 1 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 3)
+        << "Size of entry_length container should be 3.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(1), 1)
+        << "Number of entries in reserved memory page 1 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 1)
+        << "Size of empty_page_ids container should be 1.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(1), 1)
+        << "Reserved memory page 1 is empty but its ID is missing in empty_page_ids countainer.";
+
+    extlib_close(&energy_domains);
+
+    energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            ts_array[i][j] = extlib_read_energy_measurements(&energy_domains);
+        }
+    }
+    ts = extlib_read_energy_measurements(&energy_domains);
+
+    extlib_free_energy_timestamp(ts);
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 3)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 3.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(2), 1)
+                << "Reserved memory page 2 of " << domain_name << " energy domain is missing.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 3)
+        << "Size of metadata container should be 3.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(2), 1)
+        << "Container for energy timestamp metadata for reserved memory page 2 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 3)
+        << "Size of entry_length container should be 3.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(2), 1)
+        << "Number of entries in reserved memory page 2 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 1)
+        << "Size of empty_page_ids container should be 1.";
+    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(2), 1)
+        << "Reserved memory page 2 is empty but its ID is missing in empty_page_ids countainer.";
+
     extlib_close(&energy_domains);
 }
 
