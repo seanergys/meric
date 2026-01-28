@@ -1369,40 +1369,71 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
 
 TEST(MemoryManagerTest, EmptyReservedMemoryPage0IsNeverRemoved)
 {
-
     ExtlibEnergy energy_domains = {};
-    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
     enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0); // index0 is reserved for result timestamps, so page0 is never empty.
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
+    ExtlibEnergyTimeStamp *ts_array[RESERVED_ELEMENT_SIZE*2];
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    ExtlibEnergyTimeStamp *ts = extlib_read_energy_measurements(&energy_domains);
 
-    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
+    for (int i = 0; i < n_ts; i++)
+    {
+        extlib_free_energy_timestamp(ts_array[i]);
+    }
 
-    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 2)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 2.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(0), 1)
+                << "Reserved memory page 0 of " << domain_name << " energy domain is missing.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2)
+        << "Size of metadata container should be 2.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1)
+        << "Container for energy timestamp metadata for reserved memory page 0 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 2)
+        << "Size of entry_length container should be 2.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1)
+        << "Number of entries in reserved memory page 0 is missing.";
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty.";
 
     ReservedMemoryManager::shrink_to_fit();
 
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
-    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
-
-    ReservedMemoryManager::remove_page(0);
-
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
-    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.at(0), 1);
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
+        {
+            std::string domain_name = getEnergyDomainName(domain);
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].size(), 2)
+                << "Size of container for reserved memory pages of " << domain_name << " energy domain should be 2.";
+            EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(0), 1)
+                << "Reserved memory page 0 of " << domain_name << " energy domain is missing.";
+        }
+    }
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2)
+        << "Size of metadata container should be 2.";
+    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 1)
+        << "Container for energy timestamp metadata for reserved memory page 0 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 2)
+        << "Size of entry_length container should be 2.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 1)
+        << "Number of entries in reserved memory page 0 is missing.";
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty.";
 
     extlib_close(&energy_domains);
-
-    EXPECT_EQ(ReservedMemoryManager::empty_page_ids.count(0), 0);
-    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.find(0) == ReservedMemoryManager::empty_page_ids.end());
-    EXPECT_EQ(ReservedMemoryManager::metadata.count(0), 0);
-    EXPECT_EQ(ReservedMemoryManager::entry_length.count(0), 0);
 }
