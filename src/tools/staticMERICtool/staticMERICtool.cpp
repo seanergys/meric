@@ -182,7 +182,7 @@ void measureEnergy<HWMON_S, HWMON::CounterValue_t>(bool verbose, double timeNow)
 		is_init = true;
 		HWMON::init(true);
 		HWMON::fillTime(HWMON_S::startTime);
-		HWMON::start(HWMON_S::startTime);
+		HWMON::start(HWMON_S::startTime,10);
 	}
 }
 
