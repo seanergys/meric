@@ -387,7 +387,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySe
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
@@ -479,7 +479,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
@@ -521,7 +521,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
