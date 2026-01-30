@@ -1503,3 +1503,35 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPage0IsNeverRemoved)
 
     extlib_close(&energy_domains);
 }
+
+TEST(MemoryManagerTest, PrintEnergyTimestampPrintsEnergyTimeStamp)
+{
+    ExtlibEnergy energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE*2];
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[0][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    do_work(2);
+    for (int i = 0; i < n_ts; i++)
+    {
+        ts_array[1][i] = extlib_read_energy_measurements(&energy_domains);
+    }
+    auto *result = extlib_calc_energy_consumption(ts_array[0][0], ts_array[1][0]);
+
+    std::cout << "\nPrinting energy timestamp created in reserved memory page 0...\n\n";
+    extlib_print_energy_timestamp(ts_array[0][0], -1);
+
+    std::cout << "\nPrinting energy timestamp created in reserved memory page 1...\n\n";
+    extlib_print_energy_timestamp(ts_array[1][0], -1);
+
+    std::cout << "\nPrinting result energy timestamp...\n\n";
+    extlib_print_energy_timestamp(result, -1);
+
+    extlib_close(&energy_domains);
+}
