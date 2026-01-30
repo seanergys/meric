@@ -990,7 +990,7 @@ TEST(MemoryManagerTest, MultipleInitAndCloseHaveNoSideEffects)
         << "reserved_memory_size variable should be 0 after close.";
 }
 
-TEST(MemoryManagerTest, AllocateTimeStampPrioritizeUsingEmptySlots)
+TEST(MemoryManagerTest, EnergyTimeStampsAreAllocatedInEmptyReservedMemorySlotsFirst)
 {
     ExtlibEnergy energy_domains = {};
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, 1);
