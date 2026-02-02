@@ -1348,7 +1348,7 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
         extlib_free_energy_timestamp(ts_array[1][i]);
     }
 
-    ReservedMemoryManager::shrink_to_fit();
+    extlib_shrink_to_fit();
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
@@ -1397,7 +1397,7 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
 
     extlib_free_energy_timestamp(ts);
 
-    ReservedMemoryManager::shrink_to_fit();
+    extlib_shrink_to_fit();
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
@@ -1474,7 +1474,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPage0IsNeverRemoved)
     EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
         << "empty_page_ids container should be empty.";
 
-    ReservedMemoryManager::shrink_to_fit();
+    extlib_shrink_to_fit();
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
