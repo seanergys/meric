@@ -1020,6 +1020,111 @@ TEST(MemoryManagerTest, EnergyTimeStampsAreAllocatedInEmptyReservedMemorySlotsFi
     extlib_close(&energy_domains);
 }
 
+TEST(MemoryManagerTest, ReservedMemoryPage3IsCreatedWhenPages0And2AreFullAndPage1HasBeenRemoved)
+{
+    ExtlibEnergy energy_domains = {};
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    ExtlibEnergyTimeStamp *reference_ts = extlib_read_energy_measurements(&energy_domains); // get a dummy timestamp
+    // get existing domain sizes, to compare with memory manager allocations
+    size_t domain_arr_size[EXTLIB_NUM_DOMAINS] = {0}; // init each domain arr size to 0
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
+        {
+            domain_arr_size[domain_idx] = reference_ts->domain_data[domain_idx].arr_size;
+        }
+    }
+
+    extlib_free_energy_timestamp(reference_ts);
+    extlib_close(&energy_domains);
+
+    energy_domains = {};
+    EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    ExtlibEnergyTimeStamp *ts_array[3][RESERVED_ELEMENT_SIZE*2];
+    int n_pages = 3;
+    int n_ts = RESERVED_ELEMENT_SIZE*2;
+    for (int i = 0; i < n_pages; i++)
+    {
+        for (int j = 0; j < n_ts; j++)
+        {
+            ts_array[i][j] = extlib_read_energy_measurements(&energy_domains);
+        }
+    }
+
+    for (int i = 0; i < n_ts; i++)
+    {
+        extlib_free_energy_timestamp(ts_array[1][i]);
+    }
+    extlib_shrink_to_fit();
+    auto *ts = extlib_read_energy_measurements(&energy_domains);
+
+    EXPECT_TRUE(ReservedMemoryManager::empty_page_ids.empty())
+        << "empty_page_ids container should be empty.";
+
+    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+    {
+        unsigned int domain = 1 << domain_idx;
+        if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain)))
+        {
+            ReservedMemoryManager::DomainMemoryPool *domain_memory_map = ReservedMemoryManager::get_domain_map(domain_idx, 3);
+
+            std::string domain_name = getEnergyDomainName(domain);
+            if (!domain_memory_map)
+            {
+                FAIL() << domain_name << " energy domain exists but pointer to its reserved memory page 3 is NULL/nullptr.";
+                continue;
+            }
+            EXPECT_NE(domain_memory_map->counter_name, nullptr)
+                << domain_name << " energy domain exists but counter_name pointer of its reserved memory page 3 is NULL/nullptr.";
+            EXPECT_NE(domain_memory_map->counter_value, nullptr)
+                << domain_name << " energy domain exists but counter_value pointer of its reserved memory page 3 is NULL/nullptr.";
+            EXPECT_NE(domain_memory_map->energy_per_counter, nullptr)
+                << domain_name << " energy domain exists but energy_per_counter pointer of its reserved memory page 3 is NULL/nullptr.";
+
+            size_t expected_arr_size = domain_arr_size[domain_idx];
+            size_t expected_sizeof_counter_name = sizeof(char *) * domain_arr_size[domain_idx];
+            size_t expected_sizeof_counter_value = sizeof(uint64_t) * domain_arr_size[domain_idx] * ReservedMemoryManager::reserved_memory_size;
+            size_t expected_sizeof_energy_per_counter = sizeof(double) * domain_arr_size[domain_idx] * ReservedMemoryManager::reserved_memory_size;
+
+            EXPECT_EQ(domain_memory_map->arr_size, expected_arr_size)
+                << "arr_size variable of reserved memory page 3 of existing " << domain_name << " energy domain should be " << expected_arr_size
+                << " (" << domain_memory_map->arr_size << " != " << expected_arr_size << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_counter_name, expected_sizeof_counter_name)
+                << "sizeof_counter_name variable of reserved memory page 3 of existing " << domain_name << " energy domain should be " << expected_sizeof_counter_name
+                << " (" << domain_memory_map->sizeof_counter_name << " != " << expected_sizeof_counter_name << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_counter_value, expected_sizeof_counter_value)
+                << "sizeof_counter_value variable of reserved memory page 3 of existing " << domain_name << " energy domain should be " << expected_sizeof_counter_value
+                << " (" << domain_memory_map->sizeof_counter_value << " != " << expected_sizeof_counter_value << ").";
+            EXPECT_EQ(domain_memory_map->sizeof_energy_per_counter, expected_sizeof_energy_per_counter)
+                << "sizeof_energy_per_counter variable of reserved memory page 3 of existing " << domain_name << " energy domain should be " << expected_sizeof_energy_per_counter
+                << " (" << domain_memory_map->sizeof_energy_per_counter << " != " << expected_sizeof_energy_per_counter << ").";
+        }
+    }
+
+    EXPECT_EQ(ReservedMemoryManager::metadata.size(), 3)
+        << "Size of metadata container should be 3.";
+    ASSERT_EQ(ReservedMemoryManager::metadata.count(3), 1)
+        << "Container for energy timestamp metadata for reserved memory page 3 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::metadata[3].capacity(), ReservedMemoryManager::reserved_memory_size)
+        << "Capacity of container for energy timestamp metadata for reserved memory page 3 should be " << ReservedMemoryManager::reserved_memory_size
+        << " (" << ReservedMemoryManager::metadata[1].capacity() << " != " << ReservedMemoryManager::reserved_memory_size << ").";
+
+    EXPECT_EQ(ReservedMemoryManager::entry_length.size(), 3)
+        << "Size of entry_length container should be 3.";
+    ASSERT_EQ(ReservedMemoryManager::entry_length.count(3), 1)
+        << "Number of entries in reserved memory page 3 is missing.";
+    EXPECT_EQ(ReservedMemoryManager::entry_length[3], 1)
+        << "Number of entries in reserved memory page 3 should be 1.";
+
+    extlib_close(&energy_domains);
+}
+
 TEST(MemoryManagerTest, ReservedMemoryManagerIsInResetStateAfterClose)
 {
     ExtlibEnergy energy_domains = {};
