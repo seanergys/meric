@@ -483,10 +483,6 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
-    extlib_print_energy_timestamp(ts1, -1);
-    extlib_print_energy_timestamp(ts2, -1);
-    extlib_print_energy_timestamp(result, -1);
-
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int domain = 1 << domain_idx;
