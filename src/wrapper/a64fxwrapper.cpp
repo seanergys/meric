@@ -12,7 +12,7 @@ std::map<std::string, double> A64FX::units;
  **/
 void A64FX::init(bool detailed)
 {
-	auto setCounter = [&] (__u32 type, __u64 config, int cpu)
+	auto setCounter = [&](__u32 type, __u64 config, int cpu)
 	{
 		struct perf_event_attr attr;
 		memset(&attr, 0, sizeof(struct perf_event_attr));
@@ -24,24 +24,24 @@ void A64FX::init(bool detailed)
 
 		return openCounter(attr, cpu);
 	};
-	
+
 	initCountersUnits();
-	
+
 	const std::string suffix = "_";
-	const int suffixLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE)+1;
-	for (int i=0; i<Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE; i++)
+	const int suffixLength = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
+	for (int i = 0; i < Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE; i++)
 	{
 		std::ostringstream os;
 		os << std::setfill('0') << std::setw(suffixLength) << i;
 		countersFd[A64FX_COUNTERS::ENERGY_CORE + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_CORE], i);
-		if (i%Environment::CORES_PER_SOCKET == 0)
+		if (i % Environment::CORES_PER_SOCKET == 0)
 		{
 			countersFd[A64FX_COUNTERS::ENERGY_L2 + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_L2], i);
 			countersFd[A64FX_COUNTERS::ENERGY_MEM + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_MEM], i);
 		}
 	}
 
-	for(std::map<std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+	for (std::map<std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
 		{
@@ -52,26 +52,26 @@ void A64FX::init(bool detailed)
 			std::cerr << "PREFEVENT error when starting counting\n";
 		}
 	}
-	
-	for(std::map<const std::string, const uint64_t>::iterator iterator = counterDefines.begin(); iterator != counterDefines.end(); iterator++)
+
+	for (std::map<const std::string, const uint64_t>::iterator iterator = counterDefines.begin(); iterator != counterDefines.end(); iterator++)
 	{
 		const int pos = A64FX_COUNTERS::counterLabel[iterator->first].find(' ');
-		const std::string prefix = A64FX_COUNTERS::counterLabel[iterator->first].substr(0,pos);
+		const std::string prefix = A64FX_COUNTERS::counterLabel[iterator->first].substr(0, pos);
 		const std::string postfix = A64FX_COUNTERS::counterLabel[iterator->first].substr(pos);
-		
-		for (int i=0; i<Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE;)
+
+		for (int i = 0; i < Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE;)
 		{
 			std::ostringstream os;
 			os << std::setfill('0') << std::setw(suffixLength) << i;
 			A64FX_COUNTERS::counterLabel[iterator->first + suffix + os.str()] = prefix + suffix + os.str() + postfix;
-			
+
 			if (iterator->first == A64FX_COUNTERS::ENERGY_CORE)
 			{
 				i++;
 			}
 			else
 			{
-				i+=Environment::CORES_PER_SOCKET;
+				i += Environment::CORES_PER_SOCKET;
 			}
 		}
 	}
@@ -79,15 +79,15 @@ void A64FX::init(bool detailed)
 
 void A64FX::close()
 {
-	for(std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+	for (std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
 	{
 		if (ioctl(iterator->second, PERF_EVENT_IOC_DISABLE, 0) != 0)
 		{
 			std::cerr << "PREFEVENT error when stoping counting\n";
 		}
 	}
-	
-	for(std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+
+	for (std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
 	{
 		if (::close(iterator->second) != 0)
 		{
@@ -101,25 +101,25 @@ void A64FX::close()
  **/
 long A64FX::openCounter(perf_event_attr attr, int cpu)
 {
-	//struct perf_event_attr, pid, cpu, group_fd, flags
+	// struct perf_event_attr, pid, cpu, group_fd, flags
 	long fd = syscall(__NR_perf_event_open, &attr, -1, cpu, -1, 0);
-/*
-pid == 0 and cpu == -1
-    This measures the calling process/thread on any CPU. 
-pid == 0 and cpu >= 0
-    This measures the calling process/thread only when running on the specified CPU. 
-pid > 0 and cpu == -1
-    This measures the specified process/thread on any CPU. 
-pid > 0 and cpu >= 0
-    This measures the specified process/thread only when running on the specified CPU. 
-pid == -1 and cpu >= 0
-    This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less than 1. 
-pid == -1 and cpu == -1
-    This setting is invalid and will return an error.
-*/
+	/*
+	pid == 0 and cpu == -1
+		This measures the calling process/thread on any CPU.
+	pid == 0 and cpu >= 0
+		This measures the calling process/thread only when running on the specified CPU.
+	pid > 0 and cpu == -1
+		This measures the specified process/thread on any CPU.
+	pid > 0 and cpu >= 0
+		This measures the specified process/thread only when running on the specified CPU.
+	pid == -1 and cpu >= 0
+		This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less than 1.
+	pid == -1 and cpu == -1
+		This setting is invalid and will return an error.
+	*/
 	if (fd < 0)
 	{
-		std::cerr << "PREFEVENT error while opening new fd\n"; 
+		std::cerr << "PREFEVENT error while opening new fd\n";
 	}
 	return fd;
 }
@@ -138,10 +138,15 @@ void A64FX::close()
 bool A64FX::isAvailable()
 {
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
-	return true;
+	std::string CPUname = "";
+	meric::Environment::getCPUbrandString(CPUname);
+	if (CPUname == "Fujitsu A64FX")
+		return true;
+	else
+		return false;
 #else
 	return false;
-#endif 
+#endif
 }
 
 /**
@@ -173,15 +178,15 @@ std::string A64FX::getSummaryCounterName()
 /**
  * Read raw performance counters
  **/
-void A64FX::getCounterValues(std::map<std::string, unsigned long long int> & record)
+void A64FX::getCounterValues(std::map<std::string, unsigned long long int> &record)
 {
-	for(std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
+	for (std::map<const std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
 	{
 		unsigned long long int result = 0;
 		if ((read(iterator->second, &result, sizeof(unsigned long long int))) != sizeof(unsigned long long int))
 		{
-			//int errn = errno;
-			std::cerr << "PREFEVENT error. Failed to read counter "<< iterator->first << std::endl;
+			// int errn = errno;
+			std::cerr << "PREFEVENT error. Failed to read counter " << iterator->first << std::endl;
 			record[iterator->first] = 0;
 		}
 		else
@@ -194,7 +199,7 @@ void A64FX::getCounterValues(std::map<std::string, unsigned long long int> & rec
 /**
  * Solve counter overflow + transforms performance counters to energy [J]
  **/
-double A64FX::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int & cumulative, std::string counter, std::string regionName)
+double A64FX::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter, std::string regionName)
 {
 	const std::string counterName = counter.substr(0, counter.find_last_of('_'));
 
@@ -206,7 +211,7 @@ double A64FX::getResultValue(unsigned long long int startValue, unsigned long lo
 
 	if (stopValue < startValue)
 	{
-		MERIC_INFO << "PERFEVENT OVERFLOW, MAX VALUE: " << COUNTERMAX << "*" << units[counterName] << " " <<counterName << std::endl;
+		MERIC_INFO << "PERFEVENT OVERFLOW, MAX VALUE: " << COUNTERMAX << "*" << units[counterName] << " " << counterName << std::endl;
 		MERIC_INFO << "PERFEVENT REPAIR " << startValue << " .. " << stopValue << " = " << ((COUNTERMAX - startValue) + stopValue) * units[counterName] << std::endl;
 		return ((COUNTERMAX - startValue) + stopValue) * units[counterName];
 	}
@@ -223,8 +228,8 @@ double A64FX::getResultValue(unsigned long long int startValue, unsigned long lo
  **/
 void A64FX::initCountersUnits()
 {
-	//nominal frequency of the A64FX is not possible to read from the CPU (it can be measured if a core is under a load from CPU_CYCLES (0x0011) event) so the CPU type identification must be done based on number of cores
-	//A64FX has 4 NUMA domains, while the system identifies each domain as a socket
+	// nominal frequency of the A64FX is not possible to read from the CPU (it can be measured if a core is under a load from CPU_CYCLES (0x0011) event) so the CPU type identification must be done based on number of cores
+	// A64FX has 4 NUMA domains, while the system identifies each domain as a socket
 	if (Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE == 48) // XXX XXX XXX XXX XXX XXX XXX XXX
 	{
 		units[A64FX_COUNTERS::ENERGY_CORE] = 8e-9;

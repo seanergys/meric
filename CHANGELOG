@@ -1,4 +1,7 @@
 ### XX.XX.XXXX #################################################################
+  - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
+
+### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
   - support for power sampling (use MERIC_SAMPLES to specify sampling frequency [Hz]), current support for HWMON, RAPL and NVML
   - new python module for MERIC usage with python applications

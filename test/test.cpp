@@ -24,16 +24,13 @@ int main(int argc, char **argv)
 			usleep(500000);
 
 				MERIC_MeasureStart("Nested");
-				usleep(600000);
+				usleep(500000);
 				MERIC_MeasureStop("Nested");
 
 			MERIC_MeasureStop("SLEEP");
-		//}
 
 			MERIC_MeasureStart("RUN");
-		//	do_work(2);
 			do_work(1);
-		//	do_work(2);
 			MERIC_MeasureStop("RUN");
 		} //omp parallel
 		

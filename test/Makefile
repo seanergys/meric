@@ -15,8 +15,6 @@ ifeq ($(CC),)
 	CC=gcc
 endif
 
-
-
 ifeq ($(FC),)
 	FC=gfortran
 	ifeq (, $(shell which ${FC}))
@@ -31,7 +29,7 @@ ifeq ($(MPICXX),)
 	endif
 endif
 
-ifeq ($(shell echo ${CXX} | awk '{n=split($$1,0A,"/"); print A[n]}'),icpc)
+ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),icpc)
 	OPENMP=-qopenmp
 else ifeq ($(shell echo ${CXX} | awk '{n=split($$1,A,"/"); print A[n]}'),FCC)
 	OPENMP=-Kopenmp
@@ -48,7 +46,7 @@ endif
 #PAPI=-lpapi
 #RESTCLIENT= -lrestclient-cpp
 #NUMA=-lnuma
-#NVML=-lnvidia-ml -DHAVE_NVML_H
+#NVML=-lnvidia-ml
 #ESMI=-le_smi64
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
