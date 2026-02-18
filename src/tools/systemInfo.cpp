@@ -40,7 +40,6 @@
 #include "../wrapper/rocmwrapper.h"
 #endif
 
-
 ////////////////////////////////////////////////////////////////////////////////
 std::map<std::string, double> unit;
 std::map<uint64_t, uint64_t> currentWhitelist;
@@ -1265,12 +1264,12 @@ void listEnergySystemsWithDomains()
 	}
 
 #ifdef HAVE_HDEEM_H
-	std::cout << "\tDAVIDE: ";
+	std::cout << "\tHDEEM: ";
 	systems++;
 #endif
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-	std::cout << "\tEXAMON: ";
+	std::cout << "\tDAVIDE: ";
 	systems++;
 #endif
 
@@ -1374,12 +1373,12 @@ void sysEnergyMeasurement()
 	}
 
 #ifdef HAVE_HDEEM_H
-	std::cout << "\tDAVIDE\n";
+	std::cout << "\tHDEEM\n";
 	systems++;
 #endif
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-	std::cout << "\tEXAMON\n";
+	std::cout << "\tDAVIDE\n";
 	systems++;
 #endif
 
