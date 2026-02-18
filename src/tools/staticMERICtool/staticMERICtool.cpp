@@ -252,7 +252,7 @@ void printHelp()
 			  << "\t mericStatic [mericStatic parameters] -- stop: Sends SIGTERM signal to stop mericStatic commands.\n"
 			  << "\t mericStatic [mericStatic parameters] -- eval: Reads all dump files and aggregates total energy consumption.\n"
 			  << "\t mericStatic parameters:\n"
-			  << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON-C, HWMON-S, or A64FX\n"
+			  << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON, or A64FX\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
@@ -684,15 +684,10 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<A64FX, unsigned long long int>);
 				prints.push_back(EnergyRecords<A64FX, unsigned long long int>::printValues);
 			}
-			else if (token == "HWMON-C") // counting mode
+			else if (token == "HWMON") // counting mode
 			{
 				measurements.push_back(&measureEnergy<HWMON, HWMON::CounterValue_t>);
 				prints.push_back(EnergyRecords<HWMON, HWMON::CounterValue_t>::printValues);
-			}
-			else if (token == "HWMON-S") // sampling mode
-			{
-				measurements.push_back(&measureEnergy<HWMON_S, HWMON::CounterValue_t>);
-				prints.push_back(EnergyRecords<HWMON_S, HWMON::CounterValue_t>::printValues);
 			}
 			else if (token == "ROCM")
 			{

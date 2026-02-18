@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_HDEEMWRAPPER_H_
 
 #include "../basis/utils.h"
+#include "basewrapper.h"
 
 #ifdef HAVE_HDEEM_H
 	#include <hdeem.h>
@@ -21,7 +22,7 @@
 
 namespace meric {
 
-class HDEEM {
+class HDEEM : public BaseWrapper {
 
 public:
 	static const int FREQUENCY = 1000;
@@ -34,6 +35,9 @@ public:
 	static const std::string SUM_ENERGY_LABEL;
 
 	static bool isAvailable();
+
+	static size_t getSamplerCount() { return PROBE_NUMBER; }
+    static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
 
 #ifdef HAVE_HDEEM_H
 	static void init(bool detailed = false)
@@ -127,7 +131,7 @@ public:
 		MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
 	}
 	
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
 	
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};
@@ -184,12 +188,8 @@ private:
 	static int getSamples() {return 0; };
 	static void deleteSamples() {};
 	static void setTimeAdjustment(timespec start) {};
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[])
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record)
 	{
-		*firstBlade = 0;
-		*lastBlade  = 0;
-		*firstVR    = 0;
-		*lastVR     = 0;
 		return "";
 	}
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};

@@ -4,39 +4,25 @@
 using namespace meric;
 
 struct HWMON::SourceDecl_t {
-    enum Domain_t {
-        DOMAIN_NONE       = 0,
-        DOMAIN_GLOBAL     = 1,
-        DOMAIN_PER_SOCKET = 2,
-        DOMAIN_PER_CORE   = 3,
-        DOMAIN_PER_THREAD = 4,
-    };
-
-    enum Flags_t {
-        FLAG_NONE_BIT          = 0,
-        FLAG_ACCUMULATIVE_BIT  = 1 << 0,
-        FLAG_DETAILED_ONLY_BIT = 1 << 1,
-        FLAG_DERIVED_BIT       = 1 << 2,
-    };
-
-    enum Type_t {
-        TYPE_NONE = 0,
-        TYPE_ENERGY,
-        TYPE_POWER,
-    };
-
-    Type_t    type;
-    Domain_t  domain;
-    uint32_t  flags;
+    SourceInfo_t info;
     std::vector<std::string> sources;
 };
 
-struct HWMON::SourceDesc_t {
-    
-
-    SourceDecl_t::Type_t   type;
-    SourceDecl_t::Domain_t domain;
-    uint32_t flags;
+struct HWMON::SourceDesc_t : public SourceDecl_t {
+    SourceDesc_t(const SourceDecl_t &decl, const std::string &label, 
+        const std::string &fullName, const std::string &path)
+        : SourceDecl_t(decl)
+        , unit(1.0e-6)
+        , label(label)
+        , fullName(fullName)
+        , rangeMax(0)
+        , lastValue(0)
+        , overflowCount(0)
+        , lastSampleTime(0)
+        , sumValue(0)
+        , path(path)
+        , fs(path)
+    {}
     
     double unit;
     std::string label;
@@ -46,6 +32,8 @@ struct HWMON::SourceDesc_t {
     uint64_t lastValue;
     uint64_t overflowCount;
     std::vector<Sample_t> samples;
+    uint64_t lastSampleTime;
+    uint64_t sumValue;
 
     std::string path;
     std::ifstream fs;
@@ -71,7 +59,9 @@ HWMON::SourceDescMap_t HWMON::s_sourceDesc;
 HWMON::SourceNameMap_t HWMON::s_sourceByName;
 HWMON::SourceIdVec_t   HWMON::s_sourceById;
 
-std::chrono::nanoseconds             HWMON::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::chrono::nanoseconds             HWMON::s_defaultSamplePeriod(std::chrono::milliseconds(100));
+std::chrono::nanoseconds             HWMON::s_minSamplePeriod(std::chrono::milliseconds(10));
+std::chrono::nanoseconds             HWMON::s_currentSamplePeriod(0);
 std::atomic<bool>                    HWMON::s_sampleStoreEnabled(false);
 AsyncSampler<HWMON::CounterRecord_t> HWMON::s_asyncSampler;
 
@@ -86,8 +76,15 @@ double SampleEnergyToPower(const T &sample, uint64_t rangeMax, const T *pPrevSam
     return double(value) * dt;
 };
 
-void HWMON::init(bool detailed)
+void HWMON::init(bool detailed, double sampleFreqHz)
 {
+    s_currentSamplePeriod = s_defaultSamplePeriod;
+
+    if(sampleFreqHz > 0.0)
+    {
+        s_currentSamplePeriod = std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz));
+    }
+
     initCounters(detailed);
     initSamplers(detailed);
 }
@@ -116,17 +113,17 @@ void HWMON::initCounters(bool detailed)
         uint64_t period;
     };
 
-    auto GetSuffixLen = [](SourceDecl_t::Domain_t domain) {
+    auto GetSuffixLen = [](SourceInfo_t::Domain_t domain) {
         int suffixLen = 0;
         switch(domain)
         {
-        case SourceDecl_t::DOMAIN_PER_SOCKET:
+        case SourceInfo_t::DOMAIN_PER_SOCKET:
             suffixLen = log10(Environment::SOCKETS_PER_NODE) + 1;
             break;
-        case SourceDecl_t::DOMAIN_PER_CORE:
+        case SourceInfo_t::DOMAIN_PER_CORE:
             suffixLen = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
             break;
-        case SourceDecl_t::DOMAIN_PER_THREAD:
+        case SourceInfo_t::DOMAIN_PER_THREAD:
             suffixLen = log10(Environment::THREADS_PER_CORE * Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
             break;
         default:
@@ -157,11 +154,11 @@ void HWMON::initCounters(bool detailed)
         collectDesc.counterFileRegex = "^energy([0-9]+)_input$";
         collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
         collectDesc.labelFilename    = { "energy", "_label" };
-        sourcesDecl[HWMON_PCKG_ENERGY] = { SourceDecl_t::TYPE_ENERGY, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_ACCUMULATIVE_BIT };
+        sourcesDecl[HWMON_PCKG_ENERGY] = { { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT }, {} };
 
         if(detailed)
         {
-            sourcesDecl[HWMON_CORE_ENERGY] = { SourceDecl_t::TYPE_ENERGY, SourceDecl_t::DOMAIN_PER_CORE, SourceDecl_t::FLAG_NONE_BIT };
+            sourcesDecl[HWMON_CORE_ENERGY] = { { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_CORE, SourceInfo_t::FLAG_NONE_BIT }, {} };
         }
 
         CollectSources(hwmonCounterRoots, collectDesc, sourcesDecl, sourcesDef, 
@@ -209,12 +206,14 @@ void HWMON::initCounters(bool detailed)
         collectDesc.counterFileRegex = "^power([0-9]+)_average$";
         collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
         collectDesc.labelFilename    = { "power", "_oem_info" };
+
+        sourcesDecl.insert(std::make_pair<std::string, SourceDecl_t>("CPU_Power_Socket", { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }, {} }));
         
-        sourcesDecl["CPU_Power_Socket"]    = { SourceDecl_t::TYPE_POWER, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_NONE_BIT };
-        sourcesDecl["Module_Power_Socket"] = { SourceDecl_t::TYPE_POWER, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_NONE_BIT };
-        sourcesDecl["SysIO_Power_Socket"]  = { SourceDecl_t::TYPE_POWER, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_NONE_BIT };
-        sourcesDecl["Grace_Power_Socket"]  = { SourceDecl_t::TYPE_POWER, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_NONE_BIT };
-        sourcesDecl["GPU_Power_Socket"]    = { SourceDecl_t::TYPE_POWER, SourceDecl_t::DOMAIN_PER_SOCKET, SourceDecl_t::FLAG_DERIVED_BIT, { "Module_Power_Socket", "Grace_Power_Socket" } };
+        sourcesDecl["CPU_Power_Socket"]    = { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }, {} };
+        sourcesDecl["Module_Power_Socket"] = { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }, {} };
+        sourcesDecl["SysIO_Power_Socket"]  = { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }, {} };
+        sourcesDecl["Grace_Power_Socket"]  = { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }, {} };
+        sourcesDecl["GPU_Power_Socket"]    = { { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_DERIVED_BIT }, { "Module_Power_Socket", "Grace_Power_Socket" } };
 
         CollectSources(hwmonCounterRoots, collectDesc, sourcesDecl, sourcesDef, 
             [&](SourceDef_t &out, const std::string &path, 
@@ -227,62 +226,46 @@ void HWMON::initCounters(bool detailed)
             });
     }
 
+    uint64_t sourceSamplePeriod = std::numeric_limits<uint64_t>::max();
+
     for(const SourceDef_t &source: sourcesDef)
     {
-        int suffixLen = GetSuffixLen(source.domain);
+        int suffixLen = GetSuffixLen(source.info.domain);
 
         const std::string fullName  = sysfsutils::MakeCounterName(source.baseLabel, counterLabels, {{ source.id, suffixLen }});
         const std::string fullLabel = sysfsutils::MakeCounterName(source.baseLabel, counterLabels, {{ source.id, suffixLen }}, true);
 
-        SourceDesc_t sourceDesc{
-            source.type,
-            source.domain,
-            source.flags,
-
-            1.0e-6,
-            fullLabel,
-            fullName,
-            0,
-            0,
-            0,
-            std::vector<Sample_t>(),
-            source.path,
-            std::ifstream(source.path)
-        };
+        SourceDesc_t sourceDesc(source, fullLabel, fullName, source.path);
 
         auto baseRes = s_sourceDesc.insert(std::make_pair(source.baseLabel, std::map<int, SourceDesc_t>()));
         auto res     = baseRes.first->second.insert(std::make_pair(source.id, std::move(sourceDesc)));
 
         s_sourceByName[fullName] = &res.first->second;
+
+        if(source.period > 0)
+        {
+            sourceSamplePeriod = std::min(sourceSamplePeriod, source.period);
+        }
+    }
+
+    if(sourceSamplePeriod != std::numeric_limits<uint64_t>::max())
+    {
+        s_minSamplePeriod = std::chrono::nanoseconds(sourceSamplePeriod);
     }
 
     {
         for(auto it = sourcesDecl.begin(); it != sourcesDecl.end(); ++it)
         {
-            if((it->second.flags & SourceDecl_t::FLAG_DERIVED_BIT) == 0)
+            if(!it->second.info.IsDerived())
                 continue;
 
             MakeSources(it->second, [&](const SourceDecl_t &sourceDecl, int id) {
-                int suffixLen = GetSuffixLen(sourceDecl.domain);
+                int suffixLen = GetSuffixLen(sourceDecl.info.domain);
 
                 const std::string fullName  = sysfsutils::MakeCounterName(it->first, counterLabels, {{ id, suffixLen }});
                 const std::string fullLabel = sysfsutils::MakeCounterName(it->first, counterLabels, {{ id, suffixLen }}, true);
 
-                SourceDesc_t sourceDesc{
-                    sourceDecl.type,
-                    sourceDecl.domain,
-                    sourceDecl.flags,
-
-                    1.0e-6,
-                    fullLabel,
-                    fullName,
-                    0,
-                    0,
-                    0,
-                    std::vector<Sample_t>(),
-                    "",
-                    std::ifstream(),
-                };
+                SourceDesc_t sourceDesc(sourceDecl, fullLabel, fullName, "");
 
                 for(const std::string &sourceName: it->second.sources)
                 {
@@ -315,7 +298,7 @@ void HWMON::initCounters(bool detailed)
         {
             for(auto &item: res->second)
             {
-                item.second.flags |= SourceDecl_t::FLAG_ACCUMULATIVE_BIT;
+                item.second.info.flags |= SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
             }
 
             break;
@@ -334,7 +317,7 @@ double HWMON::getResultValue(CounterValue_t startValue, CounterValue_t stopValue
 
     SourceDesc_t &desc = *it->second;
 
-    cumulative = ((desc.flags & SourceDecl_t::FLAG_ACCUMULATIVE_BIT) != 0) ? 1 : 0;
+    cumulative = desc.info.IsAccumulative() ? 1 : 0;
     uint64_t overflow = stopValue.generation - startValue.generation;
     double res = double(stopValue.value) - double(startValue.value);
 
@@ -366,10 +349,10 @@ std::string HWMON::getCounterLabel(const std::string counter)
     auto it = s_sourceByName.find(counter);
     if(it != s_sourceByName.end())
     {
-        return it->second->label;
+        return it->second->label + " [J]";
     }
 
-    return counter;
+    return counter + " [J]";
 }
 
 double HWMON::getUnit(std::string counterName)
@@ -383,24 +366,20 @@ double HWMON::getUnit(std::string counterName)
     return -1.0;
 }
 
-void HWMON::start(timespec &time, double sampleFreqHz)
+void HWMON::start(timespec &time, bool storeSamples, double sampleFreqHz)
 {
-    s_sampleStoreEnabled.store(sampleFreqHz != 0.0);
+    if(sampleFreqHz > 0.0)
+    {
+        s_currentSamplePeriod = std::max(s_minSamplePeriod, std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz)));
+        s_asyncSampler.SetPeriod(s_currentSamplePeriod);
+    }
 
-    if(sampleFreqHz != 0)
-    {
-        s_asyncSampler.SetFrequecy(sampleFreqHz);
-    }
-    else
-    {
-        s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
-    }
+    s_sampleStoreEnabled.store(storeSamples);
 }
 
 void HWMON::stop(timespec &time)
 {
     s_sampleStoreEnabled.store(false);
-    s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
 }
 
 void HWMON::initSamplers(bool detailed)
@@ -428,7 +407,7 @@ void HWMON::initSamplers(bool detailed)
 
     PROBE_NUMBER = s_sourceById.size();
 
-    s_asyncSampler.Start(s_overflowCheckPeriod, [](bool isSampling, CounterRecord_t *pRequest) {
+    s_asyncSampler.Start(s_currentSamplePeriod, [](bool isSampling, CounterRecord_t *pRequest) {
         for(auto &baseDesc: s_sourceDesc)
         {
             for(auto &desc: baseDesc.second)
@@ -436,9 +415,10 @@ void HWMON::initSamplers(bool detailed)
                 timespec now;
                 clock_gettime(CLOCK_REALTIME, &now);
 
+                const uint64_t timestamp = uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec;
                 uint64_t value = 0;
 
-                if((desc.second.flags & SourceDecl_t::FLAG_DERIVED_BIT) == 0)
+                if(!desc.second.info.IsDerived())
                 {
                     sysfsutils::ReadValue(desc.second.fs, value);
                 }
@@ -454,15 +434,25 @@ void HWMON::initSamplers(bool detailed)
                 if(isSampling && s_sampleStoreEnabled)
                 {
                     desc.second.samples.push_back({
-                        uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
-                        value
+                        timestamp, value
                     });
                 }
 
-                if(value < desc.second.lastValue && (desc.second.type & SourceDecl_t::TYPE_ENERGY) != 0)
+                if(value < desc.second.lastValue && desc.second.info.type == SourceInfo_t::TYPE_ENERGY)
                     desc.second.overflowCount++;
 
                 desc.second.lastValue = value;
+
+                if(isSampling)
+                {
+                    if(desc.second.lastSampleTime > 0)
+                    {
+                        uint64_t deltaTime = timestamp - desc.second.lastSampleTime;
+                        desc.second.sumValue += uint64_t(value * (double(deltaTime) * 1.0e-9));
+                    }
+
+                    desc.second.lastSampleTime = timestamp;
+                }
             }
         }
 
@@ -473,8 +463,11 @@ void HWMON::initSamplers(bool detailed)
         {
             for(auto &desc: baseDesc.second)
             {
-                if((desc.second.type & SourceDecl_t::TYPE_POWER) != 0)
+                if(desc.second.info.type == SourceInfo_t::TYPE_POWER)
+                {
+                    (*pRequest)[desc.second.fullName] = CounterValue_t(desc.second.sumValue, 0);
                     continue;
+                }
                 
                 (*pRequest)[desc.second.fullName] = CounterValue_t(desc.second.lastValue, desc.second.overflowCount);
             }
@@ -487,6 +480,11 @@ void HWMON::closeSamplers()
     s_asyncSampler.Stop();
     s_sourceDesc.clear();
     s_sourceById.clear();
+
+    StreamStats stats;
+    s_asyncSampler.GetSampleStats(stats);
+    MERIC_INFO << "INFO: [HWMON/Sampling] Collected " << stats.GetCount() 
+        << " samples (MIN: " << stats.GetMin() << ", MAX: " << stats.GetMax() << ", AVG: " << stats.GetMean() << ") [s]" << std::endl;
 }
 
 int HWMON::getSamples()
@@ -505,7 +503,7 @@ void HWMON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
     samples.reserve(last - first);
     for(size_t i = first; i < last; ++i)
     {
-        if(desc.type == SourceDecl_t::TYPE_ENERGY)
+        if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
         {
             samples.push_back(SampleEnergyToPower(desc.samples[i], desc.rangeMax, 
                 i > 0 ? &desc.samples[i - 1] : nullptr) * desc.unit);
@@ -517,54 +515,55 @@ void HWMON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
     }
 }
 
-std::string HWMON::getData(double startTime, double duration, 
-    size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, 
-    double energy[], double minWatts[], double maxWatts[])
+std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &record)
 {
-    uint64_t intervalStart = uint64_t(startTime * 1.0e9);
-    uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
+    const uint64_t intervalStart = uint64_t(startTime * 1.0e9);
+    const uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
 
     for(size_t i = 0; i < s_sourceById.size(); ++i)
     {
-        energy[i]   = 0.0;
-        minWatts[i] = 0.0;
-        maxWatts[i] = 0.0;
-
         if(!s_sourceById[i])
         {
             continue;
         }
 
+        record.push_back(SamplerData_t());
+
         const SourceDesc_t &desc = *s_sourceById[i];
+        SamplerData_t &data = record.back();
+        data.id = i;
+        data.name = desc.fullName;
+        data.energy = 0.0;
+        data.min = std::numeric_limits<double>::max();
+        data.max = 0.0;
 
         auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart, 
             [](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
         auto endIt   = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd, 
             [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
-
-        energy  [i] = 0.0;
-        minWatts[i] = std::numeric_limits<double>::max();
-        maxWatts[i] = 0.0;
         
         for(auto it = startIt; it != endIt; ++it)
         {
             double power = (double(it->value) * desc.unit);
 
-            if(desc.type == SourceDecl_t::TYPE_ENERGY)
+            if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
             {
                 power = SampleEnergyToPower(*it, desc.rangeMax, 
                     it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.unit;
             }
 
-            energy[i]  += power;
-            minWatts[i] = std::min(minWatts[i], power);
-            maxWatts[i] = std::max(maxWatts[i], power);
+            data.energy += power;
+            data.min = std::min(data.min, power);
+            data.max = std::max(data.max, power);
         }
-        *firstVR = std::distance(desc.samples.begin(), startIt);
-        *lastVR  = std::distance(desc.samples.begin(), endIt);
+
+        data.first = std::distance(desc.samples.begin(), startIt);
+        data.last  = std::distance(desc.samples.begin(), endIt);
+
+        if(data.min > data.max)
+            data.min = data.max;
     }
 
-    *firstBlade = *lastBlade = 0;
     return "";
 }
 
@@ -650,16 +649,16 @@ void HWMON::CollectSources(const std::vector<std::string> &paths,
 template<typename F>
 void HWMON::MakeSources(const SourceDecl_t &sourceDecl, F &&f)
 {
-    auto GetDomainElems = [](SourceDecl_t::Domain_t domain) {
+    auto GetDomainElems = [](SourceInfo_t::Domain_t domain) {
         switch(domain)
         {
-        case SourceDecl_t::DOMAIN_PER_SOCKET:
+        case SourceInfo_t::DOMAIN_PER_SOCKET:
             return Environment::SOCKETS_PER_NODE;
             break;
-        case SourceDecl_t::DOMAIN_PER_CORE:
+        case SourceInfo_t::DOMAIN_PER_CORE:
             return (Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE);
             break;
-        case SourceDecl_t::DOMAIN_PER_THREAD:
+        case SourceInfo_t::DOMAIN_PER_THREAD:
             return (Environment::THREADS_PER_CORE * Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE);
             break;
         default:
@@ -668,7 +667,7 @@ void HWMON::MakeSources(const SourceDecl_t &sourceDecl, F &&f)
         }
     };
 
-    int count = GetDomainElems(sourceDecl.domain);
+    int count = GetDomainElems(sourceDecl.info.domain);
     for(int i = 0; i < count; ++i)
     {
         f(sourceDecl, i);
