@@ -1,5 +1,7 @@
 ### XX.XX.XXXX #################################################################
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
+  - improved power monitoring system availability detection
+  - MERICext support for HWMON in Nvidia Grace/GraceHopper
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
