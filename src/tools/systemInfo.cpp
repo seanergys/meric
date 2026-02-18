@@ -284,7 +284,7 @@ void sysInfoSize(bool detailed = false)
 		if (GPUDeviceCount)
 		{
 			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
-					  << "\n\tCompile MERIC with ROCM SMI header to controll and monitor the AMD GPUs\n";
+					  << "\n\tCompile MERIC with ROCM header to controll and monitor the AMD GPUs\n";
 		}
 		closedir(dir2);
 	}
@@ -1265,7 +1265,7 @@ void listEnergySystemsWithDomains()
 	}
 
 #ifdef HAVE_HDEEM_H
-	std::cout << "\tHDEEM: ";
+	std::cout << "\tDAVIDE: ";
 	systems++;
 #endif
 
@@ -1298,7 +1298,7 @@ void listEnergySystemsWithDomains()
 	if (meric::ROCM::isAvailable())
 	{
 		meric::ROCM::init();
-		std::cout << "\tROCM SMI: ";
+		std::cout << "\tROCM: ";
 		std::map<std::string, uint64_t> counter_values;
 		meric::ROCM::getCounterValues(counter_values);
 		for (const auto &domain : counter_values)
@@ -1374,7 +1374,7 @@ void sysEnergyMeasurement()
 	}
 
 #ifdef HAVE_HDEEM_H
-	std::cout << "\tHDEEM\n";
+	std::cout << "\tDAVIDE\n";
 	systems++;
 #endif
 
@@ -1394,7 +1394,7 @@ void sysEnergyMeasurement()
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	if (meric::ROCM::isAvailable())
 	{
-		std::cout << "\tROCm SMI\n";
+		std::cout << "\tROCM\n";
 		systems++;
 	}
 #endif
@@ -1407,7 +1407,7 @@ void sysEnergyMeasurement()
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
 	if (meric::A64FX::isAvailable())
 	{
-		std::cout << "\tA64FX:";
+		std::cout << "\tA64FX\n";
 		systems++;
 	}
 #endif
@@ -1550,7 +1550,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
 	{
-		std::cerr << "ROCm SMI: Unable to initialize\n";
+		std::cerr << "ROCM: Unable to initialize\n";
 	}
 #endif
 
