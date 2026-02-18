@@ -49,11 +49,8 @@ void DAVIDE::init()
 }
 
 //TODO - missing error message return
-std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])
-{
-	*firstVR = 0;
-	*lastVR = 0;
-	
+std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &record)
+{	
 	MERIC_INFO << " ***************************************************************************\n";
 	std::string errMessage = "";
 
@@ -62,25 +59,25 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	long long t0 = time_samples[0];
 	long long ts = (long long)(FREQUENCY*startTime);
 	long long dur_t = (long long)(FREQUENCY*duration);
-	*firstBlade = (size_t)(ts - t0);
-	*lastBlade = (size_t)((ts - t0) + dur_t);
-	size_t n_samples = *lastBlade - *firstBlade;
+	size_t firstBlade = (size_t)(ts - t0);
+	size_t lastBlade = (size_t)((ts - t0) + dur_t);
+	size_t n_samples = lastBlade - firstBlade;
 
 
 	MERIC_INFO << "StartTime  : " << ts << "\n";
 	if (dur_t == 0 || n_samples == 0)
 	{
 		MERIC_INFO << "Duration   : < 1 sample\n";
-		*firstBlade = -1;
-		*lastBlade = -1;
+		firstBlade = -1;
+		lastBlade = -1;
 		dur_t = 0;
 	}
 	else
 	{
 		MERIC_INFO << "Duration   : " << dur_t << " samples\n";
 	}
-	MERIC_INFO << "firstBlade  : " << *firstBlade << "\n"
-	           << "lastBlade   : " << *lastBlade  << "\n"
+	MERIC_INFO << "firstBlade  : " << firstBlade << "\n"
+	           << "lastBlade   : " << lastBlade  << "\n"
 	           << "# of Samples: " << n_samples << "\n";
 
 	// sub-sampling measurement setup
@@ -93,7 +90,14 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 	if (dur_t == 0)
 		return errMessage;
 
-	if (dur_t < 10 && *firstBlade > hallo_size && time_samples.size() >= (*firstBlade - hallo_size + buf_size -1))
+	record.push_back(SamplerData_t(SourceInfo_t(SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_NODE, SourceInfo_t::FLAG_ACCUMULATIVE_BIT)));
+	SamplerData_t &sensor = record.back();
+	sensor.id = 0;
+	sensor.name = vrSensorLabel[0];
+	sensor.first = firstBlade;
+	sensor.last  = lastBlade;
+
+	if (dur_t < 10 && firstBlade > hallo_size && time_samples.size() >= (firstBlade - hallo_size + buf_size -1))
 	{
 		tmp_t.reserve(buf_size);
 		tmp_w.reserve(buf_size);
@@ -102,16 +106,16 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 			       << "  StartTime   : " << (long long)(FREQUENCY*startTime*1000.0) << "\n"
 			       << "  StopTime    : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n"
 			       << "  Duration    : " << (long long)(FREQUENCY*duration*1000.0) << " us\n"
-			       << "  Start sample: " << *firstBlade - hallo_size << std::endl
-			       << "  Stop sample : " << *firstBlade - hallo_size + buf_size -1 << std::endl;
+			       << "  Start sample: " << firstBlade - hallo_size << std::endl
+			       << "  Stop sample : " << firstBlade - hallo_size + buf_size -1 << std::endl;
 
 		for (size_t i = 0; i < buf_size; i++ )
 		{
-			tmp_t.push_back((double)  time_samples [*firstBlade - hallo_size + i]);
-			tmp_w.push_back(          power_samples[*firstBlade - hallo_size + i]);
+			tmp_t.push_back((double)  time_samples [firstBlade - hallo_size + i]);
+			tmp_w.push_back(          power_samples[firstBlade - hallo_size + i]);
 
-			MERIC_INFO << "    Time: " << time_samples [*firstBlade - hallo_size + i] << "    [ms]; power: " 
-				                       << power_samples[*firstBlade - hallo_size + i] << " W \n";
+			MERIC_INFO << "    Time: " << time_samples [firstBlade - hallo_size + i] << "    [ms]; power: " 
+				                       << power_samples[firstBlade - hallo_size + i] << " W \n";
 		}
 
 		tk::spline s;
@@ -134,60 +138,60 @@ std::string DAVIDE::getData(double startTime, double duration, size_t *firstBlad
 
 			if (i == 0)
 			{
-				energy[0]   = interp_power;
-				maxWatts[0] = interp_power;
-				minWatts[0] = interp_power;
+				sensor.energy = interp_power;
+				sensor.max = interp_power;
+				sensor.min = interp_power;
 			}
 			else
 			{
-				if (interp_power > maxWatts[0])
-					maxWatts[0] = interp_power;
-				if (interp_power < minWatts[0])
-					minWatts[0] = interp_power; 
-				energy[0] += interp_power;
+				if (interp_power > sensor.max)
+					sensor.max = interp_power;
+				if (interp_power < sensor.min)
+					sensor.min = interp_power; 
+				sensor.energy += interp_power;
 			}
  
 			MERIC_INFO << "    Time: " << (long long) (sub_time*1000.0) <<  " [us]; power: " << interp_power << " W (sub-sample)\n"; 
 		}
 		MERIC_INFO << "    ------------------------\n";
 
-		maxWatts[0]-= GPU_offset;
-		minWatts[0]-= GPU_offset;
+		sensor.max -= GPU_offset;
+		sensor.min -= GPU_offset;
 
-		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
-			       << "maxWatts : " << maxWatts[0] << " W\n";
+		MERIC_INFO << "minWatts : " << sensor.min << " W\n"
+			       << "maxWatts : " << sensor.max << " W\n";
 
 		
-		double avgWatts = energy[0] / double(n_subsamples+1);
-		energy[0] = (avgWatts - GPU_offset) * n_samples;
+		double avgWatts = sensor.energy / double(n_subsamples+1);
+		sensor.energy = (avgWatts - GPU_offset) * n_samples;
 	}
 	else
 	{
-		energy[0]   = 0.0;
-		maxWatts[0] = power_samples[*firstBlade];
-		minWatts[0] = power_samples[*firstBlade];
+		sensor.energy = 0.0;
+		sensor.max = power_samples[firstBlade];
+		sensor.min = power_samples[firstBlade];
 
-		double valTmp = power_samples[*firstBlade];
-		for (size_t it=*firstBlade; it <*lastBlade; it++)
+		double valTmp = power_samples[firstBlade];
+		for (size_t it = firstBlade; it < lastBlade; it++)
 		{
 			valTmp = power_samples[it];
 
-			if (valTmp > maxWatts[0])
-				maxWatts[0] = valTmp;
+			if (valTmp > sensor.max)
+				sensor.max = valTmp;
 			
-			if (valTmp < minWatts[0]) //&& valTmp > 0.0)
-				minWatts[0] = valTmp;
+			if (valTmp < sensor.min) //&& valTmp > 0.0)
+				sensor.min = valTmp;
 			
-			energy[0] += valTmp;
+			sensor.energy += valTmp;
 		}
 
-		maxWatts[0]-= GPU_offset;
-		minWatts[0]-= GPU_offset;
+		sensor.max -= GPU_offset;
+		sensor.min -= GPU_offset;
 
-		MERIC_INFO << "minWatts : " << minWatts[0] << " W\n"
-			       << "maxWatts : " << maxWatts[0] << " W\n"
-			       << "avgWatts : " << ( energy[0] / ((double)(n_samples)) ) - GPU_offset << " W (subtracted "<<GPU_offset<<"W for GPU idle (4x30W) \n";
-		energy[0] -= n_samples * GPU_offset;
+		MERIC_INFO << "minWatts : " << sensor.min << " W\n"
+			       << "maxWatts : " << sensor.max << " W\n"
+			       << "avgWatts : " << (sensor.energy / ((double)(n_samples)) ) - GPU_offset << " W (subtracted "<<GPU_offset<<"W for GPU idle (4x30W) \n";
+		sensor.energy -= n_samples * GPU_offset;
 	}
 
 	return errMessage;

@@ -2,6 +2,7 @@
 #include "raplwrapper.h"
 #include "nvmlwrapper.h"
 #include "rocmwrapper.h"
+#include "../meric/meric.h"
 
 using namespace meric;
 

@@ -25,44 +25,29 @@ template <class TSystem> void SamplesStore<TSystem>::computePeriods()
 
 template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedRegionStats &stats, size_t iStarts, size_t iEnd)
 {
+	BaseWrapper::SamplerRecord_t samplerRecord;
+
 	std::string msg = "";
-	size_t firstBlade, lastBlade;
-	size_t firstVR, lastVR;
-	double * energy;
-	double * min;
-	double * max;
 	const double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
-	energy = new double [TSystem::PROBE_NUMBER];
-	min = new double [TSystem::PROBE_NUMBER];
-	max = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, min, max);
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), duration, samplerRecord);
 
 	if (msg != "")
 		std::cerr << msg <<  _name[_records[iStarts].region] << std::endl;
-	
-	// Blade values
-	if(lastBlade > 0 && lastBlade > firstBlade)
+
+	stats.totalEnergy = 0.0;
+
+	for(const auto &sampler: samplerRecord)
 	{
-		stats.energy[0] = duration * energy[0] / (lastBlade - firstBlade);
-	}
-	else
-		stats.energy[0] = 0;
-	
-	// Voltage Regualtors values
-	if(lastVR > 0 && lastVR > firstVR)
-	{
-		for (size_t it = 1; it < TSystem::vrSensorLabel.size(); it++)
+		if(sampler.last <= 0 || sampler.last <= sampler.first)
 		{
-			stats.energy[it] = duration * energy[it] / (lastVR - firstVR);
+			stats.energy.push_back(0.0);
+			continue;
 		}
+
+		const double energy = duration * sampler.energy / (sampler.last - sampler.first);
+		stats.energy.push_back(energy);
+		stats.totalEnergy += sampler.info.IsAccumulative() ? energy : 0.0;
 	}
-	else
-		for(size_t i=1; i < HDEEM::PROBE_NUMBER; i++) //DetailedRegionStats.energy size is always HDEEM::PROBE_NUMBER
-			stats.energy[i] = 0;
-	
-	delete [] energy;
-	delete [] min;
-	delete [] max;
 }
 
 template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream &ss, std::vector<size_t> &iStarts, size_t iEnd)
@@ -76,26 +61,19 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	}
 	ss << std::endl;
 
-	size_t firstBlade, lastBlade;
-	size_t firstVR, lastVR;
-	double * energy;
-	double * minWatts;
-	double * maxWatts;
 	double avgWatts = 0.0;
 	double energyConsumption = 0.0;
+	BaseWrapper::SamplerRecord_t samplerRecord;
 
 	std::string msg = "";
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
-	energy = new double [TSystem::PROBE_NUMBER];
-	minWatts = new double [TSystem::PROBE_NUMBER];
-	maxWatts = new double [TSystem::PROBE_NUMBER];
-	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, &firstBlade, &lastBlade, &firstVR, &lastVR, energy, minWatts, maxWatts);
+	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, samplerRecord);
 	
 	if (msg != "" && msg.find("detailed") == std::string::npos)
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 
-	MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " << int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
-	MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade << " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
+	// MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " << int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
+	// MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade << " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
 	
 	bool staticRegion = false;
 	std::ofstream samplesStream;
@@ -111,70 +89,32 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		}
 	}
 
-    // Blade values
-	if(lastBlade > 0 && lastBlade > firstBlade)
+	for(const auto &sampler: samplerRecord)
 	{
-		if (printSamples && staticRegion)
+		if(printSamples && staticRegion)
 		{
-			samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade) power [W]:\n";
+			samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << ") power [W]:\n";
 			std::vector<double> samples;
-			TSystem::getSamplesList(0, firstBlade, lastBlade, samples);
-			size_t it = firstBlade;
-			for (size_t i = 0; i < samples.size(); i++)
-				samplesStream << it++ << "," << samples[i] << '\n';
+			TSystem::getSamplesList(sampler.id, sampler.first, sampler.last, samples);
+
+			for(size_t i = 0; i < samples.size(); ++i)
+				samplesStream << (sampler.first + i) << "," << samples[i] << "\n";
 		}
-		avgWatts = energy[0]/(lastBlade-firstBlade);
+
+		avgWatts = sampler.energy / (sampler.last - sampler.first);
 		energyConsumption = duration * avgWatts;
 
-		ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
-		   << TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
-		   << "MAX power [W]" << "," << maxWatts[0] << '\n'
-		   << "MIN power [W]" << "," << minWatts[0] << '\n'
-		   << "AVG power [W]" << "," << avgWatts << '\n'
-		   << "ID of first sample" << "," << firstBlade << '\n'
-		   << "ID of last sample" << "," << lastBlade-1 << '\n';
-	}
-	else
-	{
-		ss << "\n# SAMPLES - " << TSystem::getSourceLabel() << " (Blade):\n"
-		   << "# Blade summary - ERROR\n"
-		   << TSystem::SUM_ENERGY_LABEL << ",0\n";
-	}
-	
-	// Voltage Regulators values
-	if(lastVR > 0 && lastVR > firstVR)
-	{
-		for (unsigned int sensorID = 1; sensorID < TSystem::vrSensorLabel.size(); sensorID++)
-		{
-			if(printSamples && staticRegion)
-			{
-				samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << ") power [W]:\n";
-				std::vector<double> samples;
-				TSystem::getSamplesList(sensorID, firstVR, lastVR, samples);
-				size_t it = firstVR;
-				for (size_t i = 0; i < samples.size(); i++)
-					samplesStream << it++ << "," << samples[i] << '\n';
-
-			}
-			avgWatts = energy[sensorID]/(lastVR-firstVR);
-			energyConsumption = duration * avgWatts;
-
-		    ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << TSystem::vrSensorLabel[sensorID] << "):\n"
-		       << TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
-		       << "MAX power [W]" << "," << maxWatts[sensorID] << '\n'
-		       << "MIN power [W]" << "," << minWatts[sensorID] << '\n'
-		       << "AVG power [W]" << "," << avgWatts << '\n'
-		       << "ID of first sample" << "," << firstVR << '\n'
-		       << "ID of last sample" << "," << lastVR-1 << std::endl;
-		}
+		ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << "):\n"
+			<< TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
+		    << "MAX power [W]" << "," << sampler.max << '\n'
+		    << "MIN power [W]" << "," << sampler.min << '\n'
+		    << "AVG power [W]" << "," << avgWatts << '\n'
+		    << "ID of first sample" << "," << sampler.first << '\n'
+		    << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
 	}
 	
 	if(printSamples && staticRegion)
 		samplesStream.close();
-
-	delete [] energy;
-	delete [] minWatts;
-	delete [] maxWatts;
 	
 	clock_gettime(CLOCK_REALTIME, &time2);
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";

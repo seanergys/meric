@@ -245,6 +245,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
@@ -267,6 +268,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
@@ -285,6 +287,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef SRC_MERIC_CPU_AFFINITY_MAP_H_
-#define SRC_MERIC_CPU_AFFINITY_MAP_H_
+#ifndef SRC_BASIS_CPU_AFFINITY_MAP_H_
+#define SRC_BASIS_CPU_AFFINITY_MAP_H_
 
 #include <cstdint>
 #include <map>
@@ -30,4 +30,4 @@ protected:
 }
 
 
-#endif // SRC_MERIC_CPU_AFFINITY_MAP_H_
+#endif // SRC_BASIS_CPU_AFFINITY_MAP_H_

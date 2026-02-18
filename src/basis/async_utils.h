@@ -9,6 +9,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "statistics_utils.h"
+
 template<typename T>
 class AsyncSampler
 {
@@ -44,8 +46,15 @@ public:
                     }
                     
                     const auto sampleTime = Clock_t::now();
-                    
-                    f(sampleTime >= time, m_pRequest);
+
+                    {
+                        const auto sampleStart = Clock_t::now();
+                        
+                        f(sampleTime >= time, m_pRequest);
+                        
+                        const auto sampleElapsedTime = Clock_t::now() - sampleStart;
+                        m_sampleTime.Push(std::chrono::duration<double>(sampleElapsedTime).count());
+                    }
                     
                     m_pRequest = nullptr;
                     
@@ -90,6 +99,18 @@ public:
 
         SetPeriod(std::chrono::nanoseconds(uint64_t(1.0e9 / frequencyHz)));
     }
+
+    void GetSampleStats(StreamStats &stats) {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        stats = m_sampleTime;
+        m_cond.notify_all();
+    }
+
+    void ClearSampleStats() {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_sampleTime.Clear();
+        m_cond.notify_all();
+    }
     
 protected:
     typedef std::chrono::steady_clock Clock_t;
@@ -99,6 +120,7 @@ protected:
     std::atomic<bool>        m_enabled;
     std::condition_variable  m_cond;
     std::mutex               m_mutex;
+    StreamStats              m_sampleTime;
     
     T *m_pRequest;
 };

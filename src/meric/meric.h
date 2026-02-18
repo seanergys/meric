@@ -13,6 +13,7 @@
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
+#include "../basis/cpu_affinity_map.h"
 #include "../store/samplesstore.h"
 #include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
@@ -28,8 +29,6 @@
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
 #include "../wrapper/hwmonwrapper.h"
-
-#include "cpu_affinity_map.h"
 
 namespace meric {
 
@@ -530,7 +529,8 @@ protected:
 	static bool DETAILED;
 	static bool AGGREGATE;
 	static bool DEBUG;
-	static double SAMPLES;
+	static bool SAMPLES;
+	static double SAMPLING_FREQUENCY;
 	static bool IGNORE;
 	static bool HDF5;
 	static int MODE;

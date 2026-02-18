@@ -8,7 +8,19 @@ void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<
 {
 	DetailedRegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
-	MPI_Gather(&stats, sizeof(DetailedRegionStats), MPI_BYTE, _buffer.data(), sizeof(DetailedRegionStats), MPI_BYTE, 0, this->_comm);
+
+	Value_t totalEnergyIn(stats.totalEnergy), totalEnergyOut;
+
+	std::vector<Value_t> energyIn, energyOut;
+	for(const auto &value: stats.energy)
+	{
+		energyIn.push_back(Value_t(value));
+	}
+
+	energyOut.resize(energyIn.size());
+
+	MPI_Reduce(&totalEnergyIn, &totalEnergyOut, 1, m_valueType, m_reduceOp, 0, this->_comm);
+	MPI_Reduce(energyIn.data(), energyOut.data(), energyIn.size(), m_valueType, m_reduceOp, 0, this->_comm);
 
 	ss << "# CALLTREE;init_" << this->_store->_initCounter;
 	for (size_t j = 0; j < iStarts.size()-1; j++)
@@ -16,62 +28,31 @@ void SamplesAggregateStore<TStore>::saveInterval(std::ofstream &ss, std::vector<
 		ss << ";" <<  this->_store->_name[this->_store->_records[iStarts[j]].region] << "_" << this->_store->_counters[this->_store->_records[iStarts[j]].region];
 	}
 
-	double sumEnergy = 0,
-		   maxEnergy = 0,
-		   minEnergy = _buffer[0].energy[0];
-
-	for (size_t i = 0; i < this->_size; i++)
+	if(totalEnergyOut.value > 0.0)
 	{
-		if(maxEnergy < _buffer[i].energy[0])
-		{
-			maxEnergy = _buffer[i].energy[0];
-		} else if (minEnergy > _buffer[i].energy[0])
-		{
-			minEnergy = _buffer[i].energy[0];
-		}
-		sumEnergy += _buffer[i].energy[0];
-	}
-
-	if (sumEnergy > 0.0)
-	{
-		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade):\n"
-		   << "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << sumEnergy/this->_size << '\n'
-		   << "MAX Energy consumption [J]," << maxEnergy << '\n'
-		   << "MIN Energy consumption [J]," << minEnergy << '\n'
-		   << "SUM Energy consumption [J]," << sumEnergy << '\n';
+		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Total):\n"
+		   << "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << totalEnergyOut.value / this->_size << '\n'
+		   << "MAX Energy consumption [J]," << totalEnergyOut.max << '\n'
+		   << "MIN Energy consumption [J]," << totalEnergyOut.min << '\n'
+		   << "SUM Energy consumption [J]," << totalEnergyOut.value << '\n';
 	}
 	else
 	{
-		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Blade):\n"
-		   << "# Blade summary - ERROR\n"
+		ss << "\n# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (Total):\n"
+		   << "# Total summary - ERROR\n"
 		   << "SUM Energy consumption [J],0\n";
 	}
 
-	for (unsigned int sensorID = 1; sensorID < StoreSamplesType::vrSensorLabel.size(); sensorID++)
+	for(size_t i = 0; i < energyOut.size(); ++i)
 	{
-		sumEnergy = 0;
-		maxEnergy = 0;
-		minEnergy = _buffer[0].energy[sensorID];
+		if(energyOut[i].value <= 0.0)
+			continue;
 
-		// Iterate through nodes
-		for (size_t i = 0; i < this->_size; i++)
-		{
-			if(maxEnergy < _buffer[i].energy[sensorID])
-			{
-				maxEnergy = _buffer[i].energy[sensorID];
-			} else if (minEnergy > _buffer[i].energy[sensorID]) 
-			{
-				minEnergy = _buffer[i].energy[sensorID];
-			}
-			sumEnergy += _buffer[i].energy[sensorID];
-		}
-
-		if (sumEnergy > 0.0)
-			ss << "# SAMPLES - " << StoreSamplesType::getSourceLabel() << " ("<< StoreSamplesType::vrSensorLabel[sensorID] <<"):\n"
-			   << "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << sumEnergy/this->_size << '\n'
-			   << "MAX Energy consumption [J]," << maxEnergy << '\n'
-			   << "MIN Energy consumption [J]," << minEnergy << '\n'
-			   << "SUM Energy consumption [J]," << sumEnergy << '\n';
+		ss << "# SAMPLES - " << StoreSamplesType::getSourceLabel() << " (" << StoreSamplesType::getSamplerLabel(i) << "):\n"
+			<< "AVG Energy consumption [J]," << std::fixed << std::setprecision (6) << energyOut[i].value / this->_size << '\n'
+			<< "MAX Energy consumption [J]," << energyOut[i].max << '\n'
+			<< "MIN Energy consumption [J]," << energyOut[i].min << '\n'
+			<< "SUM Energy consumption [J]," << energyOut[i].value << '\n';
 	}
 }
 
@@ -81,8 +62,18 @@ void SamplesAggregateStore<TStore>::saveInterval(std::vector<size_t> &iStarts, s
 	DetailedRegionStats stats;
 	this->_store->fillRegionStats(stats, iStarts.back(), iEnd);
 
-	//TODO in non-detailed mode we should send just the BLADE
-	MPI_Gather(&stats, sizeof(DetailedRegionStats), MPI_BYTE, _buffer.data(), sizeof(DetailedRegionStats), MPI_BYTE, 0, this->_comm);
+	Value_t totalEnergyIn(stats.totalEnergy), totalEnergyOut;
+
+	std::vector<Value_t> energyIn, energyOut;
+	for(const auto &value: stats.energy)
+	{
+		energyIn.push_back(Value_t(value));
+	}
+
+	energyOut.resize(energyIn.size());
+
+	MPI_Reduce(&totalEnergyIn, &totalEnergyOut, 1, m_valueType, m_reduceOp, 0, this->_comm);
+	MPI_Reduce(energyIn.data(), energyOut.data(), energyIn.size(), m_valueType, m_reduceOp, 0, this->_comm);
 }
 
 }
