@@ -3,12 +3,14 @@
 #define SRC_MERIC_MERIC_H_
 
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <vector>
 #include <algorithm>
 #include <ctime>
 #include <cmath>
+#include <cctype>
 
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
@@ -515,7 +517,24 @@ namespace meric
 		{
 			_mainRegion.assign(program_invocation_name);
 			if (_mainRegion.find("python") == 0)
-				_mainRegion = get_cmdline_args_linux()[1];
+			{
+				const auto args = get_cmdline_args_linux();
+				if (args.size() > 1)
+				{
+					std::string candidate = args[1];
+					size_t n = candidate.find_last_of("/");
+					if (n != std::string::npos)
+						candidate = candidate.substr(n + 1);
+					n = candidate.find_first_of(".");
+					if (n != std::string::npos)
+						candidate = candidate.substr(0, n);
+
+					const bool ok = !candidate.empty() && std::all_of(candidate.begin(), candidate.end(), [](char c)
+																	  { return std::isalnum(static_cast<unsigned char>(c)); });
+					if (ok)
+						_mainRegion = candidate;
+				}
+			}
 
 			size_t n = _mainRegion.find_last_of("/");
 			if (n != std::string::npos)
