@@ -514,7 +514,7 @@ namespace meric
 		void setMainRegionName()
 		{
 			_mainRegion.assign(program_invocation_name);
-			if (_mainRegion == "python" || _mainRegion == "python3")
+			if (_mainRegion.find("python") == 0)
 				_mainRegion = get_cmdline_args_linux()[1];
 
 			size_t n = _mainRegion.find_last_of("/");
