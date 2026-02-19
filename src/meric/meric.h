@@ -513,18 +513,9 @@ namespace meric
 
 		void setMainRegionName()
 		{
-			std::vector<std::string> args = get_cmdline_args_linux();
-			uint8_t cntr = 0;
-			for (auto &&i : args)
-			{
-				if (cntr == 0)
-				{
-					cntr++;
-					if (i == "python" || i == "python3")
-						continue;
-				}
-				_mainRegion += i;
-			}
+			_mainRegion.assign(program_invocation_name);
+			if (_mainRegion == "python" || _mainRegion == "python3")
+				_mainRegion = get_cmdline_args_linux()[1];
 
 			size_t n = _mainRegion.find_last_of("/");
 			if (n != std::string::npos)
