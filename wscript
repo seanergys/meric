@@ -368,7 +368,7 @@ def build(ctx):
 					ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 					ctx.path.ant_glob('src/store/*.cpp'),
 				target       = 'mericpy',
-				use          = "basis",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 				install_path = "${PREFIX}/lib"
 			)
 
@@ -378,7 +378,7 @@ def build(ctx):
 					ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
 					ctx.path.ant_glob('src/timeprof/*.cpp'),
 				target       = "timeprofpy",
-				use          = "basis",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 				install_path = "${PREFIX}/lib"
 			)
 		suffix=""
@@ -437,7 +437,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = 'mericmpipy',
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 			install_path = "${PREFIX}/lib",
 			env          = ctx.all_envs["mpi"]
 		)
@@ -448,7 +448,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
 				ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprofmpipy",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
 			install_path = "${PREFIX}/lib",
 			env          = ctx.all_envs["mpi"]
 		)
