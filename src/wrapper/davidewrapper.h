@@ -5,6 +5,7 @@
 #include "../basis/spline.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
+#include "basewrapper.h"
 #include <iostream>
 #include <unistd.h>
 
@@ -22,7 +23,7 @@
 
 namespace meric {
 
-class DAVIDE {
+class DAVIDE : public BaseWrapper {
 
 public:
 
@@ -52,23 +53,27 @@ public:
 
 	static int getSamples();
 	static void init();
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[]);
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
 	#else
 	static void close() {}
 
 	static int getSamples() { return 0; };
 	static void init() {};
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double min[], double max[])
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record)
 	{
-		*firstBlade = 0;
-		*lastBlade  = 0;
-		*firstVR    = 0;
-		*lastVR     = 0;
 		return "";
 	}
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples) {};
 	#endif
+
+	static size_t getSamplerCount() { return PROBE_NUMBER; }
+    static std::string getSamplerLabel(size_t id) { 
+		if(id > getSamplerCount())
+                return "";
+			
+		return vrSensorLabel[id]; 
+	}
 
 
 private:

@@ -38,16 +38,17 @@ std::string RAPL::PLATFORM_POWER_LIMIT = "";
 std::string RAPL::POWER_LIMIT_TIMEWINDOW = "";
 
 const std::string RAPL::SUM_ENERGY_LABEL = "Energy consumption [J]";
-int RAPL::PROBE_NUMBER;
-std::vector<std::string> RAPL::vrSensorLabel;
+// int RAPL::PROBE_NUMBER;
+// std::vector<std::string> RAPL::vrSensorLabel;
 
 std::map<std::string, RAPL::SamplerDesc_t> RAPL::s_samplerDesc;
 std::vector<RAPL::SamplerDesc_t *>         RAPL::s_samplerById;
 
-std::chrono::nanoseconds RAPL::s_samplingPeriod(std::chrono::milliseconds(25));
-std::chrono::nanoseconds RAPL::s_overflowCheckPeriod(std::chrono::seconds(10));
+std::chrono::nanoseconds RAPL::s_defaultSamplePeriod(std::chrono::milliseconds(1000));
+std::chrono::nanoseconds RAPL::s_minSamplePeriod(std::chrono::milliseconds(25));
+std::chrono::nanoseconds RAPL::s_currentSamplePeriod(0);
 
-std::atomic<bool>                            RAPL::s_sampleStoreEnabled(false);
+std::atomic<bool>                         RAPL::s_sampleStoreEnabled(false);
 AsyncSampler<RAPL::Base::CounterRecord_t> RAPL::s_asyncSampler;
 
 template<typename T>
@@ -61,8 +62,15 @@ double SampleEnergyToPower(const T &sample, uint64_t rangeMax, const T *pPrevSam
     return double(value) * dt;
 };
 
-void RAPL::init(bool detailed)
+void RAPL::init(bool detailed, double sampleFreqHz)
 {
+    s_currentSamplePeriod = s_defaultSamplePeriod;
+
+    if(sampleFreqHz > 0.0)
+    {
+        s_currentSamplePeriod = std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz));
+    }
+
     getImpl()->init(detailed);
     initSamplers();
 }
@@ -121,24 +129,20 @@ double RAPL::getUnit(std::string counter)
     return getImpl()->getUnit(counter);
 }
 
-void RAPL::start(timespec &time, double sampleFreqHz)
+void RAPL::start(timespec &time, bool storeSamples, double sampleFreqHz)
 {
-    s_sampleStoreEnabled.store(sampleFreqHz != 0.0);
+    if(sampleFreqHz > 0.0)
+    {
+        s_currentSamplePeriod = std::max(s_minSamplePeriod, std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz)));
+        s_asyncSampler.SetPeriod(s_currentSamplePeriod);
+    }
 
-    if(sampleFreqHz != 0)
-    {
-        s_asyncSampler.SetFrequecy(sampleFreqHz);
-    }
-    else
-    {
-        s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
-    }
+    s_sampleStoreEnabled.store(storeSamples);
 }
 
 void RAPL::stop(timespec &time)
 {
     s_sampleStoreEnabled.store(false);
-    s_asyncSampler.SetPeriod(s_overflowCheckPeriod);
 }
 
 void RAPL::initSamplers()
@@ -163,12 +167,12 @@ void RAPL::initSamplers()
             });
         
         // NOTE: Simulates HDEEM Blade sensor, which doesn't exist in RAPL
-        vrSensorLabel.push_back("");
-        s_samplerById.push_back(nullptr);
+        // vrSensorLabel.push_back("");
+        // s_samplerById.push_back(nullptr);
         
         for(Base::CounterDesc_t *pCounterDesc: counters)
         {
-            vrSensorLabel.push_back(pCounterDesc->fullName);
+            // vrSensorLabel.push_back(pCounterDesc->fullName);
 
             auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->fullName, SamplerDesc_t()));
             res.first->second.pCounterDesc  = pCounterDesc;
@@ -178,10 +182,10 @@ void RAPL::initSamplers()
             s_samplerById.push_back(&res.first->second);
         }
 
-        PROBE_NUMBER = s_samplerById.size();
+        // PROBE_NUMBER = s_samplerById.size();
     }
 
-    s_asyncSampler.Start(s_overflowCheckPeriod, [](bool isSampling, CounterRecord_t *pRequest) {
+    s_asyncSampler.Start(s_currentSamplePeriod, [](bool isSampling, CounterRecord_t *pRequest) {
         for(auto &desc: s_samplerDesc)
         {
             timespec now;
@@ -218,6 +222,11 @@ void RAPL::closeSamplers()
     s_asyncSampler.Stop();
     s_samplerDesc.clear();
     s_samplerById.clear();
+
+    StreamStats stats;
+    s_asyncSampler.GetSampleStats(stats);
+    MERIC_INFO << "INFO: [RAPL/Sampling] Collected " << stats.GetCount() 
+        << " samples (MIN: " << stats.GetMin() << ", MAX: " << stats.GetMax() << ", AVG: " << stats.GetMean() << ") [s]" << std::endl;
 }
 
 int RAPL::getSamples()
@@ -241,50 +250,53 @@ void RAPL::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
     }
 }
 
-std::string RAPL::getData(double startTime, double duration,
-    size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
-    double energy[], double minWatts[], double maxWatts[])
+std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &record)
 {
-    uint64_t intervalStart = uint64_t(startTime * 1.0e9);
-    uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
+    const uint64_t intervalStart = uint64_t(startTime * 1.0e9);
+    const uint64_t intervalEnd   = intervalStart + uint64_t(duration * 1.0e9);
 
     for(size_t i = 0; i < s_samplerById.size(); ++i)
     {
-        energy[i]   = 0.0;
-        minWatts[i] = 0.0;
-        maxWatts[i] = 0.0;
-
         if(!s_samplerById[i])
         {
             continue;
         }
 
+        record.push_back(SamplerData_t());
+
         const SamplerDesc_t &desc = *s_samplerById[i];
+        SamplerData_t &data = record.back();
+        data.id = i;
+        data.name = desc.pCounterDesc->fullName;
+        data.energy = 0.0;
+        data.min = std::numeric_limits<double>::max();
+        data.max = 0.0;
+
+        if(desc.pCounterDesc->isCumulative)
+            data.info.flags |= SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
 
         auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart,
             [](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
         auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
             [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
-        
-        energy[i]   = 0.0;
-        minWatts[i] = std::numeric_limits<double>::max();
-        maxWatts[i] = 0.0;
 
         for(auto it = startIt; it != endIt; ++it)
         {
             // double power = double(it->value) * desc.pCounterDesc->unit;
             double power = SampleEnergyToPower(*it, desc.pCounterDesc->rangeMax, 
                 it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.pCounterDesc->unit;
-            energy[i] += power;
-            minWatts[i] = std::min(minWatts[i], power);
-            maxWatts[i] = std::max(maxWatts[i], power);
+            data.energy += power;
+            data.min = std::min(data.min, power);
+            data.max = std::max(data.max, power);
         }
 
-        *firstVR = std::distance(desc.samples.begin(), startIt);
-        *lastVR  = std::distance(desc.samples.begin(), endIt);
+        data.first = std::distance(desc.samples.begin(), startIt);
+        data.last = std::distance(desc.samples.begin(), endIt);
+
+        if(data.min > data.max)
+            data.min = data.max;
     }
 
-    *firstBlade = *lastBlade = 0;
     return "";
 }
 

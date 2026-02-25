@@ -34,7 +34,8 @@ struct InfoStats { //infoAggregateStore
 };
 
 struct DetailedRegionStats { //aggregateStore
-	double energy[HDEEM::PROBE_NUMBER];											//TODO remove dependency on HDEEM !
+	double totalEnergy;
+	std::vector<double> energy;
 };
 
 struct DebugRegionStats {

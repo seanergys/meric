@@ -22,11 +22,11 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES != 0.0));
+			_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HDEEM_COUNTERS) != MONITORS.end())
@@ -36,7 +36,7 @@ SharedMeric::SharedMeric()
 
 		if (Meric::DEBUG)
 		{
-			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0));
+			_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES));
 		}
 		else
 		{
@@ -47,7 +47,7 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
@@ -56,7 +56,7 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
-		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
@@ -65,19 +65,19 @@ SharedMeric::SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<THUNDER>(Meric::SAMPLES));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
-		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES != 0.0));
+		_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES));
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
 	{
@@ -134,11 +134,11 @@ SharedMeric::SharedMeric()
 		switch(m)
 		{
 		case MODE_RAPL:
-			RAPL::init(Meric::DETAILED);
+			RAPL::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 			RAPL::start(_startTime, Meric::SAMPLES);
 			break;
 		case MODE_HWMON:
-			HWMON::init(Meric::DETAILED);
+			HWMON::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 			HWMON::start(_startTime, Meric::SAMPLES);
 			break;
 		case MODE_OCC:
@@ -158,7 +158,7 @@ SharedMeric::SharedMeric()
 			A64FX::init();
 			break;
 		case MODE_NVML:
-			NVML::start(_startTime, Meric::SAMPLES);
+			NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
 			break;
 		default:
 			break;
@@ -206,6 +206,11 @@ SharedMeric::~SharedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
 		NVML::close();
+	}
+
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
+	{
+		HWMON::close();
 	}
 	
 	for(unsigned int i=0;i<_storeList.size(); i++)

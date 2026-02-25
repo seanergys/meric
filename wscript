@@ -150,8 +150,12 @@ def configure(ctx):
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 		
-		# check for energy measurment systems
-		if (not ctx.check_cxx(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False) or not ctx.check_cxx(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)):
+		have_freeipmi = ctx.check_cxx(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)
+		if have_freeipmi:
+			have_hdeem = ctx.check_cxx(header_name="hdeem.h", lib=["hdeem", "freeipmi"], uselib_store="hdeem", execute=False, mandatory=False)
+		else:
+			have_hdeem = ctx.check_cxx(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False)
+		if (not have_hdeem) or (not have_freeipmi):
 			# missing include <freeipmi/freeipmi.h>
 			ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
 		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
@@ -259,6 +263,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
@@ -281,6 +286,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
@@ -299,6 +305,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",

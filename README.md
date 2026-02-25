@@ -467,11 +467,16 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 * `export MERIC_DETAILED=1`
 	- If energy measurement system provides not only data from blade, but also data from other Voltage Regulators (e.g. CPUx, DRAMx) are gathered too, MERIC will provide information about each of them. 
 
-* `export MERIC_SAMPLES=<sample frequency in Hz>`
+* `export MERIC_SAMPLES=1`
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
 	- Available for HDEEM-S, RAPL, HWMON and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
 	- WARNING: Output may become very big when measured regions run for a long time.
+
+* `export MERIC_SAMPLING_FREQUENCY=<sampling frequency in Hz>`
+	- If the energy measurement system provides power samples, MERIC will attempt to collect the samples at specified frequency.
+	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON and NVML) to avoid unnecessary oversampling (and associated overhead).
+	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as GH200).
 
 * `export MERIC_DEBUG=1`
 	- Uses HDEEM-S and HDEEM-C energy measurement at the same time.

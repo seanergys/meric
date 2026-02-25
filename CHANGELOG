@@ -1,5 +1,10 @@
 ### XX.XX.XXXX #################################################################
+  - python module added support for command line arguments parsing for main region name
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
+  - Change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
+  - Solved Blade error
+  - No need to store power samples to evaluate energy consumption from HWMON power sampling
+  - MERIC does no longer recognize power monitoring systems HWMON-S and HWMON-C, but only unified HWMON
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files

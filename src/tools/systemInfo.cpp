@@ -1250,7 +1250,7 @@ void listEnergySystemsWithDomains()
 	if (meric::RAPL::isAvailable())
 	{
 		meric::RAPL::init(false);
-		std::cout << "\tRAPL:";
+		std::cout << "\tRAPL: ";
 		meric::RAPL::CounterRecord_t counter_values;
 		meric::RAPL::getCounterValues(counter_values);
 		for (const auto &domain : counter_values)
@@ -1265,12 +1265,12 @@ void listEnergySystemsWithDomains()
 	}
 
 #ifdef HAVE_HDEEM_H
-	std::cout << "\tHDEEM:";
+	std::cout << "\tHDEEM: ";
 	systems++;
 #endif
 
 #ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-	std::cout << "\tEXAMON:";
+	std::cout << "\tEXAMON: ";
 	systems++;
 #endif
 
@@ -1314,7 +1314,7 @@ void listEnergySystemsWithDomains()
 #endif
 
 #ifdef HAVE_OCC
-	std::cout << "\tOCC:";
+	std::cout << "\tOCC: ";
 	systems++;
 #endif
 

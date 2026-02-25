@@ -15,6 +15,7 @@
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
 #include "../basis/json.h"
+#include "../basis/cpu_affinity_map.h"
 #include "../store/samplesstore.h"
 #include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
@@ -30,8 +31,6 @@
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
 #include "../wrapper/hwmonwrapper.h"
-
-#include "cpu_affinity_map.h"
 
 namespace meric
 {
@@ -528,9 +527,10 @@ namespace meric
 					n = candidate.find_first_of(".");
 					if (n != std::string::npos)
 						candidate = candidate.substr(0, n);
-
 					const bool ok = !candidate.empty() && std::all_of(candidate.begin(), candidate.end(), [](char c)
-																	  { return std::isalnum(static_cast<unsigned char>(c)); });
+																	  {
+												  const unsigned char uc = static_cast<unsigned char>(c);
+												  return std::isalnum(uc) || c == '_' || c == '-'; });
 					if (ok)
 						_mainRegion = candidate;
 				}
@@ -571,7 +571,8 @@ namespace meric
 		static bool DETAILED;
 		static bool AGGREGATE;
 		static bool DEBUG;
-		static double SAMPLES;
+		static bool SAMPLES;
+		static double SAMPLING_FREQUENCY;
 		static bool IGNORE;
 		static bool HDF5;
 		static int MODE;
