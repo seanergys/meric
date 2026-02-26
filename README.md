@@ -28,8 +28,9 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
  8. [Content of test folder and example application run](https://code.it4i.cz/energy-efficiency/meric-suite/meric#8-content-of-test-folder-and-example-application-run)
  9. [Analysis of MERIC output files](https://code.it4i.cz/energy-efficiency/meric-suite/meric#9-analysis-of-meric-output-files)
 10. [MERIC with a Fortran code](https://code.it4i.cz/energy-efficiency/meric-suite/meric#10-meric-with-a-fortran-code)
-11. [Command line utilities](https://code.it4i.cz/energy-efficiency/meric-suite/meric#11-command-line-utilities)
-12. [Acknowledgment](https://code.it4i.cz/energy-efficiency/meric-suite/meric#12-acknowledgment)
+11. [MERIC with a Python code](https://code.it4i.cz/energy-efficiency/meric-suite/meric#10-meric-with-a-python-code)
+12. [Command line utilities](https://code.it4i.cz/energy-efficiency/meric-suite/meric#12-command-line-utilities)
+13. [Acknowledgment](https://code.it4i.cz/energy-efficiency/meric-suite/meric#13-acknowledgment)
 
 
 <!--- dev branch links
@@ -612,7 +613,10 @@ There are Fortran module and interface in the include directory. To instrument a
 
 To allow MERIC manual instrumentation in your Fortran application, add `use meric` command to your program. For the MERIC functions user should use keyword `call` as usual for Fortran functions. Since in Fortran is a problem with C `const *char` all the region names must be ended with `//char(0)` (e.g. `call MERIC_MeasureStart("RegionName"//char(0))`). MERIC repository contains a Fortran code example `test/fort_test.f90` to show how the API can be used.
 
-<!---
+--------------------------------------------------------------------------------
+#      11] MERIC with a Python code                                           #
+--------------------------------------------------------------------------------
+
 ### Python binding
 
 There is Python module in the `lib` directory named libmericpy.so and libmericmpipy.so.
@@ -662,10 +666,10 @@ FUNCTIONS
         Stop one region and start another, return stop duration
 
 ```
--->
+
 
 --------------------------------------------------------------------------------
-#     11] Command line utilities                                               #
+#     12] Command line utilities                                               #
 --------------------------------------------------------------------------------
 ## systemInfo ##
  - Provides basic information about the CPU and GPUs (if available).
@@ -861,7 +865,7 @@ mv "$out_file" "mericStaticMeasurements/$nnodes/$out_file"
 ```
 
 --------------------------------------------------------------------------------
-#     12] Acknowledgment                                                       #
+#     13] Acknowledgment                                                       #
 --------------------------------------------------------------------------------
 MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
 Please, open an issue, if you meet any problem. 
