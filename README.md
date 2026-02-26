@@ -28,7 +28,7 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
  8. [Content of test folder and example application run](https://code.it4i.cz/energy-efficiency/meric-suite/meric#8-content-of-test-folder-and-example-application-run)
  9. [Analysis of MERIC output files](https://code.it4i.cz/energy-efficiency/meric-suite/meric#9-analysis-of-meric-output-files)
 10. [MERIC with a Fortran code](https://code.it4i.cz/energy-efficiency/meric-suite/meric#10-meric-with-a-fortran-code)
-11. [MERIC with a Python code](https://code.it4i.cz/energy-efficiency/meric-suite/meric#10-meric-with-a-python-code)
+11. [MERIC with a Python code](https://code.it4i.cz/energy-efficiency/meric-suite/meric#11-meric-with-a-python-code)
 12. [Command line utilities](https://code.it4i.cz/energy-efficiency/meric-suite/meric#12-command-line-utilities)
 13. [Acknowledgment](https://code.it4i.cz/energy-efficiency/meric-suite/meric#13-acknowledgment)
 
