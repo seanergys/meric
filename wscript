@@ -2,6 +2,7 @@
 from waflib import Logs
 import os, shutil, copy, re, platform
 import subprocess
+from subprocess import DEVNULL
 
 def getCPUvendor():
 	vendor = ""
@@ -101,7 +102,7 @@ def configure(ctx):
 	if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
 		MSRSAFEavailable = True
 		ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
-		ctx.check_cxx(msg='Checking for module msr_safe', always=True)
+		ctx.check_cxx(msg='Checking for module msr_safe')
 	
 	# check for OCC
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
@@ -111,6 +112,23 @@ def configure(ctx):
 	# check for sysfs rapl.
 	if os.access("/sys/class/powercap/intel-rapl", os.R_OK):
 		ctx.env.append_unique("DEFINES", [ "HAVE_SYSFS_RAPL=1" ])
+	
+	# check for pybind11 - necessary to generate Python wrapper
+	try:
+		executable = "python"
+		if not shutil.which(executable):
+			executable +="3"
+			if not shutil.which(executable):
+				executable = ""
+		
+		# read pybind11 includes from the Python
+		pybindIncludes = [ i for i in subprocess.check_output([executable, '-m', 'pybind11', '--includes'], stderr=DEVNULL).decode().split() if i.startswith('-I')]
+		ctx.env.append_unique("CXXFLAGS",pybindIncludes)
+		ctx.check_cxx(msg='Checking for pybind11')
+		ctx.env["PYBIND"] = 1
+	except:
+		ctx.check_cxx(fragment='#error', msg='Checking for pybind11', errmsg='not found', mandatory=False)
+		ctx.env["PYBIND"] = 0
 	
 	# check for HW-tuning software
 	if not ctx.options.sbi:
@@ -347,6 +365,29 @@ def build(ctx):
 			use          = "basis",
 			install_path = "${PREFIX}/lib"
 		)
+		
+		# Python wrapper
+		if ctx.env.PYBIND:
+			#MERIC Python
+			ctx.shlib(
+				source       =
+					ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
+					ctx.path.ant_glob('src/meric/shared/*.cpp') + 
+					ctx.path.ant_glob('src/store/*.cpp'),
+				target       = 'mericpy',
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				install_path = "${PREFIX}/lib"
+			)
+
+			#TIMEPROF Python
+			ctx.shlib(
+				source       = 
+					ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
+					ctx.path.ant_glob('src/timeprof/*.cpp'),
+				target       = "timeprofpy",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				install_path = "${PREFIX}/lib"
+			)
 		suffix=""
 	else:
 		suffix="only"
@@ -393,6 +434,32 @@ def build(ctx):
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
+	
+	# Python wrapper
+	if ctx.env.PYBIND:
+		#MERIC-Python Wrapper
+		ctx.shlib(
+			source       =
+				ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + #TODO why using find_dir ?
+				ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
+				ctx.path.ant_glob('src/store/*.cpp'),
+			target       = 'mericmpipy',
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			install_path = "${PREFIX}/lib",
+			env          = ctx.all_envs["mpi"]
+		)
+	
+		#TIMEPROF Python Wrapper
+		ctx.shlib(
+			source       = 
+				ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
+				ctx.path.ant_glob('src/timeprof/*.cpp'),
+			target       = "timeprofmpipy",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			install_path = "${PREFIX}/lib",
+			env          = ctx.all_envs["mpi"]
+		)
+
 
 ################################################################################
 def options(opt):
