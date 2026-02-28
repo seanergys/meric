@@ -2,6 +2,7 @@
 from waflib import Logs
 import os, shutil, copy, re, platform
 import subprocess
+from subprocess import DEVNULL
 
 def getCPUvendor():
 	vendor = ""
@@ -101,7 +102,7 @@ def configure(ctx):
 	if os.access("/dev/cpu/0/msr_safe", os.R_OK) and os.access("/dev/cpu/0/msr_safe", os.W_OK):
 		MSRSAFEavailable = True
 		ctx.env.append_unique("DEFINES", [ "HAVE_MSR_SAFE=1" ])
-		ctx.check_cxx(msg='Checking for module msr_safe', always=True)
+		ctx.check_cxx(msg='Checking for module msr_safe')
 	
 	# check for OCC
 	if os.access("/sys/firmware/opal/exports/occ_inband_sensors", os.R_OK):
@@ -111,6 +112,23 @@ def configure(ctx):
 	# check for sysfs rapl.
 	if os.access("/sys/class/powercap/intel-rapl", os.R_OK):
 		ctx.env.append_unique("DEFINES", [ "HAVE_SYSFS_RAPL=1" ])
+	
+	# check for pybind11 - necessary to generate Python wrapper
+	try:
+		executable = "python"
+		if not shutil.which(executable):
+			executable +="3"
+			if not shutil.which(executable):
+				executable = ""
+		
+		# read pybind11 includes from the Python
+		pybindIncludes = [ i for i in subprocess.check_output([executable, '-m', 'pybind11', '--includes'], stderr=DEVNULL).decode().split() if i.startswith('-I')]
+		ctx.env.append_unique("CXXFLAGS",pybindIncludes)
+		ctx.check_cxx(msg='Checking for pybind11')
+		ctx.env["PYBIND"] = 1
+	except:
+		ctx.check_cxx(fragment='#error', msg='Checking for pybind11', errmsg='not found', mandatory=False)
+		ctx.env["PYBIND"] = 0
 	
 	# check for HW-tuning software
 	if not ctx.options.sbi:
@@ -132,8 +150,12 @@ def configure(ctx):
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
 		
-		# check for energy measurment systems
-		if (not ctx.check_cxx(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False) or not ctx.check_cxx(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)):
+		have_freeipmi = ctx.check_cxx(header_name="freeipmi/freeipmi.h", lib="freeipmi", uselib_store="freeipmi", execute=False, mandatory=False)
+		if have_freeipmi:
+			have_hdeem = ctx.check_cxx(header_name="hdeem.h", lib=["hdeem", "freeipmi"], uselib_store="hdeem", execute=False, mandatory=False)
+		else:
+			have_hdeem = ctx.check_cxx(header_name="hdeem.h", lib="hdeem", uselib_store="hdeem", execute=False, mandatory=False)
+		if (not have_hdeem) or (not have_freeipmi):
 			# missing include <freeipmi/freeipmi.h>
 			ctx.env.append_unique("CXXFLAGS", [ "-I"+ctx.path.abspath()+"/include/"])
 		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
@@ -241,6 +263,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
@@ -263,6 +286,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
@@ -281,6 +305,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
+			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
@@ -340,6 +365,29 @@ def build(ctx):
 			use          = "basis",
 			install_path = "${PREFIX}/lib"
 		)
+		
+		# Python wrapper
+		if ctx.env.PYBIND:
+			#MERIC Python
+			ctx.shlib(
+				source       =
+					ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + 
+					ctx.path.ant_glob('src/meric/shared/*.cpp') + 
+					ctx.path.ant_glob('src/store/*.cpp'),
+				target       = 'mericpy',
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				install_path = "${PREFIX}/lib"
+			)
+
+			#TIMEPROF Python
+			ctx.shlib(
+				source       = 
+					ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
+					ctx.path.ant_glob('src/timeprof/*.cpp'),
+				target       = "timeprofpy",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				install_path = "${PREFIX}/lib"
+			)
 		suffix=""
 	else:
 		suffix="only"
@@ -386,6 +434,32 @@ def build(ctx):
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
+	
+	# Python wrapper
+	if ctx.env.PYBIND:
+		#MERIC-Python Wrapper
+		ctx.shlib(
+			source       =
+				ctx.path.find_dir('src/python').ant_glob('meric_pybind.cpp') + #TODO why using find_dir ?
+				ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
+				ctx.path.ant_glob('src/store/*.cpp'),
+			target       = 'mericmpipy',
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			install_path = "${PREFIX}/lib",
+			env          = ctx.all_envs["mpi"]
+		)
+	
+		#TIMEPROF Python Wrapper
+		ctx.shlib(
+			source       = 
+				ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
+				ctx.path.ant_glob('src/timeprof/*.cpp'),
+			target       = "timeprofmpipy",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			install_path = "${PREFIX}/lib",
+			env          = ctx.all_envs["mpi"]
+		)
+
 
 ################################################################################
 def options(opt):

@@ -146,56 +146,61 @@ int JETSON::getSamples()					//TODO rename to loadSamples()
 	return 0;
 }
 
-std::string JETSON::getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[])	//TODO getRegionData
+std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &record)	//TODO getRegionData
 {
-	*firstVR    = 0;
-	*lastVR     = 0;
-	*firstBlade = 0;
-	*lastBlade  = 0;
-	*energy     = 0.0;
-	*minWatts   = 0.0;
-	*maxWatts   = 0.0;
+	
 
 	if (_samples.size() == 0)
 		return "";
 
-	*firstBlade = std::ceil((startTime - _samples[0].timestamp) * FREQUENCY);
-	if (_samples.size() <= *firstBlade)
-		*firstBlade = _samples.size()-1;
-	while (_samples[*firstBlade].timestamp > startTime)
+	size_t firstBlade = std::ceil((startTime - _samples[0].timestamp) * FREQUENCY);
+	if (_samples.size() <= firstBlade)
+		firstBlade = _samples.size()-1;
+	while (_samples[firstBlade].timestamp > startTime)
 	{
-		*firstBlade -= std::ceil(_samples[*firstBlade].timestamp - startTime);
-		if (*firstBlade <= 0)
+		firstBlade -= std::ceil(_samples[firstBlade].timestamp - startTime);
+		if (firstBlade <= 0)
 		{
-			*firstBlade = 0;
+			firstBlade = 0;
 			break;
 		}
 	}
-	while (_samples[*firstBlade].timestamp < startTime)
-		*firstBlade += 1;
-	*lastBlade  = std::floor(duration * FREQUENCY) + *firstBlade;
-	if (*lastBlade > _samples.size())
-		*lastBlade = _samples.size()-1;
+	while (_samples[firstBlade].timestamp < startTime)
+		firstBlade += 1;
+	size_t lastBlade  = std::floor(duration * FREQUENCY) + firstBlade;
+	if (lastBlade > _samples.size())
+		lastBlade = _samples.size()-1;
 	const double endTime = startTime + duration;
-	while (_samples[*lastBlade].timestamp > endTime)
-		*lastBlade -= std::ceil(_samples[*lastBlade].timestamp - endTime) * FREQUENCY;
-	if (*lastBlade < *firstBlade)
-		*lastBlade = *firstBlade;
-	while (*lastBlade < _samples.size() && _samples[*lastBlade].timestamp < endTime)
-		*lastBlade += 1;
+	while (_samples[lastBlade].timestamp > endTime)
+		lastBlade -= std::ceil(_samples[lastBlade].timestamp - endTime) * FREQUENCY;
+	if (lastBlade < firstBlade)
+		lastBlade = firstBlade;
+	while (lastBlade < _samples.size() && _samples[lastBlade].timestamp < endTime)
+		lastBlade += 1;
 
-	if (*lastBlade == _samples.size())
+	if (lastBlade == _samples.size())
 	{
-		*lastBlade = std::numeric_limits<size_t>::max();
+		lastBlade = std::numeric_limits<size_t>::max();
 		return "MERIC ERROR: missing ARM samples for region ";
 	}
 
-	if(*lastBlade > 0 && *lastBlade > *firstBlade)
+	for (size_t sensorId = 0; sensorId < JETSON::PROBE_NUMBER - 1; sensorId++)
 	{
-		for (size_t it = *firstBlade; it < *lastBlade; it++)
+		record.push_back(SamplerData_t(SourceInfo_t(SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT)));
+		record.back().id = sensorId;
+		record.back().name = vrSensorLabel[sensorId];
+		record.back().first = firstBlade;
+		record.back().last  = lastBlade;
+	}
+
+	if(lastBlade > 0 && lastBlade > firstBlade)
+	{
+		for (size_t it = firstBlade; it < lastBlade; it++)
 		{
 			for (size_t sensorId = 0; sensorId < JETSON::PROBE_NUMBER - 1; sensorId++)
 			{
+				SamplerData_t &sensor = record[sensorId];
+
 				double valTmp = 0.0;
 				switch(sensorId)
 				{
@@ -216,17 +221,19 @@ std::string JETSON::getData(double startTime, double duration, size_t *firstBlad
 					}
 				}
 				
-				if (valTmp > maxWatts[sensorId])
-					maxWatts[sensorId] = valTmp;
-				else if (valTmp < minWatts[sensorId])
-					minWatts[sensorId] = valTmp;
-				energy[sensorId] += valTmp;
+				if (valTmp > sensor.max)
+					sensor.max = valTmp;
+				else if (valTmp < sensor.min)
+					sensor.min = valTmp;
+				sensor.energy += valTmp;
 			}
 		}
 	}else
 	{
+		/*
 		*firstBlade = std::numeric_limits<size_t>::max();
 		*lastBlade  = std::numeric_limits<size_t>::max();
+		*/
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	return "";

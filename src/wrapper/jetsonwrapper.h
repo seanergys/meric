@@ -3,6 +3,7 @@
 #define SRC_WRAPPER_JETSONWRAPPER_H_
 
 #include "../basis/utils.h"
+#include "basewrapper.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -26,7 +27,7 @@ struct jetsonSample {
 	double CPU;
 };
 
-class JETSON {
+class JETSON : public BaseWrapper {
 
 public:
 
@@ -38,11 +39,13 @@ public:
 	static void init();
 	static int getSamples();
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples);
-	static std::string getData(double startTime, double duration, size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR, double energy[], double minWatts[], double maxWatts[]);
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
 	static std::string getSourceLabel() {	return "JETSON";};
+	static size_t getSamplerCount() { return PROBE_NUMBER; }
+    static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
 
 private:
 	static std::string filename;

@@ -368,10 +368,11 @@ void generateDefaultWrapperConfigFile()
 #elif defined HAVE_MSR_CORE_H
 			+ "\t\t\"COUNTERS\" : \"msr\",\n"
 #endif
-			+ "\t\t\"AGGREGATE\"  : 1,\n"
-			+ "\t\t\"DETAILED\"   : 1,\n"
-			+ "\t\t\"SAMPLES\"    : 0,\n"
-			+ "\t\t\"BARRIERS\"   : \"all\",\n"
+			+ "\t\t\"AGGREGATE\"          : 1,\n"
+			+ "\t\t\"DETAILED\"           : 1,\n"
+			+ "\t\t\"SAMPLES\"            : 0,\n"
+			+ "\t\t\"SAMPLING_FREQUENCY\" : 0.0,\n"
+			+ "\t\t\"BARRIERS\"   		  : \"all\",\n"
 //			+ "\t\t\"OUTPUT_FILENAME\" : \"\",\n"
 			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
 			+ "\t}\n";
@@ -870,6 +871,8 @@ int readParameters(int argc, char **argv)
 							setenv("MERIC_DETAILED", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "SAMPLES")
 							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
+						else if (std::string(meric->name->string) == "SAMPLING_FREQUENCY")
+							setenv("MERIC_SAMPLING_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "BARRIERS")
 							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "OUTPUT_FILENAME")

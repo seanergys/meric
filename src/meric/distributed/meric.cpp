@@ -73,20 +73,20 @@ DistributedMeric::DistributedMeric()
 			}
 			else
 			{
-				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0, !_MPInodeRank));
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
 		else
 		{
 			if (Meric::AGGREGATE)
 			{
-				if (Meric::SAMPLES != 0.0)
+				if (Meric::SAMPLES)
 					std::cerr << "MERIC WARNING: HDEEM power samples are available in non-aggregate mode only\n";
 				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HDEEM>>(_storingProcs, !_MPInodeRank));
 			}
 			else
 			{
-				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+				_storeList.push_back(new SamplesStore<HDEEM>(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
 	}
@@ -106,7 +106,7 @@ DistributedMeric::DistributedMeric()
 			}
 			else
 			{
-				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES != 0.0, !_MPInodeRank));
+				_storeList.push_back(new TimeEnergyStore(Meric::SAMPLES, !_MPInodeRank));
 			}
 		}
 		else
@@ -132,7 +132,7 @@ DistributedMeric::DistributedMeric()
 		else
 		{
 			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
@@ -157,7 +157,7 @@ DistributedMeric::DistributedMeric()
 		else
 		{
 			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 	
@@ -183,7 +183,7 @@ DistributedMeric::DistributedMeric()
 		else
 		{
 			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 		
@@ -195,7 +195,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_THUNDER) != MONITORS.end())
@@ -212,7 +212,7 @@ DistributedMeric::DistributedMeric()
 		}
 		else
 		{
-			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES != 0.0, !_MPInodeRank));
+			_storeList.push_back(new SamplesStore<DAVIDE>(Meric::SAMPLES, !_MPInodeRank));
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_A64FX) != MONITORS.end())
@@ -355,19 +355,19 @@ DistributedMeric::DistributedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		RAPL::init(Meric::DETAILED);
+		RAPL::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		RAPL::start(_startTime, Meric::SAMPLES);
 	}
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		HWMON::init(Meric::DETAILED);
+		HWMON::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		HWMON::start(_startTime, Meric::SAMPLES);
 	}
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
-		NVML::start(_startTime, Meric::SAMPLES);
+		NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
 	}
 
 	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
@@ -405,6 +405,10 @@ DistributedMeric::~DistributedMeric()
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
 		NVML::close();
+	}
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
+	{
+		HWMON::close();
 	}
 
 	Environment::close();

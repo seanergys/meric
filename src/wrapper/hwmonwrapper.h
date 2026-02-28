@@ -20,6 +20,7 @@
 #include <dirent.h>
 
 #include "counters.h"
+#include "basewrapper.h"
 #include "../basis/sysfsutils.h"
 #include "../basis/async_utils.h"
 
@@ -28,7 +29,7 @@ using namespace HWMON_COUNTERS;
 namespace meric
 {
 
-    class HWMON
+    class HWMON : public BaseWrapper
     {
     public:
         typedef unsigned long long int RawCounterValue_t;
@@ -65,7 +66,7 @@ namespace meric
         typedef std::map<std::string, CounterValue_t> CounterRecord_t;
 
         // Counters interface
-        static void init(bool detailed);
+        static void init(bool detailed, double sampleFreqHz = 0.0);
         static void close();
 
         static void getCounterValues(CounterRecord_t &record);
@@ -86,21 +87,24 @@ namespace meric
 
         // Sampling iterface
         static const std::string SUM_ENERGY_LABEL;
-        static int PROBE_NUMBER;
-        static std::vector<std::string> vrSensorLabel;
 
-        static void start(timespec &time, double sampleFreqHz = 0.0);
+        static void start(timespec &time, bool storeSamples = false, double sampleFreqHz = 0.0);
         static void stop(timespec &time);
         static void initSamplers(bool detailed);
         static void closeSamplers();
         static int getSamples();
         static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
-        static std::string getData(double startTime, double duration,
-                                   size_t *firstBlade, size_t *lastBlade, size_t *firstVR, size_t *lastVR,
-                                   double energy[], double minWatts[], double maxWatts[]);
+        static std::string getData(double startTime, double duration, SamplerRecord_t &record);
         static void setTimeAdjustment(timespec &time) {}
         static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
         static void deleteSamples() {}
+        static size_t getSamplerCount() { return PROBE_NUMBER; }
+        static std::string getSamplerLabel(size_t id) { 
+            if(id > getSamplerCount())
+                return "";
+            
+            return vrSensorLabel[id]; 
+        }
 
         static bool isAvailable();
 
@@ -127,6 +131,9 @@ namespace meric
         template <typename F>
         static void MakeSources(const SourceDecl_t &sourceDecl, F &&f);
 
+        static int PROBE_NUMBER;
+        static std::vector<std::string> vrSensorLabel;
+
         static const std::string s_rootPath;
         static const std::vector<std::string> s_checkFiles;
 
@@ -134,7 +141,9 @@ namespace meric
         static SourceNameMap_t s_sourceByName;
         static std::vector<SourceDesc_t *> s_sourceById;
 
-        static std::chrono::nanoseconds s_overflowCheckPeriod;
+        static std::chrono::nanoseconds s_defaultSamplePeriod;
+        static std::chrono::nanoseconds s_minSamplePeriod;
+        static std::chrono::nanoseconds s_currentSamplePeriod;
         static std::atomic<bool> s_sampleStoreEnabled;
         static AsyncSampler<CounterRecord_t> s_asyncSampler;
     };
