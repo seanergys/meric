@@ -502,6 +502,13 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 * `export MERIC_OUTPUT_FILENAME="log"`
 	- Name of the output file is set automatically according specified values of the tuned system parameters, however this is a way how to add filename suffix.
 
+## Thread affinity management ##
+* `export MERIC_PIN_MODE=<thread pinning mode>`
+	- MERIC is capable of performing simple MPI-aware thread (OpenMP) to core pinning. The aim is to pin each thread to its own dedicated core (as long as "thread count" <= "core count") to allow per-core frequency tuning and per-thread/core measurement in some cases. Following pinning algorithms are available:
+	 - `default` = Maintains thread placement specified by the system (OpenMP, MPI, etc.), but pins each thread to a single core (when possible)
+	 - `close` = Pins threads sequentially to available cores
+	 - `spread` = Pins threads with step equal to CORE_COUNT / (THREAD_COUNT*RANK_COUNT), which can be used to spread threads between sockets etc.
+	 - `none` = Disables the thread pinning mechanism in MERIC (OpenMP/MPI/... settings are honored)
 
 --------------------------------------------------------------------------------
 #     8] Content of test folder and example application run                    #
