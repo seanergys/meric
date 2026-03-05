@@ -115,6 +115,12 @@ void PERFEVENT::init(bool detailed)
 			PMU_TYPES[PMUname] = getPMUtype(PMUname);
 		}
 	}
+
+	if(CPUname == "Fujitsu A64FX")
+	{
+		PERFEVENT_COUNTERS::counterMultipliers[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_SP] = 4;
+		PERFEVENT_COUNTERS::counterMultipliers[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_DP] = 4;
+	}
 	#endif
 
 	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
@@ -144,7 +150,7 @@ void PERFEVENT::init(bool detailed)
 	}
 
 	#ifdef _AMD_
-	//Initialization of monitoring of supported AMD counters
+	//Initialization of monitoring of supported AMD performance counters
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
 		//(per core)
@@ -179,7 +185,7 @@ void PERFEVENT::init(bool detailed)
 	}
 	
 	#elif defined _INTEL_
-	//Initialization of monitoring of supported Intel counters
+	//Initialization of monitoring of supported Intel performance counters
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
 		//(per core)
@@ -248,7 +254,15 @@ void PERFEVENT::init(bool detailed)
 
 			int core = Environment::mapCoresToSocket[i][j];
 
-			if(CPUname == "ARMv8 Neoverse V2")
+			if(CPUname == "Fujitsu A64FX")
+			{
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_NEON + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_NEON], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_SP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_SP], core);
+				countersFd[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_DP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_DP], core);
+			}
+			else if(CPUname == "ARMv8 Neoverse V2")
 			{
 				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP], core);
 				countersFd[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE + suffixCoreIdx] = openCounter(PERF_TYPE_RAW, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE], core);
@@ -486,7 +500,7 @@ long PERFEVENT::openCounter(__u32 type, __u64 config, int cpu)
 		struct perf_event_attr attr;
 		memset(&attr, 0, sizeof(struct perf_event_attr));
 		attr.size = sizeof(struct perf_event_attr);
-		attr.inherit = 1;
+		attr.inherit = 0;
 		attr.type = type;
 		attr.config = config;
 		attr.disabled = 1;
@@ -626,7 +640,15 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
 
 	#elif defined _ARM_
-	if(CPUname == "ARMv8 Neoverse V2")
+	if(CPUname == "Fujitsu A64FX")
+	{
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_NEON].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_SP].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_DP].reserve(CORES_PER_NODE);
+	}
+	else if(CPUname == "ARMv8 Neoverse V2")
 	{
 		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP].reserve(CORES_PER_NODE);
 		counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SVE].reserve(CORES_PER_NODE);
@@ -832,7 +854,26 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
 			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-			if(CPUname == "ARMv8 Neoverse V2")
+			if(CPUname == "Fujitsu A64FX")
+			{
+				unsigned long long int flopsScalarNeon = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON][coreIdx];
+				unsigned long long int flopsSVESP = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_SP][coreIdx];
+				unsigned long long int flopsSVEDP = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE_DP][coreIdx];
+				unsigned long long int flops = flopsScalarNeon + flopsSVESP + flopsSVEDP;
+
+				ratios["CPU_FLOP"+suffixCoreIdx+" [FLOP/s]"] = flops/runtime;
+
+				unsigned long long int instructionsScalarFp = counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_SCALAR_FP][coreIdx];
+				unsigned long long int instructionsNeon = counterValues[PERFEVENT_COUNTERS::ARM_CPU_INSTS_NEON][coreIdx];
+				unsigned long long int instructionsSVEfp = (flopsSVESP/16) + (flopsSVEDP/8);
+
+				unsigned long long int instructions = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS][coreIdx];
+
+				ratios["CPU_INSTRUCTION SCALAR_FP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsScalarFp/(double)instructions)*100 : 0;
+				ratios["CPU_INSTRUCTION VEC_NEON/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsNeon/(double)instructions)*100 : 0;
+				ratios["CPU_INSTRUCTION VEC_SVE_FP/ALL"+suffixCoreIdx+" [%]"] = instructions ? (instructionsSVEfp/(double)instructions)*100 : 0;
+			}
+			else if(CPUname == "ARMv8 Neoverse V2")
 			{
 				unsigned long long int flopsScalarNeon = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SCALAR_NEON][coreIdx];
 				unsigned long long int flopsSVE = counterValues[PERFEVENT_COUNTERS::ARM_CPU_FLOPS_SVE][coreIdx];
