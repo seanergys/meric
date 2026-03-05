@@ -5,6 +5,7 @@
   - Solved Blade error
   - No need to store power samples to evaluate energy consumption from HWMON power sampling
   - MERIC does no longer recognize power monitoring systems HWMON-S and HWMON-C, but only unified HWMON
+  - support for monitoring of performance counters on Fujitsu A64FX using perfevent and evaluation of corresponding metrics
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
