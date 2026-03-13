@@ -126,13 +126,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, RAPL::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<RAPL>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<RAPL>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, RAPL::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
+			}
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
@@ -151,13 +163,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<NVML>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<NVML>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
+			}
 		}
 	}
 	
@@ -177,13 +201,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<HWMON, HWMON::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<HWMON, HWMON::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
+			}
 		}
 	}
 		
@@ -353,19 +389,19 @@ DistributedMeric::DistributedMeric()
 		PAPI::init();
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end() && !_MPInodeRank)
 	{
 		RAPL::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		RAPL::start(_startTime, Meric::SAMPLES);
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end() && !_MPInodeRank)
 	{
 		HWMON::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		HWMON::start(_startTime, Meric::SAMPLES);
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end() && !_MPInodeRank)
 	{
 		NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
 	}

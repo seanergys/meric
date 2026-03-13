@@ -1217,7 +1217,7 @@ protected:
             close();
         }
 
-        bool open(uint32_t type, uint64_t config, int cpu)
+        int open(uint32_t type, uint64_t config, int cpu)
         {
             perf_event_attr event_attrib;
             std::memset(&event_attrib, 0, sizeof(perf_event_attr));
@@ -1231,7 +1231,8 @@ protected:
             event_attrib.inherit     = 1;
 
             fd = syscall(__NR_perf_event_open, &event_attrib, pid_t(-1), cpu, int(-1), 0);
-            return (fd >= 0);
+
+            return (fd >= 0) ? 0 : errno;
         }
 
         void close()
@@ -1294,12 +1295,17 @@ void RAPL_PERF_EVENT::init(bool detailed)
             return true;
         }
 
-        if(!res.first->second.open(def.type, def.config, cpu))
+        int status = res.first->second.open(def.type, def.config, cpu);
+
+        if(status != 0)
         {
-            std::cerr << "MERIC ERROR: Failed to open perf event" 
-                      << join(def.name.begin(), def.name.end(), std::string("/")) 
-                      << " (" << def.type << ":0x" << std::hex << def.config << std::dec << ")"
-                      << " for " << fullName << std::endl;
+            MERIC_INFO << "MERIC ERROR: Failed to open (errno: " << status << ") perf event " 
+                    << "\"" << def.label << "\""
+                    << " (" << def.type << ":0x" << std::hex << def.config << std::dec << ")"
+                    << " for " << fullName << std::endl;
+
+            counterDesc.erase(res.first);
+
             return false;
         }
 
@@ -1314,24 +1320,41 @@ void RAPL_PERF_EVENT::init(bool detailed)
 
     auto FindCounterByName = [&](CounterDef_t &def) {
         const std::string basePath = "/sys/bus/event_source/devices/";
-        if(def.name.size() < 2)
-        {
+        
+        if(def.names.size() == 0)
             return true;
-        }
-        if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/type", def.type))
-        {
-            return false;
-        }
-        std::string event;
-        if(!sysfsutils::ReadValue(basePath + "/" + def.name[0] + "/events/" + def.name[1], event))
-        {
-            return false;
-        }
-        if(sscanf(event.c_str(), "event=%lx", &def.config) < 1)
-        {
-            return false;
-        }
-        return true;
+        
+        bool found = false;
+        
+        sysfsutils::ScanTree(basePath, 3, [&def, &found](const std::string &name, const std::string &path) {
+            if(def.names.count(name) == 0)
+                return;
+            
+            std::vector<std::string> pathParts;
+            explode(path, '/', std::back_inserter(pathParts));
+            
+            std::string typePath = join(pathParts.begin(), pathParts.end() - 2, std::string("/")) + "/type";
+            
+            if(!sysfsutils::ReadValue(typePath, def.type))
+            {
+                return;
+            }
+            
+            std::string event;
+            if(!sysfsutils::ReadValue(path, event))
+            {
+                return;
+            }
+            
+            if(sscanf(event.c_str(), "event=%lx", &def.config) < 1)
+            {
+                return;
+            }
+            
+            found = true;
+        });
+        
+        return found;
     };
 
     for(const auto &counterDef: counterDefs)
