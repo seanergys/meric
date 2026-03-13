@@ -46,27 +46,50 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
+		}
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<OCC, uint64_t, uint64_t>());
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
-		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
+		}
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<ROCM, uint64_t, double>());
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
+		}
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
