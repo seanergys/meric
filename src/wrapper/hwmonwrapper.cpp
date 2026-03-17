@@ -527,9 +527,8 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
             continue;
         }
 
-        record.push_back(SamplerData_t());
-
         const SourceDesc_t &desc = *s_sourceById[i];
+        record.push_back(SamplerData_t(desc.info));
         SamplerData_t &data = record.back();
         data.id = i;
         data.name = desc.fullName;

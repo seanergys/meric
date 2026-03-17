@@ -153,6 +153,11 @@ void *json_write_minified(const struct json_value_s *value, size_t *out_size);
 void *json_write_pretty(const struct json_value_s *value, const char *indent,
                         const char *newline, size_t *out_size);
 
+
+// Helper function to find a value in a JSON object by key
+struct json_value_s *find_value_in_object(struct json_object_s *object, const char *key); 
+
+
 // The various types JSON values can be. Used to identify what a value is
 enum json_type_e {
   json_type_string,

@@ -51,15 +51,16 @@ endif
 #X86ADAPT=-lx86_adapt
 #CPUFREQ=--lcpufreq
 #CPUFREQ=-L/lib64/ -lcpupower
-#PAPI=-lpapi
+# PAPI=-lpapi
 #RESTCLIENT= -lrestclient-cpp
 #NUMA=-lnuma
 #NVML=-lnvidia-ml
 #ESMI=-le_smi64
+SNMP= -lnetsnmp
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
 MERIC=-L../lib -I../include 
-LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
+LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(SNMP) $(CXX_FLAGS)
 BINARIES=plainTest test test_mpi blasTest samples sleepTest fortTest overHead
 ################################################################################
 MKL_PATHS=

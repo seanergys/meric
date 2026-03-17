@@ -31,14 +31,15 @@
 #include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
 #include "../wrapper/hwmonwrapper.h"
+#include "../wrapper/e4wrapper.h"
 
 namespace meric
 {
 
-	class Meric
-	{
-	public:
-		static void readRegionParameters();
+class Meric {
+public:
+	static void refreshConfigFromEnv();
+	static void readRegionParameters();
 
 		virtual void start(const std::string &region)
 		{
@@ -576,6 +577,7 @@ namespace meric
 		static bool IGNORE;
 		static bool HDF5;
 		static int MODE;
+		static std::string MERIC_E4MACHINE_TO_MONITOR;
 		static std::string COUNTERS;
 		static std::string OUTPUT_DIR;
 		static std::string OUTPUT_FILENAME;

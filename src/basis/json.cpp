@@ -29,6 +29,7 @@
 #include "json.h"
 
 #include <stdlib.h>
+#include <cstring>
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -1773,6 +1774,19 @@ void *json_write_minified(const struct json_value_s *value, size_t *out_size) {
   return data;
 }
 
+json_value_s *find_value_in_object(json_object_s *object, const char *key)
+{
+	if (!object || !key)
+		return NULL;
+	for (json_object_element_s *elem = object->start; elem != NULL; elem = elem->next)
+	{
+		if (strcmp(elem->name->string, key) == 0)
+		{
+			return elem->value;
+		}
+	}
+	return NULL;
+}
 static int json_write_pretty_get_value_size(const struct json_value_s *value,
                                             size_t depth, size_t indent_size,
                                             size_t newline_size, size_t *size);

@@ -248,6 +248,8 @@ struct CFG_algorithm : public CFGbase {
 		value(meric::MODE_RAPL)
 #elif defined HAVE_NVML_H
 		value(meric::MODE_NVML)
+#elif defined HAVE_E4_H
+		value(meric::MODE_PDU)
 #elif defined HAVE_OCC
 		value(meric::MODE_OCC)
 #elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H

@@ -90,8 +90,7 @@ public:
 		mutils::createDir(outputDir);
 		dataInfoFileName = outputDir + "/measurementInfo.json";
 		
-		char hostname[HOST_NAME_MAX];
-		gethostname(hostname, HOST_NAME_MAX);
+		std::string hostname = mutils::getHostnameShort();
 		time_t now_t = time(0);
 		std::string now_s = std::string(ctime(&now_t));
 		now_s.pop_back();
@@ -99,7 +98,7 @@ public:
 		struct stat info;
 		if(stat(dataInfoFileName.c_str(), &info ) != 0)
 		{
-			measurementInfo = {0, now_s, std::string(hostname), (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
+			measurementInfo = {0, now_s, hostname, (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
 		}
 		else
 		{
@@ -121,14 +120,14 @@ public:
 			if (root ==  NULL)
 			{
 				std::cerr << "MERIC WARNING: empty or invalid input "<< dataInfoFileName <<"\n";
-				measurementInfo = {0, now_s, std::string(hostname), (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
+				measurementInfo = {0, now_s, hostname, (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
 			}
 
 			struct json_object_element_s* data = ((struct json_object_s*)root->payload)->start;
 			if (data == NULL)
 			{
 				free(root);
-				measurementInfo = {0, now_s, std::string(hostname), (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
+				measurementInfo = {0, now_s, hostname, (prefix.size() ? "node_" : "") + outputFilenameInfo, ""};
 			}
 			else
 			{

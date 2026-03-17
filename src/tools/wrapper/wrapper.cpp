@@ -1500,9 +1500,8 @@ std::string constructConfigFileName(std::string regName, configuration config)	/
 
 	if (params.MPI)
 	{
-		char hostname[HOST_NAME_MAX];
-		gethostname(hostname, HOST_NAME_MAX);
-		cfgStr = std::string(hostname) +"_"+ cfgStr;
+		std::string hostname = meric::mutils::getHostnameShort();
+		cfgStr = hostname +"_"+ cfgStr;
 		//cfgStr = "cn6.barbora.it4i.cz_"+ cfgStr;
 	}
 	

@@ -184,6 +184,28 @@ DistributedMeric::DistributedMeric()
 			}
 		}
 	}
+
+	if(std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			if(Meric::SAMPLES){
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<E4>>(_storingProcs, !_MPInodeRank));
+			}
+			else{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<E4, E4::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
+		}
+		else
+		{
+			if(Meric::SAMPLES){
+				_storeList.push_back(new SamplesStore<E4>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else{
+				_storeList.push_back(new CountersStore<E4, E4::CounterValue_t, double>(!_MPInodeRank));
+			}
+		}
+	}
 	
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
@@ -327,6 +349,14 @@ DistributedMeric::DistributedMeric()
 		currentState.socket[socket] = defaultParameter;
 	}
 
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end() && !_MPInodeRank)
+	{
+		#ifdef HAVE_E4_PDU // needed to distinct future pdus
+			E4::init(Meric::MERIC_E4MACHINE_TO_MONITOR, Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
+			E4::start(_startTime, Meric::SAMPLES);
+		#endif
+	}
+	
 	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(
 		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
 		std::max(defaultParameter.nthreads, 1), _currentNode));
@@ -376,6 +406,7 @@ DistributedMeric::DistributedMeric()
 	{
 		A64FX::init();
 	}
+	 
 	
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called
@@ -433,6 +464,12 @@ DistributedMeric::~DistributedMeric()
 	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
+	}
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{
+		#ifdef HAVE_E4_PDU
+			E4::close();
+		#endif
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
