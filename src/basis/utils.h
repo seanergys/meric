@@ -12,6 +12,7 @@
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <unistd.h>
 #include <cstdint>
 
 #ifdef VERBOSE
@@ -96,6 +97,16 @@ struct mutils
 		}
 	}
 
+	static std::string trimWhitespace(const std::string& s) {
+		const char* ws = " \t\r\n";
+		const std::size_t start = s.find_first_not_of(ws);
+		if (start == std::string::npos) {
+			return "";
+		}
+		const std::size_t end = s.find_last_not_of(ws);
+		return s.substr(start, end - start + 1);
+	}
+
 	static timespec stringToTime(const std::string &data)
 	{
 		timespec time;
@@ -104,6 +115,18 @@ struct mutils
 		time.tv_sec = sec;
 		time.tv_nsec = nsec;
 		return time;
+	}
+
+	static std::string getHostnameShort()
+	{
+		char hostname[256];
+
+		if (gethostname(hostname, sizeof(hostname)) != 0) {
+			return "UNKNOWN";
+		}
+
+		std::string hostname_str{hostname};
+		return hostname_str.find(".") != std::string::npos ? hostname_str.substr(0, hostname_str.find(".")) : hostname_str;
 	}
 		
 	static void createDir(const std::string &dir)

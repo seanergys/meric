@@ -34,6 +34,8 @@ Ttype mutils::getenv(const std::string &param, Ttype defaultValue)
 	if (var != NULL)
 	{
 		std::stringstream ss(var);
+		if(ss.str().size() == 0)
+			return defaultValue;
 		ss >> value;
 		return value;
 	}

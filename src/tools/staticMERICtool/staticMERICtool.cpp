@@ -4,6 +4,7 @@
 #include "../../wrapper/a64fxwrapper.h"
 #include "../../wrapper/hwmonwrapper.h"
 #include "../../wrapper/rocmwrapper.h"
+#include "../../wrapper/e4wrapper.h"
 #include "../../basis/utils.h"
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -163,6 +164,143 @@ void measureEnergy<ROCM, uint64_t>(bool verbose, double timeNow)
 	EnergyRecords<ROCM, uint64_t>::recordTime.push_back(timeNow);
 }
 
+struct HWMON_S
+{
+	static timespec startTime; // this is dummy.
+	static timespec endTime;   // this is dummy.
+}; // dummy class to seperate from counting.
+
+timespec HWMON_S::startTime = {0, 0};
+timespec HWMON_S::endTime = {0, 0};
+
+// following will be called many times but init only once.
+
+//----------------------------------------------------------------------------//
+// E4 support for static tool (SNMP power sampling -> integrated energy)
+//----------------------------------------------------------------------------//
+
+struct E4_S
+{
+	static bool started;
+	static std::string nodeLabel;
+
+	static void init(bool detailed)
+	{
+		if (started)
+			return;
+		if (nodeLabel.empty())
+		{
+			nodeLabel = mutils::getHostnameShort();
+		}
+
+		E4::init(nodeLabel, detailed);
+		timespec ts;
+		E4::fillTime(ts);
+		// Default 1 Hz sampling to keep SNMP overhead low.
+		E4::start(ts, 1.0);
+		started = true;
+	}
+
+	static void close()
+	{
+		if (!started)
+			return;
+		E4::stop();
+		E4::close();
+		started = false;
+	}
+
+	static void getCounterValues(std::map<std::string, unsigned long long int> &record)
+	{
+		E4::getCounterValues(record);
+	}
+
+	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "")
+	{
+		return E4::getResultValue(startValue, stopValue, runtime, cumulative, counter, regionName);
+	}
+
+	static std::string getSummaryCounterName() { return E4::getSummaryCounterName(); }
+	static std::string getSourceLabel() { return E4::getSourceLabel(); }
+	static std::string getCounterLabel(std::string counter) { return E4::getCounterLabel(counter); }
+};
+
+bool E4_S::started = false;
+std::string E4_S::nodeLabel;
+
+template <>
+struct EnergyRecords<E4_S, unsigned long long int>
+{
+	static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
+	static std::vector<double> recordTime;
+
+	static void printValues(bool verbose)
+	{
+		if (recordTime.size() < 2)
+		{
+			std::cerr << "MERIC ERROR: Missing measurement samples\n";
+			E4_S::close();
+			exit(2);
+		}
+
+		std::map<std::string, double> record;
+		for (auto &kv : recordEnergy[0])
+		{
+			record[kv.first] = 0;
+		}
+
+		double summary = 0.0;
+		double runtime = recordTime.back() - recordTime[0];
+
+		for (int i = 1; i < (int)recordEnergy.size(); i++)
+		{
+			for (auto &kv : record)
+			{
+				int cumulative = 0;
+				double delta = E4_S::getResultValue(
+					recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first],
+					recordTime[i - 1] - recordTime[i], cumulative, kv.first);
+				record[kv.first] += delta;
+				if (cumulative > 0)
+				{
+					summary += delta;
+				}
+			}
+		}
+		summary += POWER_BASELINE * runtime;
+
+		if (verbose)
+		{
+			std::cout << "Runtime [s] = " << std::fixed << std::setprecision(3) << runtime << std::endl;
+			for (auto &kv : recordEnergy[0])
+			{
+				std::cout << E4_S::getCounterLabel(kv.first) << " = " << std::fixed << std::setprecision(3) << record[kv.first] << std::endl;
+			}
+			if (E4_S::getSummaryCounterName() != "")
+			{
+				std::cout << std::endl
+						  << std::fixed << std::setprecision(3) << E4_S::getSourceLabel() << " " << E4_S::getSummaryCounterName() << " = " << summary << "\n"
+						  << std::fixed << std::setprecision(3) << E4_S::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+			}
+		}
+		else
+		{
+			std::cout << std::fixed << std::setprecision(3) << summary << std::endl;
+		}
+
+		E4_S::close();
+	}
+
+	static void clear()
+	{
+		recordEnergy.clear();
+		recordTime.clear();
+	}
+};
+
+std::vector<std::map<std::string, unsigned long long int>> EnergyRecords<E4_S, unsigned long long int>::recordEnergy;
+std::vector<double> EnergyRecords<E4_S, unsigned long long int>::recordTime;
+
 void printHelp()
 {
 	std::cerr << "\nMERIC static tool help:\n\n"
@@ -171,7 +309,7 @@ void printHelp()
 			  << "\t mericStatic [mericStatic parameters] -- stop: Sends SIGTERM signal to stop mericStatic commands.\n"
 			  << "\t mericStatic [mericStatic parameters] -- eval: Reads all dump files and aggregates total energy consumption.\n"
 			  << "\t mericStatic parameters:\n"
-			  << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON, or A64FX\n"
+		      << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON, A64FX, or PDU\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
@@ -250,7 +388,7 @@ void setupSignalHandlers()
 int main(int argc, char **argv)
 {
 	bool verbose = true;
-	char hostname[HOST_NAME_MAX];
+	std::string hostname;
 	std::string energyMode = "";
 	std::string applicationCommand = "";
 	std::string outputDirectory = "mericStaticMeasurements";
@@ -263,25 +401,7 @@ int main(int argc, char **argv)
 		measurement_id = std::atoi(measurement_id_env);
 	}
 	std::cout << "measurement_id : " << measurement_id << std::endl;
-
-	if (gethostname(hostname, HOST_NAME_MAX) != 0)
-	{
-		std::cerr << "MERIC WARNING: gethostname failed (" << strerror(errno) << "), trying /etc/hostname\n";
-		std::ifstream hostname_file("/etc/hostname");
-		if (hostname_file.is_open())
-		{
-			std::string line;
-			std::getline(hostname_file, line);
-			std::strncpy(hostname, line.c_str(), HOST_NAME_MAX);
-			hostname[HOST_NAME_MAX - 1] = '\0';
-		}
-		else
-		{
-			std::cerr << "MERIC ERROR: Cannot get hostname from /etc/hostname. Using fallback to \"unknown_host\".\n";
-			std::strncpy(hostname, "unknown_host", HOST_NAME_MAX);
-			hostname[HOST_NAME_MAX - 1] = '\0';
-		}
-	}
+	hostname = mutils::getHostnameShort();
 	setupSignalHandlers();
 	RegionParameters defaultParameter;
 	for (int i = 1; i < argc; ++i)
@@ -613,6 +733,14 @@ int main(int argc, char **argv)
 				measurements.push_back(&measureEnergy<ROCM, uint64_t>);
 				prints.push_back(EnergyRecords<ROCM, uint64_t>::printValues);
 			}
+			else if (token == "PDU")
+			{
+				#ifdef HAVE_E4_PDU
+					E4_S::nodeLabel = mutils::getHostnameShort();
+					measurements.push_back(&measureEnergy<E4_S, unsigned long long int>);
+					prints.push_back(EnergyRecords<E4_S, unsigned long long int>::printValues);
+				#endif
+			}
 			else
 			{
 				std::cerr << "MERIC ERROR: Unknown energy measurement system '" + token + "'\n\n";
@@ -843,6 +971,7 @@ int main(int argc, char **argv)
 			{"NVML", 0.0},
 			{"A64FX", 0.0},
 			{"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
+			{"PDU", 0.0},
 			{"ROCM", 0.0},
 		};
 		double maxRuntime = 0.0;
@@ -923,10 +1052,11 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 		{"NVML", 0.0},
 		{"A64FX", 0.0},
 		{"HWMON", 0.0},
+		{"PDU", 0.0},
 		{"ROCM", 0.0},
 	};
 
-	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
+	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|PDU|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");
 	std::smatch match;
 
 	bool found = false;
@@ -943,12 +1073,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 
 	if (!found)
 	{
-		char hostname[HOST_NAME_MAX];
-		if (gethostname(hostname, HOST_NAME_MAX) != 0)
-		{
-			std::strncpy(hostname, "unknown_host", HOST_NAME_MAX);
-			hostname[HOST_NAME_MAX - 1] = '\0';
-		}
+		std::string hostname = mutils::getHostnameShort();
 		std::cerr << "MERIC ERROR: Job is not completed or energy data missing for: \n"
 				  << "\tHostname: " << hostname << std::endl;
 		exit(EXIT_FAILURE);

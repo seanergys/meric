@@ -687,6 +687,13 @@ FUNCTIONS
  - Identifies whether the MERIC installation is capable to manage the knob in the executed platform.
  - Provides list of available power monitoring systems that MERIC can use to measure energy consumption.
 
+## E4RemoteMonitoring ##
+ - Master (Monitoring System) - Slave (target system) implementation
+ - After `master --init` command, slave.sh script created
+ - Alter  the slave.sh to execute your commands then execute on the target system.
+ - It will trigger a session creation on Master node and starts monitoring the target node.
+ - Exit master program to terminate its session.
+
 ## mericStatic ##
  - Command line energy measurement and hardware power management.
 
