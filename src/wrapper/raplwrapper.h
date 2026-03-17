@@ -123,7 +123,7 @@ public:
     typedef Base::CounterRecord_t   CounterRecord_t;
 
     // Counters interface
-    static void init(bool detailed, double sampleFreqHz = 0.0);
+    static void init(bool detailed = false, double sampleFreqHz = 0.0);
     static void close();
 
     static void getCounterValues(CounterRecord_t &record);
@@ -160,6 +160,8 @@ public:
     static std::string getSamplerLabel(size_t id) { 
         return s_samplerById[id]->pCounterDesc->fullName; 
     }
+
+    static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
     static bool isAvailable();
 

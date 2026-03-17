@@ -51,6 +51,7 @@ struct NVML::DeviceDesc_t
     nvmlDevice_t device;
 
     std::vector<nvmlFieldValue_t> fieldValues;
+    std::vector<SourceDesc_t *> fieldValuesSources;
     std::vector<SourceDesc_t *> sources;
 };
 
@@ -64,7 +65,7 @@ NVML::SourceIdVec_t NVML::s_sourceById;
 NVML::DeviceDescMap_t NVML::s_deviceDesc;
 
 std::chrono::nanoseconds            NVML::s_defaultSamplePeriod(std::chrono::milliseconds(100));
-std::chrono::nanoseconds            NVML::s_minSamplePeriod(std::chrono::milliseconds(100));
+std::chrono::nanoseconds            NVML::s_minSamplePeriod(std::chrono::milliseconds(1));
 std::chrono::nanoseconds            NVML::s_currentSamplePeriod(0);
 std::atomic<bool>                   NVML::s_sampleStoreEnabled(false);
 AsyncSampler<NVML::CounterRecord_t> NVML::s_asyncSampler;
@@ -150,15 +151,15 @@ void NVML::initCounters(bool detailed)
 
     if (IsNVPlatform())
     {
-        sourceDecls.push_back({ "MODULE_ENERGY",    0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT }});
-        sourceDecls.push_back({ "GPU_POWER",        NVML_FI_DEV_POWER_INSTANT, 0, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT         }});
-        sourceDecls.push_back({ "MODULE_POWER",     NVML_FI_DEV_POWER_INSTANT, 1, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT         }});
-        sourceDecls.push_back({ "GPU_MEMORY_POWER", NVML_FI_DEV_POWER_AVERAGE, 2, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT         }});
+        // sourceDecls.push_back({ "DEVICE",     0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }});
+        sourceDecls.push_back({ "GPU",        NVML_FI_DEV_POWER_INSTANT, 0, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT         }});
+        sourceDecls.push_back({ "MODULE",     NVML_FI_DEV_POWER_INSTANT, 1, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT }});
+        sourceDecls.push_back({ "GPU_MEMORY", NVML_FI_DEV_POWER_AVERAGE, 2, { SourceInfo_t::TYPE_POWER,  SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT         }});
     }
     else
     {
-        sourceDecls.push_back({ "GPU_ENERGY", 0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT }});
-        sourceDecls.push_back({ "GPU_POWER",  NVML_FI_DEV_POWER_INSTANT, 0, { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }});
+        // sourceDecls.push_back({ "DEVICE", 0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }});
+        sourceDecls.push_back({ "GPU",    NVML_FI_DEV_POWER_INSTANT, 0, { SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT }});
     }
 
     uint32_t deviceCount = 0;
@@ -196,6 +197,10 @@ void NVML::initCounters(bool detailed)
                 deviceDesc.fieldValues.push_back(nvmlFieldValue_t{});
                 deviceDesc.fieldValues.back().fieldId = sourceDecl.fieldId;
                 deviceDesc.fieldValues.back().scopeId = sourceDecl.scopeId;
+                deviceDesc.fieldValuesSources.push_back(&res.first->second);
+            }
+            else if(sourceDecl.info.type == SourceInfo_t::TYPE_ENERGY)
+            {
                 deviceDesc.sources.push_back(&res.first->second);
             }
         }
@@ -274,11 +279,6 @@ void NVML::initSamplers(bool detailed)
 {
     for (auto &desc : s_sourceByName)
     {
-        if (desc.second->info.type != SourceInfo_t::TYPE_POWER)
-        {
-            continue;
-        }
-
         s_sourceById.push_back(desc.second);
     }
 
@@ -299,48 +299,66 @@ void NVML::initSamplers(bool detailed)
     PROBE_NUMBER = s_sourceById.size();
 
     s_asyncSampler.Start(s_currentSamplePeriod, [](bool isSampling, CounterRecord_t *pRequest) {
+        auto ProcessSampleValue = [&](SourceDesc_t *pSource, uint64_t timestamp, uint64_t value) {
+            if(isSampling && s_sampleStoreEnabled)
+            {
+                pSource->samples.push_back({ timestamp, value });
+            }
+
+            if(isSampling)
+            {
+                if(pSource->lastSampleTime > 0)
+                {
+                    uint64_t deltaTime = timestamp - pSource->lastSampleTime;
+                    pSource->sumValue += uint64_t(value * (double(deltaTime) * 1.0e-9));
+                }
+
+                pSource->lastSampleTime = timestamp;
+            }
+        };
+
         for(auto &deviceDescIt: s_deviceDesc)
         {
             timespec now;
             clock_gettime(CLOCK_REALTIME, &now);
             const uint64_t timestamp = uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec;
 
-            auto &fieldValues = deviceDescIt.second.fieldValues;
-            auto &sources     = deviceDescIt.second.sources;
-
-            nvmlReturn_t ret = nvmlDeviceGetFieldValues(deviceDescIt.second.device,
-                fieldValues.size(), fieldValues.data());
-            
-            for(size_t i = 0; i < fieldValues.size(); ++i)
             {
-                uint64_t value = 0;
-                if(ret == NVML_SUCCESS && fieldValues[i].nvmlReturn == NVML_SUCCESS)
+                auto &fieldValues = deviceDescIt.second.fieldValues;
+                auto &sources     = deviceDescIt.second.fieldValuesSources;
+
+                nvmlReturn_t ret = nvmlDeviceGetFieldValues(deviceDescIt.second.device,
+                    fieldValues.size(), fieldValues.data());
+                
+                for(size_t i = 0; i < fieldValues.size(); ++i)
                 {
-                    value = fieldValues[i].value.uiVal;
-
-                    if(value < sources[i]->lastValue && sources[i]->info.type == SourceInfo_t::TYPE_ENERGY)
-                        sources[i]->overflowCount++;
-
-                    sources[i]->lastValue = value;
-                }
-
-                if(isSampling && s_sampleStoreEnabled)
-                {
-                    sources[i]->samples.push_back({
-                        uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec,
-                        value
-                    });
-                }
-
-                if(isSampling)
-                {
-                    if(sources[i]->lastSampleTime > 0)
+                    uint64_t value = 0;
+                    if(ret == NVML_SUCCESS && fieldValues[i].nvmlReturn == NVML_SUCCESS)
                     {
-                        uint64_t deltaTime = timestamp - sources[i]->lastSampleTime;
-                        sources[i]->sumValue += uint64_t(value * (double(deltaTime) * 1.0e-9));
+                        value = fieldValues[i].value.uiVal;
+
+                        if(value < sources[i]->lastValue && sources[i]->info.type == SourceInfo_t::TYPE_ENERGY)
+                            sources[i]->overflowCount++;
+
+                        sources[i]->lastValue = value;
                     }
 
-                    sources[i]->lastSampleTime = timestamp;
+                    ProcessSampleValue(sources[i], timestamp, value);
+                }
+            }
+
+            {
+                auto &sources = deviceDescIt.second.sources;
+
+                for(auto &pSource: sources)
+                {
+                    unsigned long long value = 0;
+                    if (nvmlDeviceGetTotalEnergyConsumption(pSource->pDeviceDesc->device, &value) != NVML_SUCCESS)
+                    {
+                        value = 0;
+                    }
+
+                    ProcessSampleValue(pSource, timestamp, value);
                 }
             }
         }
@@ -393,6 +411,11 @@ void NVML::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
         {
             samples.push_back(double(desc.samples[i].value) * desc.unit);
         }
+        else if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
+        {
+            samples.push_back(PowerFromEnergySamples(desc.samples[i], std::numeric_limits<uint64_t>::max(),
+                i > 0 ? &desc.samples[i - 1] : nullptr) * desc.unit);
+        }
     }
 }
 
@@ -427,7 +450,17 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
 
         for (auto it = startIt; it != endIt; ++it)
         {
-            double power = (double(it->value) * desc.unit);
+            double power = 0.0;
+
+            if(desc.info.type == SourceInfo_t::TYPE_POWER)
+            {
+                power = (double(it->value) * desc.unit);
+            }
+            else if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
+            {
+                power = PowerFromEnergySamples(*it, std::numeric_limits<uint64_t>::max(),
+                    it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.unit;
+            }
 
             data.energy += power;
             data.min = std::min(data.min, power);
@@ -442,6 +475,13 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
     }
 
     return "";
+}
+
+void NVML::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+    info.min     = s_minSamplePeriod.count();
+    info.initial = s_defaultSamplePeriod.count();
+    info.current = s_currentSamplePeriod.count();
 }
 
 bool NVML::isAvailable()
@@ -579,6 +619,11 @@ void NVML::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
 std::string NVML::getData(double startTime, double duration, SamplerRecord_t &record)
 {
     return "";
+}
+
+void NVML::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+    info = SamplePeriodInfo_t();
 }
 
 bool NVML::isAvailable()

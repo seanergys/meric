@@ -169,6 +169,10 @@ void OCC::initMap(std::map<std::string, uint64_t> & dict)
 	dict["PWRSYS"] = 0;
 }
 
-
-
-
+bool OCC::isAvailable()
+{
+#ifdef HAVE_OCC
+	return true;
+#endif
+	return false;
+}

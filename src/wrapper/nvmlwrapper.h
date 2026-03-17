@@ -64,6 +64,8 @@ namespace meric
             return vrSensorLabel[id]; 
         }
 
+        static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
+
         static bool isAvailable();
 
         // NVML Specific

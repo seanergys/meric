@@ -567,6 +567,13 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
     return "";
 }
 
+void HWMON::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+    info.min     = s_minSamplePeriod.count();
+    info.initial = s_defaultSamplePeriod.count();
+    info.current = s_currentSamplePeriod.count();
+}
+
 bool HWMON::isAvailable()
 {
 #if defined(_INTEL_)

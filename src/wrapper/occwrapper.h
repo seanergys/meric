@@ -108,7 +108,7 @@ namespace meric {
 class OCC {
 
 public:
-	static void init(bool detailed);
+	static void init(bool detailed = false);
 	static void close()
 	{
 		::close(OCC_fd);
@@ -120,6 +120,8 @@ public:
 	static  inline std::string getSourceLabel() { return "OCC"; };
 	static std::string getCounterLabel(std::string counter);
 	static void getRatios(std::map<std::string, uint64_t>& start, std::map<std::string, uint64_t>& stop, double runtime, std::map <std::string, double> & ratios) {};
+
+	static bool isAvailable();
 
 private:
 	static std::map<std::string, uint64_t> counters;

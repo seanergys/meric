@@ -302,8 +302,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
-			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hdeemwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/thunderwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
