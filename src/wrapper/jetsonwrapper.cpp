@@ -265,7 +265,13 @@ void JETSON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 	}
 }
 
+void JETSON::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+	uint64_t period = 1000000000ull / FREQUENCY;
+	info = SamplePeriodInfo_t(period, period, period);
+}
 
-
-
-
+bool JETSON::isAvailable()
+{
+	return true;
+}

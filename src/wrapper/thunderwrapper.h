@@ -51,6 +51,10 @@ public:
 		return vrSensorLabel[id]; 
 	}
 
+	static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
+
+    static bool isAvailable();
+
 private:
 	static std::string filename;
 	static std::vector<thunderSample> _samples;

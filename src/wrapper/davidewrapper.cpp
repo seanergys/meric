@@ -322,9 +322,16 @@ void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 
 #endif
 
+void DAVIDE::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+	info = SamplePeriodInfo_t();
+}
 
-
-
-
-
-
+bool DAVIDE::isAvailable()
+{
+#ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+	return true;
+#else
+	return false;
+#endif
+}

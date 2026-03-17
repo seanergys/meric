@@ -155,7 +155,13 @@ void THUNDER::getSamplesList(size_t sensorId, size_t first, size_t last, std::ve
 		samples.push_back(_samples[i].DC);
 }
 
+void THUNDER::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+	uint64_t period = 1000000000ull / FREQUENCY;
+	info = SamplePeriodInfo_t(period, period, period);
+}
 
-
-
-
+bool THUNDER::isAvailable()
+{
+	return true;
+}

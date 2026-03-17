@@ -162,6 +162,11 @@ void A64FX::close()
 }
 #endif
 
+// void A64FX::getSamplePeriodInfo(BaseWrapper::SamplePeriodInfo_t &info)
+// {
+// 	info = BaseWrapper::SamplePeriodInfo_t();
+// }
+
 bool A64FX::isAvailable()
 {
 #if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__

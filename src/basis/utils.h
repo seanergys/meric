@@ -194,19 +194,24 @@ void explode(const std::string &input, char sep, OutIt output)
 	}
 }
 
-template<typename InputIt, typename T>
-std::string join(InputIt first, InputIt last, const T &delimiter)
+template<typename InputIt, typename T, typename F>
+std::string join(InputIt first, InputIt last, const T &delimiter, F &&f)
 {
 	if(first == last)
 	{
 		return T();
 	}
 
-	return std::accumulate(std::next(first), last, *first,
-		[&delimiter](const T &a, const T &b)
+	return std::accumulate(std::next(first), last, f(*first),
+		[&](const T &a, const typename std::iterator_traits<InputIt>::value_type &b)
 		{
-			return a + delimiter + b;
+			return a + delimiter + f(b);
 		});
+}
+
+template<typename InputIt, typename T>
+std::string join(InputIt first, InputIt last, const T &delimiter) {
+	return join(first, last, delimiter, [](const typename std::iterator_traits<InputIt>::value_type &a) { return a; });
 }
 
 }

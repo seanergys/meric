@@ -34,6 +34,8 @@ public:
 	static std::string getSourceLabel() {return "HDEEM";};
 	static const std::string SUM_ENERGY_LABEL;
 
+	// static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
+
 	static bool isAvailable();
 
 	static size_t getSamplerCount() { return PROBE_NUMBER; }
@@ -157,7 +159,7 @@ private:
 
 #else
 
-	static void init(bool detailed)
+	static void init(bool detailed = false)
 	{
 		detailedMode = detailed;
 		vrSensorLabel = {"blade", "CPU0", "CPU1", "DDR_1", "DDR_2", "DDR_3", "DDR_4", "MEZZA", "VAUX" };

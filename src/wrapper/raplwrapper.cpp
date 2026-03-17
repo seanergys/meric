@@ -45,7 +45,7 @@ std::map<std::string, RAPL::SamplerDesc_t> RAPL::s_samplerDesc;
 std::vector<RAPL::SamplerDesc_t *>         RAPL::s_samplerById;
 
 std::chrono::nanoseconds RAPL::s_defaultSamplePeriod(std::chrono::milliseconds(1000));
-std::chrono::nanoseconds RAPL::s_minSamplePeriod(std::chrono::milliseconds(25));
+std::chrono::nanoseconds RAPL::s_minSamplePeriod(std::chrono::milliseconds(10));
 std::chrono::nanoseconds RAPL::s_currentSamplePeriod(0);
 
 std::atomic<bool>                         RAPL::s_sampleStoreEnabled(false);
@@ -1542,6 +1542,13 @@ bool RAPL::isAvailable()
     }
     
     return false;
+}
+
+void RAPL::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+    info.min     = s_minSamplePeriod.count();
+    info.initial = s_defaultSamplePeriod.count();
+    info.current = s_currentSamplePeriod.count();
 }
 
 RAPL::Base *RAPL::getImpl()

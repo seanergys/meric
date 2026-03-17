@@ -479,6 +479,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON and NVML) to avoid unnecessary oversampling (and associated overhead).
 	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as GH200).
 	- The sampling overhead can be minimized by setting this variable to low frequency (such as MERIC_SAMPLING_FREQUENCY=1). Note that this will negatively impact accuracy of energy measurements in cases, where the value is derived from power sampling.
+	- If MERIC_SAMPLING_FREQUENCY is not set (or set to 0), the sampling runs at the default sampling frequency, which varies by power monitoring system. The default and the maximum sampling frequency of available power monitoring systems can be read using systemInfo -p.
 
 * `export MERIC_DEBUG=1`
 	- Uses HDEEM-S and HDEEM-C energy measurement at the same time.
