@@ -25,7 +25,8 @@ namespace meric
 	class E4 : public BaseWrapper
 	{
 	public:
-		typedef std::map<std::string, unsigned long long> CounterRecord_t;
+		typedef unsigned long long CounterValue_t;
+		typedef std::map<std::string, CounterValue_t> CounterRecord_t;
 
 		static void init(std::string label, bool detailed = false, double sampleFreqHz = 0.0);
 		static void close();

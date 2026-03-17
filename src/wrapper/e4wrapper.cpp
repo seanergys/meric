@@ -397,13 +397,15 @@ double E4::getResultValue(unsigned long long startValue, unsigned long long stop
 	// E4 counter is cumulative energy (J).
 	cumulative = 1;
 	return double(stopValue - startValue);
-#endif
+#endif // HAVE_E4_PDU
 	return 0.0;
 }
 
 void E4::init(std::string label, bool detailed, double sampleFreqHz)
 {
+#if HAVE_E4_PDU
 	powerDevice = label;
+
 	load_oids_from_dcpower_if_present();
 	load_datacenter_from_dcpower_if_present();
 
@@ -421,20 +423,26 @@ void E4::init(std::string label, bool detailed, double sampleFreqHz)
 
 	samplers[powerDevice] = {powerDevice, 0.0, {}};
 	initSamplers(detailed);
+#endif // HAVE_E4_PDU
 }
 
 void E4::close()
 {
+#if HAVE_E4_PDU
 	closeSamplers();
+#endif // HAVE_E4_PDU
 }
 
 void E4::stop()
 {
+#if HAVE_E4_PDU
 	s_sampleStoreEnabled.store(false);
+#endif // HAVE_E4_PDU
 }
 
 void E4::start(timespec &time, bool storeSamples, double sampleFreqHz)
 {
+#if HAVE_E4_PDU
 	if(sampleFreqHz > 0.0)
 	{
 		s_currentSamplePeriod = std::max(s_minSamplePeriod, std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz)));
@@ -442,6 +450,7 @@ void E4::start(timespec &time, bool storeSamples, double sampleFreqHz)
 	}
 
 	s_sampleStoreEnabled.store(storeSamples);
+#endif // HAVE_E4_PDU
 }
 
 void E4::getCounterValues(std::map<std::string, unsigned long long> &record)
@@ -450,7 +459,7 @@ void E4::getCounterValues(std::map<std::string, unsigned long long> &record)
 	s_asyncSampler.Sample(&record);
 #else
 	(void)record;
-#endif
+#endif // HAVE_E4_PDU
 }
 
 void E4::initSamplers(bool detailed)
@@ -519,11 +528,13 @@ void E4::initSamplers(bool detailed)
 			(*pRequest)[title] = static_cast<unsigned long long>(value);
 		}
 	});
-#endif
+#endif // HAVE_E4_PDU
 }
 
 void E4::closeSamplers() {
+#if HAVE_E4_PDU
 	s_asyncSampler.Stop();
+#endif // HAVE_E4_PDU
 }
 
 int E4::getSamples()
