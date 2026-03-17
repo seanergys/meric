@@ -15,6 +15,11 @@ ifeq ($(CC),)
 	CC=gcc
 endif
 
+ifeq ($(NVCC),)
+	NVCC=nvcc
+endif
+
+
 ifeq ($(FC),)
 	FC=gfortran
 	ifeq (, $(shell which ${FC}))
@@ -37,6 +42,9 @@ else
 	OPENMP=-fopenmp
 endif
 
+ifeq ($(MAKECMDGOALS),cudaTest)
+	OPENMP=-Xcompiler -fopenmp
+endif
 
 ################################################################################
 #HDEEM=-lhdeem -lfreeipmi
@@ -59,7 +67,7 @@ MKL_PATHS=
 
 default: all
 
-all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
+all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo cudaTestInfo
 
  ######
 
@@ -103,6 +111,13 @@ fortTestInfo:
 	$(info INFO: to compile fort_test.f90 compile MERIC fortran using "make fortran" and compile the test app using "make fortTest" )
 	$(info )
 
+cudaTest: test_cuda.cu
+	$(NVCC) -O0 -g test_cuda.cu -lmeric $(LIBS) -o testCuda
+	
+cudaTestInfo:
+	$(info )
+	$(info INFO: to compile test_cuda.cu set NVCC and compile the test app using "make cudaTest" )
+	$(info )
 
  ######
 MeasurementDIRS=mericMeasurement* TEST* TESTMPI*
