@@ -235,7 +235,7 @@ void sysInfoSize(bool detailed = false)
 			std::cout << "\tGPUs per node:    " << GPUdeviceCount << '\n';
 		}
 
-		std::cout << "\n\tCompile MERIC with NVML to controll and monitor the CUDA GPUs\n";
+		std::cout << "\n\tCompile MERIC with NVML to control and monitor the CUDA GPUs\n";
 	}
 #endif
 
