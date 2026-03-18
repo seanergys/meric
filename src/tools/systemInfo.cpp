@@ -283,7 +283,7 @@ void sysInfoSize(bool detailed = false)
 		if (GPUDeviceCount)
 		{
 			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
-					  << "\n\tCompile MERIC with ROCM header to controll and monitor the AMD GPUs\n";
+					  << "\n\tCompile MERIC with ROCM header to control and monitor the AMD GPUs\n";
 		}
 		closedir(dir2);
 	}

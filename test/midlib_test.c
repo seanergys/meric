@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     extlib_print_energy_timestamp(ts, 5);
 
     // #pragma omp parallel
-    do_work(5.0); // cannot be sleep!! A64FX does not accumulate power samples if the HW is idle
+    do_work(5.0); 
 
     struct ExtlibEnergyTimeStamp *ts2 = extlib_read_energy_measurements(&energy_domains);
     extlib_print_energy_timestamp(ts2, 5);
