@@ -1590,6 +1590,24 @@ void Environment::readSystemDefaultSettings()
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef _INTEL_
+		if(isUFSPossible() == UFS_WAY_TPMI_SYSFS)
+		{
+			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_min_freq_khz");
+			if(frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				defaultSettings.minUncoreFreq = std::stol(freqBound) * 1000;
+			}
+
+			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_max_freq_khz");
+			if(frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				defaultSettings.maxUncoreFreq = std::stol(freqBound) * 1000;
+			}
+		}
+		else
+		{
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 			read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
@@ -1610,6 +1628,7 @@ void Environment::readSystemDefaultSettings()
 			
 			defaultSettings.maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
 	#endif
+		}
 #elif defined __arm__	//Jetson memory frequencies
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
 		if (frequencyBounderyFile.is_open())
