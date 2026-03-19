@@ -28,6 +28,7 @@ void enableAllEnergyDomains(ExtlibEnergy &energy_domains)
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM);
     EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM);
+    EXTLIB_ENERGY_ENABLE_DOMAIN(energy_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON);
 }
 
 std::string getEnergyDomainName(unsigned int domain)
@@ -386,7 +387,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySe
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
@@ -478,13 +479,9 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
-
-    extlib_print_energy_timestamp(ts1, -1);
-    extlib_print_energy_timestamp(ts2, -1);
-    extlib_print_energy_timestamp(result, -1);
 
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
@@ -520,7 +517,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
     extlib_init(&energy_domains, true);
 
     auto *ts1 = extlib_read_energy_measurements(&energy_domains);
-    do_work(5);
+    do_work(2);
     auto *ts2 = extlib_read_energy_measurements(&energy_domains);
     auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
@@ -542,6 +539,32 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
                 << domain_name << " energy domain does not exist but its energy_total variable is greater than 0.";
         }
     }
+
+    extlib_free_energy_timestamp(ts1);
+    extlib_free_energy_timestamp(ts2);
+    extlib_free_energy_timestamp(result);
+    extlib_close(&energy_domains);
+}
+
+TEST(MERICExtAPITest, PrintEnergyTimestampPrintsEnergyTimeStamp)
+{
+    ExtlibEnergy energy_domains = {};
+    enableAllEnergyDomains(energy_domains);
+    extlib_init(&energy_domains, true);
+
+    auto *ts1 = extlib_read_energy_measurements(&energy_domains);
+    do_work(2);
+    auto *ts2 = extlib_read_energy_measurements(&energy_domains);
+    auto *result = extlib_calc_energy_consumption(ts1, ts2);
+
+    std::cout << "\nPrinting the first energy timestamp (ts1)...\n\n";
+    extlib_print_energy_timestamp(ts1, -1);
+
+    std::cout << "\nPrinting the second energy timestamp (ts2)...\n\n";
+    extlib_print_energy_timestamp(ts2, -1);
+
+    std::cout << "\nPrinting result energy timestamp...\n\n";
+    extlib_print_energy_timestamp(result, -1);
 
     extlib_free_energy_timestamp(ts1);
     extlib_free_energy_timestamp(ts2);

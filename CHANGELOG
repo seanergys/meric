@@ -2,6 +2,8 @@
   - MERIC E4 Remote node monitoring utility with E4 PDU sampling support.
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
+  - improved power monitoring system availability detection
+  - MERICext support for HWMON energy measurement
   - Change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - Solved Blade error
   - No need to store power samples to evaluate energy consumption from HWMON power sampling
