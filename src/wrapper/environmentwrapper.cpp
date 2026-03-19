@@ -1596,6 +1596,7 @@ void Environment::readSystemDefaultSettings()
 			if(frequencyBounderyFile.is_open())
 			{
 				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
 				defaultSettings.minUncoreFreq = std::stol(freqBound) * 1000;
 			}
 
@@ -1603,6 +1604,7 @@ void Environment::readSystemDefaultSettings()
 			if(frequencyBounderyFile.is_open())
 			{
 				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
 				defaultSettings.maxUncoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
