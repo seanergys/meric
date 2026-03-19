@@ -66,6 +66,16 @@ static int write_msr(int cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTE
 
 bool check_whitelist_msr(const std::vector<std::pair<uint64_t, uint64_t> > &regs);
 
+template<typename MSR>
+int read_msr(int cpuid, MSR &msr) {
+	return read_msr(cpuid, off_t(msr.addr), &msr.value);
+}
+
+template<typename MSR>
+int write_msr(int cpuid, const MSR &msr) {
+	return write_msr(cpuid, off_t(msr.addr), msr.value);
+}
+
 }
 
 #endif //SRC_BASIS_MSRUTIL_H_

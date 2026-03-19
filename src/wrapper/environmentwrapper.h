@@ -88,6 +88,12 @@ enum DVFS_WAY {
 	OTHER          // DVFS possible under another (unknown) scaling driver
 };
 
+enum UFS_WAY {
+	UFS_WAY_NONE = 0,
+	UFS_WAY_MSR,
+	UFS_WAY_TPMI_SYSFS,
+};
+
 enum GPU_TUNING_WAY {
 	NO_TUNING = 0, //
 	NVML_API,      // 
@@ -210,6 +216,7 @@ public:
 	static std::string getScalingDriver();
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
+	static UFS_WAY isUFSPossible();
 	static bool isPWRCAPpossible();
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	static void getGPUTuningMethod();
@@ -256,7 +263,7 @@ private:
 	static bool usedGPUDVFS;
 	static bool usedGPUPWRCAP;
 	static DVFS_WAY activatedDVFS;
-	static bool activatedUFS;
+	static UFS_WAY  activatedUFS;
 	static bool activatedPWRCAP;
 	static GPU_TUNING_WAY activatedGPUtuning;
 	
