@@ -1110,26 +1110,6 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
   #endif
 
   //********************************************** END INTEL SAPPHIRE RAPIDS **********************************************
-
-  //********************************************** BEGIN INTEL GRANITE RAPIDS **********************************************
-  #ifdef _INTEL_
-  struct MSR_PM_LOGICAL_ID {
-    union {
-        struct {
-            uint64_t lp_id:3;		 ///< Hyper-Threading thread ID (0 or 1)
-            uint64_t module_id:8;	 ///< Module ID (Core ID in PM_DOMAIN)
-            uint64_t pm_domain_id:5; ///< Power-management domain ID
-        };
-        uint64_t value;
-    };
-    
-    static constexpr uint64_t addr = 0x54;
-  };
-  #endif // _INTEL_
-
-  //********************************************** END INTEL GRANITE RAPIDS **********************************************
-
-
   
 
 // RAPL POWER-CAP //////////////////////////////////////////////////////////////
