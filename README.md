@@ -85,7 +85,9 @@ If scaling driver allows to specify `userspace` scaling governor (`/sys/devices/
 ## Intel CPU uncore frequency ##
 Intel uncore frequency refers to frequency of subsystems in the physical processor package that are shared by multiple processor cores. E.g., L3 cache or on-chip ring interconnect.
 
-MERIC requires [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/) to be able to change the system uncore frequency. 
+Depending on Intel CPU architecture, MERIC requires one of following interfaces to allow uncore frequency changes.
+- Granite Rapids and newer: Write access to `/sys/devices/system/cpu/intel_uncore_frequency/package_*/*_freq_khz` and read access to `/sys/devices/system/cpu/intel_uncore_frequency/package_*/initial_*_freq_khz`, ideally with [msr-safe](https://github.com/LLNL/msr-safe) and [libmsr](https://github.com/LLNL/libmsr).
+- Other supported Intel CPUs: [msr-safe](https://github.com/LLNL/msr-safe), ideally together with [libmsr](https://github.com/LLNL/libmsr) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/).
 
 
 ## Power capping ##
