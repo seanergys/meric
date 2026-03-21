@@ -217,6 +217,7 @@ public:
 	static DVFS_WAY isDVFSpossible();
 	static DVFS_WAY activateDVFS(DVFS_WAY way = NO_DVFS);
 	static UFS_WAY isUFSPossible();
+	static UFS_WAY getPreferredUFSWay();
 	static bool isPWRCAPpossible();
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 	static void getGPUTuningMethod();

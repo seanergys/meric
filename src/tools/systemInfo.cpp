@@ -554,28 +554,46 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 
 // UNCORE FREQUENCY
 #ifdef _INTEL_
-	if(meric::Environment::isUFSPossible() == meric::UFS_WAY_TPMI_SYSFS)
+	if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_TPMI_SYSFS)
 	{
-		std::ifstream file;
-		std::string freqBound;
+		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
 
-		file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_max_freq_khz");
-		if(file.is_open())
+		if(meric::sysfsutils::CheckFileAccess({ 
+				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
+			}, basePath))
 		{
-			file >> freqBound;
-			file.close();
-			std::cout << "\tMax CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			std::ifstream file;
+			std::string freqBound;
+
+			file.open(basePath + "initial_max_freq_khz");
+			if(file.is_open())
+			{
+				file >> freqBound;
+				file.close();
+				std::cout << "\tMax CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			}
+
+			file.open(basePath + "initial_min_freq_khz");
+			if(file.is_open())
+			{
+				file >> freqBound;
+				file.close();
+				std::cout << "\tMin CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			}
+		}
+		else
+		{
+			std::cout << "\tCPU uncore frequency limits: unknown - grant read right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/initial_*_freq_khz\n";
 		}
 
-		file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_min_freq_khz");
-		if(file.is_open())
+		if(!meric::sysfsutils::CheckFileAccess({ 
+				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}} 
+			}, basePath))
 		{
-			file >> freqBound;
-			file.close();
-			std::cout << "\tMin CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			std::cout << "\tCPU uncore frequency control NOT available - grant write right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/*_freq_khz\n";
 		}
 	}
-	else if(meric::Environment::isUFSPossible() == meric::UFS_WAY_MSR)
+	else if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_MSR)
 	{
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
@@ -643,7 +661,7 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 	}
 	else
 	{
-		std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n";
+		std::cout << "\n# CPU uncore frequency NOT available\n";
 	}
 #elif defined __arm__ // Jetson memory frequencies
 	frequencyBounderyFile.open("/sys/kernel/debug/clock/emc/max");

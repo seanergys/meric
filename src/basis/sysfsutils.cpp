@@ -7,6 +7,24 @@
 namespace meric {
 namespace sysfsutils {
 
+bool CheckFileAccess(const std::vector<std::vector<std::pair<std::string, int> > > &fileGroups, 
+	const std::string &basePath)
+{
+	for(const auto &files: fileGroups)
+	{
+		size_t count = 0;
+		for(const auto &file: files)
+		{
+			count += (access((basePath + file.first).c_str(), file.second) == 0 ? 0 : 1);
+		}
+
+		if(count == 0)
+			return false;
+	}
+
+	return true;
+}
+
 std::string MakeCounterName(const std::string &name, 
 	std::map<const std::string, std::pair<std::string, std::string> > &counterLabels,
 	const std::vector<std::pair<int, int>> &nums, 

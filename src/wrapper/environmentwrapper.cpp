@@ -942,12 +942,33 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 
 UFS_WAY Environment::isUFSPossible()
 {
+	UFS_WAY way = getPreferredUFSWay();
+
+	if(way == UFS_WAY_TPMI_SYSFS)
+	{
+		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
+		
+		if(sysfsutils::CheckFileAccess({
+				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}, 
+				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
+			}, basePath))
+		{
+			way = UFS_WAY_NONE;
+		}
+	}
+
+	return way;
+}
+
+UFS_WAY Environment::getPreferredUFSWay()
+{
 	std::string cpuFamilyStr;
 	getCPUFamilyModelString(cpuFamilyStr);
 	auto cpuFamily = meric::stringToCpuidSignature(cpuFamilyStr);
 
 	if(cpuFamily >= CpuidSignatureValues::INTEL_06_AEH)
 	{
+		// Granite Rapids and newer Intel CPUs require TPMI interface for tuning
 		return UFS_WAY_TPMI_SYSFS;
 	}
 
@@ -1590,7 +1611,7 @@ void Environment::readSystemDefaultSettings()
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef _INTEL_
-		if(isUFSPossible() == UFS_WAY_TPMI_SYSFS)
+		if(activatedUFS == UFS_WAY_TPMI_SYSFS)
 		{
 			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_min_freq_khz");
 			if(frequencyBounderyFile.is_open())
@@ -1608,7 +1629,7 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.maxUncoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-		else
+		else if(activatedUFS == UFS_WAY_MSR)
 		{
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
