@@ -948,7 +948,7 @@ UFS_WAY Environment::isUFSPossible()
 	{
 		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
 		
-		if(sysfsutils::CheckFileAccess({
+		if(!sysfsutils::CheckFileAccess({
 				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}, 
 				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
 			}, basePath))

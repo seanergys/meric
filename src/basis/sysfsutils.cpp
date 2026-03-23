@@ -15,7 +15,7 @@ bool CheckFileAccess(const std::vector<std::vector<std::pair<std::string, int> >
 		size_t count = 0;
 		for(const auto &file: files)
 		{
-			count += (access((basePath + file.first).c_str(), file.second) == 0 ? 0 : 1);
+			count += (access((basePath + file.first).c_str(), file.second) == 0 ? 1 : 0);
 		}
 
 		if(count == 0)
