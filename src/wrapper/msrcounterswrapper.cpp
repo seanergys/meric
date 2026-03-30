@@ -136,10 +136,10 @@ void MSR::init()
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 			write_msr(Environment::mapCoresToSocket[i][0], U_MSR_PMON_FIXED_CTL, U_MSR_PMON_FIXED_CTL_bits);
 #endif
-		nominal_freq = Environment::getNominalFrequency();
 		// TODO prepare a msr batch
 	}
 #endif
+	nominal_freq = Environment::getNominalFrequency();
 }
 
 void MSR::close()
