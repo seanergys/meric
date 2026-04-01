@@ -198,7 +198,9 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> &record)
 #endif
 		}
 
+#ifdef _INTEL_
 		record[MSR_COUNTERS::UCF_FREQ + "_" + std::to_string(i)] = val;
+#endif // _INTEL_
 
 #ifdef MSR_PKG_PERF_STATUS
 		read_msr(Environment::mapCoresToSocket[i][0], MSR_PKG_PERF_STATUS, &val);
