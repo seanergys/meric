@@ -44,7 +44,8 @@ def configure(ctx):
 		ctx.load(ctx.options.cpp)
 	except:
 		if ('CXX' in ctx.env):
-			if (ctx.env['CXX'][0].endswith('clang++') or ctx.env['CXX'][0] == 'CC'):
+			chain=ctx.env['CXX'][0]
+			if (chain.endswith('clang++') or chain.endswith('CC') or (len(chain) > 3 and chain[-4:-1] == 'icp')):
 				ctx.load("clang++")
 			else:
 				ctx.load("g++")
