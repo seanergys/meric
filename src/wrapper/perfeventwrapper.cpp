@@ -11,7 +11,7 @@
 // #include <errno.h>
 
 #include "perfeventwrapper.h"
-#include "cpuidsignatures.h"
+#include "hwidsignatures.h"
 #include "../basis/utils.h"
 
 using namespace meric;
