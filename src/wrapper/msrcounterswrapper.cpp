@@ -11,7 +11,7 @@ CpuidSignatureValues MSR::cpu_arch = CpuidSignatureValues::UNKNOWN;
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 std::map<std::string, uint64_t> MSR::counters;
 
-#ifdef U_MSR_CBO_0_PMON_CTL0 && U_MSR_CBO_0_PMON_CTR0
+#if defined U_MSR_CBO_0_PMON_CTL0 && defined U_MSR_CBO_0_PMON_CTR0
 	#define U_MSR_CBO_x_PMON_CTLy_2_U_MSR_CBO_x_PMON_CTRy(ctrl_addr) ctrl_addr + 0x6 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
 	#define U_MSR_CBO_x_PMON_CTRy_2_U_MSR_CBO_x_PMON_CTLy(ctr_addr) ctr_addr - 0x6	 // based on the documentation, ctrl0:0x2002 - ctr0:0x2008, ctrl1:0x2003 - ctr1:0x2009, ctrl2:0x2004 - ctr2:0x200A... etc
 #endif
@@ -111,7 +111,7 @@ void MSR::init()
 						continue;
 					}
 
-					if ((U_MSR_CBO_x_PMON_CTLx_bits & U_MSR_CBO_x_PMON_CTRx_event_select_mask) == 0x0) // if it is empty configure for monitoring (check the event_code section [7:0] bits to determine if it is empty)
+					if ((U_MSR_CBO_x_PMON_CTLx_bits & U_MSR_CBO_x_PMON_CTLx_event_select_mask) == 0x0) // if it is empty configure for monitoring (check the event_code section [7:0] bits to determine if it is empty)
 					{
 						socket_free_box_found = true;
 						msrCTRandOwnership.push_back({U_MSR_CBO_x_PMON_CTLy_2_U_MSR_CBO_x_PMON_CTRy(U_MSR_CBO_x_PMON_CTLy_addr), 1});	// add the counter of that controller, we owned the msr.
