@@ -56,7 +56,7 @@ endif
 #NUMA=-lnuma
 #NVML=-lnvidia-ml
 #ESMI=-le_smi64
-SNMP= -lnetsnmp
+#SNMP= -lnetsnmp
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
 MERIC=-L../lib -I../include 
