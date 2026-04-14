@@ -216,7 +216,7 @@ namespace meric
 		}
 	}
 	
-	
+	//Source: Mesa repository - https://gitlab.freedesktop.org/mesa/libdrm/-/blob/main/data/amdgpu.ids
 	inline std::string hexToAMDGPUName(const std::string &hexStr)
 	{
 		static const std::unordered_map<long, std::string> LUT = {
