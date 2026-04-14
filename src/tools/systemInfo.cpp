@@ -18,6 +18,7 @@
 #include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/rocmwrapper.h"
 #include "../wrapper/occwrapper.h"
+#include "../wrapper/hwidsignatures.h"
 
 #ifdef HAVE_MSR_CORE_H
 #include <msr_rapl.h>
@@ -73,74 +74,6 @@ std::string readFile(const std::string &filePath)
 		file.close();
 	}
 	return content;
-}
-
-/*
- * GPU id and name can be obtained through command: rocminfo | grep -Ei "Chip ID|Marketing name"
- *   - note: this command may output also AMD CPUs
- */
-
-std::string getAMDGPUName(const std::string hex)
-{
-	long version = 0;
-	try
-	{
-		long version = std::stol(hex, nullptr, 16);
-	}
-	catch (...)
-	{
-		return "Unknown AMD GPU type";
-	}
-
-	std::string name;
-	switch (version)
-	{
-	case 0x686c:
-		name = "AMD Instinct MI25";
-		break;
-	case 0x66a1:
-		name = "AMD Instinct MI50/MI60";
-		break;
-	case 0x738c:
-		name = "AMD Instinct MI100";
-		break;
-	case 0x740f:
-		name = "AMD Instinct MI210";
-		break;
-	case 0x7408:
-		name = "AMD Instinct MI250X";
-		break;
-	case 0x740c:
-		name = "AMD Instinct MI250X/MI250";
-		break;
-	case 0x74a0:
-		name = "AMD Instinct MI300A";
-		break;
-	case 0x74a1:
-		name = "AMD Instinct MI300X";
-		break;
-	case 0x74A2:
-		name = "AMD Instinct MI308X";
-		break;
-	case 0x74A5:
-		name = "AMD Instinct MI325X";
-		break;
-	case 0x74A9:
-		name = "AMD Instinct MI300X HF";
-		break;
-	case 0x74B5:
-		name = "AMD Instinct MI300X VF";
-		break;
-	case 0x74B6:
-		name = "AMD Instinct MI308X";
-		break;
-	case 0x74BD:
-		name = "AMD Instinct MI300X HF";
-		break;
-	default:
-		name = "Unknown AMD GPU type";
-	}
-	return name;
 }
 
 void sysInfoSize(bool detailed = false)
@@ -279,7 +212,7 @@ void sysInfoSize(bool detailed = false)
 					GPUDeviceCount++;
 
 					std::string pciDeviceID = readFile(cardPath + "device");
-					modelName = getAMDGPUName(pciDeviceID);
+					modelName = meric::hexToAMDGPUName(pciDeviceID);
 				}
 			}
 		}
