@@ -437,6 +437,9 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	{
 		return;
 	}
+#if defined HAVE_E_SMI_E_SMI_H
+	return;
+#endif
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
