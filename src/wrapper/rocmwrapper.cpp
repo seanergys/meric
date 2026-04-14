@@ -81,10 +81,7 @@ bool ROCM::isAvailable()
 	bool available = (rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS) && deviceCount > 0;
 	available = available && (rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS);
 
-	if(HIP_PRIOR_6_2)
-	{
-		rsmi_shut_down();
-	}
+	rsmi_shut_down();
 
 	return available;
 }
