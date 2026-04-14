@@ -291,6 +291,7 @@ void NVML::initSamplers(bool detailed)
     // NOTR: Simulates HDEEM Blade sensor, which doesn't exist in NVML
     s_sourceById.insert(s_sourceById.begin(), nullptr);
 
+    vrSensorLabel.clear();
     for (SourceDesc_t *pSourceDesc : s_sourceById)
     {
         vrSensorLabel.push_back(pSourceDesc ? pSourceDesc->fullName : "");
@@ -486,13 +487,21 @@ void NVML::getSamplePeriodInfo(SamplePeriodInfo_t &info)
 
 bool NVML::isAvailable()
 {
+    if(nvmlInit_v2() != NVML_SUCCESS)
+    {
+        return false;
+    }
+
+    uint32_t deviceCount = 0;
     unsigned long long energy;
     nvmlDevice_t deviceHandle;
-    if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS && nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS)
-    {
-        return true;
-    }
-    return false;
+
+    bool available = (nvmlDeviceGetCount(&deviceCount) == NVML_SUCCESS) && deviceCount > 0;
+    available = available && (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS);
+    available = available && (nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS);
+
+    nvmlShutdown();
+    return available;
 }
 
 nvmlDevice_t NVML::getGPUHandle(int id)

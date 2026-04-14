@@ -65,21 +65,35 @@ void ROCM::init(bool detailed)
 #endif
 }
 
+#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 bool ROCM::isAvailable()
 {
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+	if(rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	{
+		return false;
+	}
+
 	uint32_t deviceCount;
 	uint64_t energy;
 	float precision;
 	uint64_t timestamp;
-	// energy read cause segfault if rocm smi not initialized, which we do not know in this location
-	// for that reason additional device count read is issued
-	if (rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS && deviceCount > 0 && rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS)
-		return true;
-#else
-	return false;
-#endif // HAVE_ROCM_SMI_ROCM_SMI_H
+
+	bool available = (rsmi_num_monitor_devices(&deviceCount) == RSMI_STATUS_SUCCESS) && deviceCount > 0;
+	available = available && (rsmi_dev_energy_count_get(0, &energy, &precision, &timestamp) == RSMI_STATUS_SUCCESS);
+
+	if(HIP_PRIOR_6_2)
+	{
+		rsmi_shut_down();
+	}
+
+	return available;
 }
+#else
+bool ROCM::isAvailable()
+{
+	return false;
+}
+#endif // HAVE_ROCM_SMI_ROCM_SMI_H
 
 void ROCM::start(unsigned int sampling_frequency)
 {
