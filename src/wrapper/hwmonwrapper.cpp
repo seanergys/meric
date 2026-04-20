@@ -105,6 +105,8 @@ void HWMON::initCounters(bool detailed)
     struct SourceDef_t : public SourceDecl_t {
         SourceDef_t(const SourceDecl_t &decl)
             : SourceDecl_t(decl)
+            , id(0)
+            , period(0)
         {}
 
         std::string path;
