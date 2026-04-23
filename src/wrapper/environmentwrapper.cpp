@@ -1829,6 +1829,10 @@ void Environment::readSystemDefaultSettings()
 				defaultRestoreFile << restoreJson;
 				defaultRestoreFile.close();
 			}
+			else
+			{
+				MERIC_INFO << "WARNING: Failed to store system defaults: " << defaultSettingFile << std::endl;
+			}
 		}
 	}
 

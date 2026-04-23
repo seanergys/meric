@@ -172,7 +172,7 @@ def configure(ctx):
 		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 		
 		#check for libs to read performance counters
-		ctx.check_cxx(header_name="papi.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="papi.h", lib="papi", uselib_store="papi", execute=False, mandatory=False)
 		ctx.check_cxx(header_name="linux/perf_event.h", execute=False, mandatory=False)
 		
 		ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
@@ -365,7 +365,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 
@@ -380,7 +380,7 @@ def build(ctx):
 		ctx.shlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 		
@@ -431,7 +431,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -448,7 +448,7 @@ def build(ctx):
 	ctx.shlib(
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
