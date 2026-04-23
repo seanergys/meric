@@ -7,8 +7,10 @@ INCLUDES_MERIC=
 LIBPATH_MERIC=
 
 
-ifeq ($(FC),ifort)
+ifneq ($(filter ifort ifx pgfortran nvfortran,$(FC)),)
 	FORTFLAGS=-module
+else ifneq ($(filter nagfor,$(FC)),)
+	FORTFLAGS=-mdir
 else
 	FORTFLAGS=-J
 endif
