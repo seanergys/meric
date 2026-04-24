@@ -91,22 +91,44 @@ int main(int argc, char** argv)
 	dim3 grid(16,32);
 
 	MERIC_MeasureStart("compute");
-	
-	compute<<<grid, block>>>();
+
+
+	int deviceCount;
+	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
+	if(deviceCount < 1)
+	{
+		printf("No CUDA devices found, app will exit now!\n");
+		return -1;
+	}
+
+	for (int device=0; device<deviceCount; device++)
+	{ 
+		CUDA_CHECK(cudaSetDevice(device));
+		compute<<<grid, block>>>();
+	}
 	CUDA_CHECK(cudaPeekAtLastError());
-	CUDA_CHECK(cudaDeviceSynchronize());
+	for (int device=0; device<deviceCount; device++)
+	{
+		CUDA_CHECK(cudaSetDevice(device));
+		CUDA_CHECK(cudaDeviceSynchronize());
+	}
 	printf("Compute phase end\n");
 	
 	MERIC_MeasureStopStart("compute", "move");
 	
 	float *xr;
-	size_t bytes = (size_t)block.x * (size_t)block.y * (size_t)grid.x * (size_t)grid.y * sizeof(float);
-	CUDA_CHECK(cudaMallocHost((void**)&xr, bytes));
+	size_t elements = (size_t)block.x * (size_t)block.y * (size_t)grid.x * (size_t)grid.y;
+	size_t bytes = elements * sizeof(float);
+	CUDA_CHECK(cudaMallocHost((void**)&xr, (size_t)(deviceCount)*bytes));
 
-	set<<<grid, block>>>(xr);
-	read<<<grid, block>>>(xr);
-	CUDA_CHECK(cudaPeekAtLastError());
-	CUDA_CHECK(cudaDeviceSynchronize());
+	for (int device=0; device<deviceCount; device++)
+	{
+		CUDA_CHECK(cudaSetDevice(device));
+		set<<<grid, block>>>(xr+device*elements);
+		read<<<grid, block>>>(xr+device*elements);
+		CUDA_CHECK(cudaPeekAtLastError());
+		CUDA_CHECK(cudaDeviceSynchronize());
+	}
 	printf("Memory phase end\n");
 	
 	MERIC_MeasureStop("move");
