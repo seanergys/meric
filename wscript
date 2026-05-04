@@ -175,7 +175,7 @@ def configure(ctx):
 		ctx.check_cxx(header_name="papi.h", lib="papi", uselib_store="papi", execute=False, mandatory=False)
 		ctx.check_cxx(header_name="linux/perf_event.h", execute=False, mandatory=False)
 		
-		ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
+		#ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
 	
 	# SBI tool
 	else:
