@@ -80,8 +80,8 @@ void NVML::init(bool detailed, double sampleFreqHz)
     }
 
     if(nvmlInit_v2() != NVML_SUCCESS)
-	{
-		std::cerr << "NVML ERROR: Unable to initialize\n";
+    {
+        std::cerr << "NVML ERROR: Unable to initialize\n";
         return;
     }
 
@@ -175,7 +175,9 @@ void NVML::initCounters(bool detailed)
     {
         nvmlDevice_t deviceHandle;
         if (nvmlDeviceGetHandleByIndex(i, &deviceHandle) != NVML_SUCCESS)
+        {
             continue;
+        }
 
         auto deviceDescRes = s_deviceDesc.insert(std::make_pair(i, DeviceDesc_t{deviceHandle}));
         DeviceDesc_t &deviceDesc = deviceDescRes.first->second;
@@ -313,7 +315,6 @@ void NVML::initSamplers(bool detailed)
                     uint64_t deltaTime = timestamp - pSource->lastSampleTime;
                     pSource->sumValue += uint64_t(value * (double(deltaTime) * 1.0e-9));
                 }
-
                 pSource->lastSampleTime = timestamp;
             }
         };
@@ -337,20 +338,18 @@ void NVML::initSamplers(bool detailed)
                     if(ret == NVML_SUCCESS && fieldValues[i].nvmlReturn == NVML_SUCCESS)
                     {
                         value = fieldValues[i].value.uiVal;
-
                         if(value < sources[i]->lastValue && sources[i]->info.type == SourceInfo_t::TYPE_ENERGY)
+                        {
                             sources[i]->overflowCount++;
-
+                        }
                         sources[i]->lastValue = value;
                     }
-
                     ProcessSampleValue(sources[i], timestamp, value);
                 }
             }
 
             {
                 auto &sources = deviceDescIt.second.sources;
-
                 for(auto &pSource: sources)
                 {
                     unsigned long long value = 0;
@@ -358,14 +357,15 @@ void NVML::initSamplers(bool detailed)
                     {
                         value = 0;
                     }
-
                     ProcessSampleValue(pSource, timestamp, value);
                 }
             }
         }
 
         if(!pRequest)
+        {
             return;
+        }
 
         for(auto &desc: s_sourceByName)
         {
@@ -459,8 +459,12 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
             }
             else if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
             {
+                if (it == desc.samples.begin())
+                {
+                    continue;
+                }
                 power = PowerFromEnergySamples(*it, std::numeric_limits<uint64_t>::max(),
-                    it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.unit;
+                    (it - 1).base()) * desc.unit;
             }
 
             data.energy += power;
@@ -472,7 +476,9 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
         data.last  = std::distance(desc.samples.begin(), endIt);
 
         if(data.min > data.max)
+        {
             data.min = data.max;
+        }
     }
 
     return "";
@@ -508,7 +514,9 @@ nvmlDevice_t NVML::getGPUHandle(int id)
 {
     auto it = s_deviceDesc.find(id);
     if (it == s_deviceDesc.end())
+    {
         return nvmlDevice_t{};
+    }
     return it->second.device;
 }
 
@@ -557,7 +565,6 @@ void NVML::init(bool detailed, double sampleFreqHz)
 void NVML::close()
 {
     closeSamplers();
-
     // nvmlShutdown();
 }
 
