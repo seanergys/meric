@@ -87,7 +87,10 @@ void Environment::getCPUbrandString(std::string & CPUname)
 	CPUname = std::string(buff);
 }
 
-
+/**
+ * Provides the processor family and model in format XX_XXH, where first XX is family, second XX is model, H stands for hexadecimal
+ * Required for architecture-specific features (e.g., Sapphire Rapids uncore frequency monitoring)
+ **/
 void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 {
 	unsigned int regs[4];
@@ -106,10 +109,12 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
     uint32_t family_synth = family;
 
 	// Compute actual family and model
-	if (family == 0xF) {
+	if (family == 0xF)
+	{
 		family_synth += extended_family;
 	}
-	if (family == 0x6 || family == 0xF) {
+	if (family == 0x6 || family == 0xF)
+	{
 		model_synth += (extended_model << 4);
 	}
  
@@ -122,10 +127,9 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 
 	#if defined(_INTEL_)
     	CPUFamilyModelOut = std::string("INTEL_") + CPUFamilyModelOut;
-	#elif defined(_AMD_) || defined(__amd64__)
+	#elif defined(_AMD_)
 		CPUFamilyModelOut = std::string("AMD_") + CPUFamilyModelOut;
 	#endif
-
 }
 
 
@@ -433,6 +437,9 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	{
 		return;
 	}
+#if defined HAVE_E_SMI_E_SMI_H
+	return;
+#endif
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -1821,6 +1828,10 @@ void Environment::readSystemDefaultSettings()
 			{
 				defaultRestoreFile << restoreJson;
 				defaultRestoreFile.close();
+			}
+			else
+			{
+				MERIC_INFO << "WARNING: Failed to store system defaults: " << defaultSettingFile << std::endl;
 			}
 		}
 	}

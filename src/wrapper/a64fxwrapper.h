@@ -25,6 +25,7 @@
 
 #include "counters.h"
 #include "environmentwrapper.h"
+#include "basewrapper.h"
 
 using namespace A64FX_COUNTERS;
 
@@ -44,6 +45,8 @@ public:
 	static void getRatios(std::map<std::string, unsigned long long>& start, std::map<std::string, unsigned long long>& stop, double runtime, std::map <std::string, double> & ratios) {};
 
 	static inline double getUnit(std::string counterName);
+
+	// static void getSamplePeriodInfo(BaseWrapper::SamplePeriodInfo_t &info);
 
 	static bool isAvailable();
 

@@ -25,6 +25,10 @@ void MERIC_Init()
 		exit(EXIT_FAILURE);
 	}
 
+	// If MERIC_* variables are set/changed at runtime (e.g. from a socket message),
+	// refresh cached config before instantiation.
+	meric::Meric::refreshConfigFromEnv();
+
 	meric::Meric::readRegionParameters();
 	holder = new meric::DistributedMeric();
 }

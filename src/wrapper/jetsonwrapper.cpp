@@ -18,9 +18,8 @@ void JETSON::init() //int rank = 0)
 		std::cerr << "JETSON energy measurement system ERROR: connection failed\n";
 	
 	//get name of the file with measurements
-	char hostname[HOST_NAME_MAX];
-	gethostname(hostname, HOST_NAME_MAX);
-	filename = std::string(MERIC_PATH)+"/tools/jetsonMeasurement/"+std::string(hostname)+".csv";
+	std::string hostname = mutils::getHostnameShort();
+	filename = std::string(MERIC_PATH)+"/tools/jetsonMeasurement/"+hostname+".csv";
 }
 
 
@@ -265,7 +264,13 @@ void JETSON::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 	}
 }
 
+void JETSON::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+	uint64_t period = 1000000000ull / FREQUENCY;
+	info = SamplePeriodInfo_t(period, period, period);
+}
 
-
-
-
+bool JETSON::isAvailable()
+{
+	return true;
+}

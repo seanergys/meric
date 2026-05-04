@@ -17,7 +17,7 @@ void A64FX::init(bool detailed)
 		struct perf_event_attr attr;
 		memset(&attr, 0, sizeof(struct perf_event_attr));
 		attr.size = sizeof(struct perf_event_attr);
-		attr.inherit = 1;
+		attr.inherit = 0;
 		attr.type = type;
 		attr.config = config;
 		attr.disabled = 1;
@@ -27,52 +27,79 @@ void A64FX::init(bool detailed)
 
 	initCountersUnits();
 
-	const std::string suffix = "_";
-	const int suffixLength = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
-	for (int i = 0; i < Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE; i++)
+	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
+
+	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		std::ostringstream os;
-		os << std::setfill('0') << std::setw(suffixLength) << i;
-		countersFd[A64FX_COUNTERS::ENERGY_CORE + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_CORE], i);
-		if (i % Environment::CORES_PER_SOCKET == 0)
+		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
 		{
-			countersFd[A64FX_COUNTERS::ENERGY_L2 + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_L2], i);
-			countersFd[A64FX_COUNTERS::ENERGY_MEM + suffix + os.str()] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_MEM], i);
+			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+			std::ostringstream coreIdxFill;
+			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+			std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+			int core = Environment::mapCoresToSocket[i][j];
+
+			countersFd[A64FX_COUNTERS::ENERGY_CORE + suffixCoreIdx] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_CORE], core);
+		}
+
+		int socketIdx = i;
+
+		std::ostringstream socketIdxFill;
+		socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+		std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+		int core = Environment::mapCoresToSocket[i][0];
+
+		countersFd[A64FX_COUNTERS::ENERGY_L2 + suffixSocketIdx] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_L2], core);
+		countersFd[A64FX_COUNTERS::ENERGY_MEM + suffixSocketIdx] = setCounter(PERF_TYPE_RAW, counterDefines[A64FX_COUNTERS::ENERGY_MEM], core + 1);
+	}
+
+	for (std::map<const std::string, const uint64_t>::iterator iterator = counterDefines.begin(); iterator != counterDefines.end(); iterator++)
+	{
+		size_t suffixUnitStartPos = A64FX_COUNTERS::counterLabel[iterator->first].find_last_of(' ');
+		const std::string counterBaseLabel = A64FX_COUNTERS::counterLabel[iterator->first].substr(0, suffixUnitStartPos);
+		const std::string suffixUnit = A64FX_COUNTERS::counterLabel[iterator->first].substr(suffixUnitStartPos);
+
+		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+		{
+			if (iterator->first == A64FX_COUNTERS::ENERGY_CORE)
+			{
+				for (int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+				{
+					int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+
+					std::ostringstream coreIdxFill;
+					coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
+					std::string suffixCoreIdx = "_" + coreIdxFill.str();
+
+					A64FX_COUNTERS::counterLabel[iterator->first + suffixCoreIdx] = counterBaseLabel + suffixCoreIdx + suffixUnit;
+				}
+			}
+			else
+			{
+				int socketIdx = i;
+
+				std::ostringstream socketIdxFill;
+				socketIdxFill << std::setfill('0') << std::setw(socketIdxLength) << socketIdx;
+				std::string suffixSocketIdx = "_" + socketIdxFill.str();
+
+				A64FX_COUNTERS::counterLabel[iterator->first + suffixSocketIdx] = counterBaseLabel + suffixSocketIdx + suffixUnit;
+			}
 		}
 	}
 
 	for (std::map<std::string, long>::iterator iterator = countersFd.begin(); iterator != countersFd.end(); iterator++)
 	{
-		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) != 0)
+		if (ioctl(iterator->second, PERF_EVENT_IOC_RESET, 0) != 0)
 		{
 			std::cerr << "PREFEVENT error when reseting counter\n";
 		}
-		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) != 0)
+		if (ioctl(iterator->second, PERF_EVENT_IOC_ENABLE, 0) != 0)
 		{
 			std::cerr << "PREFEVENT error when starting counting\n";
-		}
-	}
-
-	for (std::map<const std::string, const uint64_t>::iterator iterator = counterDefines.begin(); iterator != counterDefines.end(); iterator++)
-	{
-		const int pos = A64FX_COUNTERS::counterLabel[iterator->first].find(' ');
-		const std::string prefix = A64FX_COUNTERS::counterLabel[iterator->first].substr(0, pos);
-		const std::string postfix = A64FX_COUNTERS::counterLabel[iterator->first].substr(pos);
-
-		for (int i = 0; i < Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE;)
-		{
-			std::ostringstream os;
-			os << std::setfill('0') << std::setw(suffixLength) << i;
-			A64FX_COUNTERS::counterLabel[iterator->first + suffix + os.str()] = prefix + suffix + os.str() + postfix;
-
-			if (iterator->first == A64FX_COUNTERS::ENERGY_CORE)
-			{
-				i++;
-			}
-			else
-			{
-				i += Environment::CORES_PER_SOCKET;
-			}
 		}
 	}
 }
@@ -134,6 +161,11 @@ void A64FX::close()
 	return;
 }
 #endif
+
+// void A64FX::getSamplePeriodInfo(BaseWrapper::SamplePeriodInfo_t &info)
+// {
+// 	info = BaseWrapper::SamplePeriodInfo_t();
+// }
 
 bool A64FX::isAvailable()
 {

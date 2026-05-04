@@ -15,6 +15,11 @@ ifeq ($(CC),)
 	CC=gcc
 endif
 
+ifeq ($(NVCC),)
+	NVCC=nvcc
+endif
+
+
 ifeq ($(FC),)
 	FC=gfortran
 	ifeq (, $(shell which ${FC}))
@@ -37,21 +42,25 @@ else
 	OPENMP=-fopenmp
 endif
 
+ifeq ($(MAKECMDGOALS),cudaTest)
+	OPENMP=-Xcompiler -fopenmp
+endif
 
 ################################################################################
 #HDEEM=-lhdeem -lfreeipmi
 #X86ADAPT=-lx86_adapt
 #CPUFREQ=--lcpufreq
 #CPUFREQ=-L/lib64/ -lcpupower
-#PAPI=-lpapi
+# PAPI=-lpapi
 #RESTCLIENT= -lrestclient-cpp
 #NUMA=-lnuma
 #NVML=-lnvidia-ml
 #ESMI=-le_smi64
+#SNMP= -lnetsnmp
 #LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
 ################################################################################
 MERIC=-L../lib -I../include 
-LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(CXX_FLAGS)
+LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(SNMP) $(CXX_FLAGS)
 BINARIES=plainTest test test_mpi blasTest samples sleepTest fortTest overHead
 ################################################################################
 MKL_PATHS=
@@ -59,7 +68,7 @@ MKL_PATHS=
 
 default: all
 
-all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo
+all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo fortTestInfo cudaTestInfo
 
  ######
 
@@ -103,6 +112,13 @@ fortTestInfo:
 	$(info INFO: to compile fort_test.f90 compile MERIC fortran using "make fortran" and compile the test app using "make fortTest" )
 	$(info )
 
+cudaTest: test_cuda.cu
+	$(NVCC) -O0 -g test_cuda.cu -lmeric $(LIBS) -o testCuda
+	
+cudaTestInfo:
+	$(info )
+	$(info INFO: to compile test_cuda.cu set NVCC and compile the test app using "make cudaTest" )
+	$(info )
 
  ######
 MeasurementDIRS=mericMeasurement* TEST* TESTMPI*

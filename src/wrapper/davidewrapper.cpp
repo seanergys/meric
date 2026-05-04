@@ -17,9 +17,7 @@ const std::string DAVIDE::SUM_ENERGY_LABEL = "Energy consumption [J]";
 RestClient::Connection* DAVIDE::conn_samples;
 void DAVIDE::init()
 {
-	char hostname[HOST_NAME_MAX];
-   	gethostname(hostname, HOST_NAME_MAX);
-   	std::string davideHostname = std::string(hostname);
+   	std::string davideHostname = mutils::getHostnameShort();
    	std::string::iterator it = davideHostname.begin();
 	while (it != davideHostname.end() && !std::isdigit(*it))
 		++it;
@@ -322,9 +320,16 @@ void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 
 #endif
 
+void DAVIDE::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+	info = SamplePeriodInfo_t();
+}
 
-
-
-
-
-
+bool DAVIDE::isAvailable()
+{
+#ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+	return true;
+#else
+	return false;
+#endif
+}

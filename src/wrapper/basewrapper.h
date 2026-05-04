@@ -72,6 +72,28 @@ public:
     };
 
     typedef std::vector<SamplerData_t> SamplerRecord_t;
+
+    struct SamplePeriodInfo_t {
+        SamplePeriodInfo_t(uint64_t min = 0, uint64_t initial = 0, uint64_t current = 0)
+            : min(min), initial(initial), current(current)
+        {}
+
+        uint64_t min;       ///< Minimal sampling period [ns]
+        uint64_t initial;   ///< Default sampling period [ns]
+        uint64_t current;   ///< Current sampling period [ns]
+    };
+
+protected:
+    template<typename T>
+    static double PowerFromEnergySamples(const T &sample, uint64_t rangeMax, const T *pPrevSample) {
+        if(!pPrevSample)
+            return 0.0;
+
+        uint64_t value = (sample.value < pPrevSample->value) ? ((rangeMax - pPrevSample->value) + sample.value) : (sample.value - pPrevSample->value);
+        double dt = 1.0f / (double(sample.timestamp - pPrevSample->timestamp) * 1.0e-9);
+
+        return double(value) * dt;
+    };
 };
 
 }

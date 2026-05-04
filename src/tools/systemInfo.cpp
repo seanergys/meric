@@ -8,10 +8,16 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <thread>
+#include "../basis/utils.h"
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/raplwrapper.h"
 #include "../wrapper/hwmonwrapper.h"
 #include "../wrapper/a64fxwrapper.h"
+#include "../wrapper/hdeemwrapper.h"
+#include "../wrapper/davidewrapper.h"
+#include "../wrapper/nvmlwrapper.h"
+#include "../wrapper/rocmwrapper.h"
+#include "../wrapper/occwrapper.h"
 
 #ifdef HAVE_MSR_CORE_H
 #include <msr_rapl.h>
@@ -1240,12 +1246,94 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 	return ok;
 }
 
+template<typename... Ts>
+struct make_void { typedef void type; };
+ 
+template<typename... Ts>
+using void_t = typename make_void<Ts...>::type;
+
+template<typename T, typename = void>
+struct HasCounterRecord_t : std::false_type {};
+
+template<typename T>
+struct HasCounterRecord_t<T, void_t<typename T::CounterRecord_t>> : std::true_type {};
+
+template<typename T, typename = void>
+struct HasSamplePeriodInfo_t : std::false_type {};
+
+template<typename T>
+struct HasSamplePeriodInfo_t<T, void_t<decltype(T::getSamplePeriodInfo)>> : std::true_type {};
+
+template<typename M, typename std::enable_if<HasCounterRecord_t<M>::value, bool>::type = true>
+void PrintCountersInfo(std::ostream &ss) {
+	typename M::CounterRecord_t counter_values;
+	M::getCounterValues(counter_values);
+
+	if(counter_values.empty())
+	{
+		ss << "n/a";
+	}
+	else
+	{
+		ss << meric::join(counter_values.begin(), counter_values.end(), 
+			std::string(", "), [](const typename M::CounterRecord_t::value_type &v) { return v.first; });
+	}
+
+	std::cout << "\n";
+}
+
+template<typename M, typename std::enable_if<!HasCounterRecord_t<M>::value, bool>::type = true>
+void PrintCountersInfo(std::ostream &ss) {
+	ss << "n/a";
+	ss << "\n";
+}
+
+template<typename M, typename std::enable_if<HasSamplePeriodInfo_t<M>::value, bool>::type = true>
+void PrintSampleInfo(std::ostream &ss) {
+	typename M::SamplePeriodInfo_t info;
+	M::getSamplePeriodInfo(info);
+
+	ss <<  "\t\tSampling default frequency: " << (info.initial == 0 ? 0.0 : (1.0 / (double(info.initial) * 1.0e-9))) << " Hz\n"
+    	<< "\t\tSampling max frequency:     " << (info.min == 0 ? 0.0 : (1.0 / (double(info.min) * 1.0e-9))) << " Hz\n";
+}
+
+template<typename M, typename std::enable_if<!HasSamplePeriodInfo_t<M>::value, bool>::type = true>
+void PrintSampleInfo(std::ostream &ss) {
+	ss <<  "\t\tSampling default frequency: n/a\n"
+		<< "\t\tSampling max frequency:     n/a\n";
+}
+
+template<typename M>
+bool PrintWrapperInfo() {
+	if(!M::isAvailable())
+		return false;
+
+	std::cout << "\t" << M::getSourceLabel() << ": ";
+
+	M::init();
+	PrintCountersInfo<M>(std::cout);
+	PrintSampleInfo<M>(std::cout);
+	M::close();
+
+	return true;
+}
+
 void listEnergySystemsWithDomains()
 {
 	int systems = 0;
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 	meric::Environment::initHWSizes();
 
+	systems += PrintWrapperInfo<meric::RAPL>()   ? 1 : 0;
+	systems += PrintWrapperInfo<meric::HDEEM>()  ? 1 : 0;
+	systems += PrintWrapperInfo<meric::DAVIDE>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::NVML>()   ? 1 : 0;
+	systems += PrintWrapperInfo<meric::ROCM>()   ? 1 : 0;
+	systems += PrintWrapperInfo<meric::OCC>()    ? 1 : 0;
+	systems += PrintWrapperInfo<meric::A64FX>()  ? 1 : 0;
+	systems += PrintWrapperInfo<meric::HWMON>()  ? 1 : 0;
+
+/*
 	if (meric::RAPL::isAvailable())
 	{
 		meric::RAPL::init(false);
@@ -1287,6 +1375,8 @@ void listEnergySystemsWithDomains()
 				std::cout << ", ";
 		}
 		std::cout << "\n";
+		meric::NVML::SamplePeriodInfo_t info;
+		meric::NVML::getSamplePeriodInfo(info);
 		meric::NVML::close();
 
 		systems++;
@@ -1354,6 +1444,7 @@ void listEnergySystemsWithDomains()
 		meric::HWMON::close();
 		systems++;
 	}
+*/
 
 	if (systems == 0)
 	{

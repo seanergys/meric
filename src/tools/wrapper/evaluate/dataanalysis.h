@@ -14,6 +14,7 @@
 #include "../../../wrapper/jetsonwrapper.h"
 #include "../../../wrapper/nvmlwrapper.h"
 #include "../../../wrapper/occwrapper.h"
+#include "../../../wrapper/e4wrapper.h"
 
 class DataAnalysis {
 
@@ -215,6 +216,10 @@ public:
 		else if (config.meric.measure.value == meric::MODE_DAVIDE)
 		{
 			label_dataSource = std::string("# SAMPLES - ")+meric::DAVIDE::getSourceLabel()+" (Blade):";
+		}
+		else if (config.meric.measure.value == meric::MODE_PDU)
+		{
+			label_dataSource = std::string("# COUNTERS - ")+meric::E4::getSourceLabel()+":";
 		}
 		std::cout << "LABEL = '"<< label_energy << "' SRC = '" << label_dataSource << "'\n";
 	}

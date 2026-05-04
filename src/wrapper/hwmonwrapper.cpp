@@ -105,6 +105,8 @@ void HWMON::initCounters(bool detailed)
     struct SourceDef_t : public SourceDecl_t {
         SourceDef_t(const SourceDecl_t &decl)
             : SourceDecl_t(decl)
+            , id(0)
+            , period(0)
         {}
 
         std::string path;
@@ -527,9 +529,8 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
             continue;
         }
 
-        record.push_back(SamplerData_t());
-
         const SourceDesc_t &desc = *s_sourceById[i];
+        record.push_back(SamplerData_t(desc.info));
         SamplerData_t &data = record.back();
         data.id = i;
         data.name = desc.fullName;
@@ -565,6 +566,13 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
     }
 
     return "";
+}
+
+void HWMON::getSamplePeriodInfo(SamplePeriodInfo_t &info)
+{
+    info.min     = s_minSamplePeriod.count();
+    info.initial = s_defaultSamplePeriod.count();
+    info.current = s_currentSamplePeriod.count();
 }
 
 bool HWMON::isAvailable()

@@ -10,7 +10,7 @@
 #include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
-#include "cpuidsignatures.h"
+#include "hwidsignatures.h"
 
 #ifdef HAVE_MSR_CORE_H
 	#include <msr_clocks.h>

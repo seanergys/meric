@@ -46,27 +46,59 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>());
+		}
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<OCC, uint64_t, uint64_t>());
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
-		_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>());
+		}
+	}
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{ 
+		#ifdef HAVE_E4_PDU // needed to distinct future pdus
+			if(Meric::SAMPLES)
+				_storeList.push_back(new SamplesStore<E4>(Meric::SAMPLES));
+			else
+				_storeList.push_back(new CountersStore<E4, unsigned long long, double>());
+		#endif
+
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
 		_storeList.push_back(new CountersStore<ROCM, uint64_t, double>());
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
-		_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		if(Meric::SAMPLES)
+		{
+			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
+		}
+		else
+		{
+			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>());
+		}
 	}
+
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_JETSON) != MONITORS.end())
 	{
 		_storeList.push_back(new SamplesStore<JETSON>(Meric::SAMPLES));
@@ -83,6 +115,7 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>());
 	}
+	
 	
 	if (Meric::COUNTERS != "none")
 	{
@@ -157,6 +190,12 @@ SharedMeric::SharedMeric()
 		case MODE_A64FX:
 			A64FX::init();
 			break;
+		case MODE_PDU:
+			#ifdef HAVE_E4_PDU
+				E4::init(Meric::MERIC_E4MACHINE_TO_MONITOR, Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
+				E4::start(_startTime, Meric::SAMPLES); // TODO: Pass Meric::SAMPLES to specify requested sampling frequency
+			#endif
+			break;
 		case MODE_NVML:
 			NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
 			break;
@@ -197,7 +236,12 @@ SharedMeric::~SharedMeric()
 	{
 		DAVIDE::close();
 	}
-
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{
+		#ifdef HAVE_E4_PDU
+			E4::close();
+		#endif
+	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
 		RAPL::close();

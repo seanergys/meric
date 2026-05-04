@@ -10,7 +10,7 @@
  ### PRINT LIST OF ENV VARIABLES ###
 variables()
 {
-	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_PWRCAP_POWER MERIC_PWRCAP_TIME MERIC_GPU_FREQUENCY MERIC_GPU_MEM_FREQUENCY MERIC_PWRCAP_GPU MERIC_COUNTERS MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_MEASURE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS
+	for exp in MERIC_FREQUENCY MERIC_UNCORE_FREQUENCY MERIC_NUM_THREADS MERIC_PWRCAP_POWER MERIC_PWRCAP_TIME MERIC_GPU_FREQUENCY MERIC_GPU_MEM_FREQUENCY MERIC_PWRCAP_GPU MERIC_COUNTERS MERIC_DETAILED MERIC_AGGREGATE MERIC_DEBUG MERIC_SAMPLES MERIC_SAMPLING_FREQUENCY MERIC_MEASURE MERIC_OUTPUT_DIR MERIC_OUTPUT_FILENAME MERIC_REGION_OPTIONS MERIC_BARRIERS MERIC_PIN_MODE
 	do
         	if [ ! -z ${!exp} ]
 	        then
@@ -49,13 +49,15 @@ export MERIC_GPU_FREQUENCY=0     # [Hz] no GPU streaming multiprocessors frequen
 export MERIC_GPU_MEM_FREQUENCY=0 # [Hz] no GPU memory frequency tuning
 export MERIC_PWRCAP_GPU=0        # [mW] default GPU power capping
 
-export MERIC_MEASURE=NONE       # comma separated list of {HDEEM-S, HDEEM-C, RAPL, NVML, ROCM, DAVIDE, JETSON, THUNDER, TIME, OCC, A64FX, NONE}
-export MERIC_AGGREGATE=1        # aggregated data from all the nodes
-export MERIC_COUNTERS=perfevent # perfevent, papi, msr
-# export MERIC_DETAILED=1       # detailed information about the system
-# export MERIC_SAMPLES=0        # [Hz] sampling frequency if possible to adjust, 0 = do not store power samples
-# export MERIC_BARRIERS=all     # {all, mpi, omp, none}
-# export MERIC_DEBUG=0          # HDEEM debug mode off
+export MERIC_PIN_MODE=default        # threads/processes pinning to cores {default, close, spread, none}
+export MERIC_MEASURE=NONE            # comma separated list of {HDEEM-S, HDEEM-C, RAPL, NVML, ROCM, DAVIDE, JETSON, THUNDER, TIME, OCC, A64FX, PDU, NONE}
+export MERIC_AGGREGATE=1             # aggregated data from all the nodes
+export MERIC_COUNTERS=perfevent      # {perfevent, papi, msr}
+# export MERIC_DETAILED=1            # detailed information about the system
+# export MERIC_SAMPLES=1             # store power samples
+# export MERIC_SAMPLING_FREQUENCY=10 # [Hz] sampling frequency
+# export MERIC_BARRIERS=all          # {all, mpi, omp, none}
+# export MERIC_DEBUG=0               # HDEEM debug mode off
 
 # export MERIC_OUTPUT_DIR=mericMeasurement
 # export MERIC_OUTPUT_FILENAME=APP0

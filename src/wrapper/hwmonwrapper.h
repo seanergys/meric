@@ -66,7 +66,7 @@ namespace meric
         typedef std::map<std::string, CounterValue_t> CounterRecord_t;
 
         // Counters interface
-        static void init(bool detailed, double sampleFreqHz = 0.0);
+        static void init(bool detailed = false, double sampleFreqHz = 0.0);
         static void close();
 
         static void getCounterValues(CounterRecord_t &record);
@@ -105,6 +105,8 @@ namespace meric
             
             return vrSensorLabel[id]; 
         }
+
+        static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
         static bool isAvailable();
 

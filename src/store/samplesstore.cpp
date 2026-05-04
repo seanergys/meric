@@ -89,8 +89,21 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		}
 	}
 
+	int samplerErrorCount = 0;
+
 	for(const auto &sampler: samplerRecord)
 	{
+		if(sampler.last == 0 || sampler.last <= sampler.first)
+		{
+			if(samplerErrorCount == 0)
+			{
+				ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << ") - ERROR\n";
+			}
+
+			samplerErrorCount++;
+			continue;
+		}
+
 		if(printSamples && staticRegion)
 		{
 			samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << ") power [W]:\n";
@@ -125,5 +138,6 @@ template class meric::SamplesStore <JETSON>;
 template class meric::SamplesStore <THUNDER>;
 template class meric::SamplesStore <DAVIDE>;
 template class meric::SamplesStore <HWMON>;
+template class meric::SamplesStore <E4>;
 template class meric::SamplesStore <RAPL>;
 template class meric::SamplesStore <NVML>;

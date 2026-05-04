@@ -126,13 +126,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, RAPL::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<RAPL>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<RAPL>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<RAPL, RAPL::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<RAPL, RAPL::CounterValue_t, double>(!_MPInodeRank));
+			}
 		}
 	}
 	else if (std::find(MONITORS.begin(), MONITORS.end(), MODE_OCC) != MONITORS.end())
@@ -151,13 +163,47 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<NVML>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<NVML>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<NVML, unsigned long long, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<NVML, unsigned long long, double>(!_MPInodeRank));
+			}
+		}
+	}
+
+	if(std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{
+		if (Meric::AGGREGATE)
+		{
+			if(Meric::SAMPLES){
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<E4>>(_storingProcs, !_MPInodeRank));
+			}
+			else{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<E4, E4::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
+		}
+		else
+		{
+			if(Meric::SAMPLES){
+				_storeList.push_back(new SamplesStore<E4>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else{
+				_storeList.push_back(new CountersStore<E4, E4::CounterValue_t, double>(!_MPInodeRank));
+			}
 		}
 	}
 	
@@ -177,13 +223,25 @@ DistributedMeric::DistributedMeric()
 	{
 		if (Meric::AGGREGATE)
 		{
-			_storeList.push_back(new CountersAggregateStore<CountersStore<HWMON, HWMON::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
-			_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesAggregateStore<SamplesStore<HWMON>>(_storingProcs, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersAggregateStore<CountersStore<HWMON, HWMON::CounterValue_t, double>>(_storingProcs, !_MPInodeRank));
+			}
 		}
 		else
 		{
-			_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
-			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
+			if(Meric::SAMPLES)
+			{
+				_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES, !_MPInodeRank));
+			}
+			else
+			{
+				_storeList.push_back(new CountersStore<HWMON, HWMON::CounterValue_t, double>(!_MPInodeRank));
+			}
 		}
 	}
 		
@@ -291,6 +349,14 @@ DistributedMeric::DistributedMeric()
 		currentState.socket[socket] = defaultParameter;
 	}
 
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end() && !_MPInodeRank)
+	{
+		#ifdef HAVE_E4_PDU // needed to distinct future pdus
+			E4::init(Meric::MERIC_E4MACHINE_TO_MONITOR, Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
+			E4::start(_startTime, Meric::SAMPLES);
+		#endif
+	}
+	
 	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapDist_t<uint64_t>(
 		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,
 		std::max(defaultParameter.nthreads, 1), _currentNode));
@@ -340,6 +406,7 @@ DistributedMeric::DistributedMeric()
 	{
 		A64FX::init();
 	}
+	 
 	
 	//wrappers must be initialized after meric instantiation
 	//RAPL + MSR wrappers expects that environment::init() was already called
@@ -353,19 +420,19 @@ DistributedMeric::DistributedMeric()
 		PAPI::init();
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end() && !_MPInodeRank)
 	{
 		RAPL::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		RAPL::start(_startTime, Meric::SAMPLES);
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end() && !_MPInodeRank)
 	{
 		HWMON::init(Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
 		HWMON::start(_startTime, Meric::SAMPLES);
 	}
 
-	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
+	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end() && !_MPInodeRank)
 	{
 		NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
 	}
@@ -397,6 +464,12 @@ DistributedMeric::~DistributedMeric()
 	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_DAVIDE) != MONITORS.end())
 	{
 		DAVIDE::close();
+	}
+	if (!_MPInodeRank && std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
+	{
+		#ifdef HAVE_E4_PDU
+			E4::close();
+		#endif
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{

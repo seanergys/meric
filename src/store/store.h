@@ -22,6 +22,7 @@
 #include "../wrapper/thunderwrapper.h"
 #include "../wrapper/davidewrapper.h"
 #include "../wrapper/hwmonwrapper.h"
+#include "../wrapper/e4wrapper.h"
 #include "../wrapper/raplwrapper.h"
 #include "../wrapper/nvmlwrapper.h"
 #include "../basis/utils.h"

@@ -44,7 +44,8 @@ def configure(ctx):
 		ctx.load(ctx.options.cpp)
 	except:
 		if ('CXX' in ctx.env):
-			if (ctx.env['CXX'][0].endswith('clang++') or ctx.env['CXX'][0] == 'CC'):
+			chain=ctx.env['CXX'][0]
+			if (chain.endswith('clang++') or chain.endswith('CC') or (len(chain) > 3 and chain[-4:-1] == 'icp')):
 				ctx.load("clang++")
 			else:
 				ctx.load("g++")
@@ -146,6 +147,16 @@ def configure(ctx):
 			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False)
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
 			ctx.env.append_unique("LINKFLAGS", [ "-lrocm_smi64" ])
+
+		if os.path.exists("/opt/share/scripts/powerdiscovery/getpower.sh") or os.path.exists("/opt/share/scripts/powerdiscovery/dcpower"):
+			if ctx.check_cxx(header_name="net-snmp/net-snmp-config.h",
+					lib="netsnmp",
+					uselib_store="netsnmp", 
+					execute=False,
+					mandatory=False,
+					msg="Checking for header net-snmp/net-snmp-config.h"): 
+				ctx.env.append_unique("DEFINES", [ "HAVE_E4_PDU=1" ])
+				ctx.check_cxx(msg='Checking for E4 PDU infrastructure')
 		ctx.check_cxx(header_name="stdint.h e_smi/e_smi.h", define_name="HAVE_E_SMI_E_SMI_H", lib="e_smi64", uselib_store="esmi", execute=False, mandatory=False, msg="Checking for header e_smi/e_smi.h")
 		ctx.check_cxx(header_name="numa.h", lib="numa", uselib_store="numa", execute=False, mandatory=False)
 #		ctx.check_cxx(header_name="cilk/cilk_api.h", execute=False, mandatory=False)
@@ -161,7 +172,7 @@ def configure(ctx):
 		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 		
 		#check for libs to read performance counters
-		ctx.check_cxx(header_name="papi.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="papi.h", lib="papi", uselib_store="papi", execute=False, mandatory=False)
 		ctx.check_cxx(header_name="linux/perf_event.h", execute=False, mandatory=False)
 		
 		ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
@@ -262,12 +273,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/e4wrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
-		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp",
 		install_path = "${PREFIX}/bin"
 	)
 	
@@ -285,12 +297,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/e4wrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
-		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower",
+		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower netsnmp",
 		install_path = "${PREFIX}/bin"
 	)
 	
@@ -302,8 +315,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/raplwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/nvmlwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/rocmwrapper.cpp') +
-			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hdeemwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/thunderwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/jetsonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/davidewrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
@@ -347,7 +365,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 
@@ -362,7 +380,7 @@ def build(ctx):
 		ctx.shlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 		
@@ -413,7 +431,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -430,7 +448,7 @@ def build(ctx):
 	ctx.shlib(
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -463,13 +481,13 @@ def build(ctx):
 
 ################################################################################
 def options(opt):
-	option_group = opt.get_option_group('configure options')
-	option_group.add_option("--prefix",
+	opt.add_option(
+		"--prefix",
 		dest='prefix',
 		default=opt.path.abspath(),
-		help="installation prefix"
+		help="Installation prefix"
 	)
-
+	
 	opt.add_option(
 		"--verbose",
 		action="store_true",
@@ -533,17 +551,19 @@ def options(opt):
 		help="Compiler flags (-std=c++11, -fPIC and -qopenmp/-fopenmp are default)"
 	)
 	
-	opt.add_option("--includes",
+	opt.add_option(
+		"--includes",
 		action="store",
-		type="string",
 		metavar="INCLUDE_PATHS",
 		default="",
-		help="List of paths to include")
+		help="List of paths to include"
+	)
 	
-	opt.add_option("--libpaths",
+	opt.add_option(
+		"--libpaths",
 		action="store",
-		type="string",
 		metavar="LIB_PATHS",
 		default="",
-		help="List of paths to libraries")
+		help="List of paths to libraries"
+	)
 

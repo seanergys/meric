@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <unordered_map>
+#include <set>
 
 // From PAPI src https://bitbucket.org/icl/papi/src/6d0f9d3dfb45a2f4262e9f63963e34cd121cd3d1/src/components/perf_event/perf_helpers.h#lines-5
 /* In case headers aren't new enough to have __NR_perf_event_open */
@@ -74,9 +75,12 @@ const std::string INTEL_CPU_DRAM_BYTES_READ = "CPU_DRAM_READ";
 const std::string INTEL_CPU_DRAM_BYTES_WRITE = "CPU_DRAM_WRITE";
 #elif defined _ARM_
 const std::string ARM_CPU_INSTS_SCALAR_FP = "CPU_INST_SCALAR_FP";
+const std::string ARM_CPU_INSTS_NEON = "CPU_INST_NEON";
 const std::string ARM_CPU_INSTS_SVE = "CPU_INST_SVE";
 const std::string ARM_CPU_FLOPS_SCALAR_NEON = "CPU_FLOPS_SCALAR_NEON";
 const std::string ARM_CPU_FLOPS_SVE = "CPU_FLOPS_SVE";
+const std::string ARM_CPU_FLOPS_SVE_SP = "CPU_FLOPS_SVE_SP";
+const std::string ARM_CPU_FLOPS_SVE_DP = "CPU_FLOPS_SVE_DP";
 const std::string ARM_CPU_L3_MISSES = "CPU_L3_MISSES";
 const std::string NVIDIA_GRACE_CPU_UNCORE_CYCLES = "CPU_UNCORE_CYCLES";
 const std::string NVIDIA_GRACE_MEM_DRAM_BYTES_READ = "MEM_DRAM_READ";
@@ -99,9 +103,12 @@ static std::map<const std::string, std::string> counterLabel = {
 	{ INTEL_CPU_DRAM_BYTES_WRITE,        "CPU_DRAM_BYTES_WRITE"            },
 	#elif defined _ARM_
 	{ ARM_CPU_INSTS_SCALAR_FP,           "CPU_INSTRUCTIONS_SCALAR_FP"      },
+	{ ARM_CPU_INSTS_NEON,                "CPU_INSTRUCTIONS_VEC_NEON"       },
 	{ ARM_CPU_INSTS_SVE,                 "CPU_INSTRUCTIONS_VEC_SVE"        },
 	{ ARM_CPU_FLOPS_SCALAR_NEON,         "CPU_FLOPS_SCALAR_VEC_NEON"       },
 	{ ARM_CPU_FLOPS_SVE,                 "CPU_FLOPS_VEC_SVE"               },
+	{ ARM_CPU_FLOPS_SVE_SP,              "CPU_FLOPS_VEC_SVE_SP"            },
+	{ ARM_CPU_FLOPS_SVE_DP,              "CPU_FLOPS_VEC_SVE_DP"            },
 	{ ARM_CPU_L3_MISSES,                 ARM_CPU_L3_MISSES                 },
 	{ NVIDIA_GRACE_CPU_UNCORE_CYCLES,    NVIDIA_GRACE_CPU_UNCORE_CYCLES    },
 	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ,  "MEM_DRAM_BYTES_READ"             },
@@ -124,9 +131,12 @@ static std::map<const std::string, uint64_t> counterDefines = {
 	{ INTEL_CPU_L3_MISSES,               0x20d1      }
 	#elif defined _ARM_
 	{ ARM_CPU_INSTS_SCALAR_FP,           0x0075      },
+	{ ARM_CPU_INSTS_NEON,                0x0074      },
 	{ ARM_CPU_INSTS_SVE,                 0x8006      },
 	{ ARM_CPU_FLOPS_SCALAR_NEON,         0x80c1      },
 	{ ARM_CPU_FLOPS_SVE,                 0x80c0      },
+	{ ARM_CPU_FLOPS_SVE_SP,              0x80c4      },
+	{ ARM_CPU_FLOPS_SVE_DP,              0x80c6      },
 	{ ARM_CPU_L3_MISSES,                 0x0037      },
 	{ NVIDIA_GRACE_CPU_UNCORE_CYCLES,    0x100000000 },
 	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ,  0x01a5      },
@@ -376,7 +386,7 @@ struct CounterDef_t {
 		FLAG_VIRTUAL_BIT       = 1 << 2,
 	};
 
-	std::vector<std::string> name;
+	std::set<std::string> names;
 	std::string label;
 	std::string unit;
 	Domain_t    domain;
@@ -389,12 +399,12 @@ const std::string RAPL_SUM_ENERGY = "ENERGY_CONSUMPTION";
 
 static std::map<const std::string, CounterDef_t> counterDefs = {
 #ifdef _INTEL_
-	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
-	{ "RAM", { { "power", "energy-ram" }, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
+	{ "PCKG", { { "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 214, 0x2 } },
+	{ "RAM", { { "energy-ram" }, "RAM", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_NONE_BIT, 214, 0x3 } },
 	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #else // _AMD_
-	{ "PCKG", { { "power", "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
-	{ "CORE", { { "power_core", "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_DETAILED_ONLY_BIT, 0, 0x0 }},
+	{ "PCKG", { { "energy-pkg" }, "PCKG", "[J]", CounterDef_t::DOMAIN_PER_SOCKET, CounterDef_t::FLAG_ACCUMULATIVE_BIT, 0, 0x0 } },
+	{ "CORE", { { "energy-core" }, "CORE", "[J]", CounterDef_t::DOMAIN_PER_CORE, CounterDef_t::FLAG_DETAILED_ONLY_BIT, 0, 0x0 }},
 	{ RAPL_SUM_ENERGY, { {}, "Energy consumption", "[J]", CounterDef_t::DOMAIN_NONE, CounterDef_t::FLAG_NONE_BIT, 0, 0x0 }},
 #endif
 };
