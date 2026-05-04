@@ -1,22 +1,27 @@
-### XX.XX.XXXX #################################################################
-  - MERIC E4 Remote node monitoring utility with E4 PDU sampling support.
+### 04.05.2026 #################################################################
+  - change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
+  - fixed MPI support in Python
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
   - improved power monitoring system availability detection
+  - systemInfo detailed output on available power monitoring systems
   - MERICext support for HWMON energy measurement
-  - Change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
-  - Solved Blade error
-  - No need to store power samples to evaluate energy consumption from HWMON power sampling
+  - solved Blade error output of non-HDEEM power monitoring systems
+  - removed requirement to store power samples to evaluate energy consumption from HWMON power sampling
   - MERIC does no longer recognize power monitoring systems HWMON-S and HWMON-C, but only unified HWMON
   - support for monitoring of performance counters on Fujitsu A64FX using perfevent and evaluation of corresponding metrics
+  - support for energy measurement from PDUs exposing the power samples to user space 
+  - MERIC E4 Remote node monitoring utility with E4 PDU sampling support
+  - new CUDA test application
+  - support for additional Fortran compilers
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
   - support for power sampling (use MERIC_SAMPLES to specify sampling frequency [Hz]), current support for HWMON, RAPL and NVML
   - new python module for MERIC usage with python applications
-  - new static tool supporting multi-node energy measurment, and energy counters overflow handling
+  - new static tool supporting multi-node energy measurement, and energy counters overflow handling
   - support for Nvidia Grace/Grace Hopper energy and power sampling using HWMON and NVML
-  - support for AMD MI250X energy measurment and frequency scaling using AMD ROCm
+  - support for AMD MI250X energy measurement and frequency scaling using AMD ROCm
   - support for Intel and AMD RAPL energy readings from the intel_rapl / intel_rapl_common kernel module 
   - support for Intel and AMD RAPL energy readings using perf
   - support for AMD RAPL energy readings using amd_energy interface
@@ -49,13 +54,13 @@
   - fixed restore of the system hardware settings in the energyMeasureStop
   - improved systemInfo tool
 		+ extended amount of the reported information, including the system topology
-		+ provides posibility to restore the system settings
+		+ provides possibility to restore the system settings
   - HW tuning and RAPL energy measurement using GEOPM
   - continual mode is now default
   - it is not necessary any more to set MERIC_CONTINUAL for energy measurement systems that does not support non-continual measurement
   - unified output label for all the energy measurement systems
   - removed the duty to compile MERIC with numactl when libmsr, x86_adapt, and GEOPM not available
-  - compiler detection has been added, if not recognised, the default compiler is GNU (instead of Intel compiler, which was default previously)
+  - compiler detection has been added, if not recognized, the default compiler is GNU (instead of Intel compiler, which was default previously)
   - SBI tools are compiled together with MERIC when using GNU compiler (Dyninst must be compiled using GNU compiler)
   - all the MERIC's utilities are located in the tools directory, the source files re-located
   - new format of the file that keeps the default settings, now supports multiple architectures from one installation
@@ -64,7 +69,7 @@
   - new option MERIC_OUTPUT_FORMAT
   - RAPL power limit time window description changed from Twindow to CPUPWRtw
   - (power) samples are stored juts once in a separate directory
-  - readex.h dropped from the MERIC repository, the feature of multi-tools instrumentation provides Instrument API, testcases now use MERIC API only
+  - readex.h dropped from the MERIC repository, the feature of multi-tools instrumentation provides Instrument API, test cases now use MERIC API only
   - TIMEPROF library now allows to collect runtime of regions by all processes, and checks that the regions have been executed by all processes the same number of times (TIMEPROF_MASTER=0).
   - simplified MERIC configuration file
 		- removed socket-/node-specific tuning
