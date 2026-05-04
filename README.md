@@ -136,7 +136,7 @@ Since RAPL measurement is stored in a performance counter, overflow may happen d
 
 Intel uses RAPL system to limit power consumption of their CPUs. The power limit can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
 
-MERIC supports reading RAPL energy consumption od Intel and AMD CPUs using virtual sysfs created by [intel_rapl/intel_rapl_common](https://github.com/torvalds/linux/blob/master/drivers/powercap/intel_rapl_common.c) linux kernel module. To reduce energy reading overhead and to receive more detailed information MERIC support usage [msr-safe](https://github.com/LLNL/msr-safe) (works well for both Intel and AMD). If MERIC compiled at a system with the msr-safe available, then the msr-safe is always used for the readings. In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) (support for Icelake and older Intel architectures) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
+MERIC supports reading RAPL energy consumption od Intel and AMD CPUs using virtual sysfs created by [intel_rapl/intel_rapl_common](https://github.com/torvalds/linux/blob/master/drivers/powercap/intel_rapl_common.c) linux kernel module. Similar interface is available in AMD CPUs created by [amd_energy](https://github.com/amd/amd_energy) kernel module. To reduce energy reading overhead and to receive more detailed information, MERIC supports [msr-safe](https://github.com/LLNL/msr-safe) (works well for both Intel and AMD). If MERIC is compiled at a system with the msr-safe available, then the msr-safe is always used for the readings. In case of Intel, it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) (support for Icelake and older Intel architectures) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode, MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
 
 
 ## HDEEM ##
@@ -170,8 +170,10 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 
 
 ## Fujisu A64FX ##
-Energy measurement of ARM-based A64FX is provided by performance counters of three power domains (CORE, MEMORY, and L2 cache). MERIC uses perf to read them. These events count energy consumption every cycle of the domain, which means high-frequency power sampling when CPU is under a load, however **no energy measurement** is provided when it is idle.
+Energy measurement of ARM-based A64FX is provided by performance counters of three power domains (CORE, MEMORY, and L2 cache). MERIC uses perf to read them. Requires `/proc/sys/kernel/perf_event_paranoid = 0`.
 
+## PDU ##
+Some server systems are powered by Power Distribution Unit (PDU) which allows to expose power consumption of the server to the user space. A library providing the power samples from the PDU to the MERIC is necessary. 
 
 ## BSC ARM Jetson ##
 Part of the MERIC repository is a Python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
@@ -332,6 +334,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - [ROCm](https://github.com/ROCm/rocm_smi_lib)
 * optionally - [numactl](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
+* optionally - [net-snmp](https://github.com/net-snmp/net-snmp/) - mandatory for E4 PDU power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
 During runtime MERIC create one or a few temporary files. `MERIC_TMP_PATH` must be defined in the configuration stage to specify location where to store these files, otherwise these files are created in the MERIC root directory.
@@ -438,7 +441,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
 	- HDEEM   = Equals to HDEEM-S option.
-	- RAPL    = Intel RAPL energy measurement.
+	- RAPL    = Intel/AMD RAPL energy measurement.
 	- NVML    = Nvidia GPUs energy measurement.
 	- HWMON   = Nvidia CPU/platform energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
@@ -447,6 +450,7 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
 	- JETSON  = BSC Jetson TX1 energy and power measurement.
 	- THUNDER = BSC ThunderX energy and power measurement.
+	- PDU     = PDU energy measurement.
 	- TIME    = Runtime measurement, default for other modes.
 
 * `export MERIC_BARRIERS=all`
@@ -522,8 +526,6 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* One region, with two another regions inside.
 	* test_mpi.cpp
 		* Same test as test.c, only extended with MPI.
-	* fort_test.f90
-		* Fortran version of test.cpp to show the MERIC Fortran interface.
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
@@ -532,12 +534,18 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* Originally made to control real CPU frequency of the machine.
 	* overhead_test.cpp
 		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
+	* fort_test.f90
+		* Fortran version of test.cpp to show the MERIC Fortran interface.
+		* It si compiled using `make fortTest`.
 	* blas_test.cpp
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
-		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests.
+		* This test requires [Intel MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) library.
+		* It is compiled using `make blasTest`.
+	* cuda_test.cu
+		* Executes a memory bound and a compute bound kernels in all available GPUs.
+		* It is compiled using `make cudaTest`.
 * Makefile
-	* Command `make` compiles all test codes except blas_test.cpp.
-	* To compile blas_test.cpp use `make blasTest` command.
+	* Command `make` compiles all test codes except the ones which explicitly lists its compilation command.
 * environment_default.source
 	* Basic script that sets chosen MERIC environment variables and informs you which variables are set.
 	* When run with argument `-t`, the script just prints list of set variables.
