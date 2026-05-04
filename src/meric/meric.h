@@ -179,7 +179,6 @@ public:
 			{
 				long paramChange = 0;
 				// core frequency
-#if defined HAVE_CPUFREQ_H || defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
 				if (next.frequency)
 				{
 					paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency - next.frequency : next.frequency - prev.socket[socket].frequency;
@@ -198,12 +197,9 @@ public:
 						prev.socket[socket].frequency = defaultParameter.frequency;
 					}
 				}
-#else
-				change.socket[socket].frequency = 0;
-				prev.socket[socket].frequency = 0;
-#endif
-				// uncore frequency
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+
+				// uncore frequency (Intel, ARM Jetson)
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || defined __arm__
 				if (next.uncoreFrequency)
 				{
 					paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency - next.uncoreFrequency : next.uncoreFrequency - prev.socket[socket].uncoreFrequency;
@@ -222,9 +218,6 @@ public:
 						prev.socket[socket].uncoreFrequency = defaultParameter.uncoreFrequency;
 					}
 				}
-#else
-				change.socket[socket].uncoreFrequency = 0;
-				prev.socket[socket].uncoreFrequency = 0;
 #endif
 
 				// threads
@@ -247,13 +240,10 @@ public:
 						prev.socket[socket].nthreads = defaultParameter.nthreads;
 					}
 				}
-#else
-				change.socket[socket].nthreads = paramChange;
-				prev.socket[socket].nthreads = defaultParameter.nthreads;
 #endif
 
 				// CPU power cap
-#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
+#if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || defined HAVE_E_SMI_E_SMI_H
 				if (next.powerCapPKG)
 				{
 					paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG - next.powerCapPKG : next.powerCapPKG - prev.socket[socket].powerCapPKG;
@@ -291,14 +281,9 @@ public:
 						prev.socket[socket].powerCapPKGtime = defaultParameter.powerCapPKGtime;
 					}
 				}
-#else
-				change.socket[socket].powerCapPKG = 0;
-				change.socket[socket].powerCapPKGtime = 0;
-				prev.socket[socket].powerCapPKG = 0;
-				prev.socket[socket].powerCapPKGtime = 0;
 #endif
 
-#ifdef HAVE_NVML_H
+#if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 				// GPU SM frequency
 				if (next.frequencyGPU)
 				{
@@ -358,13 +343,6 @@ public:
 						prev.socket[socket].powerCapGPU = defaultParameter.powerCapGPU;
 					}
 				}
-#else
-				change.socket[socket].frequencyGPU = 0;
-				change.socket[socket].frequencyGPUmem = 0;
-				change.socket[socket].powerCapGPU = 0;
-				prev.socket[socket].frequencyGPU = 0;
-				prev.socket[socket].frequencyGPUmem = 0;
-				prev.socket[socket].powerCapGPU = 0;
 #endif
 			};
 
