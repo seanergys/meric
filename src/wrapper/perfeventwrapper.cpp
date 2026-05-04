@@ -100,7 +100,7 @@ void PERFEVENT::init(bool detailed)
 		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0x0f04;
 		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0x3004;
 	}
-	else
+	else if(cpuidSignature == CpuidSignatureValues::INTEL_06_8FH)
 	{
 		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ] = 0xcf05;
 		PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE] = 0xf005;
@@ -223,8 +223,11 @@ void PERFEVENT::init(bool detailed)
 
 			std::string PMUname = "uncore_imc_" + std::to_string(j);
 			__u32 PMU_TYPE = PMU_TYPES[PMUname];
-			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ], core);
-			countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE], core);
+			if(cpuidSignature <= CpuidSignatureValues::INTEL_06_8FH)
+			{
+				countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ], core);
+				countersFd[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE + suffixIMCidx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE], core);
+			}
 		}
 
 		//(per socket)
@@ -636,8 +639,11 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_INSTS_VEC512_FP_DP].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_L3_MISSES].reserve(CORES_PER_NODE);
 	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES].reserve(Environment::SOCKETS_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
-	counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
+	if(cpuidSignature <= CpuidSignatureValues::INTEL_06_8FH)
+	{
+		counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ].reserve(IMCs_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE].reserve(IMCs_PER_NODE);
+	}
 
 	#elif defined _ARM_
 	if(CPUname == "Fujitsu A64FX")
@@ -821,24 +827,27 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		{
 			int IMCidx = i*PERFEVENT::IMCs_PER_SOCKET + j;
 
-			unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
-			unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
-
-			if(detailedMode)
+			if(cpuidSignature <= CpuidSignatureValues::INTEL_06_8FH)
 			{
-				std::ostringstream IMCidxFill;
-				IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
-				std::string suffixIMCidx = "_" + IMCidxFill.str();
+				unsigned long long int DRAMbytesRead = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_READ][IMCidx];
+				unsigned long long int DRAMbytesWrite = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_DRAM_BYTES_WRITE][IMCidx];
 
-				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixIMCidx+" [B/s]"] = DRAMbytesRead/runtime;
-				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixIMCidx+" [B/s]"] = DRAMbytesWrite/runtime;
-				ratios["CPU_DRAM_BANDWIDTH"+suffixIMCidx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
-			}
-			else
-			{
-				ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] += DRAMbytesRead/runtime;
-				ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] += DRAMbytesWrite/runtime;
-				ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
+				if(detailedMode)
+				{
+					std::ostringstream IMCidxFill;
+					IMCidxFill << std::setfill('0') << std::setw(IMCidxLength) << IMCidx;
+					std::string suffixIMCidx = "_" + IMCidxFill.str();
+
+					ratios["CPU_DRAM_BANDWIDTH_READ"+suffixIMCidx+" [B/s]"] = DRAMbytesRead/runtime;
+					ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixIMCidx+" [B/s]"] = DRAMbytesWrite/runtime;
+					ratios["CPU_DRAM_BANDWIDTH"+suffixIMCidx+" [B/s]"] = (DRAMbytesRead + DRAMbytesWrite)/runtime;
+				}
+				else
+				{
+					ratios["CPU_DRAM_BANDWIDTH_READ"+suffixSocketIdx+" [B/s]"] += DRAMbytesRead/runtime;
+					ratios["CPU_DRAM_BANDWIDTH_WRITE"+suffixSocketIdx+" [B/s]"] += DRAMbytesWrite/runtime;
+					ratios["CPU_DRAM_BANDWIDTH"+suffixSocketIdx+" [B/s]"] += (DRAMbytesRead + DRAMbytesWrite)/runtime;
+				}
 			}
 		}
 	}
