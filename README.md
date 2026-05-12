@@ -200,19 +200,19 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 
  *	`void MERIC_MeasureStart(const char * region)`
 
-	Starting measurement of a reagion.
-	Please, do not use `#` and `@` in names of regions.
+	Starting measurement of a region. 
+	Region name cannot contain any of `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`, `@`, `#`, end with `_static`, or exceed 255 characters.
 
  *	`double MERIC_MeasureStop(const char * region)`
 
 	End of the measurement of the last started region.
-	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	Returns runtime of the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
  *	`double MERIC_MeasureStopStart(const char * stopRegion, const char * startRegion)`
 
 	End of the measurement of the last started region and start of a new region.
 	Removes environment switching to configuration of the region the application is nested in.
-	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	Returns runtime of the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
  *	`void MERIC_CaptureScope(const char * region)`
 

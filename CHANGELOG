@@ -1,4 +1,4 @@
-### 04.05.2026 #################################################################
+### 14.05.2026 #################################################################
   - change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed MPI support in Python
@@ -14,6 +14,7 @@
   - MERIC E4 Remote node monitoring utility with E4 PDU sampling support
   - new CUDA test application
   - support for additional Fortran compilers
+  - ignores region if its name is not valid directory name or its suffix is '_static'
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
