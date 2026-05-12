@@ -46,7 +46,9 @@ public:
 			for (unsigned int i = 0; i < _storeList.size(); i++)
 			{
 				if (_storeList[i]->getMPIWrite())
+				{
 					_storeList[i]->addStart(getRegionID(region), currentState.socket[0]); // data storing into file with name according socket#0
+				}
 			}
 			MERIC_INFO << "region '" << region << "' started\n";
 		}
@@ -54,19 +56,24 @@ public:
 		virtual double stop(const std::string region = "")
 		{
 			// stop should be in opposite order as start
-			// if continual mode is in use (MERIC_HDEEM_SAMPLES), we want to start it first and stop it last
 			for (int i = _storeList.size() - 1; i >= 0; i--)
 			{
 				if (_storeList[i]->getMPIWrite())
+				{
 					_storeList[i]->addEnd(_stack.back());
+				}
 			}
 			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
 			if (_storeList.size() && _storeList[0]->getMPIWrite())
-				// infostore is allways the first store in the list
+			{
+				// infostore is always the first store in the list
 				// only the infostore returns the region runtime, other return 0.0
 				return _storeList[0]->getRegionDuration();
+			}
 			else
+			{
 				return 0.0;
+			}
 		}
 
 		virtual void startIgnore()
@@ -81,7 +88,9 @@ public:
 #pragma omp single nowait
 				{
 					if (IGNORE)
+					{
 						std::cerr << "MERIC WARNING: starting nested MERIC ignore sections not supported\n";
+					}
 					IGNORE = true;
 				}
 			}
@@ -89,7 +98,9 @@ public:
 #endif
 			{
 				if (IGNORE)
+				{
 					std::cerr << "MERIC WARNING: starting nested MERIC ignore sections not supported\n";
+				}
 				IGNORE = true;
 			}
 		}
@@ -106,7 +117,9 @@ public:
 #pragma omp single nowait
 				{
 					if (!IGNORE)
+					{
 						std::cerr << "MERIC WARNING: stopping already stopped MERIC ignore section\n";
+					}
 					IGNORE = false;
 				}
 			}
@@ -114,7 +127,9 @@ public:
 #endif
 			{
 				if (!IGNORE)
+				{
 					std::cerr << "MERIC WARNING: stopping already stopped MERIC ignore section\n";
+				}
 				IGNORE = false;
 			}
 		}
@@ -123,7 +138,9 @@ public:
 		{
 			MERIC_INFO << "save stored data\n";
 			for (unsigned int i = 0; i < _storeList.size(); i++)
+			{
 				_storeList[i]->save(Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, _name);
+			}
 			MERIC_INFO << "store data saved\n";
 		}
 
@@ -159,7 +176,9 @@ public:
 			for (std::vector<std::string>::iterator it = ignoreRegions.begin(); it != ignoreRegions.end(); it++)
 			{
 				if (region == *it)
+				{
 					return true;
+				}
 			}
 			return false;
 		}
@@ -173,7 +192,9 @@ public:
 		{
 			SocketsRegionParameters change = {};
 			if (REGION_OPTIONS == "")
+			{
 				return change;
+			}
 
 			auto cmpSettings = [&](SocketsRegionParameters &prev, RegionParameters &next, int socket)
 			{
@@ -347,23 +368,37 @@ public:
 			};
 
 			if (parameter.find(region) == parameter.end()) // region name not in list
+			{
 				for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
+				{
 					cmpSettings(settings, defaultParameter, socket);
+				}
+			}
 			else
 			{
 				std::map<std::pair<int, int>, struct RegionParameters>::iterator it;
 				for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if (node != -1 && (it = parameter[region].find(std::make_pair(node, socket))) != parameter[region].end())
+					{
 						cmpSettings(settings, it->second, socket);
+					}
 					else if (node != -1 && (it = parameter[region].find(std::make_pair(node, -1))) != parameter[region].end())
+					{
 						cmpSettings(settings, it->second, socket);
+					}
 					else if ((it = parameter[region].find(std::make_pair(-1, socket))) != parameter[region].end())
+					{
 						cmpSettings(settings, it->second, socket);
+					}
 					else if ((it = parameter[region].find(std::make_pair(-1, -1))) != parameter[region].end())
+					{
 						cmpSettings(settings, it->second, socket);
+					}
 					else
+					{
 						cmpSettings(settings, defaultParameter, socket);
+					}
 				}
 			}
 			/*
@@ -393,7 +428,9 @@ public:
 				for (int socket = 1; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if (diffCore != change.socket[socket].frequency)
+					{
 						differentSettingsForSockets = true;
+					}
 				}
 
 				if (differentSettingsForSockets)
@@ -401,11 +438,15 @@ public:
 					for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 					{
 						if (change.socket[socket].frequency)
+						{
 							Environment::frequency(currentState.socket[socket].frequency, socket);
+						}
 					}
 				}
 				else if (diffCore)
+				{
 					Environment::frequency(currentState.socket[0].frequency);
+				}
 
 				// set uncore frequncy
 				differentSettingsForSockets = false;
@@ -413,7 +454,9 @@ public:
 				for (int socket = 1; socket < Environment::SOCKETS_PER_NODE; socket++)
 				{
 					if (diffUncore != change.socket[socket].uncoreFrequency)
+					{
 						differentSettingsForSockets = true;
+					}
 				}
 
 				if (differentSettingsForSockets)
@@ -421,11 +464,15 @@ public:
 					for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 					{
 						if (change.socket[socket].uncoreFrequency)
+						{
 							Environment::uncoreFrequency(currentState.socket[socket].uncoreFrequency, currentState.socket[socket].uncoreFrequency, socket);
+						}
 					}
 				}
 				else if (diffUncore)
+				{
 					Environment::uncoreFrequency(currentState.socket[0].uncoreFrequency, currentState.socket[0].uncoreFrequency);
+				}
 
 				// set powercap - to change timeWindow also power must be different
 				differentSettingsForSockets = false;
@@ -445,16 +492,60 @@ public:
 					for (int socket = 0; socket < Environment::SOCKETS_PER_NODE; socket++)
 					{
 						if (change.socket[socket].powerCapPKG)
+						{
 							Environment::CPUpowercap(currentState.socket[socket].powerCapPKG, currentState.socket[socket].powerCapPKGtime, socket);
+						}
 					}
 				}
 				else if (diffCapPower)
+				{
 					Environment::CPUpowercap(currentState.socket[0].powerCapPKG, currentState.socket[0].powerCapPKGtime);
+				}
 			}
 			if (change.socket[0].nthreads)
+			{
 				Environment::threadNumber(currentState.socket[0].nthreads);
+			}
 		}
 
+		bool validateRegionName(const std::string &region)
+		{
+			bool valid = true;
+			const size_t pos = find(_name.begin(), _name.end(), region) - _name.begin();
+			if (pos >= _name.size()) //1st time executed region
+			{
+				const int len = region.length();
+				//contains invalid characters
+				for (const auto &s : { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '@', '#' })
+				{
+					if (region.find_first_of(s) != std::string::npos)
+					{
+						valid = false;
+						break;
+					}
+				}
+				//too long name or reserved name
+				if (valid && (len > 255 || region == "." || region == ".."))
+				{
+					valid = false;
+				}
+				//ends with _static but it is not main application region
+				if (valid && _stack.size() != 0 && len > 7 && region.substr(len - 7, 7) == "_static")
+				{
+					valid = false;
+				}
+				if (valid == false)
+				{
+					#pragma omp single nowait
+					{
+						ignoreRegions.push_back(region);
+						std::cerr << "MERIC WARNING: invalid region name '" << region <<"' - region ignored" << std::endl;
+					}
+				}
+			}
+			return valid;
+		}
+		
 		const std::string &getRegionName(int size, int last)
 		{
 			return size ? _name[last] : _mainRegion;
@@ -474,8 +565,7 @@ public:
 		std::vector<std::string> get_cmdline_args_linux()
 		{
 			std::ifstream f("/proc/self/cmdline", std::ios::binary);
-			std::string buf((std::istreambuf_iterator<char>(f)),
-							std::istreambuf_iterator<char>());
+			std::string buf((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
 			std::vector<std::string> args;
 			size_t i = 0;
@@ -483,9 +573,13 @@ public:
 			{
 				size_t j = buf.find('\0', i);
 				if (j == std::string::npos)
+				{
 					break;
+				}
 				if (j > i)
+				{
 					args.emplace_back(buf.data() + i, j - i);
+				}
 				i = j + 1;
 			}
 			return args;
@@ -502,16 +596,22 @@ public:
 					std::string candidate = args[1];
 					size_t n = candidate.find_last_of("/");
 					if (n != std::string::npos)
+					{
 						candidate = candidate.substr(n + 1);
+					}
 					n = candidate.find_first_of(".");
 					if (n != std::string::npos)
+					{
 						candidate = candidate.substr(0, n);
+					}
 					const bool ok = !candidate.empty() && std::all_of(candidate.begin(), candidate.end(), [](char c)
 																	  {
 												  const unsigned char uc = static_cast<unsigned char>(c);
 												  return std::isalnum(uc) || c == '_' || c == '-'; });
 					if (ok)
+					{
 						_mainRegion = candidate;
+					}
 				}
 			}
 

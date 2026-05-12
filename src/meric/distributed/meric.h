@@ -22,8 +22,10 @@ public:
 	void start(const std::string &region)
 	{
 		if (Meric::IGNORE)
+		{
 			return;
-		if (ignoreRegion(region))
+		}
+		if (ignoreRegion(region) || validateRegionName(region) == false)
 		{
 			#pragma omp master
 			{
@@ -46,7 +48,9 @@ public:
 			}
 			SocketsRegionParameters change = regionValue(currentState, region, _nodeId);
 			if (MPIbarriers)
+			{
 				MPI_Barrier(_currentNode);
+			}
 			setRegionEnvironment(change, !_MPInodeRank);
 			Meric::start(region);
 			_stack.push_back(getRegionID(region));
@@ -62,8 +66,9 @@ public:
 	{
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
+		{
 			return 0.0;
-
+		}
 		if (ignoreRegion(region))
 		{
 			#pragma omp master
@@ -88,7 +93,9 @@ public:
 			#pragma omp barrier
 		}
 		if (regionRuntime < 0.0)
+		{
 			return regionRuntime;
+		}
 		
 		#pragma omp master
 		{
@@ -98,13 +105,17 @@ public:
 			}
 			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 			if (MPIbarriers)
+			{
 				MPI_Barrier(_currentNode);
+			}
 			setRegionEnvironment(change, !_MPInodeRank);
 
 			regionRuntime = Meric::stop(region+" - "+std::to_string(_MPInodeRank));
 			_stack.pop_back();
 			if (Meric::timeThreshold > regionRuntime)
+			{
 				ignoreRegions.push_back(region);
+			}
 		}
 		
 		if (OMPbarriers)
@@ -119,7 +130,9 @@ public:
 	{
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
+		{
 			return 0.0;
+		}
 		
 		#pragma omp master	//only master thread is allowed to work with the _stack
 		{
@@ -135,19 +148,29 @@ public:
 			#pragma omp barrier
 		}
 		if (regionRuntime < 0.0)
+		{
 			return regionRuntime;
+		}
 		
+		bool validStartRegionName = false;
 		#pragma omp master
 		{
-			if (!ignoreRegion(startRegionName))
+			validStartRegionName = validateRegionName(startRegionName);
+			if (!ignoreRegion(startRegionName) && validStartRegionName == true)
 			{
 				if (!ignoreRegion(stopRegionName))
+				{
 					MERIC_INFO << "region '" << stopRegionName << "' stopping and starting region '"  << startRegionName << "'\n";
+				}
 				else
+				{
 					MERIC_INFO << "starting region '"  << startRegionName << "'\n";
+				}
 				SocketsRegionParameters change = regionValue(currentState, startRegionName, _nodeId);
 				if (MPIbarriers)
+				{
 					MPI_Barrier(_currentNode);
+				}
 				setRegionEnvironment(change, !_MPInodeRank);
 			}
 			else if (!ignoreRegion(stopRegionName))
@@ -155,7 +178,9 @@ public:
 				MERIC_INFO << "region '" << stopRegionName << "' stopping\n";
 				SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
 				if (MPIbarriers)
+				{
 					MPI_Barrier(_currentNode);
+				}
 				setRegionEnvironment(change, !_MPInodeRank);
 			}
 		}
@@ -172,12 +197,16 @@ public:
 			{
 				regionRuntime = Meric::stop();
 				if (Meric::timeThreshold > regionRuntime)
+				{
 					ignoreRegions.push_back(stopRegionName);
+				}
 			}
 			_stack.pop_back();
 
-			if (!ignoreRegion(startRegionName))
+			if (!ignoreRegion(startRegionName) && validStartRegionName)
+			{
 				Meric::start(startRegionName);
+			}
 			_stack.push_back(getRegionID(startRegionName));
 		}
 		if (OMPbarriers)
@@ -249,16 +278,22 @@ public:
 
 		std::string nodeNamePrefix;
 		if(Meric::AGGREGATE)
+		{
 			nodeNamePrefix = "";
+		}
 		else
+		{
 			nodeNamePrefix = _nodeName;
+		}
 		
 		//remove ignored regions from the list of regions
 		for(const std::string reg : ignoreRegions)
 		{
 			size_t pos = find(_name.begin(), _name.end(), reg) - _name.begin();
 			if (pos < _name.size())
+			{
 				_name[pos] = "";
+			}
 		}
 		
 		unsigned int executionID = 0;
@@ -267,9 +302,13 @@ public:
 			if (!_MPInodeRank)
 			{
 				if (!_MPIglobalRank)
+				{
 					_storeList[i]->initStore(executionID, Meric::OUTPUT_DIR, Meric::OUTPUT_FILENAME, Meric::outputFormat, Meric::outputFilenameInfo, nodeNamePrefix);
+				}
 				else
+				{
 					_storeList[i]->initStore(executionID, Meric::outputFormat);
+				}
 			}
 			if (_storeList[i]->getMPIWrite())
 			{
@@ -288,7 +327,9 @@ public:
 		// re-write the measurementInfo.json
 		MPI_Barrier(MPI_COMM_WORLD);
 		if (!_MPIglobalRank && _storeList.size())
+		{
 			_storeList[0]->storeMeasurementInfo();
+		}
 	}
 
 protected:
