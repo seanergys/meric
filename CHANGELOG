@@ -3,6 +3,7 @@
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed MPI support in Python
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
+  - fixed AMD CPU turbo frequency limit identification
   - improved power monitoring system availability detection
   - systemInfo detailed output on available power monitoring systems
   - MERICext support for HWMON energy measurement
