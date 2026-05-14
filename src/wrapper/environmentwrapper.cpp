@@ -268,10 +268,14 @@ void Environment::getCPUbrandString(std::string & CPUname)
 
 	//internal alternative name of the hardware
 	if (!mapThreadsToCore.size())
+	{
 		initHWSizes();
+	}
 	CPUname = std::to_string(SOCKETS_PER_NODE)+"x"+std::to_string(CORES_PER_SOCKET)+"x"+std::to_string(THREADS_PER_CORE);
 	if (defaultSettings.maxCoreFreq > 0)
+	{
 		CPUname += " @ "+std::to_string(defaultSettings.maxCoreFreq/1e9)+"GHz";
+	}
 	else
 	{
 		CPUinfoFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
@@ -632,8 +636,16 @@ long Environment::getMaximumTurboFrequency()
 	}
 #elif defined HAVE_E_SMI_E_SMI_H
 	uint32_t boostlimit;
+	uint32_t boostcurrent;
+	
 	if (!esmi_core_boostlimit_get(0, &boostlimit))
 	{
+		uint32_t boostcurrent = boostlimit;
+		if (esmi_core_boostlimit_set(0, 20000) == ESMI_SUCCESS) //20GHz
+		{
+			esmi_core_boostlimit_get(0, &boostlimit);
+			esmi_core_boostlimit_set(0, boostcurrent);
+		}
 		frequency = boostlimit * 1e6;
 	}
 #endif
@@ -761,7 +773,6 @@ DVFS_WAY Environment::isDVFSpossible()
 	}
 #elif defined _AMD_ 
 	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
-		//has not been tested for scaling driver requirement TODO !!!
 		return OTHER;
 	#endif
 #endif
@@ -1480,12 +1491,16 @@ void Environment::readSystemDefaultSettings()
 				frequencyBounderyFile >> freqBound;
 				frequencyBounderyFile.close();
 				if (std::stoi(freqBound) == 1)
+				{
 					defaultSettings.maxTurboFreq = 0;
+				}
 				else
 				{
 					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 					if (defaultSettings.maxTurboFreq == 0)
+					{
 						defaultSettings.maxTurboFreq = 1;
+					}
 				}
 			}
 		}
@@ -1500,7 +1515,9 @@ void Environment::readSystemDefaultSettings()
 				{
 					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 					if (defaultSettings.maxTurboFreq == 0)
+					{
 						defaultSettings.maxTurboFreq = 1;
+					}
 				}
 			}
 		}
@@ -1510,7 +1527,9 @@ void Environment::readSystemDefaultSettings()
 		{
 			defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 			if (defaultSettings.maxTurboFreq == 0)
+			{
 				defaultSettings.maxTurboFreq = 1;
+			}
 		}
 		#elif defined HAVE_MSR_SAFE && defined MSR_HWCR
 		else
@@ -1538,7 +1557,14 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-#if defined _AMD_ && !defined HAVE_E_SMI_E_SMI_H && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+#if defined _AMD_ 
+	#if defined HAVE_E_SMI_E_SMI_H
+		uint32_t boostlimit;
+		if (!esmi_core_boostlimit_get(0, &boostlimit))
+		{
+			defaultSettings.defaultCoreFreq = boostlimit*1e6;
+		}
+	#elif defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
 		// if using esmi, when restoring default CF we will set turbo frequency
 		else if (!defaultSettings.availableCoreFreq.empty())
 		{
@@ -1546,8 +1572,11 @@ void Environment::readSystemDefaultSettings()
 			read_msr(0, MSR_PSTATE_CTL, &MSR_PSTATE_CTL_bits);
 			defaultSettings.defaultCoreFreq = defaultSettings.availableCoreFreq[MSR_PSTATE_CTL_bits & MSR_PSTATE_CUR_LIM_curr_limit_pstate_mask];
 			if (defaultSettings.maxTurboFreq > 0)
-				defaultSettings.defaultCoreFreq += 1000000; 
+			{
+				defaultSettings.defaultCoreFreq += 1000000;
+			}
 		}
+	#endif
 #endif
 	
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
