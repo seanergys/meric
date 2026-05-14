@@ -2,9 +2,7 @@
 # MERIC test applications Makefile                                             #
 # Reads $CXX, $FC, $MPICXX and $CXX_FLAGS environment variables.               #
 # If env variables not set, using GNU compiler as default.                     #
-# In the second section of the Makefile specify which libraries you use and    #
-# their paths                                                                  #
-#                                                                              #
+# Set MKL_PATH to compile blasTest.                                            #
 ################################################################################
 
 ifeq ($(CXX),)
@@ -47,23 +45,9 @@ ifeq ($(MAKECMDGOALS),cudaTest)
 endif
 
 ################################################################################
-#HDEEM=-lhdeem -lfreeipmi
-#X86ADAPT=-lx86_adapt
-#CPUFREQ=--lcpufreq
-#CPUFREQ=-L/lib64/ -lcpupower
-# PAPI=-lpapi
-#RESTCLIENT= -lrestclient-cpp
-#NUMA=-lnuma
-#NVML=-lnvidia-ml
-#ESMI=-le_smi64
-#SNMP= -lnetsnmp
-#LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
-################################################################################
-MERIC=-L../lib -I../include 
-LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(SNMP) $(CXX_FLAGS)
+LIBS=-L../lib -I../include
 BINARIES=plainTest test test_mpi blasTest samples sleepTest fortTest overHead
-################################################################################
-MKL_PATHS=
+MKL_PATH=
 ################################################################################
 
 default: all
@@ -97,7 +81,7 @@ samplesTest: samples_test.cpp
 	$(CXX)    -O0 -g samples_test.cpp -lmeric $(LIBS) -o samples
 
 blasTest: blas_test.c
-	$(CXX) -O3 -g blas_test.c -lmeric -mkl $(MKL_PATHS) $(LIBS) -o blasTest
+	$(CC) -O3 -g blas_test.c -lmeric -mkl $(MKL_PATH) $(LIBS) -o blasTest
 
 blasTestInfo:
 	$(info )
@@ -121,7 +105,7 @@ cudaTestInfo:
 	$(info )
 
  ######
-MeasurementDIRS=mericMeasurement* TEST* TESTMPI*
+MeasurementDIRS=mericMeasurement*
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub
