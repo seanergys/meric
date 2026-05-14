@@ -195,8 +195,8 @@ def configure(ctx):
 			configFile.write(dep[5:-2]+"\n")
 	configFile.close()
 	
-	if os.path.exists(ctx.path.abspath()+"/build/systemDefault.json"):
-		os.remove(ctx.path.abspath()+"/build/systemDefault.json")
+	if os.path.exists(ctx.path.abspath()+"/systemDefault.json"):
+		os.remove(ctx.path.abspath()+"/systemDefault.json")
 	
 	ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
 	if ctx.options.debug:
