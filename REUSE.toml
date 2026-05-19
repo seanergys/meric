@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = ["**"]
+precedence = "aggregate"
+"SPDX-FileCopyrightText" = "2026 IT4Innovations National Supercomputing Center, Ostrava, Czech Republic"
+"SPDX-License-Identifier" = "BSD-3-Clause"
