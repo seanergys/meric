@@ -40,6 +40,8 @@
 #include "../../wrapper/davidewrapper.h"
 #include "../../wrapper/thunderwrapper.h"
 #include "../../wrapper/jetsonwrapper.h"
+#include "../../wrapper/hwmonwrapper.h"
+#include "../../wrapper/nvmlwrapper.h"
 
 
 
@@ -121,6 +123,7 @@ struct configuration{	// single HW configuration
 	long uncoreFreq;
 	long powerCapPKG;
 	long powerCapPKGtime;
+	std::string hostname;
 	
 	configuration() : 
 		threads(0), coreFreq(0), uncoreFreq(0), powerCapPKG(0), powerCapPKGtime(0) {}
@@ -452,7 +455,7 @@ void recogniseTargetEnergyMeasurementSystem(meric::mode mode)
 	}
 	else if (mode == meric::MODE_RAPL)
 	{
-		label_energy = MSR_RAPL_COUNTERS::RAPL_SUM_ENERGY;
+		label_energy = meric::RAPL::SUM_ENERGY_LABEL;
 		dataSourceLabel = std::string("# COUNTERS - ")+meric::RAPL::getSourceLabel()+":";
 	}
 	else if (mode == meric::MODE_JETSON)
@@ -469,6 +472,16 @@ void recogniseTargetEnergyMeasurementSystem(meric::mode mode)
 	{
 		label_energy = meric::DAVIDE::SUM_ENERGY_LABEL;
 		dataSourceLabel = std::string("# SAMPLES - ")+meric::DAVIDE::getSourceLabel()+":";
+	}
+	else if (mode == meric::MODE_HWMON)
+	{
+		label_energy = meric::HWMON::SUM_ENERGY_LABEL;
+		dataSourceLabel = std::string("# COUNTERS - ")+meric::HWMON::getSourceLabel()+":";
+	}
+	else if (mode == meric::MODE_NVML)
+	{
+		label_energy = meric::NVML::SUM_ENERGY_LABEL;
+		dataSourceLabel = std::string("# COUNTERS - ")+meric::NVML::getSourceLabel()+":";
 	}
 }
 
@@ -982,7 +995,11 @@ configuration getConfigFromFilename(std::string fileName)
 	configuration cConf;
 	std::string token;
 	if (params.MPI)
-		fileName.erase(0, fileName.find('_') + 1);
+	{
+		int pos = fileName.find('_');
+		cConf.hostname = fileName.substr(0, pos);
+		fileName.erase(0, pos + 1);
+	}
 
 	if (selectedParams.coreFreq)
 	{
@@ -1485,22 +1502,22 @@ size_t getRegionIndex(std::string region)	//ALL
 std::string constructConfigFileName(std::string regName, configuration config)	//ALL
 {
 	std::string cfgStr = "";
-	if (config.coreFreq)
+	if (selectedParams.coreFreq)
 		cfgStr += std::to_string(config.coreFreq)+"_";
-	if (config.uncoreFreq)
+	if (selectedParams.uncoreFreq)
 		cfgStr += std::to_string(config.uncoreFreq)+"_";
-	if (config.threads)
+	if (selectedParams.threads)
 		cfgStr += std::to_string(config.threads)+"_";
-	if (config.powerCapPKG)
+	if (selectedParams.powerCapPKG)
 		cfgStr += std::to_string(config.powerCapPKG)+"_";
-	if (config.powerCapPKGtime)
+	if (selectedParams.powerCapPKGtime)
 		cfgStr += std::to_string(config.powerCapPKGtime);
 	if (cfgStr.back() == '_')
 		cfgStr.pop_back();
 
 	if (params.MPI)
 	{
-		std::string hostname = meric::mutils::getHostnameShort();
+		std::string hostname = config.hostname.empty() ? meric::mutils::getHostnameShort() : config.hostname;
 		cfgStr = hostname +"_"+ cfgStr;
 		//cfgStr = "cn6.barbora.it4i.cz_"+ cfgStr;
 	}
