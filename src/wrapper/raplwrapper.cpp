@@ -326,7 +326,7 @@ public:
 
     virtual std::string summaryCounter() { return ""; }
     virtual std::string getSummaryCounterName() { return ""; }
-    virtual std::string getSourceLabel() { return ""; }
+    virtual std::string getSourceLabel() { return "RAPL"; }
     virtual std::string getCounterLabel(const std::string counter) { return ""; }
 
     virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop, 

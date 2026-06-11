@@ -18,7 +18,6 @@ List of supported parameters:
  	* `-m MERIC_MEASURE` = measurement system that was used to measure the data, only one can be specified, no default.
  * `-b baseline` = power baseline [W] that should be used for analysis, default 0 W.
  * `-g margin` = energy consumption margin [%] of selected configuration, default 0 %. Select a configuration with energy consumption within the margin of the optimal configuration, but with better runtime.
- * `-e extension` = maximum runtime extension [%], default 10 %.
  * `--` = follows command to run the application to analyze.
 
 
