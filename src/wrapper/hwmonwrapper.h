@@ -100,8 +100,9 @@ namespace meric
         static void deleteSamples() {}
         static size_t getSamplerCount() { return PROBE_NUMBER; }
         static std::string getSamplerLabel(size_t id) { 
-            if(id > getSamplerCount())
+            if(id > getSamplerCount()) {
                 return "";
+            }
             
             return vrSensorLabel[id]; 
         }

@@ -149,6 +149,8 @@ void NVML::initCounters(bool detailed)
 
     std::vector<SourceDecl_t> sourceDecls;
 
+    // NOTE: "DEVICE" energy counter is disabled due to it's mapping to "nvmlDeviceGetTotalEnergyConsumption", which has uncertain scope.
+    //       Energy counters are derived from instant power samples instead.
     if (IsNVPlatform())
     {
         // sourceDecls.push_back({ "DEVICE",     0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }});

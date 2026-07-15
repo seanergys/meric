@@ -143,8 +143,6 @@ public:
 
     // Sampling interface
     static const std::string SUM_ENERGY_LABEL;
-    // static int PROBE_NUMBER;
-    // static std::vector<std::string> vrSensorLabel;
 
     static void start(timespec &time, bool storeSamples = false, double sampleFreqHz = 0.0);
     static void stop(timespec &time);

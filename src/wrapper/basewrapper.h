@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __SRC_WRAPPER_BASEWRAPPER_H__
-#define __SRC_WRAPPER_BASEWRAPPER_H__
+#ifndef SRC_WRAPPER_BASEWRAPPER_H_
+#define SRC_WRAPPER_BASEWRAPPER_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -98,4 +98,4 @@ protected:
 
 }
 
-#endif // __SRC_WRAPPER_BASEWRAPPER_H__
+#endif // SRC_WRAPPER_BASEWRAPPER_H_

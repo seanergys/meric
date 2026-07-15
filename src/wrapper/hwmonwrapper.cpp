@@ -561,8 +561,9 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
         data.first = std::distance(desc.samples.begin(), startIt);
         data.last  = std::distance(desc.samples.begin(), endIt);
 
-        if(data.min > data.max)
+        if(data.min > data.max) {
             data.min = data.max;
+        }
     }
 
     return "";
@@ -591,8 +592,9 @@ bool HWMON::isAvailable()
     sysfsutils::ScanTree(s_rootPath, 3, [&](const std::string &name, const std::string &path) {
         for(std::pair<std::regex, int> &searchFile: searchFiles)
         {
-            if(!std::regex_match(name, searchFile.first))
+            if(!std::regex_match(name, searchFile.first)) {
                 continue;
+            }
 
             searchFile.second += (access((path).c_str(), R_OK) == 0 ? 1 : 0);
         }
@@ -638,8 +640,9 @@ void HWMON::CollectSources(const std::vector<std::string> &paths,
             std::string baseLabel = sysfsutils::NormalizeLabel(hwmonSourceLabelMatch[1]);
 
             auto it = sourcesDecl.find(baseLabel);
-            if(it == sourcesDecl.end())
+            if(it == sourcesDecl.end()) {
                 return;
+            }
 
             T source(it->second);
             source.path      = path + desc.prefix + "/" + filename;

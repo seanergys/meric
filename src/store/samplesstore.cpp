@@ -31,8 +31,9 @@ template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedReg
 	const double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), duration, samplerRecord);
 
-	if (msg != "")
+	if (msg != "") {
 		std::cerr << msg <<  _name[_records[iStarts].region] << std::endl;
+	}
 
 	stats.totalEnergy = 0.0;
 
@@ -69,8 +70,9 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, samplerRecord);
 	
-	if (msg != "" && msg.find("detailed") == std::string::npos)
+	if (msg != "" && msg.find("detailed") == std::string::npos) {
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
+	}
 
 	// MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " << int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
 	// MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade << " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
@@ -110,8 +112,9 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 			std::vector<double> samples;
 			TSystem::getSamplesList(sampler.id, sampler.first, sampler.last, samples);
 
-			for(size_t i = 0; i < samples.size(); ++i)
+			for(size_t i = 0; i < samples.size(); ++i) {
 				samplesStream << (sampler.first + i) << "," << samples[i] << "\n";
+			}
 		}
 
 		avgWatts = sampler.energy / (sampler.last - sampler.first);
@@ -126,8 +129,9 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		    << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
 	}
 	
-	if(printSamples && staticRegion)
+	if(printSamples && staticRegion) {
 		samplesStream.close();
+	}
 	
 	clock_gettime(CLOCK_REALTIME, &time2);
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";

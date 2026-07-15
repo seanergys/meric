@@ -38,8 +38,6 @@ std::string RAPL::PLATFORM_POWER_LIMIT = "";
 std::string RAPL::POWER_LIMIT_TIMEWINDOW = "";
 
 const std::string RAPL::SUM_ENERGY_LABEL = "Energy consumption [J]";
-// int RAPL::PROBE_NUMBER;
-// std::vector<std::string> RAPL::vrSensorLabel;
 
 std::map<std::string, RAPL::SamplerDesc_t> RAPL::s_samplerDesc;
 std::vector<RAPL::SamplerDesc_t *>         RAPL::s_samplerById;
@@ -86,7 +84,6 @@ void RAPL::close()
 
 void RAPL::getCounterValues(CounterRecord_t &record)
 {
-    // getImpl()->getCounterValues(record);
     s_asyncSampler.Sample(&record);
 }
 
