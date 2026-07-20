@@ -42,7 +42,7 @@ struct HWMON::SourceDesc_t : public SourceDecl_t {
 };
 
 struct HWMON::CollectSources_t {
-    std::string prefix;
+    std::vector<std::string> prefixes;
     std::regex  counterFileRegex;
     std::regex  labelRegex;
     std::pair<std::string, std::string> labelFilename;
@@ -152,7 +152,7 @@ void HWMON::initCounters(bool detailed)
         });
 
         CollectSources_t collectDesc;
-        collectDesc.prefix           = "";
+        collectDesc.prefixes         = {""};
         collectDesc.counterFileRegex = "^energy([0-9]+)_input$";
         collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
         collectDesc.labelFilename    = { "energy", "_label" };
@@ -204,7 +204,7 @@ void HWMON::initCounters(bool detailed)
         });
 
         CollectSources_t collectDesc;
-        collectDesc.prefix           = "/device";
+        collectDesc.prefixes         = {"", "/device"};
         collectDesc.counterFileRegex = "^power([0-9]+)_average$";
         collectDesc.labelRegex       = "^([a-zA-Z ]+)([0-9]+)$";
         collectDesc.labelFilename    = { "power", "_oem_info" };
@@ -618,42 +618,51 @@ void HWMON::CollectSources(const std::vector<std::string> &paths,
 {
     for(const std::string &path: paths)
     {
-        sysfsutils::IterateDir(path + desc.prefix, [&](const std::string &filename){
-            std::smatch sourceFileMatch;
-            if(!std::regex_match(filename, sourceFileMatch, desc.counterFileRegex))
-            {
-                return;
-            }
+        for(const std::string &prefix: desc.prefixes)
+        {
+            bool sourceFound = false;
 
-            std::string hwmonSourceLabel;
-            if(!sysfsutils::ReadValue(path + desc.prefix + "/" + desc.labelFilename.first + sourceFileMatch[1].str() + desc.labelFilename.second, hwmonSourceLabel))
-            {
-                return;
-            }
+            sysfsutils::IterateDir(path + prefix, [&](const std::string &filename){
+                std::smatch sourceFileMatch;
+                if(!std::regex_match(filename, sourceFileMatch, desc.counterFileRegex))
+                {
+                    return;
+                }
 
-            std::smatch hwmonSourceLabelMatch;
-            if(!std::regex_match(hwmonSourceLabel, hwmonSourceLabelMatch, desc.labelRegex))
-            {
-                return;
-            }
+                std::string hwmonSourceLabel;
+                if(!sysfsutils::ReadValue(path + prefix + "/" + desc.labelFilename.first + sourceFileMatch[1].str() + desc.labelFilename.second, hwmonSourceLabel))
+                {
+                    return;
+                }
 
-            std::string baseLabel = sysfsutils::NormalizeLabel(hwmonSourceLabelMatch[1]);
+                std::smatch hwmonSourceLabelMatch;
+                if(!std::regex_match(hwmonSourceLabel, hwmonSourceLabelMatch, desc.labelRegex))
+                {
+                    return;
+                }
 
-            auto it = sourcesDecl.find(baseLabel);
-            if(it == sourcesDecl.end()) {
-                return;
-            }
+                std::string baseLabel = sysfsutils::NormalizeLabel(hwmonSourceLabelMatch[1]);
 
-            T source(it->second);
-            source.path      = path + desc.prefix + "/" + filename;
-            source.baseLabel = baseLabel;
-            source.id        = sysfsutils::ParseString<int>(hwmonSourceLabelMatch[2]);
+                auto it = sourcesDecl.find(baseLabel);
+                if(it == sourcesDecl.end()) {
+                    return;
+                }
 
-            if(f(source, path + desc.prefix, sourceFileMatch, hwmonSourceLabelMatch))
-            {
-                sourcesDef.push_back(source);
-            }
-        });
+                T source(it->second);
+                source.path      = path + prefix + "/" + filename;
+                source.baseLabel = baseLabel;
+                source.id        = sysfsutils::ParseString<int>(hwmonSourceLabelMatch[2]);
+
+                if(f(source, path + prefix, sourceFileMatch, hwmonSourceLabelMatch))
+                {
+                    sourcesDef.push_back(source);
+                    sourceFound = true;
+                }
+            });
+
+            if(sourceFound)
+                break;
+        }
     }
 }
 
