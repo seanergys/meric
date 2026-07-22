@@ -1,4 +1,4 @@
-### 14.05.2026 #################################################################
+### 31.07.2026 #################################################################
   - change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed MPI support in Python
@@ -17,13 +17,14 @@
   - support for additional Fortran compilers
   - ignores region if its name is not valid directory name or its suffix is '_static'
   - linked libraries are no longer required to be linked by the instrumented application
+  - support for NVIDIA Grace Blackwell energy and power sampling using HWMON
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files
   - support for power sampling (use MERIC_SAMPLES to specify sampling frequency [Hz]), current support for HWMON, RAPL and NVML
   - new python module for MERIC usage with python applications
   - new static tool supporting multi-node energy measurement, and energy counters overflow handling
-  - support for Nvidia Grace/Grace Hopper energy and power sampling using HWMON and NVML
+  - support for NVIDIA Grace/Grace Hopper energy and power sampling using HWMON and NVML
   - support for AMD MI250X energy measurement and frequency scaling using AMD ROCm
   - support for Intel and AMD RAPL energy readings from the intel_rapl / intel_rapl_common kernel module 
   - support for Intel and AMD RAPL energy readings using perf
