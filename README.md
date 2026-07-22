@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran and Python interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), selected ARM systems (e.g., Fujitsu A64FX, Grace), Nvidia GPUs (Volta, Ampere, Hopper), and AMD GPUs (MI2xx).
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), selected ARM systems (e.g., Fujitsu A64FX, Grace), NVIDIA GPUs (Volta, Ampere, Hopper, Blackwell), and AMD GPUs (MI2xx).
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -107,17 +107,17 @@ AMD EPYC CPUs from Zen3 (19h) architecture provides [EPYC System Management Soft
 Using OpenMP API.
 
 
-## Nvidia GPU streaming multiprocessors frequency ##
-Some Nvidia GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
-To tune the SM frequency, MERIC requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
+## NVIDIA GPU streaming multiprocessors frequency ##
+Some NVIDIA GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
+To tune the SM frequency, MERIC requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-## Nvidia GPU memory frequency ##
-Nvidia GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
+## NVIDIA GPU memory frequency ##
+NVIDIA GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-## Nvidia GPU power capping ##
-Using [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of Nvidia GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
+## NVIDIA GPU power capping ##
+Using [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of NVIDIA GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
 
 
 ## ARM Jetson memory frequency ##
@@ -150,7 +150,7 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 
 
 ## NVML ##
-[Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
+[NVIDIA Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of NVIDIA GPUs Volta or newer architectures. NVIDIA Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
 
 ## ROCm SMI ##
 [ROCm System Management Interface (ROCm SMI)](https://github.com/ROCm/rocm_smi_lib) allows to measure energy consumption of AMD GPUs of MI2xx or newer architectures. 
@@ -162,7 +162,7 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 -->
 
 ## HWMON ##
-[The Linux Hardware Monitoring kernel API](https://docs.kernel.org/hwmon/hwmon-kernel-api.html) allows to measure energy consumption on AMD platforms (exposes AMD RAPL) and NVIDIA platforms (NVIDIA Grace). MERIC can use this interface for both energy measurement and power sampling.
+[The Linux Hardware Monitoring kernel](https://docs.kernel.org/hwmon/index.html) allows to measure energy consumption on AMD platforms (exposes AMD RAPL) and [NVIDIA platforms](https://docs.nvidia.com/dccpu/grace-perf-tuning-guide/power-thermals.html#power-telemetry) (NVIDIA Grace, Grace Hopper, Grace Blackwell). The data is exposed via [sysfs interface](https://docs.kernel.org/hwmon/sysfs-interface.html). Thus, no dependecy necessary.
 
 
 ## OCC ##
@@ -330,7 +330,7 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
-* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the Nvidia GPUs monitoring and tuning
+* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the NVIDIA GPUs monitoring and tuning
 * optionally - [ROCm](https://github.com/ROCm/rocm_smi_lib)
 * optionally - [numactl](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
@@ -442,8 +442,8 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
 	- HDEEM   = Equals to HDEEM-S option.
 	- RAPL    = Intel/AMD RAPL energy measurement.
-	- NVML    = Nvidia GPUs energy measurement.
-	- HWMON   = Nvidia CPU/platform energy measurement.
+	- NVML    = NVIDIA GPUs energy measurement.
+	- HWMON   = NVIDIA CPU/platform, AMD RAPL energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
 	- ROCM    = AMD GPU/APU energy measurement.
 	- A64FX   = Fujitsu A64FX energy measurement.
@@ -474,14 +474,14 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 
 * `export MERIC_SAMPLES=1`
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
-	- Available for HDEEM-S, RAPL, HWMON and NVML.
+	- Available for HDEEM-S, RAPL, HWMON, and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
 	- WARNING: Output may become very big when measured regions run for a long time.
 
 * `export MERIC_SAMPLING_FREQUENCY=<sampling frequency in Hz>`
 	- If the energy measurement system provides power samples, MERIC will attempt to collect the samples at specified frequency.
-	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON and NVML) to avoid unnecessary oversampling (and associated overhead).
-	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as GH200).
+	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON, and NVML) to avoid unnecessary oversampling (and associated overhead).
+	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as NVIDIA GH200).
 	- The sampling overhead can be minimized by setting this variable to low frequency (such as MERIC_SAMPLING_FREQUENCY=1). Note that this will negatively impact accuracy of energy measurements in cases, where the value is derived from power sampling.
 	- If MERIC_SAMPLING_FREQUENCY is not set (or set to 0), the sampling runs at the default sampling frequency, which varies by power monitoring system. The default and the maximum sampling frequency of available power monitoring systems can be read using systemInfo -p.
 
