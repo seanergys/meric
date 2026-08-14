@@ -9,13 +9,12 @@ void help(const std::string name, const int ret)
 {
     std::cerr << "OpenMP application of four MERIC regions\n"
               << " - SLEEP (idle)\n"
-              << " - IDLE (idle, nested in SLEEP region)\n"
+              << " - NESTED (idle, nested in SLEEP region)\n"
               << " - RUN (compute bound)\n"
               << " - RAII (example of RAII usage, compute bound)\n"
-              << "Usage: mpirun -np <N> " << name  << " [-s sleep_ms] [-r run_ms] [-n nested_ms] [-a raii_ms]\n";
+              << "Usage: " << name << " [-s sleep_ms] [-r run_ms] [-n nested_ms] [-a raii_ms]\n";
     exit(ret);
 }
-
 
 //RAII supported by Clang and GNU compilers, so the following region will not be available if using another compiler
 void raiiTest(double time)
