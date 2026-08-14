@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <ctime>
 #include <math.h>
-#include <omp.h>
 
 #include <meric.h>
 #include "work.h"
