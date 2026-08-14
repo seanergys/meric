@@ -87,10 +87,14 @@ int main(int argc, char** argv)
 {
 	MERIC_Init();
 
+	MERIC_MeasureStart("SLEEP");
+	usleep(1000000);
+	MERIC_MeasureStop("SLEEP");
+
 	dim3 block(32,16);
 	dim3 grid(16,32);
 
-	MERIC_MeasureStart("compute");
+	MERIC_MeasureStart("COMPUTE");
 
 
 	int deviceCount;
@@ -114,7 +118,7 @@ int main(int argc, char** argv)
 	}
 	printf("Compute phase end\n");
 	
-	MERIC_MeasureStopStart("compute", "move");
+	MERIC_MeasureStopStart("COMPUTE", "MOVE");
 	
 	float *xr;
 	size_t elements = (size_t)block.x * (size_t)block.y * (size_t)grid.x * (size_t)grid.y;
@@ -131,7 +135,7 @@ int main(int argc, char** argv)
 	}
 	printf("Memory phase end\n");
 	
-	MERIC_MeasureStop("move");
+	MERIC_MeasureStop("MOVE");
 	
 	CUDA_CHECK(cudaFreeHost(xr));
 

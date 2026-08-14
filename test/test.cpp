@@ -5,8 +5,20 @@
 #include <meric.h>
 #include "work.h"
 
+void help(const std::string name, const int ret)
+{
+    std::cerr << "OpenMP application of four MERIC regions\n"
+              << " - SLEEP (idle)\n"
+              << " - IDLE (idle, nested in SLEEP region)\n"
+              << " - RUN (compute bound)\n"
+              << " - RAII (example of RAII usage, compute bound)\n"
+              << "Usage: mpirun -np <N> " << name  << " [-s sleep_ms] [-r run_ms] [-n nested_ms] [-a raii_ms]\n";
+    exit(ret);
+}
+
+
 //RAII supported by Clang and GNU compilers, so the following region will not be available if using another compiler
-void raiiTest(int time)
+void raiiTest(double time)
 {
 	MERIC_CaptureScope("RAII");
 	do_work(time);
@@ -14,29 +26,58 @@ void raiiTest(int time)
 
 int main(int argc, char **argv)
 {
-	MERIC_Init();
-	
-	for(int i = 0; i < 1; i++)
-	{
-		#pragma omp parallel
-		{
-			MERIC_MeasureStart("SLEEP");
-			usleep(500000);
+    int sleep_ms = 1000;
+    int run_ms = 1000;
+    int nested_ms = 500;
+    int raii_ms = 1000;
 
-				MERIC_MeasureStart("Nested");
-				usleep(500000);
-				MERIC_MeasureStop("Nested");
+    int opt;
+    while ((opt = getopt(argc, argv, "hs:r:n:a:")) != -1)
+    {
+        switch (opt)
+        {
+            case 'h':
+                help(std::string(argv[0]), 0);
+            case 's':
+                sleep_ms = atoi(optarg);
+                break;
+            case 'r':
+                run_ms = atoi(optarg);
+                break;
+            case 'n':
+                nested_ms = atoi(optarg);
+                break;
+            case 'a':
+                raii_ms = atoi(optarg);
+                break;
+            default:
+                help(std::string(argv[0]), 1);
+        }
+    }
 
-			MERIC_MeasureStop("SLEEP");
+    MERIC_Init();
 
-			MERIC_MeasureStart("RUN");
-			do_work(1);
-			MERIC_MeasureStop("RUN");
-		} //omp parallel
-		
-		raiiTest(1);
-	}
-	
-	MERIC_Close();
-	return 0;
+    MERIC_MeasureStart("SLEEP");
+    usleep(sleep_ms * 1000);
+
+    MERIC_MeasureStart("NESTED");
+    usleep(nested_ms * 1000);
+    MERIC_MeasureStop("NESTED");
+
+    MERIC_MeasureStop("SLEEP");
+
+    MERIC_MeasureStart("RUN");
+
+    #pragma omp parallel
+    {
+        do_work(run_ms / 1000.0);
+    }
+
+    MERIC_MeasureStop("RUN");
+
+    raiiTest(raii_ms / 1000.0);
+
+    MERIC_Close();
+
+    return 0;
 }
