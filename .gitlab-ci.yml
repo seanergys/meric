@@ -1,0 +1,60 @@
+# MERIC CI pipeline loader
+
+variables:
+  CI_MERIC_FETCH_CI_FILES: "1"
+  CI_MERIC_PIPELINE_REPO_PATH: "energy-efficiency/meric-suite/MERIC-RS-CICD"
+  CI_MERIC_PIPELINE_REPO_REF: "main"
+
+  # Nightly schedules are accepted only when they target this branch.
+  CI_MERIC_NIGHTLY_BRANCH: "dev"
+  CI_MERIC_TEST_PROFILE: "full"
+
+workflow:
+  rules:
+    # Scheduled pipeline for the integration branch.
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == $CI_MERIC_NIGHTLY_BRANCH'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "scheduled"
+        CI_MERIC_TEST_PROFILE: "nightly"
+      when: always
+
+    # Merge requests targeting the dev branch.
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "dev"
+        CI_MERIC_TEST_PROFILE: "full"
+      when: always
+
+    # Merge requests targeting the master branch.
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "master"
+        CI_MERIC_TEST_PROFILE: "full"
+      when: always
+
+    # Automatic push pipelines only for dev and master.
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "dev"'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "dev"
+        CI_MERIC_TEST_PROFILE: "full"
+      when: always
+
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "master"'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "master"
+        CI_MERIC_TEST_PROFILE: "full"
+      when: always
+
+    # Any branch can be tested manually from the GitLab UI.
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      variables:
+        CI_MERIC_PIPELINE_LEVEL: "web"
+        CI_MERIC_TEST_PROFILE: "full"
+      when: always
+
+    - when: never
+
+include:
+  - project: "energy-efficiency/meric-suite/MERIC-RS-CICD"
+    ref: "main"
+    file: "/.gitlab-ci.yml"
