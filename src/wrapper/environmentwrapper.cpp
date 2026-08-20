@@ -2289,11 +2289,13 @@ void Environment::frequency(uint64_t freq, int socket)
 	{
 		if(esmi_socket_boostlimit_set(soc, freq/1e6) != ESMI_SUCCESS)
 		{
-			for (int cpu : mapCoresToSocket[soc])
+			std::cerr << "MERIC ERROR: ESMI failed to set "<< freq/1e3<<"kHz core frequency for socket "<< soc << std::endl;
+/*			for (int cpu : mapCoresToSocket[soc])
 			{
 				//test TODO for (int thrd : mapThreadsToCore[cpu])
 				esmi_core_boostlimit_set(cpu, freq/1e6);
 			}
+*/
 		}
 	}
 #elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
