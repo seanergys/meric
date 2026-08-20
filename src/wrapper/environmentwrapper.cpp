@@ -2287,10 +2287,13 @@ void Environment::frequency(uint64_t freq, int socket)
 	MERIC_INFO << "; using ESMI\n";
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		for (int cpu : mapCoresToSocket[soc])
+		if(esmi_socket_boostlimit_set(soc, freq/1e6) != ESMI_SUCCESS)
 		{
-			//test TODO for (int thrd : mapThreadsToCore[cpu])
-			esmi_core_boostlimit_set(cpu, freq/1e6);
+			for (int cpu : mapCoresToSocket[soc])
+			{
+				//test TODO for (int thrd : mapThreadsToCore[cpu])
+				esmi_core_boostlimit_set(cpu, freq/1e6);
+			}
 		}
 	}
 #elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
