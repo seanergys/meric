@@ -63,7 +63,7 @@ public:
 					_storeList[i]->addEnd(_stack.back());
 				}
 			}
-			MERIC_INFO << "region '" << getRegionName(_stack.size(), _stack.back()) << "' stopped\n";
+			MERIC_INFO << "region '" << getRegionName(_stack.back()) << "' stopped\n";
 			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
 				// infostore is always the first store in the list
@@ -173,14 +173,7 @@ public:
 		 **/
 		bool ignoreRegion(const std::string &region)
 		{
-			for (std::vector<std::string>::iterator it = ignoreRegions.begin(); it != ignoreRegions.end(); it++)
-			{
-				if (region == *it)
-				{
-					return true;
-				}
-			}
-			return false;
+			return ignoreRegions.count(region) > 0;
 		}
 
 		/**
@@ -538,7 +531,7 @@ public:
 				{
 					#pragma omp single nowait
 					{
-						ignoreRegions.push_back(region);
+						ignoreRegions.insert(region);
 						std::cerr << "MERIC WARNING: invalid region name '" << region <<"' - region ignored" << std::endl;
 					}
 				}
@@ -546,9 +539,30 @@ public:
 			return valid;
 		}
 		
-		const std::string &getRegionName(int size, int last)
+		const std::string &getRegionName(int regionId)
 		{
-			return size ? _name[last] : _mainRegion;
+			if(regionId < 0 || regionId >= _name.size())
+				return _mainRegion;
+
+			return _name[regionId];
+		}
+
+		const std::string &getParentRegionName(bool skipIgnored = true)
+		{
+			if(_stack.size() <= 1)
+				return _mainRegion;
+
+			for(auto it = std::prev(_stack.crbegin()); it != _stack.crend(); ++it)
+			{
+				const std::string &name = getRegionName(*it);
+
+				if(skipIgnored && ignoreRegion(name))
+					continue;
+
+				return name;
+			}
+
+			return _mainRegion;
 		}
 
 		int getRegionID(const std::string &region)
@@ -631,7 +645,7 @@ public:
 		//              region_name                     node socket       settings
 		static std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters>> parameter;
 		static RegionParameters ignoreSettings;
-		static std::vector<std::string> ignoreRegions;
+		static std::set<std::string> ignoreRegions;
 
 		static RegionParameters defaultParameter;
 		static SocketsRegionParameters currentState;
