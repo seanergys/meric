@@ -552,7 +552,7 @@ public:
 			if(_stack.size() <= 1)
 				return _mainRegion;
 
-			for(auto it = std::prev(_stack.crbegin()); it != _stack.crend(); ++it)
+			for(auto it = std::next(_stack.crbegin()); it != _stack.crend(); ++it)
 			{
 				const std::string &name = getRegionName(*it);
 
