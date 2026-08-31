@@ -279,6 +279,12 @@ void Environment::getCPUbrandString(std::string & CPUname)
 		}
 	}
 }
+
+void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
+{
+	// NOTE: No consistent CPU family model strings for non-x86 platforms.
+	CPUFamilyModelOut = "";
+}
 #endif
 
 
