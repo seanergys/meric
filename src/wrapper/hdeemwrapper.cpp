@@ -70,7 +70,8 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 
 		record.back().info.type   = SourceInfo_t::TYPE_POWER;
 
-		if(sensorID == 0) {
+		if(sensorID == 0)
+		{
 			record.back().info.flags |= SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
 		}
 	}
@@ -80,10 +81,12 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 		sensor.first = firstSample;
 		sensor.last  = lastSample;
 
-		if (sensor.id == 0) {
+		if (sensor.id == 0)
+		{
 			sensor.max = _samples.blade_power[firstSample].value[sensor.id];
 		}
-		else {
+		else
+		{
 			sensor.max = _samples.vr_power[firstSample].value[sensor.id - 1];
 		}
 
@@ -92,10 +95,12 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 		double valTmp;
 		for (size_t it = firstSample; it < lastSample; it++)
 		{
-			if (sensor.id == 0) {
+			if (sensor.id == 0)
+			{
 				valTmp = _samples.blade_power[it].value[sensor.id];
 			}
-			else {
+			else
+			{
 				valTmp = _samples.vr_power[it].value[sensor.id - 1];
 			}
 
@@ -111,14 +116,17 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 	{
 		size_t firstVR = firstBlade / (FREQUENCY / FREQUENCY_VR) + VRDELAY;
 		size_t lastVR  = lastBlade / (FREQUENCY / FREQUENCY_VR)  + VRDELAY;
-		if (lastVR > _samples.nb_vr_values) {
+		if (lastVR > _samples.nb_vr_values)
+		{
 			lastVR = _samples.nb_vr_values;
 		}
 		
 		if(lastVR > 0 && lastVR > firstVR)
 		{
 			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
+			{
 				getEnergySamples(record[sensorID], firstVR, lastVR);
+			}
 		}
 		else
 		{
@@ -138,7 +146,8 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 	}
 
 	//BLADE - error message about missing blade samples is more important than missing VR samples
-	if(lastBlade > 0 && lastBlade > firstBlade) {
+	if(lastBlade > 0 && lastBlade > firstBlade)
+	{
 		getEnergySamples(record[0], firstBlade, lastBlade);
 	}
 	else
@@ -158,13 +167,15 @@ void HDEEM::getSamplesList(size_t sensorId, size_t first, size_t last, std::vect
 {
 	if (sensorId == 0)
 	{
-		for (size_t i = first; i < last; i++) {
+		for (size_t i = first; i < last; i++)
+		{
 			samples.push_back(_samples.blade_power[i].value[0]);
 		}
 	}
 	else
 	{
-		for (size_t i = first; i < last; i++) {
+		for (size_t i = first; i < last; i++)
+		{
 			samples.push_back(_samples.vr_power[i].value[sensorId-1]);
 		}
 	}
@@ -183,7 +194,8 @@ double HDEEM::getResultValue(double startValue, double stopValue, double runtime
 	else if (runtime < 0.01)
 	{
 		std::string info = "";
-		if (detailedMode && runtime < 0.001) {
+		if (detailedMode && runtime < 0.001)
+		{
 			info = " detailed";
 		}
 		std::cerr << "MERIC WARNING: very short ("<<runtime<< "s)"<< info <<" region '" << regionName << "' results might be skewed\n";
