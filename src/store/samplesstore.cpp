@@ -31,7 +31,8 @@ template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedReg
 	const double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts].time);
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts].time), duration, samplerRecord);
 
-	if (msg != "") {
+	if (msg != "")
+	{
 		std::cerr << msg <<  _name[_records[iStarts].region] << std::endl;
 	}
 
@@ -57,7 +58,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	clock_gettime(CLOCK_REALTIME, &time1);
 		
     ss << "# CALLTREE;init_" << _initCounter;
-	for (size_t j = 0; j < iStarts.size()-1; j++) {
+	for (size_t j = 0; j < iStarts.size()-1; j++)
+	{
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
 	ss << std::endl;
@@ -70,7 +72,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, samplerRecord);
 	
-	if (msg != "" && msg.find("detailed") == std::string::npos) {
+	if (msg != "" && msg.find("detailed") == std::string::npos)
+	{
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 	}
 
@@ -112,7 +115,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 			std::vector<double> samples;
 			TSystem::getSamplesList(sampler.id, sampler.first, sampler.last, samples);
 
-			for(size_t i = 0; i < samples.size(); ++i) {
+			for(size_t i = 0; i < samples.size(); ++i)
+			{
 				samplesStream << (sampler.first + i) << "," << samples[i] << "\n";
 			}
 		}
@@ -129,7 +133,8 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		    << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
 	}
 	
-	if(printSamples && staticRegion) {
+	if(printSamples && staticRegion)
+	{
 		samplesStream.close();
 	}
 	
