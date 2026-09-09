@@ -32,6 +32,10 @@ workflow:
         CI_MERIC_TEST_PROFILE: "full"
       when: always
 
+    # Do not create a second branch pipeline when an MR pipeline is available.
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+
     # Automatic push pipelines only for dev and master.
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "dev"'
       variables:
