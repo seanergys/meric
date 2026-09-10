@@ -546,10 +546,10 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 				ok = false;
 			}
 		}
-		else
+		/*else
 		{
 			std::cout << "\tCPU uncore frequency limits: unknown\n";
-		}
+		}*/
 #elif defined HAVE_X86_ADAPT_H
 		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 		int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
@@ -1510,7 +1510,14 @@ void checkMsrWhitelist()
 		std::cerr << "\nMSR_SAFE ERROR: No allowlist file in /dev/cpu/\n";
 		return;
 	}
-	currentWhitelist.insert(msr_whitelist.begin(), msr_whitelist.end());
+
+	{
+		std::string cpuFamilyModel;
+		meric::Environment::getCPUFamilyModelString(cpuFamilyModel);
+		auto cpuidSignature = meric::stringToCpuidSignature(cpuFamilyModel);
+		getMSRWhitelist(cpuidSignature, currentWhitelist);
+	}
+
 	std::ifstream msrfile(whitelistName);
 	if (!msrfile)
 	{

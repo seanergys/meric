@@ -1,6 +1,9 @@
 #ifndef SRC_WRAPPER_MSRS_H_
 #define SRC_WRAPPER_MSRS_H_
 
+#include <map>
+#include "hwidsignatures.h"
+
 /**
  * List of MSRs used in MERIC with official description from documentation
  **/
@@ -1552,6 +1555,7 @@ const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace detail {
 const std::map<uint64_t, uint64_t> msr_whitelist = {
 #ifdef IA32_ENERGY_PERF_BIAS
 	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
@@ -1672,5 +1676,19 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 #endif
 
 };
+}
+
+inline void getMSRWhitelist(meric::CpuidSignatureValues cpu_signature, 
+	std::map<uint64_t, uint64_t> &outWhitelist)
+{
+	outWhitelist = detail::msr_whitelist;
+
+	if(cpu_signature >= meric::CpuidSignatureValues::INTEL_06_AEH)
+	{
+#ifdef MSR_UNCORE_RATIO_LIMIT
+		outWhitelist.erase(MSR_UNCORE_RATIO_LIMIT);
+#endif
+	}
+}
 
 #endif /* SRC_WRAPPER_MSRS_H_ */
