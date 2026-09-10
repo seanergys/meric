@@ -63,6 +63,7 @@ def configure(ctx):
 			ctx.options.mpi="mpic++" # default MPI compiler
 	
 	if ctx.options.flags:
+		ctx.env.CXXFLAGS[:] = [item for item in ctx.env.CXXFLAGS if not item.startswith("-O")]
 		ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
 	ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
 	if (ctx.options.includes):
@@ -203,6 +204,8 @@ def configure(ctx):
 		ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
 	if ctx.options.verbose:
 		ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
+		ctx.env.CXXFLAGS[:] = [item for item in ctx.env.CXXFLAGS if not item.startswith("-O")]
+		ctx.env.append_unique("CXXFLAGS",  [ "-g", "-O0" ])
 	
 	if ctx.options.noopenmp:
 		ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True, msg="Checking for MPI compiler")
