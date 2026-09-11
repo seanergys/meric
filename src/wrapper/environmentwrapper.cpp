@@ -977,10 +977,15 @@ UFS_WAY Environment::getPreferredUFSWay()
 		// Granite Rapids and newer Intel CPUs require TPMI interface for tuning
 		return UFS_WAY_TPMI_SYSFS;
 	}
-
+	else
+	{
+		// Use MSR for older Intel CPUs or attempt to fallback to TPMI when MSR is not available at compile time
 #if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 	return UFS_WAY_MSR;
+#else
+	return UFS_WAY_TPMI_SYSFS;
 #endif
+	}
 
 	return UFS_WAY_NONE;
 }
