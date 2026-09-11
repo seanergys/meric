@@ -44,7 +44,8 @@ def configure(ctx):
 		ctx.load(ctx.options.cpp)
 	except:
 		if ('CXX' in ctx.env):
-			if (ctx.env['CXX'][0].endswith('clang++') or ctx.env['CXX'][0] == 'CC'):
+			chain=ctx.env['CXX'][0]
+			if (chain.endswith('clang++') or chain.endswith('CC') or (len(chain) > 3 and chain[-4:-1] == 'icp')):
 				ctx.load("clang++")
 			else:
 				ctx.load("g++")
@@ -62,6 +63,7 @@ def configure(ctx):
 			ctx.options.mpi="mpic++" # default MPI compiler
 	
 	if ctx.options.flags:
+		ctx.env.CXXFLAGS[:] = [item for item in ctx.env.CXXFLAGS if not item.startswith("-O")]
 		ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
 	ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
 	if (ctx.options.includes):
@@ -171,10 +173,10 @@ def configure(ctx):
 		ctx.check_cxx(header_name="restclient-cpp/restclient.h", execute=False, mandatory=False)
 		
 		#check for libs to read performance counters
-		ctx.check_cxx(header_name="papi.h", execute=False, mandatory=False)
+		ctx.check_cxx(header_name="papi.h", lib="papi", uselib_store="papi", execute=False, mandatory=False)
 		ctx.check_cxx(header_name="linux/perf_event.h", execute=False, mandatory=False)
 		
-		ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
+		#ctx.check_cxx(header_name="hdf5.h", execute=False, mandatory=False)
 	
 	# SBI tool
 	else:
@@ -194,14 +196,16 @@ def configure(ctx):
 			configFile.write(dep[5:-2]+"\n")
 	configFile.close()
 	
-	if os.path.exists(ctx.path.abspath()+"/build/systemDefault.json"):
-		os.remove(ctx.path.abspath()+"/build/systemDefault.json")
+	if os.path.exists(ctx.path.abspath()+"/systemDefault.json"):
+		os.remove(ctx.path.abspath()+"/systemDefault.json")
 	
 	ctx.env.append_unique("DEFINES", [ "MERIC_PATH=\""+ctx.path.abspath()+"\""])
 	if ctx.options.debug:
 		ctx.env.append_unique("DEFINES", [ "__MERIC_DEBUG__" ])
 	if ctx.options.verbose:
 		ctx.env.append_unique("DEFINES", [ "VERBOSE" ])
+		ctx.env.CXXFLAGS[:] = [item for item in ctx.env.CXXFLAGS if not item.startswith("-O")]
+		ctx.env.append_unique("CXXFLAGS",  [ "-g", "-O0" ])
 	
 	if ctx.options.noopenmp:
 		ctx.find_program(ctx.options.mpi, var="MPICXX", mandatory=True, msg="Checking for MPI compiler")
@@ -364,7 +368,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 
@@ -379,7 +383,7 @@ def build(ctx):
 		ctx.shlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
-			use          = "basis",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 			install_path = "${PREFIX}/lib"
 		)
 		
@@ -430,7 +434,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -447,7 +451,7 @@ def build(ctx):
 	ctx.shlib(
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
-		use          = "basis",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)

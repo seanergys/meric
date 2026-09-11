@@ -14,9 +14,11 @@ public:
 	void start(const std::string &region)
 	{
 		if (Meric::IGNORE)
+		{
 			return;
+		}
 
-		if (ignoreRegion(region))
+		if (ignoreRegion(region) || validateRegionName(region) == false)
 		{
 			#pragma omp master
 			{
@@ -60,7 +62,9 @@ public:
 	{
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
+		{
 			return 0.0;
+		}
 
 		if (ignoreRegion(region))
 		{
@@ -86,7 +90,9 @@ public:
 			#pragma omp barrier
 		}
 		if (regionRuntime < 0.0)
+		{
 			return regionRuntime;
+		}
 
 		#pragma omp master
 		{
@@ -97,7 +103,9 @@ public:
 			regionRuntime = Meric::stop();
 			_stack.pop_back();
 			if (Meric::timeThreshold > regionRuntime)
+			{
 				ignoreRegions.push_back(region);
+			}
 		}
 		
 		if (OMPbarriers)
@@ -111,7 +119,9 @@ public:
 	{
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
+		{
 			return 0.0;
+		}
 		
 		#pragma omp master	//only master thread is allowed to work with the _stack
 		{
@@ -127,16 +137,23 @@ public:
 			#pragma omp barrier
 		}
 		if (regionRuntime < 0.0)
+		{
 			return regionRuntime;
+		}
 		
 		#pragma omp master
 		{
-			if (!ignoreRegion(startRegionName))
+			const bool validStartRegionName = validateRegionName(startRegionName);
+			if (!ignoreRegion(startRegionName) && validStartRegionName == true)
 			{
 				if (!ignoreRegion(stopRegionName))
+				{
 					MERIC_INFO << "region '" << stopRegionName << "' stopping and staring region '"  << startRegionName << "'\n";
+				}
 				else
+				{
 					MERIC_INFO << "starting region '"  << startRegionName << "'\n";
+				}
 				SocketsRegionParameters change = regionValue(currentState, startRegionName);
 				setRegionEnvironment(change);
 			}
@@ -151,12 +168,16 @@ public:
 			{
 				regionRuntime = Meric::stop();
 				if (Meric::timeThreshold > regionRuntime)
+				{
 					ignoreRegions.push_back(stopRegionName);
+				}
 			}
 			_stack.pop_back();
 
-			if (!ignoreRegion(startRegionName))
+			if (!ignoreRegion(startRegionName) && validStartRegionName)
+			{
 				Meric::start(startRegionName);
+			}
 			_stack.push_back(getRegionID(startRegionName));
 		}
 		

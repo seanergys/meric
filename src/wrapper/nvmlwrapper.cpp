@@ -80,8 +80,8 @@ void NVML::init(bool detailed, double sampleFreqHz)
     }
 
     if(nvmlInit_v2() != NVML_SUCCESS)
-	{
-		std::cerr << "NVML ERROR: Unable to initialize\n";
+    {
+        std::cerr << "NVML ERROR: Unable to initialize\n";
         return;
     }
 
@@ -149,6 +149,8 @@ void NVML::initCounters(bool detailed)
 
     std::vector<SourceDecl_t> sourceDecls;
 
+    // NOTE: "DEVICE" energy counter is disabled due to it's mapping to "nvmlDeviceGetTotalEnergyConsumption", which has uncertain scope.
+    //       Energy counters are derived from instant power samples instead.
     if (IsNVPlatform())
     {
         // sourceDecls.push_back({ "DEVICE",     0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT }});
@@ -175,7 +177,9 @@ void NVML::initCounters(bool detailed)
     {
         nvmlDevice_t deviceHandle;
         if (nvmlDeviceGetHandleByIndex(i, &deviceHandle) != NVML_SUCCESS)
+        {
             continue;
+        }
 
         auto deviceDescRes = s_deviceDesc.insert(std::make_pair(i, DeviceDesc_t{deviceHandle}));
         DeviceDesc_t &deviceDesc = deviceDescRes.first->second;
@@ -291,6 +295,7 @@ void NVML::initSamplers(bool detailed)
     // NOTR: Simulates HDEEM Blade sensor, which doesn't exist in NVML
     s_sourceById.insert(s_sourceById.begin(), nullptr);
 
+    vrSensorLabel.clear();
     for (SourceDesc_t *pSourceDesc : s_sourceById)
     {
         vrSensorLabel.push_back(pSourceDesc ? pSourceDesc->fullName : "");
@@ -312,7 +317,6 @@ void NVML::initSamplers(bool detailed)
                     uint64_t deltaTime = timestamp - pSource->lastSampleTime;
                     pSource->sumValue += uint64_t(value * (double(deltaTime) * 1.0e-9));
                 }
-
                 pSource->lastSampleTime = timestamp;
             }
         };
@@ -336,20 +340,18 @@ void NVML::initSamplers(bool detailed)
                     if(ret == NVML_SUCCESS && fieldValues[i].nvmlReturn == NVML_SUCCESS)
                     {
                         value = fieldValues[i].value.uiVal;
-
                         if(value < sources[i]->lastValue && sources[i]->info.type == SourceInfo_t::TYPE_ENERGY)
+                        {
                             sources[i]->overflowCount++;
-
+                        }
                         sources[i]->lastValue = value;
                     }
-
                     ProcessSampleValue(sources[i], timestamp, value);
                 }
             }
 
             {
                 auto &sources = deviceDescIt.second.sources;
-
                 for(auto &pSource: sources)
                 {
                     unsigned long long value = 0;
@@ -357,14 +359,15 @@ void NVML::initSamplers(bool detailed)
                     {
                         value = 0;
                     }
-
                     ProcessSampleValue(pSource, timestamp, value);
                 }
             }
         }
 
         if(!pRequest)
+        {
             return;
+        }
 
         for(auto &desc: s_sourceByName)
         {
@@ -458,8 +461,12 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
             }
             else if(desc.info.type == SourceInfo_t::TYPE_ENERGY)
             {
+                if (it == desc.samples.begin())
+                {
+                    continue;
+                }
                 power = PowerFromEnergySamples(*it, std::numeric_limits<uint64_t>::max(),
-                    it != desc.samples.begin() ? (it - 1).base() : nullptr) * desc.unit;
+                    (it - 1).base()) * desc.unit;
             }
 
             data.energy += power;
@@ -471,7 +478,9 @@ std::string NVML::getData(double startTime, double duration, SamplerRecord_t &re
         data.last  = std::distance(desc.samples.begin(), endIt);
 
         if(data.min > data.max)
+        {
             data.min = data.max;
+        }
     }
 
     return "";
@@ -486,20 +495,30 @@ void NVML::getSamplePeriodInfo(SamplePeriodInfo_t &info)
 
 bool NVML::isAvailable()
 {
+    if(nvmlInit_v2() != NVML_SUCCESS)
+    {
+        return false;
+    }
+
+    uint32_t deviceCount = 0;
     unsigned long long energy;
     nvmlDevice_t deviceHandle;
-    if (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS && nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS)
-    {
-        return true;
-    }
-    return false;
+
+    bool available = (nvmlDeviceGetCount(&deviceCount) == NVML_SUCCESS) && deviceCount > 0;
+    available = available && (nvmlDeviceGetHandleByIndex(0, &deviceHandle) == NVML_SUCCESS);
+    available = available && (nvmlDeviceGetTotalEnergyConsumption(deviceHandle, &energy) == NVML_SUCCESS);
+
+    nvmlShutdown();
+    return available;
 }
 
 nvmlDevice_t NVML::getGPUHandle(int id)
 {
     auto it = s_deviceDesc.find(id);
     if (it == s_deviceDesc.end())
+    {
         return nvmlDevice_t{};
+    }
     return it->second.device;
 }
 
@@ -548,7 +567,6 @@ void NVML::init(bool detailed, double sampleFreqHz)
 void NVML::close()
 {
     closeSamplers();
-
     // nvmlShutdown();
 }
 

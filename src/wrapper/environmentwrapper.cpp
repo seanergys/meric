@@ -87,7 +87,10 @@ void Environment::getCPUbrandString(std::string & CPUname)
 	CPUname = std::string(buff);
 }
 
-
+/**
+ * Provides the processor family and model in format XX_XXH, where first XX is family, second XX is model, H stands for hexadecimal
+ * Required for architecture-specific features (e.g., Sapphire Rapids uncore frequency monitoring)
+ **/
 void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 {
 	unsigned int regs[4];
@@ -106,10 +109,12 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
     uint32_t family_synth = family;
 
 	// Compute actual family and model
-	if (family == 0xF) {
+	if (family == 0xF)
+	{
 		family_synth += extended_family;
 	}
-	if (family == 0x6 || family == 0xF) {
+	if (family == 0x6 || family == 0xF)
+	{
 		model_synth += (extended_model << 4);
 	}
  
@@ -122,10 +127,9 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 
 	#if defined(_INTEL_)
     	CPUFamilyModelOut = std::string("INTEL_") + CPUFamilyModelOut;
-	#elif defined(_AMD_) || defined(__amd64__)
+	#elif defined(_AMD_)
 		CPUFamilyModelOut = std::string("AMD_") + CPUFamilyModelOut;
 	#endif
-
 }
 
 
@@ -264,10 +268,14 @@ void Environment::getCPUbrandString(std::string & CPUname)
 
 	//internal alternative name of the hardware
 	if (!mapThreadsToCore.size())
+	{
 		initHWSizes();
+	}
 	CPUname = std::to_string(SOCKETS_PER_NODE)+"x"+std::to_string(CORES_PER_SOCKET)+"x"+std::to_string(THREADS_PER_CORE);
 	if (defaultSettings.maxCoreFreq > 0)
+	{
 		CPUname += " @ "+std::to_string(defaultSettings.maxCoreFreq/1e9)+"GHz";
+	}
 	else
 	{
 		CPUinfoFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
@@ -439,6 +447,9 @@ void Environment::getAvailableCF(std::vector<long> & values)
 	{
 		return;
 	}
+#if defined HAVE_E_SMI_E_SMI_H
+	return;
+#endif
 	std::ifstream frequencyBounderyFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
 	if (frequencyBounderyFile.is_open())
 	{
@@ -631,8 +642,16 @@ long Environment::getMaximumTurboFrequency()
 	}
 #elif defined HAVE_E_SMI_E_SMI_H
 	uint32_t boostlimit;
+	uint32_t boostcurrent;
+	
 	if (!esmi_core_boostlimit_get(0, &boostlimit))
 	{
+		uint32_t boostcurrent = boostlimit;
+		if (esmi_core_boostlimit_set(0, 20000) == ESMI_SUCCESS) //20GHz
+		{
+			esmi_core_boostlimit_get(0, &boostlimit);
+			esmi_core_boostlimit_set(0, boostcurrent);
+		}
 		frequency = boostlimit * 1e6;
 	}
 #endif
@@ -760,7 +779,6 @@ DVFS_WAY Environment::isDVFSpossible()
 	}
 #elif defined _AMD_ 
 	#if ( defined HAVE_MSR_SAFE && defined MSR_HWCR && defined MSR_PSTATE_CTL ) || defined HAVE_E_SMI_E_SMI_H
-		//has not been tested for scaling driver requirement TODO !!!
 		return OTHER;
 	#endif
 #endif
@@ -1530,12 +1548,16 @@ void Environment::readSystemDefaultSettings()
 				frequencyBounderyFile >> freqBound;
 				frequencyBounderyFile.close();
 				if (std::stoi(freqBound) == 1)
+				{
 					defaultSettings.maxTurboFreq = 0;
+				}
 				else
 				{
 					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 					if (defaultSettings.maxTurboFreq == 0)
+					{
 						defaultSettings.maxTurboFreq = 1;
+					}
 				}
 			}
 		}
@@ -1550,7 +1572,9 @@ void Environment::readSystemDefaultSettings()
 				{
 					defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 					if (defaultSettings.maxTurboFreq == 0)
+					{
 						defaultSettings.maxTurboFreq = 1;
+					}
 				}
 			}
 		}
@@ -1560,7 +1584,9 @@ void Environment::readSystemDefaultSettings()
 		{
 			defaultSettings.maxTurboFreq = getMaximumTurboFrequency();
 			if (defaultSettings.maxTurboFreq == 0)
+			{
 				defaultSettings.maxTurboFreq = 1;
+			}
 		}
 		#elif defined HAVE_MSR_SAFE && defined MSR_HWCR
 		else
@@ -1588,7 +1614,14 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-#if defined _AMD_ && !defined HAVE_E_SMI_E_SMI_H && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+#if defined _AMD_ 
+	#if defined HAVE_E_SMI_E_SMI_H
+		uint32_t boostlimit;
+		if (!esmi_core_boostlimit_get(0, &boostlimit))
+		{
+			defaultSettings.defaultCoreFreq = boostlimit*1e6;
+		}
+	#elif defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
 		// if using esmi, when restoring default CF we will set turbo frequency
 		else if (!defaultSettings.availableCoreFreq.empty())
 		{
@@ -1596,8 +1629,11 @@ void Environment::readSystemDefaultSettings()
 			read_msr(0, MSR_PSTATE_CTL, &MSR_PSTATE_CTL_bits);
 			defaultSettings.defaultCoreFreq = defaultSettings.availableCoreFreq[MSR_PSTATE_CTL_bits & MSR_PSTATE_CUR_LIM_curr_limit_pstate_mask];
 			if (defaultSettings.maxTurboFreq > 0)
-				defaultSettings.defaultCoreFreq += 1000000; 
+			{
+				defaultSettings.defaultCoreFreq += 1000000;
+			}
 		}
+	#endif
 #endif
 	
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
@@ -1899,6 +1935,10 @@ void Environment::readSystemDefaultSettings()
 			{
 				defaultRestoreFile << restoreJson;
 				defaultRestoreFile.close();
+			}
+			else
+			{
+				MERIC_INFO << "WARNING: Failed to store system defaults: " << defaultSettingFile << std::endl;
 			}
 		}
 	}

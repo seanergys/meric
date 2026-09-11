@@ -142,10 +142,9 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 			}
 			else
 			{
-				if (interp_power > sensor.max)
-					sensor.max = interp_power;
-				if (interp_power < sensor.min)
-					sensor.min = interp_power; 
+				sensor.max = std::max(sensor.max, interp_power)
+				sensor.min = std::min(sensor.min, interp_power)
+
 				sensor.energy += interp_power;
 			}
  
@@ -174,11 +173,8 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 		{
 			valTmp = power_samples[it];
 
-			if (valTmp > sensor.max)
-				sensor.max = valTmp;
-			
-			if (valTmp < sensor.min) //&& valTmp > 0.0)
-				sensor.min = valTmp;
+			sensor.max = std::max(sensor.max, valTmp);
+			sensor.min = std::min(sensor.min, valTmp);
 			
 			sensor.energy += valTmp;
 		}

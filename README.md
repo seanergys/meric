@@ -7,7 +7,7 @@
 
 Lightweight C/C++ library with Fortran and Python interface for HPC applications dynamic behavior detection with a goal in energy consumption reduction - applying [READEX](https://www.readex.eu/) approach.
 
-The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), selected ARM systems (e.g., Fujitsu A64FX, Grace), Nvidia GPUs (Volta, Ampere, Hopper), and AMD GPUs (MI2xx).
+The library was originally developed for Intel x86 systems (tested on HSW, BDW, KNL, SKL, CSL, ICX, and SPR) but additionally supports AMD EPYC (17h and 19h), IBM OpenPOWER (8 and 9), selected ARM systems (e.g., Fujitsu A64FX, Grace), NVIDIA GPUs (Volta, Ampere, Hopper, Blackwell), and AMD GPUs (MI2xx).
 
 --------------------------------------------------------------------------------
 #      README Content                                                          #
@@ -32,21 +32,6 @@ The library was originally developed for Intel x86 systems (tested on HSW, BDW, 
 12. [Command line utilities](https://code.it4i.cz/energy-efficiency/meric-suite/meric#12-command-line-utilities)
 13. [Acknowledgment](https://code.it4i.cz/energy-efficiency/meric-suite/meric#13-acknowledgment)
 
-
-<!--- dev branch links
- 1. [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/dev#1-system-parameters-tuning)
- 2. [Supported energy measurement systems](https://code.it4i.cz/vys0053/meric/tree/dev#2-supported-energy-measurement-systems)
- 3. [MERIC API](https://code.it4i.cz/vys0053/meric/-/tree/dev#3-meric-api)
- 4. [TIMEPROF library](https://code.it4i.cz/vys0053/meric/tree/dev#4-timeprof-library)
- 5. [MERIC binary instrumentation](https://code.it4i.cz/vys0053/meric/tree/dev#5-meric-binary-instrumentation)
- 6. [Compilation](https://code.it4i.cz/vys0053/meric/tree/dev#6-compilation)
- 7. [MERIC input parameters](https://code.it4i.cz/vys0053/meric/tree/dev#7-meric-input-parameters)
- 8. [Content of test folder and example application run](https://code.it4i.cz/vys0053/meric/tree/dev#8-content-of-test-folder-and-example-application-run)
- 9. [Analysis of MERIC output files](https://code.it4i.cz/vys0053/meric/tree/dev#9-analysis-of-meric-output-files)
-10. [MERIC with a Fortran code](https://code.it4i.cz/vys0053/meric/tree/dev#10-meric-with-a-fortran-code)
-11. [Tool for static tuning](https://code.it4i.cz/vys0053/meric/tree/dev#11-command-line-utilities))
-12. [Acknowledgment](https://code.it4i.cz/vys0053/meric/tree/dev#12-acknowledgment)
--->
 
 --------------------------------------------------------------------------------
 #     1] System parameters tuning                                              #
@@ -109,17 +94,17 @@ AMD EPYC CPUs from Zen3 (19h) architecture provides [EPYC System Management Soft
 Using OpenMP API.
 
 
-## Nvidia GPU streaming multiprocessors frequency ##
-Some Nvidia GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
-To tune the SM frequency, MERIC requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
+## NVIDIA GPU streaming multiprocessors frequency ##
+Some NVIDIA GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
+To tune the SM frequency, MERIC requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-## Nvidia GPU memory frequency ##
-Nvidia GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
+## NVIDIA GPU memory frequency ##
+NVIDIA GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
 
 
-## Nvidia GPU power capping ##
-Using [Nvidia Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of Nvidia GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
+## NVIDIA GPU power capping ##
+Using [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of NVIDIA GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
 
 
 ## ARM Jetson memory frequency ##
@@ -136,9 +121,9 @@ From the Sandy Bridge microarchitecture all Intel processors provide software-ba
 
 Since RAPL measurement is stored in a performance counter, overflow may happen during the application run. MERIC implements a overflow detection and recovery system, however it cannot fix the values if two or more overflows happen during a region that does not have any nested region. Please, keep it in mind when specifying a region size. We suggest not to have last-level region (does not have any nested region) that takes more than one minute.
 
-Intel uses RAPL system to limit power consumption of their CPUs. The power limit can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/vys0053/meric/tree/wrapper#1-system-parameters-tuning).
+Intel uses RAPL system to limit power consumption of their CPUs. The power limit can be controlled by MERIC, see section [System parameters tuning](https://code.it4i.cz/energy-efficiency/meric-suite/meric#1-system-parameters-tuning).
 
-MERIC supports reading RAPL energy consumption od Intel and AMD CPUs using virtual sysfs created by [intel_rapl/intel_rapl_common](https://github.com/torvalds/linux/blob/master/drivers/powercap/intel_rapl_common.c) linux kernel module. To reduce energy reading overhead and to receive more detailed information MERIC support usage [msr-safe](https://github.com/LLNL/msr-safe) (works well for both Intel and AMD). If MERIC compiled at a system with the msr-safe available, then the msr-safe is always used for the readings. In case of Intel it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) (support for Icelake and older Intel architectures) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
+MERIC supports reading RAPL energy consumption od Intel and AMD CPUs using virtual sysfs created by [intel_rapl/intel_rapl_common](https://github.com/torvalds/linux/blob/master/drivers/powercap/intel_rapl_common.c) linux kernel module. Similar interface is available in AMD CPUs created by [amd_energy](https://github.com/amd/amd_energy) kernel module. To reduce energy reading overhead and to receive more detailed information, MERIC supports [msr-safe](https://github.com/LLNL/msr-safe) (works well for both Intel and AMD). If MERIC is compiled at a system with the msr-safe available, then the msr-safe is always used for the readings. In case of Intel, it is recommended to compile MERIC also with [libmsr](https://github.com/LLNL/libmsr) (support for Icelake and older Intel architectures) or [x86_adapt](https://github.com/tud-zih-energy/x86_adapt) or [GEOPM](https://geopm.github.io/). In the detailed mode, MERIC stores energy consumption for each power domain, otherwise it aggregates the values.
 
 
 ## HDEEM ##
@@ -152,7 +137,7 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 
 
 ## NVML ##
-[Nvidia Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of Nvidia GPUs Volta or newer architectures. Nvidia Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
+[NVIDIA Managemenet Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) allows to measure energy consumption of NVIDIA GPUs Volta or newer architectures. NVIDIA Volta GPUs samples the power consumption once every 20 ms, regions should be at least a second long to retrieve reliable energy measurement.
 
 ## ROCm SMI ##
 [ROCm System Management Interface (ROCm SMI)](https://github.com/ROCm/rocm_smi_lib) allows to measure energy consumption of AMD GPUs of MI2xx or newer architectures. 
@@ -164,7 +149,7 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 -->
 
 ## HWMON ##
-[The Linux Hardware Monitoring kernel API](https://docs.kernel.org/hwmon/hwmon-kernel-api.html) allows to measure energy consumption on AMD platforms (exposes AMD RAPL) and NVIDIA platforms (NVIDIA Grace). MERIC can use this interface for both energy measurement and power sampling.
+[The Linux Hardware Monitoring kernel](https://docs.kernel.org/hwmon/index.html) allows to measure energy consumption on AMD platforms (exposes AMD RAPL) and [NVIDIA platforms](https://docs.nvidia.com/dccpu/grace-perf-tuning-guide/power-thermals.html#power-telemetry) (NVIDIA Grace, Grace Hopper, Grace Blackwell). The data is exposed via [sysfs interface](https://docs.kernel.org/hwmon/sysfs-interface.html). Thus, no dependecy necessary.
 
 
 ## OCC ##
@@ -172,8 +157,10 @@ To activate possibility of energy measurement provided by DiG system in the MERI
 
 
 ## Fujisu A64FX ##
-Energy measurement of ARM-based A64FX is provided by performance counters of three power domains (CORE, MEMORY, and L2 cache). MERIC uses perf to read them. These events count energy consumption every cycle of the domain, which means high-frequency power sampling when CPU is under a load, however **no energy measurement** is provided when it is idle.
+Energy measurement of ARM-based A64FX is provided by performance counters of three power domains (CORE, MEMORY, and L2 cache). MERIC uses perf to read them. Requires `/proc/sys/kernel/perf_event_paranoid = 0`.
 
+## PDU ##
+Some server systems are powered by Power Distribution Unit (PDU) which allows to expose power consumption of the server to the user space. A library providing the power samples from the PDU to the MERIC is necessary. 
 
 ## BSC ARM Jetson ##
 Part of the MERIC repository is a Python power measurement script that runs on node background and effects CPU. The script stores the power samples into a file, and MERIC evaluates energy consumption of the instrumented regions when the application run is over. Ten samples per second was selected in the measurement script as a compromise - this sampling rate takes ~2% of the CPU load. It is possible to change the rate in tools/getJTX1measurements.py.
@@ -200,19 +187,19 @@ If you want to use MERIC with a parallel application, keep in mind, that all pro
 
  *	`void MERIC_MeasureStart(const char * region)`
 
-	Starting measurement of a reagion.
-	Please, do not use `#` and `@` in names of regions.
+	Starting measurement of a region. 
+	Region name cannot contain any of `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`, `@`, `#`, end with `_static`, or exceed 255 characters.
 
  *	`double MERIC_MeasureStop(const char * region)`
 
 	End of the measurement of the last started region.
-	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	Returns runtime of the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
  *	`double MERIC_MeasureStopStart(const char * stopRegion, const char * startRegion)`
 
 	End of the measurement of the last started region and start of a new region.
 	Removes environment switching to configuration of the region the application is nested in.
-	Returns runtime od the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
+	Returns runtime of the stopped region in seconds. Only single MPI process per node returns the runtime, the others returns 0.0.
 
  *	`void MERIC_CaptureScope(const char * region)`
 
@@ -330,10 +317,11 @@ MERIC is compiled using [waf build system](https://waf.io/), since the system is
 * optionally - cpufreq/[cpupower](https://github.com/torvalds/linux/tree/master/tools/power/cpupower)
 * optionally - [x86_adapt](https://github.com/tud-zih-energy/x86_adapt)
 * optionally - [GEOPM](https://geopm.github.io/)
-* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the Nvidia GPUs monitoring and tuning
+* optionally - [NVML](https://developer.nvidia.com/nvidia-management-library-nvml) - mandatory for the NVIDIA GPUs monitoring and tuning
 * optionally - [ROCm](https://github.com/ROCm/rocm_smi_lib)
 * optionally - [numactl](https://github.com/numactl/numactl)
 * optionally - [REST-client](https://github.com/mrtazz/restclient-cpp) - mandatory for the DiG power monitoring
+* optionally - [net-snmp](https://github.com/net-snmp/net-snmp/) - mandatory for E4 PDU power monitoring
 * integrated - [sheredom json parser](https://github.com/sheredom/json.h)
 
 During runtime MERIC create one or a few temporary files. `MERIC_TMP_PATH` must be defined in the configuration stage to specify location where to store these files, otherwise these files are created in the MERIC root directory.
@@ -384,7 +372,7 @@ Specify following parameters to zero if you do not want to tune the selected sys
 	- GPU power limit in milliwatts.
 
 ## Dynamic tuning ##
-While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover it allows to specify additional  MERIC configuration file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [MERIC input parameters: Output files/folder name](https://code.it4i.cz/vys0053/meric/-/tree/wrapper#output-filesfolder-name)).
+While environment variables allows to specify a configuration that persists for the whole application runtime, a configuration for a specific application region must be done using a configuration file. Moreover, it allows to specify additional MERIC configuration. The file uses JSON format and `.opts` suffix. For following visualisation of an application behavior analysis using RADAR visualizer, the MERIC configuration file should be located in the MERIC output directory (see section [Analysis of MERIC output files](https://code.it4i.cz/energy-efficiency/meric-suite/meric#9-analysis-of-meric-output-files)).
 
 * `export MERIC_REGION_OPTIONS=/path/to/configurationfile.opts`
 	- Specify a MERIC configuration file to be used to tune an application.
@@ -431,7 +419,7 @@ Example MERIC configuration file:
 }
 
 ```
-More examples of MERIC configuartion files are in [test/config directory](https://code.it4i.cz/vys0053/meric/-/tree/wrapper/test/config).
+More examples of MERIC configuration files are in [test/config directory](https://code.it4i.cz/energy-efficiency/meric-suite/meric/-/tree/master/test/config).
 
 
 ## Measurement mode ##
@@ -440,15 +428,16 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 	- HDEEM-S = Atos|Bull HDEEM energy and power measurement, evaluating energy consumption from power samples ("continual mode").
 	- HDEEM-C = Atos|Bull HDEEM energy and power measurement, the system provides energy consumption directly at the beginning and end of each region. This mode may cause extra overhead in compare to evaluating from power samples.
 	- HDEEM   = Equals to HDEEM-S option.
-	- RAPL    = Intel RAPL energy measurement.
-	- NVML    = Nvidia GPUs energy measurement.
-	- HWMON   = Nvidia CPU/platform energy measurement.
+	- RAPL    = Intel/AMD RAPL energy measurement.
+	- NVML    = NVIDIA GPUs energy measurement.
+	- HWMON   = NVIDIA CPU/platform, AMD RAPL energy measurement.
 	- OCC     = IBM POWER OCC energy measurement.
 	- ROCM    = AMD GPU/APU energy measurement.
 	- A64FX   = Fujitsu A64FX energy measurement.
 	- DAVIDE  = DiG energy and power measurement at CINECA D.A.V.I.D.E. system.
 	- JETSON  = BSC Jetson TX1 energy and power measurement.
 	- THUNDER = BSC ThunderX energy and power measurement.
+	- PDU     = PDU energy measurement.
 	- TIME    = Runtime measurement, default for other modes.
 
 * `export MERIC_BARRIERS=all`
@@ -472,14 +461,14 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 
 * `export MERIC_SAMPLES=1`
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
-	- Available for HDEEM-S, RAPL, HWMON and NVML.
+	- Available for HDEEM-S, RAPL, HWMON, and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
 	- WARNING: Output may become very big when measured regions run for a long time.
 
 * `export MERIC_SAMPLING_FREQUENCY=<sampling frequency in Hz>`
 	- If the energy measurement system provides power samples, MERIC will attempt to collect the samples at specified frequency.
-	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON and NVML) to avoid unnecessary oversampling (and associated overhead).
-	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as GH200).
+	- The maximum frequency is automatically limited by each sampling subsystem (HDEEM-S, RAPL, HWMON, and NVML) to avoid unnecessary oversampling (and associated overhead).
+	- The sampling frequency is also used to collect the data for derived energy counters on platforms that don't provide native energy counters (such as NVIDIA GH200).
 	- The sampling overhead can be minimized by setting this variable to low frequency (such as MERIC_SAMPLING_FREQUENCY=1). Note that this will negatively impact accuracy of energy measurements in cases, where the value is derived from power sampling.
 	- If MERIC_SAMPLING_FREQUENCY is not set (or set to 0), the sampling runs at the default sampling frequency, which varies by power monitoring system. The default and the maximum sampling frequency of available power monitoring systems can be read using systemInfo -p.
 
@@ -524,8 +513,6 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* One region, with two another regions inside.
 	* test_mpi.cpp
 		* Same test as test.c, only extended with MPI.
-	* fort_test.f90
-		* Fortran version of test.cpp to show the MERIC Fortran interface.
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
@@ -534,12 +521,18 @@ More examples of MERIC configuartion files are in [test/config directory](https:
 		* Originally made to control real CPU frequency of the machine.
 	* overhead_test.cpp
 		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
+	* fort_test.f90
+		* Fortran version of test.cpp to show the MERIC Fortran interface.
+		* It si compiled using `make fortTest`.
 	* blas_test.cpp
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
-		* This test requires mkl library, due to that it is compiled using `make blasTest` alongside to other tests.
+		* This test requires [Intel MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) library.
+		* It is compiled using `make blasTest`.
+	* cuda_test.cu
+		* Executes a memory bound and a compute bound kernels in all available GPUs.
+		* It is compiled using `make cudaTest`.
 * Makefile
-	* Command `make` compiles all test codes except blas_test.cpp.
-	* To compile blas_test.cpp use `make blasTest` command.
+	* Command `make` compiles all test codes except the ones which explicitly lists its compilation command.
 * environment_default.source
 	* Basic script that sets chosen MERIC environment variables and informs you which variables are set.
 	* When run with argument `-t`, the script just prints list of set variables.
@@ -582,9 +575,9 @@ Each output csv file carry 3 types of information:
  *  Section label (e.g. '# Job info') - determines a "category" of data that follows
  *  Data - tuples of: key, value
 
-To identify the optimal parameters configuration of each region of the instrumented application, user may execute the application in various configurations and analyze the output files. This can be done manually, or automatically using `MERICwrapper` tool, that provides several algorithms for state-space-search, and optimal configuration configuration identification. For more details see its [README](https://code.it4i.cz/vys0053/meric/-/blob/wrapper/src/tools/wrapper/README.md) file.
+To identify the optimal parameters configuration of each region of the instrumented application, user may execute the application in various configurations and analyze the output files. This can be done manually, or automatically using `MERICwrapper` tool, that provides several algorithms for state-space-search, and optimal configuration configuration identification. For more details see its [README](https://code.it4i.cz/energy-efficiency/meric-suite/meric/-/blob/master/src/tools/wrapper/README.md) file.
 
-MERIC output presenting application dynamic behavior can be visualized using [RADAR](https://code.it4i.cz/vys0053/SGS18-READEX) tool.
+MERIC output presenting application dynamic behavior can be visualized using [RADAR visualizer](https://code.it4i.cz/energy-efficiency/meric-suite/radar-visualizer).
 
 ## Manual state-space-search example ##
 ```
@@ -885,7 +878,7 @@ mv "$out_file" "mericStaticMeasurements/$nnodes/$out_file"
 --------------------------------------------------------------------------------
 #     13] Acknowledgment                                                       #
 --------------------------------------------------------------------------------
-MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/vys0053/meric/blob/master/LICENSE).
+MERIC is being developed at [IT4Innovations National Supercomputing Center](https://www.it4i.cz/) under [BSD-3 license](https://code.it4i.cz/energy-efficiency/meric-suite/meric/-/blob/master/LICENSES/BSD-3-Clause.txt).
 Please, open an issue, if you meet any problem. 
 
 	

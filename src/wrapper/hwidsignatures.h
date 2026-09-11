@@ -1,5 +1,5 @@
-#ifndef SRC_WRAPPER_CPUID_SIGNATURE_VALUES_H_
-#define SRC_WRAPPER_CPUID_SIGNATURE_VALUES_H_
+#ifndef SRC_WRAPPER_HWIDSIGNATURES_H_
+#define SRC_WRAPPER_HWIDSIGNATURES_H_
 
 #include <string>
 #include <unordered_map>
@@ -8,7 +8,7 @@
 namespace meric
 {
 	/**
-	 *  Intel® 64 and IA-32 Architectures Software Developer’s Manual
+	 *  Intel 64 and IA-32 Architectures Software Developer’s Manual
 	 *                                      Volume 4:
 	 *                                      Model-Specific Registers
 	 *
@@ -210,10 +210,7 @@ namespace meric
 		{
 			return it->second;
 		}
-		else
-		{
-			return CpuidSignatureValues::UNKNOWN;
-		}
+		return CpuidSignatureValues::UNKNOWN;
 	}
 	
 	//Source: Mesa repository - https://gitlab.freedesktop.org/mesa/libdrm/-/blob/main/data/amdgpu.ids
@@ -298,12 +295,8 @@ namespace meric
 		{
 			return it->second;
 		}
-		else
-		{
-			return "Unknown AMD GPU type";
-		}
-	
+		return "Unknown AMD GPU type";
 	}
 }
 
-#endif
+#endif /* SRC_WRAPPER_HWIDSIGNATURES_H_ */

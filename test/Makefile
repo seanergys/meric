@@ -1,10 +1,7 @@
 ################################################################################
 # MERIC test applications Makefile                                             #
-# Reads $CXX, $FC, $MPICXX and $CXX_FLAGS environment variables.               #
+# Reads $CXX, $FC, and $MPICXX environment variables.                          #
 # If env variables not set, using GNU compiler as default.                     #
-# In the second section of the Makefile specify which libraries you use and    #
-# their paths                                                                  #
-#                                                                              #
 ################################################################################
 
 ifeq ($(CXX),)
@@ -47,23 +44,8 @@ ifeq ($(MAKECMDGOALS),cudaTest)
 endif
 
 ################################################################################
-#HDEEM=-lhdeem -lfreeipmi
-#X86ADAPT=-lx86_adapt
-#CPUFREQ=--lcpufreq
-#CPUFREQ=-L/lib64/ -lcpupower
-# PAPI=-lpapi
-#RESTCLIENT= -lrestclient-cpp
-#NUMA=-lnuma
-#NVML=-lnvidia-ml
-#ESMI=-le_smi64
-#SNMP= -lnetsnmp
-#LIBMSR=-lmsr -L${LIBMSR_PATH}/lib -I${LIBMSR_PATH}/include
-################################################################################
-MERIC=-L../lib -I../include 
-LIBS=-lrt $(MERIC) $(OPENMP) $(HDEEM) $(X86ADAPT) $(CPUFREQ) $(PAPI) $(RESTCLIENT) $(NUMA) $(NVML) $(ESMI) $(LIBMSR) $(SNMP) $(CXX_FLAGS)
+LIBS=-L../lib -I../include
 BINARIES=plainTest test test_mpi blasTest samples sleepTest fortTest overHead
-################################################################################
-MKL_PATHS=
 ################################################################################
 
 default: all
@@ -73,31 +55,31 @@ all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo for
  ######
 
 plainTest: plain_test.cpp
-	$(CXX) -O0 -g plain_test.cpp $(LIBS) -o plainTest
+	$(CXX) -O0 -g plain_test.cpp $(LIBS) $(OPENMP) -o plainTest
 
 midlib_test: midlib_test.c
-	$(CC) -O0 -g  midlib_test.c $(LIBS) -lmeric_ext -lstdc++ -lm -o midlibTest
+	$(CC) -O0 -g  midlib_test.c -lmeric_ext $(LIBS) $(OPENMP) -lstdc++ -lm -o midlibTest
 
 midlib_work_meric_test: midlib_work_meric_test.cpp
-	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) -o midlib_work_meric_test
+	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) $(OPENMP) -o midlib_work_meric_test
 
 sleepTest: sleep_test.cpp
 	$(CXX) -O0 -g sleep_test.cpp -lmeric $(LIBS) -o sleepTest
 	
 mpiTest: test_mpi.cpp
-	$(MPICXX) -O0 -g test_mpi.cpp -lmericmpi $(LIBS) -o test_mpi
+	$(MPICXX) -O0 -g test_mpi.cpp -lmericmpi $(LIBS) $(OPENMP) -o test_mpi
 
 basicTest: test.cpp
-	$(CXX)  -O0 -g test.cpp -o test -lmeric $(LIBS)
+	$(CXX) -O0 -g test.cpp -o test -lmeric $(LIBS) $(OPENMP)
 
 overhead: overhead_test.cpp
 	$(CXX)   -g overhead_test.cpp -std=c++11 -lmeric $(LIBS) -o overHead
 
 samplesTest: samples_test.cpp
-	$(CXX)    -O0 -g samples_test.cpp -lmeric $(LIBS) -o samples
+	$(CXX)    -O0 -g samples_test.cpp -lmeric $(LIBS) $(OPENMP) -o samples
 
 blasTest: blas_test.c
-	$(CXX) -O3 -g blas_test.c -lmeric -mkl $(MKL_PATHS) $(LIBS) -o blasTest
+	$(CC) -O3 -g blas_test.c -lmeric -mkl $(LIBS) $(OPENMP) -o blasTest
 
 blasTestInfo:
 	$(info )
@@ -121,7 +103,7 @@ cudaTestInfo:
 	$(info )
 
  ######
-MeasurementDIRS=mericMeasurement* TEST* TESTMPI*
+MeasurementDIRS=mericMeasurement*
 
 clean: 
 	rm -rf ${BINARIES} *.csv *.o *~ *.out *.qsub

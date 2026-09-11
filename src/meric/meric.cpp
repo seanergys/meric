@@ -3,20 +3,20 @@
 
 using namespace meric;
 
-int         Meric::MODE           		= mutils::getenv<int>("MERIC_MODE", MODE_RUN);
-bool        Meric::DETAILED       		= mutils::getenv<bool>("MERIC_DETAILED", false);
-bool        Meric::AGGREGATE      		= mutils::getenv<bool>("MERIC_AGGREGATE", true);
-bool        Meric::DEBUG          		= mutils::getenv<bool>("MERIC_DEBUG", false);
-bool		Meric::SAMPLES        		= mutils::getenv<bool>("MERIC_SAMPLES", false);
-double		Meric::SAMPLING_FREQUENCY 	= mutils::getenv<double>("MERIC_SAMPLING_FREQUENCY", 0.0);
-bool        Meric::HDF5           		= mutils::getenv<bool>("MERIC_HDF5", true);
-std::string Meric::COUNTERS       		= mutils::getenv<std::string>("MERIC_COUNTERS", "none");
-std::string Meric::BARRIERS       		= mutils::getenv<std::string>("MERIC_BARRIERS", "all");
-std::string Meric::OUTPUT_DIR     		= mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
-std::string Meric::REGION_OPTIONS 		= mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
-std::string Meric::MEASURE        		= mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
-std::string Meric::THREAD_PIN_MODE 		= mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
-std::string Meric::MERIC_E4MACHINE_TO_MONITOR  = mutils::getenv<std::string>("MERIC_E4_TARGET",mutils::getHostnameShort());
+int         Meric::MODE                       = mutils::getenv<int>("MERIC_MODE", MODE_RUN);
+bool        Meric::DETAILED                   = mutils::getenv<bool>("MERIC_DETAILED", false);
+bool        Meric::AGGREGATE                  = mutils::getenv<bool>("MERIC_AGGREGATE", true);
+bool        Meric::DEBUG                      = mutils::getenv<bool>("MERIC_DEBUG", false);
+bool        Meric::SAMPLES                    = mutils::getenv<bool>("MERIC_SAMPLES", false);
+double      Meric::SAMPLING_FREQUENCY         = mutils::getenv<double>("MERIC_SAMPLING_FREQUENCY", 0.0);
+bool        Meric::HDF5                       = mutils::getenv<bool>("MERIC_HDF5", true);
+std::string Meric::COUNTERS                   = mutils::getenv<std::string>("MERIC_COUNTERS", "none");
+std::string Meric::BARRIERS                   = mutils::getenv<std::string>("MERIC_BARRIERS", "all");
+std::string Meric::OUTPUT_DIR                 = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
+std::string Meric::REGION_OPTIONS             = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
+std::string Meric::MEASURE                    = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
+std::string Meric::THREAD_PIN_MODE            = mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
+std::string Meric::MERIC_E4MACHINE_TO_MONITOR = mutils::getenv<std::string>("MERIC_E4_TARGET",mutils::getHostnameShort());
 
 void Meric::refreshConfigFromEnv()
 {
@@ -42,10 +42,14 @@ double Meric::timeThreshold = 0.0;
 void Meric::readRegionParameters()
 {
 	if (getDefaultParameters())
+	{
 		exit(1);
+	}
 
 	if (! Meric::REGION_OPTIONS.empty())
+	{
 		readRegionOptions();
+	}
 }
 
 int Meric::getDefaultParameters()
@@ -90,7 +94,7 @@ int Meric::getDefaultParameters()
 	if (defaultParameter.nthreads < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_NUM_THREADS\n"
-				  << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
+		          << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
 		ret = 1;
 	}
 	else if (defaultParameter.nthreads != 0)
@@ -177,56 +181,91 @@ int Meric::getDefaultParameters()
 #endif 
 
 	if (ret)
+	{
 		return ret;
+	}
 
 	size_t pos = 0;
 	std::string OUTPUT_FORMAT  = mutils::getenv<std::string>("MERIC_OUTPUT_FORMAT", "");
 	if (OUTPUT_FORMAT.size())
+	{
 		OUTPUT_FORMAT+='_';
+	}
 	while ((pos = OUTPUT_FORMAT.find('_')) != std::string::npos)
 	{
 		std::string token = OUTPUT_FORMAT.substr(0, pos);
 		if (token == "CF")
+		{
 			Meric::outputFormat.frequency = int(true);
+		}
 		else if (token == "UnCF")
+		{
 			Meric::outputFormat.uncoreFrequency = int(true);
+		}
 		else if (token == "thrds")
+		{
 			Meric::outputFormat.nthreads = int(true);
+		}
 		else if (token == "CPUPWR")
+		{
 			Meric::outputFormat.powerCapPKG = int(true);
+		}
 		else if (token == "CPUPWRtw")
+		{
 			Meric::outputFormat.powerCapPKGtime = int(true);
+		}
 		else if (token == "GPUF")
+		{
 			Meric::outputFormat.frequencyGPU = int(true);
+		}
 		else if (token == "GPUMEMF")
+		{
 			Meric::outputFormat.frequencyGPUmem = int(true);
+		}
 		else if (token == "GPUPWR")
+		{
 			Meric::outputFormat.powerCapGPU = int(true);
+		}
 		else
 		{
-			std::cerr << "MERIC error: Invalid MERIC_OUTPUT_FORMAT : " << token << "\n";
+			std::cerr << "MERIC ERROR: invalid MERIC_OUTPUT_FORMAT : " << token << "\n";
 			return 1;
 		}
 		OUTPUT_FORMAT.erase(0, pos + 1);
 	}
 	
 	if (Meric::outputFormat.frequency)
+	{
 		Meric::outputFilenameInfo +="CF_";
+	}
 	if (Meric::outputFormat.uncoreFrequency)
+	{
 		Meric::outputFilenameInfo +="UnCF_";
+	}
 	if (Meric::outputFormat.nthreads)
+	{
 		Meric::outputFilenameInfo +="thrds_";
+	}
 	if (Meric::outputFormat.powerCapPKG)
+	{
 		Meric::outputFilenameInfo +="CPUPWR_";
+	}
 	if (Meric::outputFormat.powerCapPKGtime)
+	{
 		Meric::outputFilenameInfo +="CPUPWRtw_";
+	}
 	if (Meric::outputFormat.frequencyGPU)
+	{
 		Meric::outputFilenameInfo +="GPUF_";
+	}
 	if (Meric::outputFormat.frequencyGPUmem)
+	{
 		Meric::outputFilenameInfo +="GPUMEMF_";
+	}
 	if (Meric::outputFormat.powerCapGPU)
+	{
 		Meric::outputFilenameInfo +="GPUPWR_";
-	
+	}
 
 //OPTIONAL SECTION
 	MERIC_INFO << "Default number of threads: " << defaultParameter.nthreads << "\n"
@@ -382,9 +421,16 @@ int Meric::getDefaultParameters()
 		if (Meric::COUNTERS != "papi" && Meric::COUNTERS != "perfevent" && Meric::COUNTERS != "msr")
 		{
 			if (Meric::COUNTERS != "")
+			{
 				std::cerr << "MERIC WARNING: unknown counter type "<<Meric::COUNTERS<<std::endl;
+			}
 			Meric::COUNTERS = "none";
 		}
+	}
+	
+	if (Meric::AGGREGATE == 1 && Meric::SAMPLES == 1)
+	{
+		std::cerr << "MERIC WARNING: storing samples in aggregate mode not supported\n";
 	}
 
 	return 0;
@@ -436,7 +482,6 @@ void Meric::readRegionOptions()
 			int size = getRegionSettings(data, root, param);
 			if (size < 0)
 			{
-				
 				free(root);
 				parameter.clear();
 				return;
@@ -444,10 +489,12 @@ void Meric::readRegionOptions()
 			else if (regionName.size() <= std::string("_static").size() || regionName.substr(regionName.size()-std::string("_static").size()) != "_static")
 			{
 				if (configurationSize == 0)
+				{
 					configurationSize = size;
+				}
 				else if (configurationSize != size)
 				{
-					std::cerr << "MERIC error: invalid MERIC configuration file, all regions except the static region must have the same number of parameters specified\n";
+					std::cerr << "MERIC ERROR: invalid MERIC configuration file, all regions except the static region must have the same number of parameters specified\n";
 					free(root);
 					parameter.clear();
 					return;
@@ -473,7 +520,7 @@ void Meric::readRegionOptions()
 				}
 				else if (std::string(ignore->name->string) == "@CHANGE")
 				{
-					getRegionSettings(ignore, root, ignoreSettings);					
+					getRegionSettings(ignore, root, ignoreSettings);
 				}
 				else if (std::string(ignore->name->string) == "@RUNTIME")
 				{
@@ -544,7 +591,7 @@ void Meric::readRegionOptions()
 //print the parameters (core frequency only)
 	for ( const auto &regs : parameter )
 	{
-		for(const auto & pair : parameter[regs.first])	
+		for(const auto & pair : parameter[regs.first])
 		{
 			MERIC_INFO << regs.first << "\n"
 				<< "\t" << pair.first.first << ":" << pair.first.second<< "\n"

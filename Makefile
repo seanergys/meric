@@ -7,8 +7,10 @@ INCLUDES_MERIC=
 LIBPATH_MERIC=
 
 
-ifeq ($(FC),ifort)
+ifneq ($(filter ifort ifx pgfortran nvfortran,$(FC)),)
 	FORTFLAGS=-module
+else ifneq ($(filter nagfor,$(FC)),)
+	FORTFLAGS=-mdir
 else
 	FORTFLAGS=-J
 endif
@@ -30,9 +32,9 @@ noopenmp:
 	./waf configure --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --noopenmp
 	make install
 
-ddt:
+debug:
 	make love
-	./waf configure --flag="-O0 -g" --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
+	./waf configure --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
 	./waf install -v
 
 scorep:

@@ -696,7 +696,7 @@ const uint64_t IA32_PACKAGE_THERM_STATUS_readout_shift = 16;
 const uint64_t IA32_PERF_CTL_shift = 8;
 const uint64_t MSR_TURBO_RATIO_LIMIT_shift = 8;
 const uint64_t MSR_TURBO_RATIO_LIMIT_mask = 0xFF;
-const uint64_t IA32_PM_ENABLE_mask = 1;
+const uint64_t IA32_PM_ENABLE_mask = 0x1;
 
 const uint64_t MSR_PSTATE_CUR_LIM_curr_limit_pstate_mask = 0x7;
 const uint64_t MSR_PSTATE_CUR_LIM_max_pstate_shift = 4;
@@ -941,179 +941,112 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 	#endif
 
 //	#ifndef MSR_UNCORE_CURRENT_RATIO //UNCORE_PERF_STATUS - not in use in MERIC
-//		#define MSR_UNCORE_CURRENT_RATIO	0x621
+//		#define MSR_UNCORE_CURRENT_RATIO		0x621
 //	#endif
 
 	#ifndef U_MSR_PMON_FIXED_CTR
-		#define U_MSR_PMON_FIXED_CTR	0x704	//since HSW
-	//	#define U_MSR_PMON_FIXED_CTR	0xC09	//IVB EP and SDB EP chips
+		#define U_MSR_PMON_FIXED_CTR		0x704	//since HSW
+	//	#define U_MSR_PMON_FIXED_CTR		0xC09	//IVB EP and SDB EP chips
 	#endif
 
 	#ifndef U_MSR_PMON_FIXED_CTL
-		#define U_MSR_PMON_FIXED_CTL	0x703	//since HSW
-	//	#define U_MSR_PMON_FIXED_CTL	0xC08	//IVB EP and SDB EP chips
+		#define U_MSR_PMON_FIXED_CTL		0x703	//since HSW
+	//	#define U_MSR_PMON_FIXED_CTL		0xC08	//IVB EP and SDB EP chips
 	#endif
 #endif
 
+/**
+ * 4th Gen Intel Xeon Scalable Processor XCC (Codename Sapphire Rapids) Uncore 
+ * Performance Monitoring Guide 
+ * (Referece Number: 639667-001), April 2024
+ *
+ * U_MSR_PMON_GLOBAL_CTL register *********************************************
+ * Uncore PMON Global Control Register for 4th Gen Intel Xeon Scalable Processor
+ * 0x2FF0 0x00000000E000001F
+ * frz_all (bit 0, WO):
+ 	Freeze all uncore performance monitors.
+ * Reserved (bits 63:1)
+ * 
+ * U_MSR_CBO_x_PMON_UNIT_CTL register *****************************************
+ * PMON Unit Control Register for 4th Gen Intel Xeon Scalable Processor
+ * Common to all PMON Blocks (CHA0 - CHA59 with increment of 0x10)
+ * 0x2000 0x0000000000000769
+ * frz (bit 0, WO):
+	Freeze.	If set to 1 the counters in this box will be frozen.
+ * Reserved (bits 7:1)
+ * rst_ctrl (bit 8, WO):
+	Reset Control. When set to 1, the Counter Control Registers will be reset 
+	to 0.
+ * rst_ctrs (bit 9, WO):
+	Reset Counters.	When set to 1, the Counter Registers will be reset to 0.
+ * Reserved (bits 63:10)
+ *
+ * U_MSR_CBO_x_PMON_CTLx register *********************************************
+ * 0x2002 0x00000000FF96FFFF
+ * event select (bits 7:0, RW):
+  	Select event to be counted.
+ * umask (bits 15:8, RW):
+ 	Select subevents to be counted within the selected event.
+ * Reserved (bit 16)
+ * rst (bit 17, WO):
+ 	When set to 1, the corresponding counter will be cleared to 0.
+ * edge_det(ED) (bit 18, RW):
+ 	When set to 1, rather than measuring the event in each cycle it is active, 
+ 	the corresponding counter will increment when a 0 to 1 transition (that is, 
+ 	rising edge) is detected. When 0, the counter will increment in each cycle 
+ 	that the event is asserted.
+ 	Note: .edge_det is in series following .thresh. Due to this, the .thresh 
+ 	field must be set to a non-0 value. For events that increment by no more 
+ 	than 1 per cycle, set .thresh to 0x1.
+ * Reserved (bit 19)
+ * frz_ovf (bit 20, RW/V):
+ 	Freeze on Overflow. When an overflow is detected from this register, a PMON 
+ 	overflow message is sent to the global control. This bit will tell the 
+ 	global control whether it should assert the global freeze for all the 
+ 	counters in the same domain.
+ * Reserved (bits 22:21)
+ * invert(inv) (bit 23, RW):
+ 	Invert comparison against Threshold. 
+ 	0 - comparison will be 'is event increment >= threshold?'.
+ 	1 - comparison is inverted - 'is event increment < threshold?'
+ * thresh (bits 31:24, RW):
+ 	Threshold is used, along with the invert bit, to compare against the 
+ 	counter's incoming increment value. That is, the value that will be added to 
+ 	the counter. For events that increment by more than '1' per cycle, if the 
+ 	threshold is set to a value greater than 1, the data register will 
+ 	accumulate instances in which the event increment is >= threshold.
+ 	For example, say you have an event to accumulate the occupancy of a 64-entry 
+ 	queue every cycle. By setting the threshold value to 60, the data register 
+ 	would count the number of cycles the queue's occupancy was >= 60.
+ * Reserved (bits 63:32)
+ *
+ * U_MSR_CBO_x_PMON_CTRx register *********************************************
+ * 0x2008 0x0000FFFFFFFFFFFF
+ * event_count	(bits 47:0, RW-V)
+ 	Performance event counter.
+ * Reserved (bits 63:48)
+ ******************************************************************************
+ **/
 
-  //********************************************** BEGIN INTEL SAPPHIRE RAPIDS **********************************************
-
-  /**
-  * 					*Setting up a Monitoring Session
-  * 
-  * 	On HW reset, all the counters are disabled. Enabling is hierarchical. So the following
-  *		steps, which include programming the event control registers and enabling the
-  *		counters to begin collecting events, must be taken to set up a monitoring session.
-  *		Section 1.10.5, “Reading the Sample Interval” covers the steps to stop and re-start
-  *		counter registers during a monitoring session.
-  *
-  *		*Global Settings in the UBox:
-  *
-  *		*a) Freeze all the uncore counters by setting U_MSR_PMON_GLOBAL_CTL.frz_all to 1.
-  *		
-  *		*Note: Necessary for U-Box monitoring.
-  *		
-  *		*OR (if box level freeze control preferred)
-  *
-  *		*a) Freeze the box’s counters while setting up the monitoring session. For example, set Cn_MSR_PMON_BOX_CTL.frz to 1
-  *		*b) Select event to monitor if the event control register has not been programmed:
-  *			Program the .ev_sel and .umask bits in the control register with the encoding
-  *			necessary to capture the requested event along with any signal conditioning bits (.thresh/.edge_det/.invert) used to qualify the event.
-  *			
-  *		*Back to the box level:
-  *		*c)	Reset counters in each box to ensure no stale values have been acquired from previous sessions. Resetting the control registers, particularly those that will not be
-  *		used is also recommended if for no other reason than to prevent errant overflows. To reset both the counters and control registers write the following registers:
-  *			— For each CHAx, set Cn_MSR_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each MDFx, set Cn_MSR_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each DRAM Channel, set MCn_CHy_MMIO_PMON_UNIT_CTL[9:8] to 0x300
-  *			— For each M2M ,set M2M_PCI_PMON_UNIT_CTL[9:8] to 0x300
-  *			— Set PCU_MSR_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each Intel® UPI Link, set M2_Ly_PCI_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each Intel® UPI Link, set UPI_Ly_PCI_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each IIO stack, set M2n_PCI_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each IIO stack, set IIOn_MSR_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each CXL stack,set CXLCM_MMIO_PMON_UNIT_CTL[9:8] to 0x300.
-  *			— For each CXL stack,set CXLDP_MMIO_PMON_UNIT_CTL[9:8] to 0x300.
-  *
-  *		*d)	For each IIO stack, set IRPn_MSR_PMON_UNIT_CTL[9:8] to 0x300. For each CXL stack, set CXLn_MSR_PMON_UNIT_CTL[9:8] to 0x300. Select how to gather data.
-  *			If polling, skip to f. If sampling:
-  *			To set up a sample interval, the SW can pre-program the data register with a value of [2^(register bit width - up to 48) - sample interval length]. 
-  *			Doing so allows the SW, through the use of the PMI mechanism, to be notified when the number of events in the sample have been captured. Capturing a performance monitoring sample every ‘X cycles’ is a common use of this mechanism.
-  *			That is, to stop counting and receive notification when the 1,000,000th data flit is
-  *			transmitted from Intel UPI on Link 0.
-  *			— Set UPI_L0_PCI_PMON_CTR1 to (2^48- 1000)
-  *			— Set UPI_L0_PCI_PMON_CTL1.ev_sel to 0x2
-  *			— Set UPI_L0_PCI_PMON_CTL1.umask to 0xF
-  *			— Set U_MSR_PMON_GLOBAL_CTL.pmi_core_sel to which Core the monitoring
-  *			thread is executing on.
-  *			Enable counting at the global level by setting the U_MSR_PMON_GLOBAL_CTL.frz
-  *			bit to 0.
-  *		*OR
-  *
-  *		*d) Enable counting at the box level by unfreezing the counters in each box. For example, set Cn_MSR_PMON_BOX_CTL.frz to 0. And with that, counting will begin.
-  *
-  */
-
- /**
-  * 
-  * MSR_UNC_SPR_PMON_GLOBAL_CTL register (64 bit register) **********************************************
-	
-	The following registers represent state governing all PMUs in the uncore, both to exert
-	global control and collect unit-level information. MSR_UNC_SPR_PMON_GLOBAL_CTL contains bits that can stop (.frz_all) all the uncore counters.
-
-  * MSR		MASK
-  * 0x2FF0	0x0000000000000001
-  * 
-  * Field	Bits	Attr	HW_RESET_VAL	Descriptions
-  * rsv 	60:1	RV		0				Reserved
-  * frz_all	0		WO		0				Freeze all uncore performance monitors.
-  *  
-  */
 #ifdef _INTEL_
-	#define MSR_UNC_SPR_PMON_GLOBAL_CTL	0x2FF0
+	#define U_MSR_PMON_GLOBAL_CTL      0x2FF0
+	#define U_MSR_CBO_0_PMON_UNIT_CTL  0x2000
+	#define U_MSR_CBO_59_PMON_UNIT_CTL 0x23B0
+	#define U_MSR_CBO_0_PMON_CTL0      0x2002
+	#define U_MSR_CBO_59_PMON_CTL0     0x23B2
+  	#define U_MSR_CBO_0_PMON_CTR0      0x2008
+	#define U_MSR_CBO_59_PMON_CTR0     0x23B8
 #endif
- 
-  /**
-  * 
-  * MSR_UNC_SPR_C0_PMON_UNIT_CTL register (64 bit register) **********************************************
 
-  * MSR			MASK
-  * 0x0002000	0x0000000000000301
-  * 
-  * Field		Bits	Attr	HW_RESET_VAL	Descriptions
-  * rst_ctrs 	9		WO		0				Reset Counters.	When set to 1, the Counter Registers will be reset to 0.
-  * rst_ctrl	8		WO		0				Reset Control.	When set to 1, the Counter Control Registers will be reset to 0.
-  * rsv			7:1		RV		0				Reserved
-  * frz			0		WO		0				Freeze.	If set to 1 the counters in this box will be frozen.
-  *  
-  */
- #ifdef _INTEL_
- 	#define MSR_UNC_SPR_C0_PMON_UNIT_CTL  0x2000
- 	#define MSR_UNC_SPR_C59_PMON_UNIT_CTL  0x23B0
-	 #define MSR_UNC_SPR_PMON_UNIT_CTL_increment 0x10
- #endif
-  
+const uint64_t U_MSR_CBO_x_PMON_UNIT_CTLx_increment  = 0x10;
+const uint64_t U_MSR_CBO_x_PMON_CTLx_increment  = 0x10;
+const uint64_t U_MSR_CBO_x_PMON_CTRx_increment  = 0x10;
 
-  /**
-  * 
-  * MSR_UNC_SPR_C0_PMON_CTL register (64 bit register) **********************************************
+const uint64_t U_MSR_CBO_x_PMON_CTRx_mask = 0x0000FFFFFFFFFFFF;
 
-  * MSR			MASK
-  * 0x2002		0x00000000FF96FFFF
-  * 
-  * Field		Bits	Attr	HW_RESET_VAL	Descriptions
-  * rsv 		63:32	RV		0				Reserved. Only relevant to unit’s that use 64b control registers.
-  * 
-  * thresh		31:24	RW		0				Threshold is used, along with the invert bit, to compareagainst the counter’s incoming increment value. 
-  * 											That is, thevalue that will be added to the counter.For events that increment by more than ‘1’ per cycle, if thethreshold is set to a value greater than 1, 
-  * 											the data register willaccumulate instances in which the event increment is >=threshold.FieldDescriptionFor example, 
-  * 											say you have an event to accumulate theoccupancy of a 64-entry queue every cycle. 
-  * 											By setting thethreshold value to 60, the data register would count thenumber of cycles the queue’s occupancy was >= 60.
-  * 
-  * invert(inv)	 23		RW		0				Invert comparison against Threshold. 0 - comparison will be ‘is event increment >= threshold?’. 1 - comparison is inverted - ‘is event increment < threshold?’
-  * rsv			 22:21	RV		0				Reserved. The SW must write to 0, else behavior is undefined.
-  * frz_ovf		 20		RW/V	0				Freeze on Overflow.When an overflow is detected from this register, a PMON overflow message is sent to the global control. This bit will tell the global control whether it should assert the global freeze for all the counters in the same domain.
-  * rsv			 19		RV		0				Reserved.
-  * edge_det(ED) 18		RW		0				When set to 1, rather than measuring the event in each cycle it is active, the corresponding counter will increment when a 0 to 1 transition (that is, rising edge) is detected. When 0, the counter will increment in each cycle that the event is asserted.
-  * rsv			 16		RV		0				Reserved. SW must write to 0, else behavior is undefined.
-  * umask		 15:8	RW		0				Select subevents to be counted within the selected event.
-  * event select 7:0	RW		0				Select event to be counted.
-  * 
-  *  
-  */
- #ifdef _INTEL_
- 	#define MSR_UNC_SPR_C0_PMON_CTL0  0x2002
-	#define MSR_UNC_SPR_C59_PMON_CTL0 0x23B2
-	#define MSR_UNC_SPR_Cn_PMON_CTL_increment 0x10
-
-	// *** Related Configurations ***
-	#define MSR_UNC_SPR_Cn_PMON_CTL_config__clear 0x20000 // ctrl clear configuration and reset the counter.
-	#define MSR_UNC_SPR_Cn_PMON_CTL_config__uncore_freq 0x1020001 // ctrl event configuration to count uncore frequency
- #endif
-
-
-
-  /**
-  * 
-  * MSR_UNC_SPR_C0_PMON_CTR register (64 bit register) **********************************************
-
-  * MSR			MASK
-  * 0x2008		0x0000000000000000
-  * 
-  * Field		Bits	Attr	HW_RESET_VAL	Descriptions
-  * rsv			63:48	RV		0				Reserved.
-  * event_count	47:0	RW-V	0				48-bit performance event counter.
-  *  
-  */
-
-  #ifdef _INTEL_
-  	#define MSR_UNC_SPR_C0_PMON_CTR0  0x2008
-	#define MSR_UNC_SPR_C59_PMON_CTR0 0x023B8
-	#define MSR_UNC_SPR_PMON_CTR_increment 0x10
-  #endif
-
-  //********************************************** END INTEL SAPPHIRE RAPIDS **********************************************
-  
+const uint64_t U_MSR_CBO_x_PMON_CTLx_reset_mask = 0x20000;
+const uint64_t U_MSR_CBO_x_PMON_CTLx_thresh_shift = 24;
+const uint64_t U_MSR_CBO_x_PMON_CTLx_event_select_mask = 0x00000000000000FF;
 
 // RAPL POWER-CAP //////////////////////////////////////////////////////////////
 /**
@@ -1683,7 +1616,7 @@ inline void getMSRWhitelist(meric::CpuidSignatureValues cpu_signature,
 {
 	outWhitelist = detail::msr_whitelist;
 
-	if(cpu_signature >= meric::CpuidSignatureValues::INTEL_06_AEH)
+	if(cpu_signature >= meric::CpuidSignatureValues::INTEL_06_AEH) // Granite Rapids
 	{
 #ifdef MSR_UNCORE_RATIO_LIMIT
 		outWhitelist.erase(MSR_UNCORE_RATIO_LIMIT);
