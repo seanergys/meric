@@ -21,6 +21,10 @@ public:
 
 	void start(const std::string &region)
 	{
+#ifdef VERBOSE
+		std::vector<uint64_t> timer;
+		struct timespec timeStamp;
+#endif
 		if (Meric::IGNORE)
 		{
 			return;
@@ -34,7 +38,10 @@ public:
 			}
 			return;
 		}
-
+#ifdef VERBOSE
+		clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+		timer.push_back(mutils::timeToNanoSec(timeStamp));
+#endif
 		if (OMPbarriers)
 		{
 			#pragma omp barrier
@@ -52,6 +59,10 @@ public:
 				MPI_Barrier(_currentNode);
 			}
 			setRegionEnvironment(change, !_MPInodeRank);
+#ifdef VERBOSE
+			clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+			timer.push_back(mutils::timeToNanoSec(timeStamp));
+#endif
 			Meric::start(region);
 			_stack.push_back(getRegionID(region));
 		}
@@ -60,10 +71,24 @@ public:
 		{
 			#pragma omp barrier
 		}
+#ifdef VERBOSE
+		clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+		timer.push_back(mutils::timeToNanoSec(timeStamp));
+		std::string msg = ":";
+		for (uint64_t t : timer)
+		{
+			msg += " "+std::to_string(t);
+		}
+		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] START " + region + msg + " (" + std::to_string(timer.back() - timer[0]) +" ns)\n";
+#endif
 	}
 	
 	double stop(const std::string region)
 	{
+#ifdef VERBOSE
+		std::vector<uint64_t> timer;
+		struct timespec timeStamp;
+#endif
 		double regionRuntime = 0.0;
 		if (Meric::IGNORE)
 		{
@@ -78,7 +103,10 @@ public:
 			}
 			return 0.0;
 		}
-		
+#ifdef VERBOSE
+		clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+		timer.push_back(mutils::timeToNanoSec(timeStamp));
+#endif
 		#pragma omp master	//only master thread is allowed to work with the _stack
 		{
 			if (!_stack.size() || region != getRegionName(_stack.size(), _stack.back()))
@@ -109,7 +137,10 @@ public:
 				MPI_Barrier(_currentNode);
 			}
 			setRegionEnvironment(change, !_MPInodeRank);
-
+#ifdef VERBOSE
+			clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+			timer.push_back(mutils::timeToNanoSec(timeStamp));
+#endif
 			regionRuntime = Meric::stop(region+" - "+std::to_string(_MPInodeRank));
 			_stack.pop_back();
 			if (Meric::timeThreshold > regionRuntime)
@@ -123,6 +154,16 @@ public:
 			#pragma omp barrier
 		}
 
+#ifdef VERBOSE
+		clock_gettime(CLOCK_MONOTONIC, &timeStamp);
+		timer.push_back(mutils::timeToNanoSec(timeStamp));
+		std::string msg = ":";
+		for (uint64_t t : timer)
+		{
+			msg += " "+std::to_string(t);
+		}
+		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] STOP " + region + msg + " (" + std::to_string(timer.back() - timer[0]) +" ns)\n";
+#endif
 		return regionRuntime;
 	}
 
