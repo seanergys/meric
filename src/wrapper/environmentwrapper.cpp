@@ -968,6 +968,7 @@ UFS_WAY Environment::isUFSPossible()
 
 UFS_WAY Environment::getPreferredUFSWay()
 {
+#ifdef _INTEL_
 	std::string cpuFamilyStr;
 	getCPUFamilyModelString(cpuFamilyStr);
 	auto cpuFamily = meric::stringToCpuidSignature(cpuFamilyStr);
@@ -980,12 +981,18 @@ UFS_WAY Environment::getPreferredUFSWay()
 	else
 	{
 		// Use MSR for older Intel CPUs or attempt to fallback to TPMI when MSR is not available at compile time
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
-	return UFS_WAY_MSR;
-#else
-	return UFS_WAY_TPMI_SYSFS;
-#endif
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
+		return UFS_WAY_MSR;
+	#else
+		return UFS_WAY_TPMI_SYSFS;
+	#endif
 	}
+#elif defined __arm__
+	if(systemType == SYS_JETSON)
+	{
+		return UFS_WAY_JETSON_SYSFS;
+	}
+#endif
 
 	return UFS_WAY_NONE;
 }
