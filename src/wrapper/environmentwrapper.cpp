@@ -2428,7 +2428,9 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		return;
 	
 	if (activatedUFS == UFS_WAY_NONE)
+	{
 		return; //UFS not supported
+	}
 		
 	if (maxFreq > defaultSettings.maxUncoreFreq || minFreq < defaultSettings.minUncoreFreq || maxFreq < minFreq)
 	{
