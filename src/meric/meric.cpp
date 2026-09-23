@@ -25,7 +25,7 @@ void Meric::refreshConfigFromEnv()
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};
-std::vector <std::string> Meric::ignoreRegions;
+std::set<std::string> Meric::ignoreRegions;
 RegionParameters Meric::defaultParameter;
 SocketsRegionParameters Meric::currentState;
 RegionParameters Meric::outputFormat;
@@ -514,7 +514,7 @@ void Meric::readRegionOptions()
 					do
 					{
 						MERIC_INFO << "\t" << ((struct json_string_s*)set->value->payload)->string << std::endl;
-						ignoreRegions.push_back(std::string(((struct json_string_s*)set->value->payload)->string));
+						ignoreRegions.insert(std::string(((struct json_string_s*)set->value->payload)->string));
 						set = set->next;
 					}while(set != NULL);
 				}

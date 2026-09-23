@@ -109,7 +109,7 @@ public:
 #endif
 		#pragma omp master	//only master thread is allowed to work with the _stack
 		{
-			if (!_stack.size() || region != getRegionName(_stack.size(), _stack.back()))
+			if (!_stack.size() || region != getRegionName(_stack.back()))
 			{
 				std::cerr << "MERIC ERROR: corrupted instrumentation\n";
 				regionRuntime = -1.0;
@@ -131,7 +131,7 @@ public:
 			{
 				MERIC_INFO << "region '" << region << "' stopping"<< std::endl;
 			}
-			SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
+			SocketsRegionParameters change = regionValue(currentState, getParentRegionName(), _nodeId);
 			if (MPIbarriers)
 			{
 				MPI_Barrier(_currentNode);
@@ -145,7 +145,7 @@ public:
 			_stack.pop_back();
 			if (Meric::timeThreshold > regionRuntime)
 			{
-				ignoreRegions.push_back(region);
+				ignoreRegions.insert(region);
 			}
 		}
 		
@@ -177,7 +177,7 @@ public:
 		
 		#pragma omp master	//only master thread is allowed to work with the _stack
 		{
-			if (!_stack.size() || stopRegionName != getRegionName(_stack.size(), _stack.back()))
+			if (!_stack.size() || stopRegionName != getRegionName(_stack.back()))
 			{
 				std::cerr << "MERIC ERROR: corrupted instrumentation\n";
 				regionRuntime = -1.0;
@@ -217,7 +217,7 @@ public:
 			else if (!ignoreRegion(stopRegionName))
 			{
 				MERIC_INFO << "region '" << stopRegionName << "' stopping\n";
-				SocketsRegionParameters change = regionValue(currentState, getRegionName(_stack.size()-1, _stack.back()-1), _nodeId);
+				SocketsRegionParameters change = regionValue(currentState, getParentRegionName(), _nodeId);
 				if (MPIbarriers)
 				{
 					MPI_Barrier(_currentNode);
@@ -239,7 +239,7 @@ public:
 				regionRuntime = Meric::stop();
 				if (Meric::timeThreshold > regionRuntime)
 				{
-					ignoreRegions.push_back(stopRegionName);
+					ignoreRegions.insert(stopRegionName);
 				}
 			}
 			_stack.pop_back();
