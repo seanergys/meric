@@ -1002,7 +1002,10 @@ UFS_WAY Environment::getPreferredUFSWay()
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 		return UFS_WAY_MSR;
 	#else
-		return UFS_WAY_TPMI_SYSFS;
+		if (meric::sysfsutils::CheckDirExists(/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/))
+		{
+			return UFS_WAY_TPMI_SYSFS;
+		}
 	#endif
 	}
 #elif defined __arm__

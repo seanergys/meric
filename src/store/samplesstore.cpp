@@ -1,5 +1,6 @@
 
 #include "samplesstore.h"
+#include "../basis/sysfsutils.h"
 #include <cmath>
 
 using namespace meric;
@@ -89,7 +90,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		if (staticRegion)
 		{
 			const std::string samplesDir = outputDirectory+"/"+_name[_records[iStarts.back()].region]+"/samples/";
-			mutils::createDir(samplesDir);			
+			sysfsutils::CreateDir(samplesDir);
 			samplesStream.open(samplesDir + (outputPrefix.size() ? outputPrefix + "_" : "") + std::to_string(_initCounter) + ".csv", std::ofstream::app);
 		}
 	}
