@@ -4,6 +4,8 @@
   - fixed MPI support in Python
   - fixed check of the allowed GPU SM frequency (NVIDIA GPUs) interval for frequency tuning
   - fixed AMD CPU turbo frequency limit identification
+  - fixed configuration identification in dynamic tuning
+  - improved CPU core frequency tuning overhead
   - improved power monitoring system availability detection
   - systemInfo detailed output on available power monitoring systems
   - MERICext support for HWMON energy measurement
