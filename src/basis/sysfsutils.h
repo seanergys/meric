@@ -16,6 +16,7 @@ namespace meric {
 namespace sysfsutils {
 
 void CreateDir(const std::string &dir);
+bool CheckDirExists(const std::string &dir);
 
 template<typename F>
 bool IterateDir(const std::string &path, F &&f)
