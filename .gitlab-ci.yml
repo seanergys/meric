@@ -20,6 +20,9 @@ workflow:
 
     # Merge requests targeting the dev branch.
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      changes:
+        # Ignore documentation, Git metadata, issue templates and test-only changes.
+        regexp: &pipeline_relevant_change '\A(?!(?:(?:.*/)?README\.md|CHANGELOG|LICENSE|REUSE\.toml|LICENSES/.*|\.gitlab/.*|\.git(?!lab-ci\.yml\z)[^/]*|test/.*)\z).+\z'
       variables:
         CI_MERIC_PIPELINE_LEVEL: "dev"
         CI_MERIC_TEST_PROFILE: "full"
@@ -27,6 +30,8 @@ workflow:
 
     # Merge requests targeting the master branch.
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+      changes:
+        regexp: *pipeline_relevant_change
       variables:
         CI_MERIC_PIPELINE_LEVEL: "master"
         CI_MERIC_TEST_PROFILE: "full"
@@ -38,12 +43,16 @@ workflow:
 
     # Automatic push pipelines only for dev and master.
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        regexp: *pipeline_relevant_change
       variables:
         CI_MERIC_PIPELINE_LEVEL: "dev"
         CI_MERIC_TEST_PROFILE: "full"
       when: always
 
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "master"'
+      changes:
+        regexp: *pipeline_relevant_change
       variables:
         CI_MERIC_PIPELINE_LEVEL: "master"
         CI_MERIC_TEST_PROFILE: "full"
