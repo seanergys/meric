@@ -8,9 +8,10 @@
 namespace meric
 {
 	/**
-	 *  Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 *  Intel 64 and IA-32 Architectures Software Developer’s Manual
 	 *                                      Volume 4:
 	 *                                      Model-Specific Registers
+	 *
 	 *                                      Order Number: 335592-086US
 	 *                                      December 2024
 	 * Table 2-1 CPUID Signature Values of DisplayFamily_DisplayModel Mappings
@@ -209,10 +210,92 @@ namespace meric
 		{
 			return it->second;
 		}
-		else
+		return CpuidSignatureValues::UNKNOWN;
+	}
+	
+	//Source: Mesa repository - https://gitlab.freedesktop.org/mesa/libdrm/-/blob/main/data/amdgpu.ids
+	inline std::string hexToAMDGPUName(const std::string &hexStr)
+	{
+		static const std::unordered_map<long, std::string> LUT = {
+			{0x686c, "AMD Instinct MI25"},
+			{0x66a1, "AMD Instinct MI50/MI60 / AMD Radeon Pro VII"},
+			{0x738c, "AMD Instinct MI100"},
+			{0x740f, "AMD Instinct MI210"},
+			{0x7408, "AMD Instinct MI250X"},
+			{0x740c, "AMD Instinct MI250X/MI250"},
+			{0x74a0, "AMD Instinct MI300A"},
+			{0x74a1, "AMD Instinct MI300X"},
+			{0x74a2, "AMD Instinct MI308X"},
+			{0x74a5, "AMD Instinct MI325X"},
+			{0x74a9, "AMD Instinct MI300X HF"},
+			{0x74b5, "AMD Instinct MI300X VF"},
+			{0x74b6, "AMD Instinct MI308X"},
+			{0x74bd, "AMD Instinct MI300X HF"},
+			{0x75a0, "AMD Instinct MI350X"},
+			{0x75a3, "AMD Instinct MI355X"},
+			{0x75b0, "AMD Instinct MI350X VF"},
+			{0x75b3, "AMD Instinct MI355X VF"},
+			{0x66af, "AMD Radeon VII"},
+			{0x67c2, "AMD Radeon Pro V7350x2/V7300X"},
+			{0x67d0, "AMD Radeon Pro V7350x2/V7300X"},
+			{0x67df, "AMD Radeon Pro 580X"},
+			{0x67eb, "AMD Radeon Pro V5300X"},
+			{0x7312, "AMD Radeon Pro W5700"},
+			{0x731f, "AMD Radeon RX 5700 (XT)/RX 5600 OEM"},
+			{0x7340, "AMD Radeon RX 5500 (XT)/RX 5300"},
+			{0x7341, "AMD Radeon Pro W5500"},
+			{0x7347, "AMD Radeon Pro W5500M"},
+			{0x7360, "AMD Radeon Pro V520"},
+			{0x7362, "AMD Radeon Pro V540/V520"},
+			{0x73a1, "AMD Radeon Pro V620"},
+			{0x73a3, "AMD Radeon Pro W6800"},
+			{0x73a5, "AMD Radeon RX 6950 XT"},
+			{0x73ae, "AMD Radeon Pro V620 MxGPU"},
+			{0x73af, "AMD Radeon RX 6900 XT"},
+			{0x73bf, "AMD Radeon RX 6900 XT/RX 6800 (XT)"},
+			{0x73df, "AMD Radeon RX 6750/6700 XT"},
+			{0x73e3, "AMD Radeon Pro W6600"},
+			{0x73ef, "AMD Radeon RX 6650 XT"},
+			{0x73ff, "AMD Radeon RX 6600 (XT/LE)/RX 6750 GRE 10GB"},
+			{0x7421, "AMD Radeon Pro W6500M"},
+			{0x7422, "AMD Radeon Pro W6400"},
+			{0x7423, "AMD Radeon Pro W6300/W6300M"},
+			{0x7424, "AMD Radeon RX 6300"},
+			{0x743f, "AMD Radeon RX 6500 (XT)/RX 6400/RX 6550S"},
+			{0x7448, "AMD Radeon Pro W7900"},
+			{0x7449, "AMD Radeon Pro W7800 48GB"},
+			{0x744a, "AMD Radeon Pro W7900 Dual Slot"},
+			{0x744b, "AMD Radeon Pro W7900D"},
+			{0x744c, "AMD Radeon RX 7900 XTX/XT/GRE"},
+			{0x745e, "AMD Radeon Pro W7800"},
+			{0x7460, "AMD Radeon Pro V710"},
+			{0x7461, "AMD Radeon Pro V710 MxGPU"},
+			{0x7470, "AMD Radeon Pro W7700"},
+			{0x747e, "AMD Radeon RX 7800 XT/RX 7700 /RX 7700 XT"},
+			{0x7480, "AMD Radeon Pro W7600/RX 7600 (XT)/RX 7650 GRE"},
+			{0x7489, "AMD Radeon Pro W7500"},
+			{0x7499, "AMD Radeon Pro W7400/RX 7400/RX 7300"},
+			{0x7550, "AMD Radeon RX 9070 (XT/GRE)"},
+			{0x7551, "AMD Radeon AI PRO R9700/R9600D"},
+			{0x7590, "AMD Radeon RX 9060 (XT (LP))"}
+		};
+	
+		long hex = 0;
+		try
 		{
-			return CpuidSignatureValues::UNKNOWN;
+			hex = std::stol(hexStr, nullptr, 16);
 		}
+		catch (...)
+		{
+			return "Unknown AMD GPU type";
+		}
+		
+		auto it = LUT.find(hex);
+		if (it != LUT.end())
+		{
+			return it->second;
+		}
+		return "Unknown AMD GPU type";
 	}
 }
 

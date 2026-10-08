@@ -25,7 +25,7 @@ bool Environment::usedPWRCAP = false;
 bool Environment::usedGPUDVFS = false;
 bool Environment::usedGPUPWRCAP = false;
 DVFS_WAY Environment::activatedDVFS = NO_DVFS;
-bool Environment::activatedUFS = false;
+UFS_WAY  Environment::activatedUFS  = UFS_WAY_NONE;
 bool Environment::activatedPWRCAP = false;
 GPU_TUNING_WAY Environment::activatedGPUtuning = NO_TUNING;
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
@@ -286,6 +286,12 @@ void Environment::getCPUbrandString(std::string & CPUname)
 			CPUname += " @ "+std::to_string(std::stol(line)/1e6)+"GHz";
 		}
 	}
+}
+
+void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
+{
+	// NOTE: No consistent CPU family model strings for non-x86 platforms.
+	CPUFamilyModelOut = "";
 }
 #endif
 
@@ -958,6 +964,60 @@ DVFS_WAY Environment::activateDVFS(DVFS_WAY way)
 	return way;
 }
 
+UFS_WAY Environment::isUFSPossible()
+{
+	UFS_WAY way = getPreferredUFSWay();
+
+	if(way == UFS_WAY_TPMI_SYSFS)
+	{
+		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
+		
+		if(!sysfsutils::CheckFileAccess({
+				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}, 
+				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
+			}, basePath))
+		{
+			way = UFS_WAY_NONE;
+		}
+	}
+
+	return way;
+}
+
+UFS_WAY Environment::getPreferredUFSWay()
+{
+#ifdef _INTEL_
+	std::string cpuFamilyStr;
+	getCPUFamilyModelString(cpuFamilyStr);
+	auto cpuFamily = meric::stringToCpuidSignature(cpuFamilyStr);
+
+	if(cpuFamily >= CpuidSignatureValues::INTEL_06_AEH)
+	{
+		// Granite Rapids and newer Intel CPUs require TPMI interface for tuning
+		return UFS_WAY_TPMI_SYSFS;
+	}
+	else
+	{
+		// Use MSR for older Intel CPUs or attempt to fallback to TPMI when MSR is not available at compile time
+	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+		return UFS_WAY_MSR;
+	#else
+		if (meric::sysfsutils::CheckDirExists("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/"))
+		{
+			return UFS_WAY_TPMI_SYSFS;
+		}
+	#endif
+	}
+#elif defined __arm__
+	if(systemType == SYS_JETSON)
+	{
+		return UFS_WAY_JETSON_SYSFS;
+	}
+#endif
+
+	return UFS_WAY_NONE;
+}
+
 /**
  * identifies CUDA driver version, if it is 465.xxx or newer then MERIC will use
  * system utility nvidia-smi calls, for which we expect raised rights (/etc/sudoers)
@@ -1608,6 +1668,26 @@ void Environment::readSystemDefaultSettings()
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef _INTEL_
+		if(getPreferredUFSWay() == UFS_WAY_TPMI_SYSFS)
+		{
+			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_min_freq_khz");
+			if(frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				defaultSettings.minUncoreFreq = std::stol(freqBound) * 1000;
+			}
+
+			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_max_freq_khz");
+			if(frequencyBounderyFile.is_open())
+			{
+				frequencyBounderyFile >> freqBound;
+				frequencyBounderyFile.close();
+				defaultSettings.maxUncoreFreq = std::stol(freqBound) * 1000;
+			}
+		}
+		else if(getPreferredUFSWay() == UFS_WAY_MSR)
+		{
 	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 			read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
@@ -1628,6 +1708,7 @@ void Environment::readSystemDefaultSettings()
 			
 			defaultSettings.maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
 	#endif
+		}
 #elif defined __arm__	//Jetson memory frequencies
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
 		if (frequencyBounderyFile.is_open())
@@ -1965,12 +2046,11 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 		}
 
 //ACTIVATE UFS
-#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H
 		if (defaultSettings.defaultUncoreFreq != -1)
 		{
-			activatedUFS = true;
+			activatedUFS = isUFSPossible();
 		}
-#endif
+
 //ACTIVATE GPU tuning
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
 		if (defaultParameter.frequencyGPU != 0 || defaultParameter.powerCapGPU != 0)
@@ -1992,7 +2072,7 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 				}
 				if (governorFile)
 				{
-					activatedUFS = true;
+					activatedUFS = isUFSPossible();
 					MERIC_INFO << "MERIC: unCORE FREQUENCY scaling activated\n";
 				}
 			}
@@ -2395,8 +2475,10 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	if (maxFreq == 0 || minFreq == 0)
 		return;
 	
-	if (!activatedUFS)
+	if (activatedUFS == UFS_WAY_NONE)
+	{
 		return; //UFS not supported
+	}
 		
 	if (maxFreq > defaultSettings.maxUncoreFreq || minFreq < defaultSettings.minUncoreFreq || maxFreq < minFreq)
 	{
@@ -2405,7 +2487,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		return;
 	}
 	usedUFS = true;
-	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+
 	MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq;
 	if (maxFreq != minFreq)
 	{
@@ -2423,7 +2505,34 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		socket_min = 0;
 		socket_max = SOCKETS_PER_NODE-1;
 	}
-	#endif
+
+	if(activatedUFS == UFS_WAY_TPMI_SYSFS)
+	{
+		MERIC_INFO << "; using TPMI SYSFS\n";
+
+		std::ofstream file;
+
+		for(int die=socket_min; die <= socket_max; ++die)
+		{
+			file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_0" + std::to_string(die) + "_die_00/min_freq_khz");
+			if(file.is_open())
+			{
+				file << minFreq / 1000;
+				file.close();
+			}
+
+			file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_0" + std::to_string(die) + "_die_00/max_freq_khz");
+			if(file.is_open())
+			{
+				file << maxFreq / 1000;
+				file.close();
+			}
+		}
+
+		clock_gettime(CLOCK_REALTIME, &stop_time);
+		MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+		return;
+	}
 
 	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 	#ifdef HAVE_MSR_CORE_H
@@ -2965,7 +3074,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 	{
 		//DVFS_WAY activatedDVFS is not specified, because it requires the way how it was activated, which we may not know
 		usedDVFS = true;
-		activatedUFS = true;
+		activatedUFS = isUFSPossible();
 		usedUFS = true;
 		activatedPWRCAP = true;
 		usedPWRCAP = true;
@@ -3037,7 +3146,7 @@ void Environment::restoreSystemSettings(bool hardReset)
 		}
 	}
 
-	if (activatedUFS)
+	if (activatedUFS != UFS_WAY_NONE)
 	{
 		if(usedUFS)
 		{

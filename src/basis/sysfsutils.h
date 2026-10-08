@@ -15,6 +15,9 @@
 namespace meric {
 namespace sysfsutils {
 
+void CreateDir(const std::string &dir);
+bool CheckDirExists(const std::string &dir);
+
 template<typename F>
 bool IterateDir(const std::string &path, F &&f)
 {
@@ -61,6 +64,21 @@ void ScanTree(const std::string &path, int maxDepth, F &&f)
 
 	fts_close(pFs);
 }
+
+/**
+ * @brief Check file access in CNF (Conjuctive Normal Form), 
+ *			where at least one file from each file group has to be accessible
+ *			with specified access type.
+ *			The basePath is prepended to all filenames mentioned in fileGroups.
+ *			
+ * 
+ * @param fileGroups Groups of files to be checked.
+ * @param basePath 	 Base path common to all files.
+ * @return true 	 When at least one file check in *each* group succeeds.
+ * @return false 	 Otherwise.
+ */
+bool CheckFileAccess(const std::vector<std::vector<std::pair<std::string, int> > > &fileGroups, 
+	const std::string &basePath = "");
 
 template<typename T>
 bool ReadValue(std::ifstream &fs, T &out)

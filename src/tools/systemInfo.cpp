@@ -18,6 +18,7 @@
 #include "../wrapper/nvmlwrapper.h"
 #include "../wrapper/rocmwrapper.h"
 #include "../wrapper/occwrapper.h"
+#include "../wrapper/hwidsignatures.h"
 
 #ifdef HAVE_MSR_CORE_H
 #include <msr_rapl.h>
@@ -72,74 +73,6 @@ std::string readFile(const std::string &filePath)
 		file.close();
 	}
 	return content;
-}
-
-/*
- * GPU id and name can be obtained through command: rocminfo | grep -Ei "Chip ID|Marketing name"
- *   - note: this command may output also AMD CPUs
- */
-
-std::string getAMDGPUName(const std::string hex)
-{
-	long version = 0;
-	try
-	{
-		long version = std::stol(hex, nullptr, 16);
-	}
-	catch (...)
-	{
-		return "Unknown AMD GPU type";
-	}
-
-	std::string name;
-	switch (version)
-	{
-	case 0x686c:
-		name = "AMD Instinct MI25";
-		break;
-	case 0x66a1:
-		name = "AMD Instinct MI50/MI60";
-		break;
-	case 0x738c:
-		name = "AMD Instinct MI100";
-		break;
-	case 0x740f:
-		name = "AMD Instinct MI210";
-		break;
-	case 0x7408:
-		name = "AMD Instinct MI250X";
-		break;
-	case 0x740c:
-		name = "AMD Instinct MI250X/MI250";
-		break;
-	case 0x74a0:
-		name = "AMD Instinct MI300A";
-		break;
-	case 0x74a1:
-		name = "AMD Instinct MI300X";
-		break;
-	case 0x74A2:
-		name = "AMD Instinct MI308X";
-		break;
-	case 0x74A5:
-		name = "AMD Instinct MI325X";
-		break;
-	case 0x74A9:
-		name = "AMD Instinct MI300X HF";
-		break;
-	case 0x74B5:
-		name = "AMD Instinct MI300X VF";
-		break;
-	case 0x74B6:
-		name = "AMD Instinct MI308X";
-		break;
-	case 0x74BD:
-		name = "AMD Instinct MI300X HF";
-		break;
-	default:
-		name = "Unknown AMD GPU type";
-	}
-	return name;
 }
 
 void sysInfoSize(bool detailed = false)
@@ -278,7 +211,7 @@ void sysInfoSize(bool detailed = false)
 					GPUDeviceCount++;
 
 					std::string pciDeviceID = readFile(cardPath + "device");
-					modelName = getAMDGPUName(pciDeviceID);
+					modelName = meric::hexToAMDGPUName(pciDeviceID);
 				}
 			}
 		}
@@ -553,69 +486,115 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 
 // UNCORE FREQUENCY
 #ifdef _INTEL_
-#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
-	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
-	if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))
+	if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_TPMI_SYSFS)
 	{
-		meric::read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
-		freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
+
+		if(meric::sysfsutils::CheckFileAccess({ 
+				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
+			}, basePath))
+		{
+			std::ifstream file;
+			std::string freqBound;
+
+			file.open(basePath + "initial_max_freq_khz");
+			if(file.is_open())
+			{
+				file >> freqBound;
+				file.close();
+				std::cout << "\tMax CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			}
+
+			file.open(basePath + "initial_min_freq_khz");
+			if(file.is_open())
+			{
+				file >> freqBound;
+				file.close();
+				std::cout << "\tMin CPU uncore frequency:    " << std::stol(freqBound) << " kHz\n";
+			}
+		}
+		else
+		{
+			std::cout << "\tCPU uncore frequency limits: unknown - grant read right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/initial_*_freq_khz\n";
+		}
+
+		if(!meric::sysfsutils::CheckFileAccess({ 
+				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}} 
+			}, basePath))
+		{
+			std::cout << "\tCPU uncore frequency control NOT available - grant write right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/*_freq_khz\n";
+		}
+	}
+	else if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_MSR)
+	{
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
+		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
+		if (!currentWhitelist.count(MSR_UNCORE_RATIO_LIMIT))
+		{
+			meric::read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+			freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
+			std::cout << "\tMax CPU uncore frequency:    " << freq / 1000 << " kHz\n";
+			if (ok && freq != limits.maxUncoreFreq)
+			{
+				ok = false;
+			}
+			freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+			std::cout << "\tMin CPU uncore frequency:    " << freq / 1000 << " kHz\n";
+			if (ok && freq != limits.minUncoreFreq)
+			{
+				ok = false;
+			}
+		}
+		/*else
+		{
+			std::cout << "\tCPU uncore frequency limits: unknown\n";
+		}*/
+#elif defined HAVE_X86_ADAPT_H
+		int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
+		int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
+		uint64_t setting = 0;
+		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+		freq = setting * 100000000;
 		std::cout << "\tMax CPU uncore frequency:    " << freq / 1000 << " kHz\n";
 		if (ok && freq != limits.maxUncoreFreq)
 		{
 			ok = false;
 		}
-		freq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
+
+		adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
+		x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
+		if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
+		{
+			std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
+		}
+		freq = setting * 100000000;
 		std::cout << "\tMin CPU uncore frequency:    " << freq / 1000 << " kHz\n";
 		if (ok && freq != limits.minUncoreFreq)
 		{
 			ok = false;
 		}
+#elif defined HAVE_GEOPM_H
+		freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
+		std::cout << "\tMax CPU uncore frequency:    " << freq / 1000 << " kHz\n";
+		if (ok && freq != limits.maxUncoreFreq)
+		{
+			ok = false;
+		}
+
+		freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
+		std::cout << "\tMin CPU uncore frequency:    " << freq / 1000 << " kHz\n";
+		if (ok && freq != limits.minUncoreFreq)
+		{
+			ok = false;
+		}
+#else
+		std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n";
+#endif
 	}
 	else
 	{
-		std::cout << "\tCPU uncore frequency limits: unknown\n";
+		std::cout << "\n# CPU uncore frequency NOT available\n";
 	}
-#elif defined HAVE_X86_ADAPT_H
-	int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
-	int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
-	uint64_t setting = 0;
-	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	freq = setting * 100000000;
-	std::cout << "\tMax CPU uncore frequency:    " << freq / 1000 << " kHz\n";
-	if (ok && freq != limits.maxUncoreFreq)
-	{
-		ok = false;
-	}
-
-	adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
-	x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
-	if (x86_adapt_put_device(X86_ADAPT_DIE, 0))
-	{
-		std::cerr << "X86ADAPT RAPL INIT error while closing file descriptor\n";
-	}
-	freq = setting * 100000000;
-	std::cout << "\tMin CPU uncore frequency:    " << freq / 1000 << " kHz\n";
-	if (ok && freq != limits.minUncoreFreq)
-	{
-		ok = false;
-	}
-#elif defined HAVE_GEOPM_H
-	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-	std::cout << "\tMax CPU uncore frequency:    " << freq / 1000 << " kHz\n";
-	if (ok && freq != limits.maxUncoreFreq)
-	{
-		ok = false;
-	}
-
-	freq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
-	std::cout << "\tMin CPU uncore frequency:    " << freq / 1000 << " kHz\n";
-	if (ok && freq != limits.minUncoreFreq)
-	{
-		ok = false;
-	}
-#else
-	std::cout << "\n# CPU uncore frequency NOT available - install libmsr or x86_adapt\n";
-#endif
 #elif defined __arm__ // Jetson memory frequencies
 	frequencyBounderyFile.open("/sys/kernel/debug/clock/emc/max");
 	if (frequencyBounderyFile.is_open())
@@ -1530,7 +1509,14 @@ void checkMsrWhitelist()
 		std::cerr << "\nMSR_SAFE ERROR: No allowlist file in /dev/cpu/\n";
 		return;
 	}
-	currentWhitelist.insert(msr_whitelist.begin(), msr_whitelist.end());
+
+	{
+		std::string cpuFamilyModel;
+		meric::Environment::getCPUFamilyModelString(cpuFamilyModel);
+		auto cpuidSignature = meric::stringToCpuidSignature(cpuFamilyModel);
+		getMSRWhitelist(cpuidSignature, currentWhitelist);
+	}
+
 	std::ifstream msrfile(whitelistName);
 	if (!msrfile)
 	{

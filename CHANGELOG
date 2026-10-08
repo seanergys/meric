@@ -1,4 +1,4 @@
-### 31.07.2026 #################################################################
+### 31.09.2026 #################################################################
   - change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed MPI support in Python
@@ -13,6 +13,7 @@
   - removed requirement to store power samples to evaluate energy consumption from HWMON power sampling
   - MERIC does no longer recognize power monitoring systems HWMON-S and HWMON-C, but only unified HWMON
   - support for monitoring of performance counters on Fujitsu A64FX using perfevent and evaluation of corresponding metrics
+  - support for CPU uncore frequency tuning using TPMI sysfs interface (e.g., Intel Sapphire Rapids, Granite Rapids)
   - support for energy measurement from PDUs exposing the power samples to user space 
   - MERIC E4 Remote node monitoring utility with E4 PDU sampling support
   - new CUDA test application

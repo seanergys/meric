@@ -6,6 +6,7 @@
 #include "../../wrapper/rocmwrapper.h"
 #include "../../wrapper/e4wrapper.h"
 #include "../../basis/utils.h"
+#include "../../basis/sysfsutils.h"
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -668,7 +669,7 @@ int main(int argc, char **argv)
 	std::streambuf *coutbuf = std::cout.rdbuf(); // Save original buffer
 	if (toolMode == TOOL_MODE::DEFAULT || toolMode == TOOL_MODE::START)
 	{
-		meric::mutils::createDir(outputDirectory);
+		meric::sysfsutils::CreateDir(outputDirectory);
 
 		// redirect the output to the file created.
 		std::string filename = outputDirectory + "/" + "mericStatic_" + std::to_string(measurement_id) + "_" + hostname + ".data";

@@ -3,6 +3,7 @@
 #define SRC_STORE_INFOSTORE_H_
 
 #include "store.h"
+#include "../basis/sysfsutils.h"
 
 #ifdef HAVE_MPI_H
 	#include <mpi.h>
@@ -87,7 +88,7 @@ public:
 		loadSchedulerEnvironment();
 		outputFilenameFormat = outputFormat; // TODO
 
-		mutils::createDir(outputDir);
+		sysfsutils::CreateDir(outputDir);
 		dataInfoFileName = outputDir + "/measurementInfo.json";
 		
 		std::string hostname = mutils::getHostnameShort();

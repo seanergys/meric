@@ -128,21 +128,7 @@ struct mutils
 		std::string hostname_str{hostname};
 		return hostname_str.find(".") != std::string::npos ? hostname_str.substr(0, hostname_str.find(".")) : hostname_str;
 	}
-		
-	static void createDir(const std::string &dir)
-	{
-		struct stat info;
-		if(stat(dir.c_str(), &info ) != 0)
-		{
-			std::stringstream ss;
-			ss << "mkdir -p \"" + dir + "\"";
-			if (std::system(ss.str().c_str()))
-			{
-				std::cerr << "MERIC ERROR: directory '"<<dir<<"' cannot be created\n";
-			}
-		}
-	}
-
+	
 	static int countTrailingZeros(unsigned int x)
 	{
 		if (x == 0)

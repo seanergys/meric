@@ -26,6 +26,7 @@
 #include "../wrapper/raplwrapper.h"
 #include "../wrapper/nvmlwrapper.h"
 #include "../basis/utils.h"
+#include "../basis/sysfsutils.h"
 
 namespace meric {
 
@@ -108,7 +109,7 @@ protected:
 		for (std::string folderName : _name)
 		{
 			if (folderName != "")
-				mutils::createDir(outputDir + "/" + folderName);
+				sysfsutils::CreateDir(outputDir + "/" + folderName);
 		}
 		
 		std::vector<size_t> starts;
