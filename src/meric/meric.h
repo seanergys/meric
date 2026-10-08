@@ -2,6 +2,7 @@
 #ifndef SRC_MERIC_MERIC_H_
 #define SRC_MERIC_MERIC_H_
 
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -183,7 +184,14 @@ public:
 		 **/
 		const SocketsRegionParameters regionValue(SocketsRegionParameters &settings, const std::string &region, int node = -1)
 		{
-			SocketsRegionParameters change = {};
+			const std::size_t socketCount = std::max(std::size_t(1), static_cast<std::size_t>(Environment::SOCKETS_PER_NODE));
+			if (settings.socket.size() < socketCount)
+			{
+				settings.socket.resize(socketCount);
+			}
+
+			SocketsRegionParameters change;
+			change.socket.resize(settings.socket.size());
 			if (REGION_OPTIONS == "")
 			{
 				return change;

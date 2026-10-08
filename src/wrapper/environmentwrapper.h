@@ -266,24 +266,7 @@ private:
 
 
 struct SocketsRegionParameters {
-	RegionParameters socket [2];	//TODO remove this constant
-/*
-	RegionParameters * socket;
-
-	SocketsRegionParameters()
-	{
-		if (Environment::CORES_PER_SOCKET == 0)
-		{
-			Environment::initHWSizes();
-		}
-		socket = (RegionParameters*) malloc (sizeof(RegionParameters) * Environment::CORES_PER_SOCKET);
-	}
-	
-	~SocketsRegionParameters()
-	{
-		free(socket);
-	}
-*/
+	std::vector<RegionParameters> socket;
 };
 
 

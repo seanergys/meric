@@ -147,10 +147,7 @@ SharedMeric::SharedMeric()
 		Environment::init(SYS_OTHER, defaultParameter, 0);
 	}
 	
-	for (unsigned int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
-	{
-		currentState.socket[socket] = defaultParameter;
-	}
+	currentState.socket.assign(Environment::SOCKETS_PER_NODE, defaultParameter);
 
 	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>(
 		Environment::SOCKETS_PER_NODE*Environment::CORES_PER_SOCKET*Environment::THREADS_PER_CORE,

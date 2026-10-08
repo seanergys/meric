@@ -344,10 +344,7 @@ DistributedMeric::DistributedMeric()
 		Environment::init(SYS_OTHER, defaultParameter, _MPInodeRank);
 	}
 
-	for (int socket=0; socket < Environment::SOCKETS_PER_NODE; socket++)
-	{
-		currentState.socket[socket] = defaultParameter;
-	}
+	currentState.socket.assign(Environment::SOCKETS_PER_NODE, defaultParameter);
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end() && !_MPInodeRank)
 	{
