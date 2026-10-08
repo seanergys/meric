@@ -42,10 +42,6 @@ scorep:
 	./waf configure  --flag="-g" --scorep --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
 	./waf install -j 1 -v
 
-intel:
-	./waf configure --cpp=icpc --mpi=mpiicpc --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
-	make install
-
 fortran:
 	$(FC) -c include/meric_mod.F90 $(FORTFLAGS) include/ -o include/meric_mod.o
 
