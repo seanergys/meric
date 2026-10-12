@@ -72,7 +72,7 @@ include:
   - project: "energy-efficiency/meric-suite/MERIC-RS-CICD"
     ref: "main"
     file: "/.gitlab-ci.yml"
-  - component: code.it4i.cz/energy-efficiency/ci-lint-component/lint-mr@2.0.1
+  - component: code.it4i.cz/energy-efficiency/ci-lint-component/lint-mr@2.0.2
     inputs:
       exclude: "src/basis/json.*,waf,tools/*,extern/*"
       build_command: "./waf configure build -v"
