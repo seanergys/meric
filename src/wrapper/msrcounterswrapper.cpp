@@ -115,7 +115,7 @@ void MSR::init()
 					{
 						socket_free_box_found = true;
 						msrCTRandOwnership.push_back({U_MSR_CBO_x_PMON_CTLy_2_U_MSR_CBO_x_PMON_CTRy(U_MSR_CBO_x_PMON_CTLy_addr), 1});	// add the counter of that controller, we owned the msr.
-						write_msr(Environment::mapCoresToSocket[socket][0], U_MSR_CBO_x_PMON_CTLy_addr, U_MSR_CBO_x_PMON_CTLx_bits);
+						write_msr(Environment::mapCoresToSocket[socket][0], U_MSR_CBO_x_PMON_CTLy_addr, EVENT_CBOX_CLOCKTICKS_bits);
 
 						MERIC_INFO << "Socket[" << socket << "]: Empty slot is found, configuring for uncore frequency monitoring.\n";
 						break; // exit traversing U_MSR_CBO_x_PMON_CTLy_addr
