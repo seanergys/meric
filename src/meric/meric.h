@@ -607,6 +607,7 @@ public:
 			return args;
 		}
 
+		// Sets static region name according to the application name. Skips interpreter name if detected
 		void setMainRegionName()
 		{
 			_mainRegion.assign(program_invocation_name);
