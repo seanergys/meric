@@ -46,7 +46,6 @@ public:
 
 	static inline double getUnit(std::string counterName);
 
-	// static void getSamplePeriodInfo(BaseWrapper::SamplePeriodInfo_t &info);
 
 	static bool isAvailable();
 
