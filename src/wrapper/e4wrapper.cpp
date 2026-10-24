@@ -350,7 +350,7 @@ static double snmp_get_value(const std::string &ip, const std::string &oid_str)
 			else if (vars->type == ASN_GAUGE || vars->type == ASN_COUNTER || vars->type == ASN_TIMETICKS || vars->type == ASN_UINTEGER)
 				result = (double)(*vars->val.integer);
 			else if (vars->type == ASN_COUNTER64)
-				result = (double)(vars->val.counter64->high * 4294967296.0 + vars->val.counter64->low);
+				result = (double)(vars->val.counter64->high * static_cast<double>(1ULL << 32) + vars->val.counter64->low);
 		}
 	}
 	else
