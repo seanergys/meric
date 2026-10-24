@@ -356,11 +356,17 @@ static double snmp_get_value(const std::string &ip, const std::string &oid_str)
 	else
 	{
 		if (status == STAT_TIMEOUT)
-			std::cerr << "[E4 SNMP] Timeout: No response from " << ip << std::endl;
+		{
+			std::cerr << "MERIC ERROR: SNMP timeout, no response from " << ip << std::endl;
+		}
 		else if (status == STAT_SUCCESS && response)
-			std::cerr << "[E4 SNMP] Error in packet: " << snmp_errstring(response->errstat) << std::endl;
+		{
+			std::cerr << "MERIC ERROR: SNMP error in packet: " << snmp_errstring(response->errstat) << std::endl;
+		}
 		else
-			std::cerr << "[E4 SNMP] Session error" << std::endl;
+		{
+			std::cerr << "MERIC ERROR: SNMP session error" << std::endl;
+		}
 	}
 
 	if (response)
