@@ -103,8 +103,9 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << sampler.name << "\n";
 		}
 		
-		ss << "# COUNTERS/SAMPLES - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
+		ss << "# COUNTERS - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
 			<< HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[sampler.id + 1] - _records[iStarts.back()].energy[sampler.id + 1] << std::endl
+			<< "# SAMPLES - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
 			<< HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
 			<< "MAX power [W]" << "," << sampler.max << std::endl
 			<< "MIN power [W]" << "," << sampler.min << std::endl
