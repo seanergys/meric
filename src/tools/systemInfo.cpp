@@ -1263,8 +1263,7 @@ void PrintCountersInfo(std::ostream &ss) {
 
 template<typename M, typename std::enable_if<!HasCounterRecord_t<M>::value, bool>::type = true>
 void PrintCountersInfo(std::ostream &ss) {
-	ss << "n/a";
-	ss << "\n";
+	ss << "n/a\n";
 }
 
 template<typename M, typename std::enable_if<HasSamplePeriodInfo_t<M>::value, bool>::type = true>
@@ -1626,7 +1625,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
 	{
-		std::cerr << "ROCM: Unable to initialize\n";
+		std::cerr << "ROCM ERROR: Unable to initialize\n";
 	}
 #endif
 

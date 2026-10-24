@@ -130,7 +130,7 @@ void ROCM::collectSamples(unsigned int sampling_frequency)
 			if (rsmi_dev_power_ave_get(i, 0, &power) == RSMI_STATUS_SUCCESS)
 			{
 				samples[i].push_back(static_cast<double>(power) / 1e6);
-				std::cout << "Power on gpu[" << i << "]: " << power << std::endl;
+				MERIC_INFO << "Power on gpu[" << i << "]: " << power << std::endl;
 			}
 		}
 		if (HIP_PRIOR_6_2)

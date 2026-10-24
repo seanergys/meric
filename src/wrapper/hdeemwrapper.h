@@ -34,7 +34,6 @@ public:
 	static std::string getSourceLabel() {return "HDEEM";};
 	static const std::string SUM_ENERGY_LABEL;
 
-	// static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
 	static bool isAvailable();
 

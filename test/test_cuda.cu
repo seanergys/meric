@@ -140,4 +140,5 @@ int main(int argc, char** argv)
 	CUDA_CHECK(cudaFreeHost(xr));
 
 	MERIC_Close();
+	return 0;
 }

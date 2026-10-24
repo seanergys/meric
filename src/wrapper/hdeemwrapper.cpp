@@ -8,14 +8,6 @@ std::vector<std::string> HDEEM::vrSensorLabel;
 bool HDEEM::detailedMode = false;
 const std::string HDEEM::SUM_ENERGY_LABEL = "Energy consumption [J]";
 
-/*
-void HDEEM::getSamplePeriodInfo(SamplePeriodInfo_t &info)
-{
-	uint64_t period = 1000000000ull / uint64_t(FREQUENCY_VR);
-	info = SamplePeriodInfo_t(period, period, period);
-}
-*/
-
 bool HDEEM::isAvailable()
 {
 #ifdef HAVE_HDEEM_H
