@@ -39,11 +39,11 @@ std::map<std::string, uint64_t> MSR::counters;
  * @note This function is defined as `static` and is only callable within this compilation unit.
  *       It dynamically expands to store additional MSR addresses when needed.
  */
-static std::vector<std::pair<uint32_t, uint32_t>> sapphireRapidsUncoreCounterMSR(
+static std::vector<std::pair<uint32_t, uint32_t>> intelTiledUncoreCounterMSR(
 	const std::vector<std::pair<uint32_t, uint32_t>>& msr_data = {})
 {
 	//TODO remove SPR from the method name
-	//TODO uint64_t
+
 	static std::vector<std::pair<uint32_t, uint32_t>> counterMsrs;
 
 	// If no parameters are passed, return the current list immediately
@@ -133,7 +133,7 @@ void MSR::init()
 			}
 		}
 		
-		auto msr_adresses = sapphireRapidsUncoreCounterMSR(msrCTRandOwnership); // store the found msr counter addresses.
+		auto msr_adresses = intelTiledUncoreCounterMSR(msrCTRandOwnership); // store the found msr counter addresses.
 		MERIC_INFO << "Uncore freq monitoring configured to: ";
 		for(auto addr : msrCTRandOwnership)
 		{
@@ -163,7 +163,7 @@ void MSR::close()
 #ifdef _INTEL_
 	if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 	{
-		auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter addresses.
+		auto msr_adresses = intelTiledUncoreCounterMSR(); // read the found msr counter addresses.
 		// to close sequence, never freeze the unit box, clear the control so it will stop.
 		for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 		{
@@ -201,7 +201,7 @@ void MSR::getCounterValues(std::map<std::string, uint64_t> &record)
 	{
 		if (MSR::cpu_arch >= CpuidSignatureValues::INTEL_06_8FH) // based on Sapphire Rapids microarchitecture or later
 		{
-			auto msr_adresses = sapphireRapidsUncoreCounterMSR(); // read the found msr counter addresses.
+			auto msr_adresses = intelTiledUncoreCounterMSR(); // read the found msr counter addresses.
 			if (i < msr_adresses.size() && msr_adresses[i].first != -1) // read msr if it is correctly set (available box) 
 			{
 				read_msr(Environment::mapCoresToSocket[i][0], msr_adresses[i].first, &val);
