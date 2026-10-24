@@ -57,11 +57,11 @@ all: plainTest samplesTest mpiTest basicTest sleepTest overhead blasTestInfo for
 plainTest: plain_test.cpp
 	$(CXX) -O0 -g plain_test.cpp $(LIBS) $(OPENMP) -o plainTest
 
-midlib_test: midlib_test.c
-	$(CC) -O0 -g  midlib_test.c -lmeric_ext $(LIBS) $(OPENMP) -lstdc++ -lm -o midlibTest
+mericext_test: mericext_test.c
+	$(CC) -O0 -g  mericext_test.c -lmeric_ext $(LIBS) $(OPENMP) -lstdc++ -lm -o mericextTest
 
-midlib_work_meric_test: midlib_work_meric_test.cpp
-	$(CXX) -O0 -g midlib_work_meric_test.cpp -lmeric $(LIBS) $(OPENMP) -o midlib_work_meric_test
+mericext_work_meric_test: mericext_work_meric_test.cpp
+	$(CXX) -O0 -g mericext_work_meric_test.cpp -lmeric $(LIBS) $(OPENMP) -o mericext_work_meric_test
 
 sleepTest: sleep_test.cpp
 	$(CXX) -O0 -g sleep_test.cpp -lmeric $(LIBS) -o sleepTest

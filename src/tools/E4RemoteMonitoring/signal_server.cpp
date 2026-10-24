@@ -35,13 +35,13 @@ static void runWorkloadLoop(std::atomic<bool>& sessionEnd, std::string sessionLa
 int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bool>& sessionEnd,bool& isMericInit) {
     const int serverFd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (serverFd < 0) {
-        std::cerr << "socket() failed: " << std::strerror(errno) << "\n";
+        std::cerr << "MERIC ERROR: socket() failed: " << std::strerror(errno) << "\n";
         return 1;
     }
 
     int opt = 1;
     if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0) {
-        std::cerr << "Warning: setsockopt(SO_REUSEADDR) failed: " << std::strerror(errno)
+        std::cerr << "MERIC WARNING: setsockopt(SO_REUSEADDR) failed: " << std::strerror(errno)
                   << "\n";
     }
 
@@ -52,18 +52,18 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
     addr.sin_port = htons(port);
 
     if (bind(serverFd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) != 0) {
-        std::cerr << "bind(0.0.0.0:" << port << ") failed: " << std::strerror(errno) << "\n";
+        std::cerr << "MERIC ERROR: bind(0.0.0.0:" << port << ") failed: " << std::strerror(errno) << "\n";
         ::close(serverFd);
         return 1;
     }
 
     if (listen(serverFd, 16) != 0) {
-        std::cerr << "listen() failed: " << std::strerror(errno) << "\n";
+        std::cerr << "MERIC ERROR: listen() failed: " << std::strerror(errno) << "\n";
         ::close(serverFd);
         return 1;
     }
 
-    std::cout << "Listening for START/STOP on port " << port << " (Ctrl+C to quit)\n";
+    MERIC_INFO << "Listening for START/STOP on port " << port << " (Ctrl+C to quit)\n";
 
     std::thread worker;
 
@@ -78,7 +78,7 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
                 }
                 continue;
             }
-            std::cerr << "accept() failed: " << std::strerror(errno) << "\n";
+            std::cerr << "MERIC ERROR: accept() failed: " << std::strerror(errno) << "\n";
             break;
         }
 
@@ -97,7 +97,7 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
                     }
                     continue;
                 }
-                std::cerr << "recv() failed: " << std::strerror(errno) << "\n";
+                std::cerr << "MERIC ERROR: recv() failed: " << std::strerror(errno) << "\n";
                 break;
             }
             if (payload.size() < 1024) {
@@ -116,20 +116,20 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
 
         if (cmd == "START") {
             if (tokens.size() < 2) {
-                std::cerr << "Invalid START message. Expected: START <computer> (got '" << msg
+                std::cerr << "MERIC ERROR: Invalid START message. Expected: START <computer> (got '" << msg
                           << "')\n";
                 continue;
             }
             const std::string computerName = tokens[1];
             if (computerName.empty()) {
-                std::cerr << "Invalid START message: missing computer name (got '" << msg << "')\n";
+                std::cerr << "MERIC ERROR: Invalid START message: missing computer name (got '" << msg << "')\n";
                 continue;
             }
             if (tokens.size() > 2) {
-                std::cout << "Warning: extra START tokens ignored (got '" << msg << "')\n";
+                std::cerr << "MERIC WARNING: extra START tokens ignored (got '" << msg << "')\n";
             }
             else 
-                std::cout << "Received START computer='" << computerName << "'\n";
+                MERIC_INFO << "Received START computer='" << computerName << "'\n";
             if (!worker.joinable()) {
                 sessionEnd.store(false);
                 if(!isMericInit) {
@@ -139,13 +139,13 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
                 }
                 worker = std::thread(runWorkloadLoop, std::ref(sessionEnd), computerName);
             } else {
-                std::cout << "Session already running; ignoring START\n";
+                MERIC_INFO << "Session already running; ignoring START\n";
             }
         } else if (cmd == "STOP") {
             if (tokens.size() >= 2) {
-                std::cout << "Received STOP computer='" << tokens[1] << "'\n";
+                MERIC_INFO << "Received STOP computer='" << tokens[1] << "'\n";
             } else {
-                std::cout << "Received STOP\n";
+                MERIC_INFO << "Received STOP\n";
             }
             if (worker.joinable()) {
                 sessionEnd.store(true);
@@ -153,14 +153,14 @@ int runSignalServer(uint16_t port, std::atomic<bool>& shouldStop, std::atomic<bo
                 sessionEnd.store(false);
             }
             if(sessionEnd.load()) {
-                std::cout << "Session complete\n";
+                MERIC_INFO << "Session complete\n";
                 if(isMericInit) {
                     isMericInit = false;
                     MERIC_Close();
                 }
             }
         } else {
-            std::cout << "Received unknown message: '" << msg << "'\n";
+            MERIC_INFO << "Received unknown message: '" << msg << "'\n";
         }
     }
 
