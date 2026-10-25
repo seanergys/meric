@@ -451,7 +451,7 @@ More examples of MERIC configuration files are in [test/config directory](https:
 	- When running an MPI application, MERIC aggregate the data from all the processes and stores the aggregated results. There are both average values and summary included in the output files.
 	- Exporting MERIC_AGGREGATE=0 turns off this behavior and MERIC will store the results for each node separately.
 
-* `export MERIC_COUNTERS=papi` or `perfevent` or `msr`
+* `export MERIC_COUNTERS=perfevent` or `msr` or `papi`
 	- MERIC reads selected hardware performance counters using PAPI or perfevent or msr.
 	- From the counters we also evaluate some ratios (e.g. CPU core and uncore frequency, computational and arithmetic intensity).
 	- To add a counter you want to measure it is necessary to follow the instructions in src/wrapper/counters.h.
@@ -463,7 +463,6 @@ More examples of MERIC configuration files are in [test/config directory](https:
 	- If the energy measurement system provides power samples, MERIC will store also the samples to the output directory. It will be located in directory `samples` in the directory of the static region.
 	- Available for HDEEM-S, RAPL, HWMON, and NVML.
 	- Available only in non-aggregate (MERIC_AGGREGATE=0) continual mode (such as HDEEM-S).
-	- WARNING: Output may become very big when measured regions run for a long time.
 
 * `export MERIC_SAMPLING_FREQUENCY=<sampling frequency in Hz>`
 	- If the energy measurement system provides power samples, MERIC will attempt to collect the samples at specified frequency.
