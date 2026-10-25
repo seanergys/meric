@@ -17,7 +17,7 @@ uint64_t ReservedMemoryManager::count_total_empty_slots_before(uint64_t page)
         if (i.first < page)
 			empty_slots += (reserved_memory_size - i.second) + ((i.first == 0) ? 1 : 0);
 	}
-    MERIC_INFO << "total empty slots :" << empty_slots << " before page-id :" << page << "\n";
+	MERIC_INFO << "total empty slots :" << empty_slots << " before page-id :" << page << "\n";
     return empty_slots;
 }
 

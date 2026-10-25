@@ -226,7 +226,8 @@ std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &
 				sensor.energy += valTmp;
 			}
 		}
-	}else
+	}
+	else
 	{
 		/*
 		 *firstBlade = std::numeric_limits<size_t>::max();

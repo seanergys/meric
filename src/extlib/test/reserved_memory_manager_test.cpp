@@ -63,9 +63,8 @@ TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsC
     EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 
 	size_t expected_reserved_memory_size = RESERVED_ELEMENT_SIZE * 2;
-	EXPECT_TRUE(energy_domains.use_reserved_memory)
-        << "use_reserved_memory boolean should be true.";
-    EXPECT_EQ(energy_domains.reserved_memory_size, expected_reserved_memory_size)
+	EXPECT_TRUE(energy_domains.use_reserved_memory) << "use_reserved_memory boolean should be true.";
+	EXPECT_EQ(energy_domains.reserved_memory_size, expected_reserved_memory_size)
         << "reserved_memory_size variable should be " << expected_reserved_memory_size
         << " (" << energy_domains.reserved_memory_size << " != " << expected_reserved_memory_size << ").";
 
@@ -123,7 +122,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
             {
 				FAIL() << domain_name << " energy domain exists but pointer to its reserved memory page 0 is NULL/nullptr.";
 				continue;
-            }
+			}
             EXPECT_NE(domain_memory_map->counter_name, nullptr)
                 << domain_name << " energy domain exists but counter_name pointer of its reserved memory page 0 is NULL/nullptr.";
             EXPECT_NE(domain_memory_map->counter_value, nullptr)
@@ -150,7 +149,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
 				<< expected_sizeof_energy_per_counter << " (" << domain_memory_map->sizeof_energy_per_counter << " != " << expected_sizeof_energy_per_counter
 				<< ").";
 		}
-    }
+	}
 
     extlib_close(&energy_domains);
 }
@@ -1117,7 +1116,7 @@ TEST(MemoryManagerTest, MultipleInitAndCloseHaveNoSideEffects)
 	EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0) << "Size of empty_page_ids container should be 0 after close.";
 
 	// make sure energy_domains is in reset state.
-    EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
+	EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
         << "All energy domains should be disabled after close.";
     for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
@@ -1139,7 +1138,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsRemovedWhenCondit
     ExtlibEnergy energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE * 2];
 	int n_pages = 2;
@@ -1198,7 +1197,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsRemovedWhenCondit
 	energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	n_ts = RESERVED_ELEMENT_SIZE * 2;
 	for (int i = 0; i < n_pages; i++)
@@ -1238,7 +1237,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsRemovedWhenCondit
 			EXPECT_EQ(ReservedMemoryManager::domain_memory_pool[domain_idx].count(2), 0)
 				<< "Reserved memory page 2 of " << domain_name << " energy domain should be removed.";
 		}
-    }
+	}
 	EXPECT_EQ(ReservedMemoryManager::metadata.size(), 2) << "Size of metadata container should be 2" << " after reserved memory page 2 has been removed.";
 	EXPECT_EQ(ReservedMemoryManager::metadata.count(2), 0)
 		<< "Container for energy timestamp metadata for reserved memory page 2 should be removed" << " after the page has been removed.";
@@ -1257,7 +1256,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPageOfNonZeroIndexIsNotRemovedWhenCon
     ExtlibEnergy energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE * 2];
 	int n_pages = 2;
@@ -1340,7 +1339,7 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
     ExtlibEnergy energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE * 2];
 	int n_pages = 2;
@@ -1389,7 +1388,7 @@ TEST(MemoryManagerTest, ShrinkToFitRemovesEmptyReservedMemoryPageOfNonZeroIndex)
 	energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	for (int i = 0; i < n_pages; i++)
 	{
@@ -1435,7 +1434,7 @@ TEST(MemoryManagerTest, EmptyReservedMemoryPage0IsNeverRemoved)
     ExtlibEnergy energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	ExtlibEnergyTimeStamp *ts_array[RESERVED_ELEMENT_SIZE * 2];
 	int n_ts = RESERVED_ELEMENT_SIZE * 2;
@@ -1496,7 +1495,7 @@ TEST(MemoryManagerTest, PrintEnergyTimestampPrintsEnergyTimeStamp)
     ExtlibEnergy energy_domains = {};
 	EXTLIB_ENERGY_USE_RESERVED_MEMORY(energy_domains, RESERVED_ELEMENT_SIZE);
 	enableAllEnergyDomains(energy_domains);
-    extlib_init(&energy_domains, true);
+	extlib_init(&energy_domains, true);
 
 	ExtlibEnergyTimeStamp *ts_array[2][RESERVED_ELEMENT_SIZE * 2];
 	int n_ts = RESERVED_ELEMENT_SIZE * 2;

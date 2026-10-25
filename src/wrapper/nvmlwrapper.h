@@ -101,6 +101,6 @@ protected:
 	static std::chrono::nanoseconds s_currentSamplePeriod;
 	static std::atomic<bool> s_sampleStoreEnabled;
 	static AsyncSampler<CounterRecord_t> s_asyncSampler;
-    };
+};
 }
 #endif /* SRC_WRAPPER_NVMLWRAPPER_H_ */

@@ -132,7 +132,6 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 #endif
 }
 
-
 #else
 /**
  * Parse /proc/cpuinfo for the processor name, if not available, than creates internal name to recognise the hardware
@@ -1692,7 +1691,7 @@ void Environment::readSystemDefaultSettings()
 
 			defaultSettings.maxUncoreFreq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000000;
 			defaultSettings.minUncoreFreq = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
-	#elif defined HAVE_X86_ADAPT_H
+#elif defined HAVE_X86_ADAPT_H
 			int fd = x86_adapt_get_device_ro(X86_ADAPT_DIE, 0);
 			int adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO");
 			uint64_t setting;
@@ -1701,11 +1700,11 @@ void Environment::readSystemDefaultSettings()
 			adaptHandlerUncore = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MIN_RATIO");
 			x86_adapt_get_setting(fd, adaptHandlerUncore, &setting);
 			defaultSettings.minUncoreFreq = setting * 100000000;
-	#elif defined HAVE_GEOPM_H
+#elif defined HAVE_GEOPM_H
 			defaultSettings.minUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), 0);
 			
 			defaultSettings.maxUncoreFreq = pio.read_signal("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.signal_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), 0);
-	#endif
+#endif
 		}
 #elif defined __arm__	//Jetson memory frequencies
 		frequencyBounderyFile.open ("/sys/kernel/debug/clock/emc/max");
@@ -2534,17 +2533,17 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 	}
 
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
-	#ifdef HAVE_MSR_CORE_H
+#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
-	#else
+#else
 	MERIC_INFO << "; using MSR_SAFE\n";
-	#endif
+#endif
 	uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((minFreq/100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + maxFreq/100000000;
 	for (int die=socket_min; die<=socket_max; die++)
 	{
 		write_msr(mapCoresToSocket[die][0], MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
 	}
-	#elif defined HAVE_X86_ADAPT_H
+#elif defined HAVE_X86_ADAPT_H
 	MERIC_INFO << "; using X86ADAPT\n";
 	if (x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_UNCORE_MAX_RATIO") < 0)
 	{
@@ -2578,14 +2577,14 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		if (x86_adapt_put_device(X86_ADAPT_DIE, die))
 			std::cerr << "X86ADAPT ERROR: error while closing file descriptor\n";
 	}
-	#elif defined HAVE_GEOPM_H
+#elif defined HAVE_GEOPM_H
 	MERIC_INFO << "; using GEOPM\n";
 	for (int die=socket_min; die<=socket_max; die++)
 	{
 		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO"), die, minFreq);
 		pio.write_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", pio.control_domain_type("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO"), die, maxFreq);
 	}
-	#else
+#else
 	// SYS_JETSON
 	std::ofstream uncoreFile;
 	uncoreFile.open ("/sys/kernel/debug/clock/override.emc/rate");
@@ -2598,7 +2597,7 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		MERIC_INFO << "MERIC set uncore frequency to: "<< maxFreq << std::endl;
 	else
 		std::cerr << "MERIC ERROR: failed to write to /sys/kernel/debug/clock/override.emc/rate\n";
-	#endif
+#endif
 	clock_gettime(CLOCK_REALTIME, &stop_time);
 	MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
 #endif

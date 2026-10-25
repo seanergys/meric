@@ -124,11 +124,11 @@ void PERFEVENT::init(bool detailed)
 #endif
 
 	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
-	#ifdef _AMD_
+#ifdef _AMD_
 	int L3CacheIdxLength = log10(PERFEVENT::L3_CACHES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
-	#elif defined _INTEL_
+#elif defined _INTEL_
 	int IMCidxLength = log10(PERFEVENT::IMCs_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
-	#endif
+#endif
 	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 
 	//Initialization of per-core monitoring of CPU cycles and CPU instructions
@@ -149,7 +149,7 @@ void PERFEVENT::init(bool detailed)
 		}
 	}
 
-	#ifdef _AMD_
+#ifdef _AMD_
 	// Initialization of monitoring of supported AMD performance counters
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
@@ -183,8 +183,8 @@ void PERFEVENT::init(bool detailed)
 			countersFd[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES + suffixL3CacheIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::AMD_CPU_L3_MISSES], core);
 		}
 	}
-	
-	#elif defined _INTEL_
+
+#elif defined _INTEL_
 	// Initialization of monitoring of supported Intel performance counters
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
@@ -245,7 +245,7 @@ void PERFEVENT::init(bool detailed)
 		countersFd[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::INTEL_CPU_UNCORE_CYCLES], core);
 	}
 
-	#elif defined _ARM_
+#elif defined _ARM_
 	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
 		//(per core)
@@ -300,7 +300,7 @@ void PERFEVENT::init(bool detailed)
 			countersFd[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE + suffixSocketIdx] = openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE], core);
 		}
 	}
-	#endif
+#endif
 
 	start();
 }
@@ -672,7 +672,7 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 		counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_READ].reserve(Environment::SOCKETS_PER_NODE);
 		counterValues[PERFEVENT_COUNTERS::NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE].reserve(Environment::SOCKETS_PER_NODE);
 	}
-	#endif
+#endif
 
 	for(std::map<std::string, std::vector<unsigned long long int>>::iterator iterator = counterValues.begin(); iterator != counterValues.end(); iterator++)
 	{

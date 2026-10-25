@@ -52,29 +52,29 @@ public:
 			}
 		}
 		MERIC_INFO << "region '" << region << "' started\n";
-		}
+	}
 
-		virtual double stop(const std::string region = "")
+	virtual double stop(const std::string region = "")
+	{
+		// stop should be in opposite order as start
+		for (int i = _storeList.size() - 1; i >= 0; i--)
 		{
-			// stop should be in opposite order as start
-			for (int i = _storeList.size() - 1; i >= 0; i--)
+			if (_storeList[i]->getMPIWrite())
 			{
-				if (_storeList[i]->getMPIWrite())
-				{
-					_storeList[i]->addEnd(_stack.back());
-				}
+				_storeList[i]->addEnd(_stack.back());
 			}
-			MERIC_INFO << "region '" << getRegionName(_stack.back()) << "' stopped\n";
-			if (_storeList.size() && _storeList[0]->getMPIWrite())
-			{
-				// infostore is always the first store in the list
-				// only the infostore returns the region runtime, other return 0.0
-				return _storeList[0]->getRegionDuration();
-			}
-			else
-			{
-				return 0.0;
-			}
+		}
+		MERIC_INFO << "region '" << getRegionName(_stack.back()) << "' stopped\n";
+		if (_storeList.size() && _storeList[0]->getMPIWrite())
+		{
+			// infostore is always the first store in the list
+			// only the infostore returns the region runtime, other return 0.0
+			return _storeList[0]->getRegionDuration();
+		}
+		else
+		{
+			return 0.0;
+		}
 		}
 
 		virtual void startIgnore()

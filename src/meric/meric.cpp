@@ -383,7 +383,7 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 #endif
-#if !defined (__aarch64__) && !defined(HAVE_LINUX_PERF_EVENT_H)
+#if !defined(__aarch64__) && !defined(HAVE_LINUX_PERF_EVENT_H)
 				if (modeString[token] == MODE_A64FX)
 				{
 					std::cerr << "MERIC WARNING: A64FX power monitoring not available\n";

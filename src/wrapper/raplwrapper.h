@@ -126,7 +126,7 @@ public:
 	static void init(bool detailed = false, double sampleFreqHz = 0.0);
 	static void close();
 
-    static void getCounterValues(CounterRecord_t &record);
+	static void getCounterValues(CounterRecord_t &record);
     static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
         double runtime, int &cumulative, std::string counter, std::string regionName = "");
 
@@ -146,13 +146,13 @@ public:
 
 	static void start(timespec &time, bool storeSamples = false, double sampleFreqHz = 0.0);
 	static void stop(timespec &time);
-    static void initSamplers();
+	static void initSamplers();
     static void closeSamplers();
     static int getSamples();
     static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
 	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
 	static void setTimeAdjustment(timespec &time) {}
-    static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
+	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
     static void deleteSamples() {}
 	static size_t getSamplerCount() { return s_samplerById.size(); }
 	static std::string getSamplerLabel(size_t id) { return s_samplerById[id]->pCounterDesc->fullName; }
@@ -161,7 +161,7 @@ public:
 
 	static bool isAvailable();
 
-    // RAPL Properties
+	// RAPL Properties
     static std::string PCKG_POWER_LIMIT;
     static std::string RAM_POWER_LIMIT;
     static std::string PLATFORM_POWER_LIMIT;
@@ -190,8 +190,8 @@ protected:
 	static std::chrono::nanoseconds s_defaultSamplePeriod;
 	static std::chrono::nanoseconds s_minSamplePeriod;
 	static std::chrono::nanoseconds s_currentSamplePeriod;
-	static std::atomic<bool>             s_sampleStoreEnabled;
-    static AsyncSampler<CounterRecord_t> s_asyncSampler;
+	static std::atomic<bool> s_sampleStoreEnabled;
+	static AsyncSampler<CounterRecord_t> s_asyncSampler;
 };
 
 }

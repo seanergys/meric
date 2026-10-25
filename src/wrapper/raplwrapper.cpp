@@ -51,13 +51,13 @@ AsyncSampler<RAPL::Base::CounterRecord_t> RAPL::s_asyncSampler;
 
 template <typename T> double SampleEnergyToPower(const T &sample, uint64_t rangeMax, const T *pPrevSample)
 {
-	if(!pPrevSample)
+	if (!pPrevSample)
 	{
 		return 0.0;
 	}
 
 	uint64_t value = (sample.value < pPrevSample->value) ? ((rangeMax - pPrevSample->value) + sample.value) : (sample.value - pPrevSample->value);
-    double dt = 1.0f / (double(sample.timestamp - pPrevSample->timestamp) * 1.0e-9);
+	double dt = 1.0f / (double(sample.timestamp - pPrevSample->timestamp) * 1.0e-9);
 
     return double(value) * dt;
 };
@@ -72,7 +72,7 @@ void RAPL::init(bool detailed, double sampleFreqHz)
 	}
 
 	getImpl()->init(detailed);
-    initSamplers();
+	initSamplers();
 }
 
 void RAPL::close()
@@ -169,12 +169,12 @@ void RAPL::initSamplers()
 		// vrSensorLabel.push_back("");
 		// s_samplerById.push_back(nullptr);
 
-		for(Base::CounterDesc_t *pCounterDesc: counters)
-        {
+		for (Base::CounterDesc_t *pCounterDesc : counters)
+		{
 			// vrSensorLabel.push_back(pCounterDesc->fullName);
 
 			auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->fullName, SamplerDesc_t()));
-            res.first->second.pCounterDesc  = pCounterDesc;
+			res.first->second.pCounterDesc  = pCounterDesc;
             res.first->second.lastValue     = 0;
             res.first->second.overflowCount = 0;
 
@@ -257,8 +257,8 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 	const uint64_t intervalStart = uint64_t(startTime * 1.0e9);
 	const uint64_t intervalEnd = intervalStart + uint64_t(duration * 1.0e9);
 
-	for(size_t i = 0; i < s_samplerById.size(); ++i)
-    {
+	for (size_t i = 0; i < s_samplerById.size(); ++i)
+	{
         if(!s_samplerById[i])
         {
             continue;
@@ -280,8 +280,8 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 		}
 
 		auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart,
-            [](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
-        auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
+										[](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
+		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
             [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
 
         for(auto it = startIt; it != endIt; ++it)
@@ -305,7 +305,7 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 		}
 	}
 
-    return "";
+	return "";
 }
 
 class RAPL_NONE : public RAPL::Base
@@ -323,7 +323,7 @@ public:
 	virtual std::string getSourceLabel() { return "RAPL"; }
 	virtual std::string getCounterLabel(const std::string counter) { return ""; }
 
-    virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop, 
+	virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop,
         double runtime, std::map<std::string, double> &ratios) {}
 
     virtual void initCountersUnits() {}
@@ -532,8 +532,8 @@ void RAPL_MSR::initCountersUnits()
 		return; // Don't reinitialize units
 	}
 
-	RAPL::PCKG_POWER_LIMIT       = RAPL_PCKG_POWER_LIMIT;
-    RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
+	RAPL::PCKG_POWER_LIMIT = RAPL_PCKG_POWER_LIMIT;
+	RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
     RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
     RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
 
@@ -545,8 +545,8 @@ void RAPL_MSR::initCountersUnits()
 		return;
 	}
 
-	units[RAPL_PCKG_POWER_LIMIT]     = 1.0 / pow(2, (MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
-    units[RAPL_RAM_POWER_LIMIT]      = units[RAPL_PCKG_POWER_LIMIT];
+	units[RAPL_PCKG_POWER_LIMIT] = 1.0 / pow(2, (MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
+	units[RAPL_RAM_POWER_LIMIT]      = units[RAPL_PCKG_POWER_LIMIT];
     units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 
     units[RAPL_POWER_LIMIT_TIMEWINDOW]   = 1.0 / pow(2, ((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
@@ -626,7 +626,7 @@ double RAPL_MSR::getCounterUnit(const std::string &name)
 		}
 	}
 
-    return -1.0;
+	return -1.0;
 }
 
 #endif // RAPL_MSR
@@ -762,9 +762,8 @@ void RAPL_GEOPM::getCounterValues(CounterRecord_t &record)
 {
     for(const auto &desc: counterDesc)
     {
-        uint64_t value = geopm_signal_to_field(pio.read_signal(desc.second.name,
-            pio.signal_domain_type(desc.second.name), desc.second.cpuid));
-        record[desc.first] = CounterValue_t(value & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+		uint64_t value = geopm_signal_to_field(pio.read_signal(desc.second.name, pio.signal_domain_type(desc.second.name), desc.second.cpuid));
+		record[desc.first] = CounterValue_t(value & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
     }
 }
 
@@ -831,8 +830,8 @@ void RAPL_GEOPM::initCountersUnits()
 		return; // Don't reinitialize units
 	}
 
-	RAPL::PCKG_POWER_LIMIT       = RAPL_PCKG_POWER_LIMIT;
-    RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
+	RAPL::PCKG_POWER_LIMIT = RAPL_PCKG_POWER_LIMIT;
+	RAPL::RAM_POWER_LIMIT        = RAPL_RAM_POWER_LIMIT;
     RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
     RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
 
@@ -844,8 +843,8 @@ void RAPL_GEOPM::initCountersUnits()
 		return;
 	}
 
-	units[RAPL_PCKG_POWER_LIMIT]     = 1.0 / pow(2, (MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
-    units[RAPL_RAM_POWER_LIMIT]      = units[RAPL_PCKG_POWER_LIMIT];
+	units[RAPL_PCKG_POWER_LIMIT] = 1.0 / pow(2, (MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_power_mask));
+	units[RAPL_RAM_POWER_LIMIT]      = units[RAPL_PCKG_POWER_LIMIT];
     units[RAPL_PLATFORM_POWER_LIMIT] = units[RAPL_PCKG_POWER_LIMIT];
 
     units[RAPL_POWER_LIMIT_TIMEWINDOW]   = 1.0 / pow(2, ((MSR_RAPL_POWER_UNIT_bits & MSR_RAPL_POWER_UNIT_time_mask) >> MSR_RAPL_POWER_UNIT_time_shift));
@@ -894,10 +893,9 @@ RAPL_GEOPM::RawCounterValue_t RAPL_GEOPM::getCounterValue(Base::CounterDesc_t *p
 		return 0;
 	}
 
-	value = geopm_signal_to_field(pio.read_signal(desc.second.name,
-        pio.signal_domain_type(desc.second.name), desc.second.cpuid));
+	value = geopm_signal_to_field(pio.read_signal(desc.second.name, pio.signal_domain_type(desc.second.name), desc.second.cpuid));
 
-    return (value & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
+	return (value & MSR_ANYDOMAIN_ENERGY_STATUS_mask);
 }
 
 bool RAPL_GEOPM::isAvailable()
@@ -924,7 +922,7 @@ double RAPL_GEOPM::getCounterUnit(const std::string &name)
 		}
 	}
 
-    return -1.0;
+	return -1.0;
 }
 
 #endif // RAPL_GEOPM
@@ -1243,7 +1241,7 @@ protected:
 
 		int open(uint32_t type, uint64_t config, int cpu)
 		{
-            perf_event_attr event_attrib;
+			perf_event_attr event_attrib;
             std::memset(&event_attrib, 0, sizeof(perf_event_attr));
 
             event_attrib.type        = type;
@@ -1259,7 +1257,7 @@ protected:
 			return (fd >= 0) ? 0 : errno;
 		}
 
-        void close()
+		void close()
         {
             if(fd < 0)
             {
@@ -1329,9 +1327,9 @@ void RAPL_PERF_EVENT::init(bool detailed)
 			counterDesc.erase(res.first);
 
 			return false;
-        }
+		}
 
-        res.first->second.unit         = 1.0 / double(uint64_t(1) << 32);
+		res.first->second.unit         = 1.0 / double(uint64_t(1) << 32);
         res.first->second.label        = fullLabel;
         res.first->second.fullName     = fullName;
         res.first->second.rangeMax     = std::numeric_limits<uint64_t>::max();
@@ -1345,8 +1343,8 @@ void RAPL_PERF_EVENT::init(bool detailed)
 
 		if (def.names.size() == 0)
 		{
-            return true;
-        }
+			return true;
+		}
 
 		bool found = false;
 
@@ -1398,8 +1396,8 @@ void RAPL_PERF_EVENT::init(bool detailed)
 			continue;
 		}
 
-		switch(def.domain)
-        {
+		switch (def.domain)
+		{
             case CounterDef_t::DOMAIN_PER_SOCKET:
                 for(int i = 0; i < Environment::SOCKETS_PER_NODE; ++i)
                 {

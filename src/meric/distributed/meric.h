@@ -177,7 +177,7 @@ public:
 			return 0.0;
 		}
 
-#pragma omp master	//only master thread is allowed to work with the _stack
+#pragma omp master // only master thread is allowed to work with the _stack
 		{
 			if (!_stack.size() || stopRegionName != getRegionName(_stack.back()))
 			{

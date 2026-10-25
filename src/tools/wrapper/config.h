@@ -255,7 +255,7 @@ struct CFG_algorithm : public CFGbase {
 #elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 		value(meric::MODE_DAVIDE)
 #else // just time measurement
-		value(meric::MODE_TIME)
+			  value(meric::MODE_TIME)
 #endif
 		{};
 		void setValue(std::string s)
