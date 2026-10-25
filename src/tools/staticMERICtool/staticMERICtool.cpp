@@ -1,21 +1,21 @@
-#include "../../wrapper/environmentwrapper.h"
-#include "../../wrapper/raplwrapper.h"
-#include "../../wrapper/nvmlwrapper.h"
-#include "../../wrapper/a64fxwrapper.h"
-#include "../../wrapper/hwmonwrapper.h"
-#include "../../wrapper/rocmwrapper.h"
-#include "../../wrapper/e4wrapper.h"
-#include "../../basis/utils.h"
 #include "../../basis/sysfsutils.h"
-#include <sys/wait.h>
+#include "../../basis/utils.h"
+#include "../../wrapper/a64fxwrapper.h"
+#include "../../wrapper/e4wrapper.h"
+#include "../../wrapper/environmentwrapper.h"
+#include "../../wrapper/hwmonwrapper.h"
+#include "../../wrapper/nvmlwrapper.h"
+#include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/rocmwrapper.h"
+#include <csignal>
+#include <cstring>
+#include <errno.h>
+#include <iomanip>
+#include <limits>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
-#include <errno.h>
-#include <limits>
-#include <csignal>
-#include <iomanip>
-#include <cstring>
 
 using namespace meric;
 
@@ -211,12 +211,10 @@ struct E4_S
 		started = false;
 	}
 
-	static void getCounterValues(std::map<std::string, unsigned long long int> &record)
-	{
-		E4::getCounterValues(record);
-	}
+	static void getCounterValues(std::map<std::string, unsigned long long int> &record) { E4::getCounterValues(record); }
 
-	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter, std::string regionName = "")
+	static double getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter,
+								 std::string regionName = "")
 	{
 		return E4::getResultValue(startValue, stopValue, runtime, cumulative, counter, regionName);
 	}
@@ -229,8 +227,7 @@ struct E4_S
 bool E4_S::started = false;
 std::string E4_S::nodeLabel;
 
-template <>
-struct EnergyRecords<E4_S, unsigned long long int>
+template <> struct EnergyRecords<E4_S, unsigned long long int>
 {
 	static std::vector<std::map<std::string, unsigned long long int>> recordEnergy;
 	static std::vector<double> recordTime;
@@ -258,9 +255,8 @@ struct EnergyRecords<E4_S, unsigned long long int>
 			for (auto &kv : record)
 			{
 				int cumulative = 0;
-				double delta = E4_S::getResultValue(
-					recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first],
-					recordTime[i - 1] - recordTime[i], cumulative, kv.first);
+				double delta =
+					E4_S::getResultValue(recordEnergy[i - 1][kv.first], recordEnergy[i][kv.first], recordTime[i - 1] - recordTime[i], cumulative, kv.first);
 				record[kv.first] += delta;
 				if (cumulative > 0)
 				{
@@ -281,7 +277,8 @@ struct EnergyRecords<E4_S, unsigned long long int>
 			{
 				std::cout << std::endl
 						  << std::fixed << std::setprecision(3) << E4_S::getSourceLabel() << " " << E4_S::getSummaryCounterName() << " = " << summary << "\n"
-						  << std::fixed << std::setprecision(3) << E4_S::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0) << "\n\n";
+						  << std::fixed << std::setprecision(3) << E4_S::getSourceLabel() << " " << "Energy consumption [Wh] = " << (summary / 3600.0)
+						  << "\n\n";
 			}
 		}
 		else
@@ -310,7 +307,7 @@ void printHelp()
 			  << "\t mericStatic [mericStatic parameters] -- stop: Sends SIGTERM signal to stop mericStatic commands.\n"
 			  << "\t mericStatic [mericStatic parameters] -- eval: Reads all dump files and aggregates total energy consumption.\n"
 			  << "\t mericStatic parameters:\n"
-		      << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON, A64FX, or PDU\n"
+			  << "\t-e = comma separated list of energy measurement systems: RAPL, NVML, ROCM, HWMON, A64FX, or PDU\n"
 			  << "\t-i = id of the execution. It is used to seperate measurements. if not specified by default 0.\n"
 			  << "\t-c = CPU core frequency [Hz]\n"	  //, specify value with units [GHz, MHz, kHz or default Hz]\n"
 			  << "\t-u = CPU uncore frequency [Hz]\n" //, specify value with units [GHz, MHz, kHz or default Hz]\n"
@@ -736,11 +733,11 @@ int main(int argc, char **argv)
 			}
 			else if (token == "PDU")
 			{
-				#ifdef HAVE_E4_PDU
-					E4_S::nodeLabel = mutils::getHostnameShort();
-					measurements.push_back(&measureEnergy<E4_S, unsigned long long int>);
-					prints.push_back(EnergyRecords<E4_S, unsigned long long int>::printValues);
-				#endif
+#ifdef HAVE_E4_PDU
+				E4_S::nodeLabel = mutils::getHostnameShort();
+				measurements.push_back(&measureEnergy<E4_S, unsigned long long int>);
+				prints.push_back(EnergyRecords<E4_S, unsigned long long int>::printValues);
+#endif
 			}
 			else
 			{
@@ -968,12 +965,8 @@ int main(int argc, char **argv)
 		std::string prefix = "mericStatic_" + std::to_string(measurement_id);
 		std::vector<std::string> files = listMatchingFiles(prefix, outputDirectory);
 		std::map<std::string, double> totalEnergy = {
-			{"RAPL", 0.0},
-			{"NVML", 0.0},
-			{"A64FX", 0.0},
-			{"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
-			{"PDU", 0.0},
-			{"ROCM", 0.0},
+			{"RAPL", 0.0}, {"NVML", 0.0}, {"A64FX", 0.0}, {"HWMON", 0.0}, // hwmon-s and hwmon-c are merged into HWMON since only one can be active.
+			{"PDU", 0.0},  {"ROCM", 0.0},
 		};
 		double maxRuntime = 0.0;
 		for (const auto &filepath : files)
@@ -1049,12 +1042,7 @@ std::map<std::string, double> extractEnergyConsumption(const std::string &filepa
 
 	std::string line;
 	std::map<std::string, double> energyValues = {
-		{"RAPL", 0.0},
-		{"NVML", 0.0},
-		{"A64FX", 0.0},
-		{"HWMON", 0.0},
-		{"PDU", 0.0},
-		{"ROCM", 0.0},
+		{"RAPL", 0.0}, {"NVML", 0.0}, {"A64FX", 0.0}, {"HWMON", 0.0}, {"PDU", 0.0}, {"ROCM", 0.0},
 	};
 
 	std::regex pattern(R"((RAPL|NVML|A64FX|HWMON|PDU|ROCM)\s+Energy consumption\s+\[J\]\s+=\s+([0-9.]+))");

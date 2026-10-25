@@ -2,16 +2,16 @@
 #include <time.h>
 #include <climits>
 
-#include "countersstore.h"
-#include "../wrapper/perfeventwrapper.h"
-#include "../wrapper/papiwrapper.h"
-#include "../wrapper/msrcounterswrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/nvmlwrapper.h"
-#include "../wrapper/rocmwrapper.h"
-#include "../wrapper/occwrapper.h"
 #include "../wrapper/a64fxwrapper.h"
 #include "../wrapper/e4wrapper.h"
+#include "../wrapper/msrcounterswrapper.h"
+#include "../wrapper/nvmlwrapper.h"
+#include "../wrapper/occwrapper.h"
+#include "../wrapper/papiwrapper.h"
+#include "../wrapper/perfeventwrapper.h"
+#include "../wrapper/raplwrapper.h"
+#include "../wrapper/rocmwrapper.h"
+#include "countersstore.h"
 
 #ifdef HAVE_MPI_H
 #include <mpi.h>
@@ -115,7 +115,7 @@ template class meric::CountersStore <RAPL, RAPL::CounterValue_t, double>;
 template class meric::CountersStore <HWMON, HWMON::CounterValue_t, double>;
 template class meric::CountersStore <HDEEM, double, double>;
 template class meric::CountersStore <NVML, unsigned long long, double>;
-template class meric::CountersStore <E4, unsigned long long, double>;
+template class meric::CountersStore<E4, unsigned long long, double>;
 template class meric::CountersStore <ROCM, uint64_t, double>;
 template class meric::CountersStore <OCC, uint64_t, uint64_t>;
 template class meric::CountersStore <A64FX, unsigned long long int, double>;

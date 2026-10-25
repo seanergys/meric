@@ -2,9 +2,9 @@
 #ifndef SRC_WRAPPER_DAVIDEWRAPPER_H_
 #define SRC_WRAPPER_DAVIDEWRAPPER_H_
 
+#include "../basis/json.h"
 #include "../basis/spline.h"
 #include "../basis/utils.h"
-#include "../basis/json.h"
 #include "basewrapper.h"
 #include <iostream>
 #include <unistd.h>
@@ -23,7 +23,8 @@
 
 namespace meric {
 
-class DAVIDE : public BaseWrapper {
+class DAVIDE : public BaseWrapper
+{
 
 public:
 
@@ -60,21 +61,18 @@ public:
 
 	static int getSamples() { return 0; };
 	static void init() {};
-	static std::string getData(double startTime, double duration, SamplerRecord_t &record)
-	{
-		return "";
-	}
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record) { return ""; }
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples) {};
 	#endif
 
 	static size_t getSamplerCount() { return PROBE_NUMBER; }
-    static std::string getSamplerLabel(size_t id)
-	{ 
-		if(id > getSamplerCount())
+	static std::string getSamplerLabel(size_t id)
+	{
+		if (id > getSamplerCount())
 		{
-            return "";
-		}		
-		return vrSensorLabel[id]; 
+			return "";
+		}
+		return vrSensorLabel[id];
 	}
 
 	static void getSamplePeriodInfo(SamplePeriodInfo_t &info);

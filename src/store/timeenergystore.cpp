@@ -36,12 +36,12 @@ void TimeEnergyStore::fillRegionStats(DebugRegionStats &stats, size_t iStarts, s
 	stats.mericDuration = mutils::timeToDouble(_records[iEnd].clockTime - _records[iStarts].clockTime);
 	msg = HDEEM::getData(mutils::timeToDouble(_records[iStarts].clockTime - _start), stats.mericDuration, samplerRecord);
 
-	for(size_t i = 0; i < samplerRecord.size(); ++i)
+	for (size_t i = 0; i < samplerRecord.size(); ++i)
 	{
 		const auto &sampler = samplerRecord[i];
 
 		stats.energyStatsStructure[i] = (_records[iEnd].energy[sampler.id] - _records[iStarts].energy[sampler.id]);
-		if(sampler.last <= 0 || sampler.last <= sampler.first)
+		if (sampler.last <= 0 || sampler.last <= sampler.first)
 		{
 			stats.energy[i] = 0.0;
 			continue;
@@ -85,9 +85,9 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		}
 	}
 
-	for(const auto &sampler: samplerRecord)
+	for (const auto &sampler : samplerRecord)
 	{
-		if(printSamples && staticRegion)
+		if (printSamples && staticRegion)
 		{
 			samplesStream << "# SAMPLES - " << HDEEM::getSourceLabel() << " (" << sampler.name << ") power [W]:\n";
 			std::vector<double> samples;
@@ -97,21 +97,23 @@ void TimeEnergyStore::saveInterval(std::ofstream &ss, std::vector<size_t> &iStar
 		}
 		avgWatts = sampler.energy / (sampler.last - sampler.first);
 		energyConsumption = duration * avgWatts;
-		
-		if (_records[iEnd].energy[sampler.id+1] - _records[iStarts.back()].energy[sampler.id+1] <= 0)
+
+		if (_records[iEnd].energy[sampler.id + 1] - _records[iStarts.back()].energy[sampler.id + 1] <= 0)
 		{
-			std::cerr << "MERIC WARNING: No energy consumption, probably too short ("<<_records[iEnd].clockTime - _records[iStarts.back()].clockTime<<"s) detailed region "<< _name[_records[iStarts.back()].region]<<" - " << sampler.name << "\n";
+			std::cerr << "MERIC WARNING: No energy consumption, probably too short (" << _records[iEnd].clockTime - _records[iStarts.back()].clockTime
+					  << "s) detailed region " << _name[_records[iStarts.back()].region] << " - " << sampler.name << "\n";
 		}
-		
+
 		ss << "# COUNTERS - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
-			<< HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[sampler.id + 1] - _records[iStarts.back()].energy[sampler.id + 1] << std::endl
-			<< "# SAMPLES - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
-			<< HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
-			<< "MAX power [W]" << "," << sampler.max << std::endl
-			<< "MIN power [W]" << "," << sampler.min << std::endl
-			<< "AVG power [W]" << "," << avgWatts << std::endl
-			<< "ID of first sample" << "," << sampler.first << std::endl
-			<< "ID of last sample" << "," << (sampler.last - 1) << std::endl;
+		   << HDEEM::SUM_ENERGY_LABEL << " - counters" << "," << _records[iEnd].energy[sampler.id + 1] - _records[iStarts.back()].energy[sampler.id + 1]
+		   << std::endl
+		   << "# SAMPLES - " << HDEEM::getSourceLabel() << " (" << sampler.name << "):\n"
+		   << HDEEM::SUM_ENERGY_LABEL << " - samples" << "," << energyConsumption << std::endl
+		   << "MAX power [W]" << "," << sampler.max << std::endl
+		   << "MIN power [W]" << "," << sampler.min << std::endl
+		   << "AVG power [W]" << "," << avgWatts << std::endl
+		   << "ID of first sample" << "," << sampler.first << std::endl
+		   << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
 	}
 }
 

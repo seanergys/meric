@@ -46,7 +46,7 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
-		if(Meric::SAMPLES)
+		if (Meric::SAMPLES)
 		{
 			_storeList.push_back(new SamplesStore<RAPL>(Meric::SAMPLES));
 		}
@@ -63,7 +63,7 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_NVML) != MONITORS.end())
 	{
-		if(Meric::SAMPLES)
+		if (Meric::SAMPLES)
 		{
 			_storeList.push_back(new SamplesStore<NVML>(Meric::SAMPLES));
 		}
@@ -73,14 +73,13 @@ SharedMeric::SharedMeric()
 		}
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
-	{ 
-		#ifdef HAVE_E4_PDU // needed to distinct future pdus
-			if(Meric::SAMPLES)
-				_storeList.push_back(new SamplesStore<E4>(Meric::SAMPLES));
-			else
-				_storeList.push_back(new CountersStore<E4, unsigned long long, double>());
-		#endif
-
+	{
+#ifdef HAVE_E4_PDU // needed to distinct future pdus
+		if (Meric::SAMPLES)
+			_storeList.push_back(new SamplesStore<E4>(Meric::SAMPLES));
+		else
+			_storeList.push_back(new CountersStore<E4, unsigned long long, double>());
+#endif
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_ROCM) != MONITORS.end())
 	{
@@ -89,7 +88,7 @@ SharedMeric::SharedMeric()
 
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_HWMON) != MONITORS.end())
 	{
-		if(Meric::SAMPLES)
+		if (Meric::SAMPLES)
 		{
 			_storeList.push_back(new SamplesStore<HWMON>(Meric::SAMPLES));
 		}
@@ -115,8 +114,7 @@ SharedMeric::SharedMeric()
 	{
 		_storeList.push_back(new CountersStore<A64FX, unsigned long long int, double>());
 	}
-	
-	
+
 	if (Meric::COUNTERS != "none")
 	{
 		if (Meric::COUNTERS == "perfevent")
@@ -146,7 +144,7 @@ SharedMeric::SharedMeric()
 	{
 		Environment::init(SYS_OTHER, defaultParameter, 0);
 	}
-	
+
 	currentState.socket.assign(Environment::SOCKETS_PER_NODE, defaultParameter);
 
 	m_pAffinityMap.reset(new meric::cpu_affinity_map::CPUAffinityMapShared_t<uint64_t>(
@@ -188,10 +186,10 @@ SharedMeric::SharedMeric()
 			A64FX::init();
 			break;
 		case MODE_PDU:
-			#ifdef HAVE_E4_PDU
-				E4::init(Meric::MERIC_E4MACHINE_TO_MONITOR, Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
-				E4::start(_startTime, Meric::SAMPLES); // TODO: Pass Meric::SAMPLES to specify requested sampling frequency
-			#endif
+#ifdef HAVE_E4_PDU
+			E4::init(Meric::MERIC_E4MACHINE_TO_MONITOR, Meric::DETAILED, Meric::SAMPLING_FREQUENCY);
+			E4::start(_startTime, Meric::SAMPLES); // TODO: Pass Meric::SAMPLES to specify requested sampling frequency
+#endif
 			break;
 		case MODE_NVML:
 			NVML::start(_startTime, Meric::SAMPLES, Meric::SAMPLING_FREQUENCY);
@@ -235,9 +233,9 @@ SharedMeric::~SharedMeric()
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_PDU) != MONITORS.end())
 	{
-		#ifdef HAVE_E4_PDU
-			E4::close();
-		#endif
+#ifdef HAVE_E4_PDU
+		E4::close();
+#endif
 	}
 	if (std::find(MONITORS.begin(), MONITORS.end(), MODE_RAPL) != MONITORS.end())
 	{
@@ -253,7 +251,7 @@ SharedMeric::~SharedMeric()
 	{
 		HWMON::close();
 	}
-	
+
 	for(unsigned int i=0;i<_storeList.size(); i++)
 	{
 		delete _storeList[i];

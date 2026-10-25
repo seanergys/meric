@@ -27,7 +27,8 @@ struct thunderSample {
 //	double CPU;	//jetson only
 };
 
-class THUNDER : public BaseWrapper {
+class THUNDER : public BaseWrapper
+{
 
 public:
 	static std::vector<std::string> vrSensorLabel; //"DC"
@@ -42,25 +43,24 @@ public:
 	static void setTimeAdjustment(timespec time) {}; //needed for HDEEM
 	static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); };
 	static void deleteSamples() {};
-	static std::string getSourceLabel() { return "THUNDER";};
+	static std::string getSourceLabel() { return "THUNDER"; };
 	static size_t getSamplerCount() { return PROBE_NUMBER; }
-    static std::string getSamplerLabel(size_t id) { 
-		if(id > getSamplerCount())
-                return "";
-			
-		return vrSensorLabel[id]; 
+	static std::string getSamplerLabel(size_t id)
+	{
+		if (id > getSamplerCount())
+			return "";
+
+		return vrSensorLabel[id];
 	}
 
 	static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
-    static bool isAvailable();
+	static bool isAvailable();
 
 private:
 	static std::string filename;
 	static std::vector<thunderSample> _samples;
 };
-
-
 }
 
 

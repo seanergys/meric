@@ -94,7 +94,7 @@ public:
 			return regionRuntime;
 		}
 
-		#pragma omp master
+#pragma omp master
 		{
 			MERIC_INFO << "region '" << region << "' stopping\n";
 			SocketsRegionParameters change = regionValue(currentState, getParentRegionName());
@@ -122,8 +122,8 @@ public:
 		{
 			return 0.0;
 		}
-		
-		#pragma omp master	//only master thread is allowed to work with the _stack
+
+#pragma omp master	//only master thread is allowed to work with the _stack
 		{
 			if (!_stack.size() || stopRegionName != getRegionName(_stack.back()))
 			{
@@ -140,8 +140,8 @@ public:
 		{
 			return regionRuntime;
 		}
-		
-		#pragma omp master
+
+#pragma omp master
 		{
 			const bool validStartRegionName = validateRegionName(startRegionName);
 			if (!ignoreRegion(startRegionName) && validStartRegionName == true)

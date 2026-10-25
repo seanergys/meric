@@ -1,24 +1,24 @@
 /**
  * Tool to provide information about the system parameters that can be tuned.
  **/
-#include <math.h>
+#include "../basis/utils.h"
+#include "../wrapper/a64fxwrapper.h"
+#include "../wrapper/davidewrapper.h"
+#include "../wrapper/environmentwrapper.h"
+#include "../wrapper/hdeemwrapper.h"
+#include "../wrapper/hwidsignatures.h"
+#include "../wrapper/hwmonwrapper.h"
+#include "../wrapper/nvmlwrapper.h"
+#include "../wrapper/occwrapper.h"
+#include "../wrapper/raplwrapper.h"
+#include "../wrapper/rocmwrapper.h"
+#include <dirent.h>
 #include <map>
-#include <vector>
+#include <math.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <thread>
-#include "../basis/utils.h"
-#include "../wrapper/environmentwrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/hwmonwrapper.h"
-#include "../wrapper/a64fxwrapper.h"
-#include "../wrapper/hdeemwrapper.h"
-#include "../wrapper/davidewrapper.h"
-#include "../wrapper/nvmlwrapper.h"
-#include "../wrapper/rocmwrapper.h"
-#include "../wrapper/occwrapper.h"
-#include "../wrapper/hwidsignatures.h"
+#include <vector>
 
 #ifdef HAVE_MSR_CORE_H
 #include <msr_rapl.h>
@@ -38,13 +38,13 @@
 */
 
 #ifdef HAVE_NVML_H
-#include <nvml.h>
 #include "../wrapper/nvmlwrapper.h"
+#include <nvml.h>
 #endif
 
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-#include <rocm_smi/rocm_smi.h>
 #include "../wrapper/rocmwrapper.h"
+#include <rocm_smi/rocm_smi.h>
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -221,8 +221,7 @@ void sysInfoSize(bool detailed = false)
 		}
 		if (GPUDeviceCount)
 		{
-			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n'
-					  << "\n\tCompile MERIC with ROCM header to control and monitor the AMD GPUs\n";
+			std::cout << "\tGPUs per node:    " << GPUDeviceCount << '\n' << "\n\tCompile MERIC with ROCM header to control and monitor the AMD GPUs\n";
 		}
 		closedir(dir2);
 	}
@@ -486,19 +485,17 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 
 // UNCORE FREQUENCY
 #ifdef _INTEL_
-	if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_TPMI_SYSFS)
+	if (meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_TPMI_SYSFS)
 	{
 		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
 
-		if(meric::sysfsutils::CheckFileAccess({ 
-				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
-			}, basePath))
+		if (meric::sysfsutils::CheckFileAccess({{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}}}, basePath))
 		{
 			std::ifstream file;
 			std::string freqBound;
 
 			file.open(basePath + "initial_max_freq_khz");
-			if(file.is_open())
+			if (file.is_open())
 			{
 				file >> freqBound;
 				file.close();
@@ -506,7 +503,7 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 			}
 
 			file.open(basePath + "initial_min_freq_khz");
-			if(file.is_open())
+			if (file.is_open())
 			{
 				file >> freqBound;
 				file.close();
@@ -515,17 +512,17 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 		}
 		else
 		{
-			std::cout << "\tCPU uncore frequency limits: unknown - grant read right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/initial_*_freq_khz\n";
+			std::cout
+				<< "\tCPU uncore frequency limits: unknown - grant read right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/initial_*_freq_khz\n";
 		}
 
-		if(!meric::sysfsutils::CheckFileAccess({ 
-				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}} 
-			}, basePath))
+		if (!meric::sysfsutils::CheckFileAccess({{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}}, basePath))
 		{
-			std::cout << "\tCPU uncore frequency control NOT available - grant write right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/*_freq_khz\n";
+			std::cout
+				<< "\tCPU uncore frequency control NOT available - grant write right to /sys/devices/system/cpu/intel_uncore_frequency/package_*/*_freq_khz\n";
 		}
 	}
-	else if(meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_MSR)
+	else if (meric::Environment::getPreferredUFSWay() == meric::UFS_WAY_MSR)
 	{
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 		uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0x0;
@@ -658,7 +655,8 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 						gpuFreq = (uint *)malloc(gpuFreqCount * sizeof(uint));
 						if (nvmlDeviceGetSupportedGraphicsClocks(deviceHandle, memFreq[i], &gpuFreqCount, gpuFreq) == NVML_SUCCESS)
 						{
-							std::cout << "\tMemory: " << memFreq[i] * 1000 << " kHz\tSM: " << gpuFreq[0] * 1000 << " - " << gpuFreq[gpuFreqCount - 1] * 1000 << " kHz (" << gpuFreqCount << " steps)\n";
+							std::cout << "\tMemory: " << memFreq[i] * 1000 << " kHz\tSM: " << gpuFreq[0] * 1000 << " - " << gpuFreq[gpuFreqCount - 1] * 1000
+									  << " kHz (" << gpuFreqCount << " steps)\n";
 							freqSMmax = gpuFreq[0];
 							if (detailed)
 							{
@@ -728,7 +726,8 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 
 	if (ret_sys == RSMI_STATUS_SUCCESS)
 	{
-		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " - " << sysFreqs.frequency[0] / 1000 << " kHz (" << sysFreqs.num_supported << " steps)\n";
+		std::cout << "\tAvailable SM frequencies:     " << sysFreqs.frequency[sysFreqs.num_supported - 1] / 1000 << " - " << sysFreqs.frequency[0] / 1000
+				  << " kHz (" << sysFreqs.num_supported << " steps)\n";
 		if (detailed || sysFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 		{
 			std::cout << "\t\t";
@@ -744,7 +743,8 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 	{
 		if (memFreqs.num_supported > 1)
 		{
-			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000 << " - " << memFreqs.frequency[0] / 1000 << " kHz (" << memFreqs.num_supported << " steps)\n";
+			std::cout << "\tAvailable memory frequencies: " << memFreqs.frequency[memFreqs.num_supported - 1] / 1000 << " - " << memFreqs.frequency[0] / 1000
+					  << " kHz (" << memFreqs.num_supported << " steps)\n";
 			if (detailed || memFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 			{
 				std::cout << "\t\t";
@@ -761,7 +761,8 @@ bool sysInfoFrequencies(meric::systemLimits &limits, bool detailed = false)
 	{
 		if (socFreqs.num_supported > 1)
 		{
-			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1000 << " - " << socFreqs.frequency[0] / 1000 << " kHz (" << socFreqs.num_supported << " steps)\n";
+			std::cout << "\tAvailable SoC frequencies:    " << socFreqs.frequency[socFreqs.num_supported - 1] / 1000 << " - " << socFreqs.frequency[0] / 1000
+					  << " kHz (" << socFreqs.num_supported << " steps)\n";
 			if (detailed || socFreqs.num_supported <= MAX_FREQS_PER_COMPACT_OUTPUT)
 			{
 				std::cout << "\t\t";
@@ -823,16 +824,20 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			meric::read_msr(0, MSR_PKG_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 		}
 
-		std::cout
-			<< "\tRAPL time window unit: " << meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) * 1000000 << " us\n"
-			<< "\tPKG max power limit:   "
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n"
+		std::cout << "\tRAPL time window unit: " << meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) * 1000000 << " us\n"
+				  << "\tPKG max power limit:   "
+				  << ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) *
+						 meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT)
+				  << " W\n"
 
-			<< "\tPKG min power limit:   "
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n"
+				  << "\tPKG min power limit:   "
+				  << ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) *
+						 meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT)
+				  << " W\n"
 
 			//		<< "\tPKG max time window:   "
-			//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
+			//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) *
+			//meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
 			;
 
 		// DRAM
@@ -841,15 +846,19 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			meric::read_msr(0, MSR_DRAM_POWER_INFO, &MSR_PKG_DRAM_POWER_INFO_bits);
 		}
 
-		std::cout
-			<< "\tDRAM max power limit:  "
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n"
+		std::cout << "\tDRAM max power limit:  "
+				  << ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_power_mask) >> MSR_PKG_DRAM_POWER_INFO_max_power_shift) *
+						 meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT)
+				  << " W\n"
 
-			<< "\tDRAM min power limit:  "
-			<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n"
+				  << "\tDRAM min power limit:  "
+				  << ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_min_power_mask) >> MSR_PKG_DRAM_POWER_INFO_min_power_shift) *
+						 meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT)
+				  << " W\n"
 
 			//		<< "\tDRAM max time window:  "
-			//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) * meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
+			//		<< ((MSR_PKG_DRAM_POWER_INFO_bits & MSR_PKG_DRAM_POWER_INFO_max_time_mask) >> MSR_PKG_DRAM_POWER_INFO_max_time_shift) *
+			//meric::RAPL::getUnit(RAPL_POWER_LIMIT_TIMEWINDOW) << " s\n"
 			;
 #else
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_0_max_power_uw");
@@ -858,7 +867,8 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			pwrCapInfo = "";
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
-			std::cout << "\tPKG max power limit #1: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
+			std::cout << "\tPKG max power limit #1: "
+					  << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
 		}
 
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/constraint_1_max_power_uw");
@@ -867,7 +877,8 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			pwrCapInfo = "";
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
-			std::cout << "\tPKG max power limit #2: " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
+			std::cout << "\tPKG max power limit #2: "
+					  << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
 		}
 
 		pwrCapFile.open("/sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/constraint_0_max_power_uw");
@@ -876,7 +887,8 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			pwrCapInfo = "";
 			pwrCapFile >> pwrCapInfo;
 			pwrCapFile.close();
-			std::cout << "\tDRAM max power limit:   " << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
+			std::cout << "\tDRAM max power limit:   "
+					  << ((pwrCapInfo == "" || pwrCapInfo == "0") ? "n/a" : std::to_string(std::stol(pwrCapInfo) / 1000000) + " W") << "\n";
 		}
 #endif
 
@@ -903,7 +915,8 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 		adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_1");
 		x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
 #elif defined HAVE_GEOPM_H
-		MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
+		MSR_PKG_POWER_LIMIT_bits =
+			geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) & 0xFFFFFFFF;
 #endif
 		if (MSR_PKG_POWER_LIMIT_bits != 0x0)
 		{
@@ -916,13 +929,12 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 					  << " + clamping "
 					  << (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 					  << std::endl
-					  << "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n";
+					  << "\tPKG power limit #1: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT)
+					  << " W\n";
 
 			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			std::cout << "\tPKG time window #1: "
-					  << pow(2, Y) * (1.0 + Z / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
+			std::cout << "\tPKG time window #1: " << pow(2, Y) * (1.0 + Z / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) << " s\n";
 
 #if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_PKG_POWER_LIMIT
 			MSR_PKG_POWER_LIMIT_bits = MSR_PKG_POWER_LIMIT_bits >> MSR_PKG_POWER_LIMIT_power2_shift;
@@ -930,20 +942,20 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			adaptRegisterHandler = x86_adapt_lookup_ci_name(X86_ADAPT_DIE, "Intel_RAPL_PKG_POWER_LIMIT_2");
 			x86_adapt_get_setting(fd, adaptRegisterHandler, &MSR_PKG_POWER_LIMIT_bits);
 #elif defined HAVE_GEOPM_H
-			MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >> MSR_PKG_POWER_LIMIT_power2_shift;
+			MSR_PKG_POWER_LIMIT_bits = geopm_signal_to_field(pio.read_signal("MSR::PKG_POWER_LIMIT#", pio.signal_domain_type("MSR::PKG_POWER_LIMIT#"), 0)) >>
+									   MSR_PKG_POWER_LIMIT_power2_shift;
 #endif
 			std::cout << "\tPKG power limit #2: "
 					  << (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_enable_mask) >> MSR_PKG_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 					  << " + clamping "
 					  << (((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_clamping_mask) >> MSR_PKG_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
 					  << std::endl
-					  << "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT) << " W\n";
+					  << "\tPKG power limit #2: " << (MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::PCKG_POWER_LIMIT)
+					  << " W\n";
 
 			Y = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_y_mask) >> MSR_PKG_POWER_LIMIT_time_y_shift);
 			Z = ((MSR_PKG_POWER_LIMIT_bits & MSR_PKG_POWER_LIMIT_time_z_mask) >> MSR_PKG_POWER_LIMIT_time_z_shift);
-			std::cout << "\tPKG time window #2: "
-					  << pow(2, Y) * (1.0 + Z / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
+			std::cout << "\tPKG time window #2: " << pow(2, Y) * (1.0 + Z / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) << " s\n";
 		}
 
 		// DRAM
@@ -969,15 +981,15 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			std::cout << "\tDRAM power limit:   "
 					  << (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_enable_mask) >> MSR_DRAM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
 					  << " + clamping "
-					  << (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+					  << (((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_clamping_mask) >> MSR_DRAM_POWER_LIMIT_clamping_shift) == 0 ? "disabled"
+																																		 : "enabled")
 					  << std::endl
-					  << "\tDRAM power limit:   " << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n";
+					  << "\tDRAM power limit:   "
+					  << (MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_mask) * meric::RAPL::getUnit(meric::RAPL::RAM_POWER_LIMIT) << " W\n";
 
 			F = 1.0 + ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_f_mask) >> MSR_DRAM_POWER_LIMIT_time_f_shift) / 10.0;
 			Y = ((MSR_DRAM_POWER_LIMIT_bits & MSR_DRAM_POWER_LIMIT_time_y_mask) >> MSR_DRAM_POWER_LIMIT_time_y_shift);
-			std::cout << "\tDRAM time window:   "
-					  << pow(2, Y) * F * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
-					  << " s\n";
+			std::cout << "\tDRAM time window:   " << pow(2, Y) * F * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) << " s\n";
 		}
 #else
 		// PKG
@@ -1098,28 +1110,37 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 			if (MSR_PLATFORM_POWER_LIMIT_bits)
 			{
 				std::cout << "\tPLATFORM power limit #1: "
-						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0
+								  ? "disabled"
+								  : "enabled")
 						  << " + clamping "
-						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0
+								  ? "disabled"
+								  : "enabled")
 						  << std::endl
-						  << "\tPLATFORM power limit #1: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT) << " W\n";
+						  << "\tPLATFORM power limit #1: "
+						  << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT)
+						  << " W\n";
 
 				Y = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_y_mask) >> MSR_PLATFORM_POWER_LIMIT_time_y_shift);
 				X = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_time_x_mask) >> MSR_PLATFORM_POWER_LIMIT_time_x_shift);
-				std::cout << "\tPLATFORM time window: "
-						  << pow(2, Y) * (1.0 + X / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW)
-						  << " s\n";
+				std::cout << "\tPLATFORM time window: " << pow(2, Y) * (1.0 + X / 4.0) * meric::RAPL::getUnit(meric::RAPL::POWER_LIMIT_TIMEWINDOW) << " s\n";
 				const bool lock = ((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_lock_mask) >> MSR_PLATFORM_POWER_LIMIT_lock_shift);
 
 				MSR_PLATFORM_POWER_LIMIT_bits = MSR_PLATFORM_POWER_LIMIT_bits >> MSR_PLATFORM_POWER_LIMIT_power2_shift;
 				std::cout << "\tPLATFORM power limit #2: "
-						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0 ? "disabled" : "enabled")
+						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_enable_mask) >> MSR_PLATFORM_POWER_LIMIT_enable_shift) == 0
+								  ? "disabled"
+								  : "enabled")
 						  << " + clamping "
-						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0 ? "disabled" : "enabled")
+						  << (((MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_clamping_mask) >> MSR_PLATFORM_POWER_LIMIT_clamping_shift) == 0
+								  ? "disabled"
+								  : "enabled")
 						  << std::endl
-						  << "\tPLATFORM power limit #2: " << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT) << " W\n"
-						  << "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked")
-						  << std::endl;
+						  << "\tPLATFORM power limit #2: "
+						  << (MSR_PLATFORM_POWER_LIMIT_bits & MSR_PLATFORM_POWER_LIMIT_power_mask) * meric::RAPL::getUnit(meric::RAPL::PLATFORM_POWER_LIMIT)
+						  << " W\n"
+						  << "\tPLATFORM power limit: " << (lock ? "locked" : "unlocked") << std::endl;
 			}
 #endif
 		}
@@ -1225,65 +1246,67 @@ bool sysInfoPowercap(meric::systemLimits &limits)
 	return ok;
 }
 
-template<typename... Ts>
-struct make_void { typedef void type; };
- 
-template<typename... Ts>
-using void_t = typename make_void<Ts...>::type;
+template <typename... Ts> struct make_void
+{
+	typedef void type;
+};
 
-template<typename T, typename = void>
-struct HasCounterRecord_t : std::false_type {};
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 
-template<typename T>
-struct HasCounterRecord_t<T, void_t<typename T::CounterRecord_t>> : std::true_type {};
+template <typename T, typename = void> struct HasCounterRecord_t : std::false_type
+{
+};
 
-template<typename T, typename = void>
-struct HasSamplePeriodInfo_t : std::false_type {};
+template <typename T> struct HasCounterRecord_t<T, void_t<typename T::CounterRecord_t>> : std::true_type
+{
+};
 
-template<typename T>
-struct HasSamplePeriodInfo_t<T, void_t<decltype(T::getSamplePeriodInfo)>> : std::true_type {};
+template <typename T, typename = void> struct HasSamplePeriodInfo_t : std::false_type
+{
+};
 
-template<typename M, typename std::enable_if<HasCounterRecord_t<M>::value, bool>::type = true>
-void PrintCountersInfo(std::ostream &ss) {
+template <typename T> struct HasSamplePeriodInfo_t<T, void_t<decltype(T::getSamplePeriodInfo)>> : std::true_type
+{
+};
+
+template <typename M, typename std::enable_if<HasCounterRecord_t<M>::value, bool>::type = true> void PrintCountersInfo(std::ostream &ss)
+{
 	typename M::CounterRecord_t counter_values;
 	M::getCounterValues(counter_values);
 
-	if(counter_values.empty())
+	if (counter_values.empty())
 	{
 		ss << "n/a";
 	}
 	else
 	{
-		ss << meric::join(counter_values.begin(), counter_values.end(), 
-			std::string(", "), [](const typename M::CounterRecord_t::value_type &v) { return v.first; });
+		ss << meric::join(counter_values.begin(), counter_values.end(), std::string(", "),
+						  [](const typename M::CounterRecord_t::value_type &v) { return v.first; });
 	}
 
 	std::cout << "\n";
 }
 
-template<typename M, typename std::enable_if<!HasCounterRecord_t<M>::value, bool>::type = true>
-void PrintCountersInfo(std::ostream &ss) {
-	ss << "n/a\n";
-}
+template <typename M, typename std::enable_if<!HasCounterRecord_t<M>::value, bool>::type = true> void PrintCountersInfo(std::ostream &ss) { ss << "n/a\n"; }
 
-template<typename M, typename std::enable_if<HasSamplePeriodInfo_t<M>::value, bool>::type = true>
-void PrintSampleInfo(std::ostream &ss) {
+template <typename M, typename std::enable_if<HasSamplePeriodInfo_t<M>::value, bool>::type = true> void PrintSampleInfo(std::ostream &ss)
+{
 	typename M::SamplePeriodInfo_t info;
 	M::getSamplePeriodInfo(info);
 
-	ss <<  "\t\tSampling default frequency: " << (info.initial == 0 ? 0.0 : (1.0 / (double(info.initial) * 1.0e-9))) << " Hz\n"
-    	<< "\t\tSampling max frequency:     " << (info.min == 0 ? 0.0 : (1.0 / (double(info.min) * 1.0e-9))) << " Hz\n";
+	ss << "\t\tSampling default frequency: " << (info.initial == 0 ? 0.0 : (1.0 / (double(info.initial) * 1.0e-9))) << " Hz\n"
+	   << "\t\tSampling max frequency:     " << (info.min == 0 ? 0.0 : (1.0 / (double(info.min) * 1.0e-9))) << " Hz\n";
 }
 
-template<typename M, typename std::enable_if<!HasSamplePeriodInfo_t<M>::value, bool>::type = true>
-void PrintSampleInfo(std::ostream &ss) {
-	ss <<  "\t\tSampling default frequency: n/a\n"
-		<< "\t\tSampling max frequency:     n/a\n";
+template <typename M, typename std::enable_if<!HasSamplePeriodInfo_t<M>::value, bool>::type = true> void PrintSampleInfo(std::ostream &ss)
+{
+	ss << "\t\tSampling default frequency: n/a\n"
+	   << "\t\tSampling max frequency:     n/a\n";
 }
 
-template<typename M>
-bool PrintWrapperInfo() {
-	if(!M::isAvailable())
+template <typename M> bool PrintWrapperInfo()
+{
+	if (!M::isAvailable())
 		return false;
 
 	std::cout << "\t" << M::getSourceLabel() << ": ";
@@ -1302,127 +1325,127 @@ void listEnergySystemsWithDomains()
 	std::cout << "\n# AVAILABLE POWER MONITORING SYSTEMS\n";
 	meric::Environment::initHWSizes();
 
-	systems += PrintWrapperInfo<meric::RAPL>()   ? 1 : 0;
-	systems += PrintWrapperInfo<meric::HDEEM>()  ? 1 : 0;
+	systems += PrintWrapperInfo<meric::RAPL>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::HDEEM>() ? 1 : 0;
 	systems += PrintWrapperInfo<meric::DAVIDE>() ? 1 : 0;
-	systems += PrintWrapperInfo<meric::NVML>()   ? 1 : 0;
-	systems += PrintWrapperInfo<meric::ROCM>()   ? 1 : 0;
-	systems += PrintWrapperInfo<meric::OCC>()    ? 1 : 0;
-	systems += PrintWrapperInfo<meric::A64FX>()  ? 1 : 0;
-	systems += PrintWrapperInfo<meric::HWMON>()  ? 1 : 0;
+	systems += PrintWrapperInfo<meric::NVML>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::ROCM>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::OCC>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::A64FX>() ? 1 : 0;
+	systems += PrintWrapperInfo<meric::HWMON>() ? 1 : 0;
 
-/*
-	if (meric::RAPL::isAvailable())
-	{
-		meric::RAPL::init(false);
-		std::cout << "\tRAPL: ";
-		meric::RAPL::CounterRecord_t counter_values;
-		meric::RAPL::getCounterValues(counter_values);
-		for (const auto &domain : counter_values)
+	/*
+		if (meric::RAPL::isAvailable())
 		{
-			std::cout << domain.first;
-			if (&domain.first != &counter_values.rbegin()->first)
-				std::cout << ", ";
+			meric::RAPL::init(false);
+			std::cout << "\tRAPL: ";
+			meric::RAPL::CounterRecord_t counter_values;
+			meric::RAPL::getCounterValues(counter_values);
+			for (const auto &domain : counter_values)
+			{
+				std::cout << domain.first;
+				if (&domain.first != &counter_values.rbegin()->first)
+					std::cout << ", ";
+			}
+			std::cout << "\n";
+			meric::RAPL::close();
+			systems++;
 		}
-		std::cout << "\n";
-		meric::RAPL::close();
+
+	#ifdef HAVE_HDEEM_H
+		std::cout << "\tHDEEM: ";
 		systems++;
-	}
+	#endif
 
-#ifdef HAVE_HDEEM_H
-	std::cout << "\tHDEEM: ";
-	systems++;
-#endif
+	#ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+		std::cout << "\tDAVIDE: ";
+		systems++;
+	#endif
 
-#ifdef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-	std::cout << "\tDAVIDE: ";
-	systems++;
-#endif
-
-#ifdef HAVE_NVML_H
-	if (meric::NVML::isAvailable())
-	{
-		meric::NVML::init(false);
-		std::cout << "\tNVML: ";
-		meric::NVML::CounterRecord_t counter_values;
-		meric::NVML::getCounterValues(counter_values);
-		for (const auto &domain : counter_values)
+	#ifdef HAVE_NVML_H
+		if (meric::NVML::isAvailable())
 		{
-			std::cout << domain.first;
-			if (&domain.first != &counter_values.rbegin()->first)
-				std::cout << ", ";
+			meric::NVML::init(false);
+			std::cout << "\tNVML: ";
+			meric::NVML::CounterRecord_t counter_values;
+			meric::NVML::getCounterValues(counter_values);
+			for (const auto &domain : counter_values)
+			{
+				std::cout << domain.first;
+				if (&domain.first != &counter_values.rbegin()->first)
+					std::cout << ", ";
+			}
+			std::cout << "\n";
+			meric::NVML::SamplePeriodInfo_t info;
+			meric::NVML::getSamplePeriodInfo(info);
+			meric::NVML::close();
+
+			systems++;
 		}
-		std::cout << "\n";
-		meric::NVML::SamplePeriodInfo_t info;
-		meric::NVML::getSamplePeriodInfo(info);
-		meric::NVML::close();
+	#endif
 
-		systems++;
-	}
-#endif
-
-#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
-	if (meric::ROCM::isAvailable())
-	{
-		meric::ROCM::init();
-		std::cout << "\tROCM: ";
-		std::map<std::string, uint64_t> counter_values;
-		meric::ROCM::getCounterValues(counter_values);
-		for (const auto &domain : counter_values)
+	#ifdef HAVE_ROCM_SMI_ROCM_SMI_H
+		if (meric::ROCM::isAvailable())
 		{
-			std::cout << domain.first;
-			if (&domain.first != &counter_values.rbegin()->first)
-				std::cout << ", ";
+			meric::ROCM::init();
+			std::cout << "\tROCM: ";
+			std::map<std::string, uint64_t> counter_values;
+			meric::ROCM::getCounterValues(counter_values);
+			for (const auto &domain : counter_values)
+			{
+				std::cout << domain.first;
+				if (&domain.first != &counter_values.rbegin()->first)
+					std::cout << ", ";
+			}
+			std::cout << "\n";
+			meric::ROCM::close();
+			systems++;
 		}
-		std::cout << "\n";
-		meric::ROCM::close();
+	#endif
+
+	#ifdef HAVE_OCC
+		std::cout << "\tOCC: ";
 		systems++;
-	}
-#endif
+	#endif
 
-#ifdef HAVE_OCC
-	std::cout << "\tOCC: ";
-	systems++;
-#endif
-
-#if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
-	meric::Environment::getCPUbrandString(CPUname);
-	if (meric::A64FX::isAvailable())
-	{
-		meric::A64FX::init();
-		std::cout << "\tA64FX: ";
-		std::map<std::string, unsigned long long> counter_values;
-		meric::A64FX::getCounterValues(counter_values);
-		for (const auto &domain : counter_values)
+	#if defined HAVE_LINUX_PERF_EVENT_H && defined __aarch64__
+		meric::Environment::getCPUbrandString(CPUname);
+		if (meric::A64FX::isAvailable())
 		{
-			std::cout << domain.first;
-			if (&domain.first != &counter_values.rbegin()->first)
-				std::cout << ", ";
+			meric::A64FX::init();
+			std::cout << "\tA64FX: ";
+			std::map<std::string, unsigned long long> counter_values;
+			meric::A64FX::getCounterValues(counter_values);
+			for (const auto &domain : counter_values)
+			{
+				std::cout << domain.first;
+				if (&domain.first != &counter_values.rbegin()->first)
+					std::cout << ", ";
+			}
+			std::cout << "\n";
+			meric::A64FX::close();
+
+			systems++;
 		}
-		std::cout << "\n";
-		meric::A64FX::close();
+	#endif
 
-		systems++;
-	}
-#endif
-
-	if (meric::HWMON::isAvailable())
-	{
-		meric::HWMON::init(false);
-		std::cout << "\tHWMON: ";
-		meric::HWMON::CounterRecord_t counter_values;
-		meric::HWMON::getCounterValues(counter_values);
-		for (const auto &domain : counter_values)
+		if (meric::HWMON::isAvailable())
 		{
-			std::cout << domain.first;
-			if (&domain.first != &counter_values.rbegin()->first)
-				std::cout << ", ";
+			meric::HWMON::init(false);
+			std::cout << "\tHWMON: ";
+			meric::HWMON::CounterRecord_t counter_values;
+			meric::HWMON::getCounterValues(counter_values);
+			for (const auto &domain : counter_values)
+			{
+				std::cout << domain.first;
+				if (&domain.first != &counter_values.rbegin()->first)
+					std::cout << ", ";
+			}
+			std::cout << "\n";
+			meric::HWMON::close();
+			systems++;
 		}
-		std::cout << "\n";
-		meric::HWMON::close();
-		systems++;
-	}
-*/
+	*/
 
 	if (systems == 0)
 	{
@@ -1662,8 +1685,7 @@ int main(int argc, char **argv)
 			}
 			else if (!systemInTheDefaultSettings)
 			{
-				std::cerr << "\n\tWARNING: system not in the default settings!"
-						  << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
+				std::cerr << "\n\tWARNING: system not in the default settings!" << "\n\trun systemInfo with parameter '-r' to restore the settings\n";
 			}
 		}
 	}

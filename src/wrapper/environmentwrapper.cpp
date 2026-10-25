@@ -1,8 +1,8 @@
 #include "environmentwrapper.h"
-#include "raplwrapper.h"
-#include "nvmlwrapper.h"
-#include "rocmwrapper.h"
 #include "../meric/meric.h"
+#include "nvmlwrapper.h"
+#include "raplwrapper.h"
+#include "rocmwrapper.h"
 
 using namespace meric;
 
@@ -25,7 +25,7 @@ bool Environment::usedPWRCAP = false;
 bool Environment::usedGPUDVFS = false;
 bool Environment::usedGPUPWRCAP = false;
 DVFS_WAY Environment::activatedDVFS = NO_DVFS;
-UFS_WAY  Environment::activatedUFS  = UFS_WAY_NONE;
+UFS_WAY Environment::activatedUFS = UFS_WAY_NONE;
 bool Environment::activatedPWRCAP = false;
 GPU_TUNING_WAY Environment::activatedGPUtuning = NO_TUNING;
 #if defined HAVE_NVML_H || defined HAVE_ROCM_SMI_ROCM_SMI_H
@@ -117,7 +117,7 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 	{
 		model_synth += (extended_model << 4);
 	}
- 
+
 	std::ostringstream oss;
 	oss << std::hex << std::uppercase << std::setfill('0');
 	oss << std::setw(2) << family_synth << "_";
@@ -127,9 +127,9 @@ void Environment::getCPUFamilyModelString(std::string &CPUFamilyModelOut)
 
 	#if defined(_INTEL_)
     	CPUFamilyModelOut = std::string("INTEL_") + CPUFamilyModelOut;
-	#elif defined(_AMD_)
-		CPUFamilyModelOut = std::string("AMD_") + CPUFamilyModelOut;
-	#endif
+#elif defined(_AMD_)
+	CPUFamilyModelOut = std::string("AMD_") + CPUFamilyModelOut;
+#endif
 }
 
 
@@ -643,11 +643,11 @@ long Environment::getMaximumTurboFrequency()
 #elif defined HAVE_E_SMI_E_SMI_H
 	uint32_t boostlimit;
 	uint32_t boostcurrent;
-	
+
 	if (!esmi_core_boostlimit_get(0, &boostlimit))
 	{
 		uint32_t boostcurrent = boostlimit;
-		if (esmi_core_boostlimit_set(0, 20000) == ESMI_SUCCESS) //20GHz
+		if (esmi_core_boostlimit_set(0, 20000) == ESMI_SUCCESS) // 20GHz
 		{
 			esmi_core_boostlimit_get(0, &boostlimit);
 			esmi_core_boostlimit_set(0, boostcurrent);
@@ -968,14 +968,12 @@ UFS_WAY Environment::isUFSPossible()
 {
 	UFS_WAY way = getPreferredUFSWay();
 
-	if(way == UFS_WAY_TPMI_SYSFS)
+	if (way == UFS_WAY_TPMI_SYSFS)
 	{
 		const std::string basePath = "/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/";
-		
-		if(!sysfsutils::CheckFileAccess({
-				{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}, 
-				{{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}} 
-			}, basePath))
+
+		if (!sysfsutils::CheckFileAccess(
+				{{{"min_freq_khz", W_OK}}, {{"max_freq_khz", W_OK}}, {{"initial_min_freq_khz", R_OK}}, {{"initial_max_freq_khz", R_OK}}}, basePath))
 		{
 			way = UFS_WAY_NONE;
 		}
@@ -991,7 +989,7 @@ UFS_WAY Environment::getPreferredUFSWay()
 	getCPUFamilyModelString(cpuFamilyStr);
 	auto cpuFamily = meric::stringToCpuidSignature(cpuFamilyStr);
 
-	if(cpuFamily >= CpuidSignatureValues::INTEL_06_AEH)
+	if (cpuFamily >= CpuidSignatureValues::INTEL_06_AEH)
 	{
 		// Granite Rapids and newer Intel CPUs require TPMI interface for tuning
 		return UFS_WAY_TPMI_SYSFS;
@@ -999,17 +997,17 @@ UFS_WAY Environment::getPreferredUFSWay()
 	else
 	{
 		// Use MSR for older Intel CPUs or attempt to fallback to TPMI when MSR is not available at compile time
-	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_X86_ADAPT_H || defined HAVE_GEOPM_H
 		return UFS_WAY_MSR;
-	#else
+#else
 		if (meric::sysfsutils::CheckDirExists("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/"))
 		{
 			return UFS_WAY_TPMI_SYSFS;
 		}
-	#endif
+#endif
 	}
 #elif defined __arm__
-	if(systemType == SYS_JETSON)
+	if (systemType == SYS_JETSON)
 	{
 		return UFS_WAY_JETSON_SYSFS;
 	}
@@ -1617,14 +1615,14 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.defaultCoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-#if defined _AMD_ 
-	#if defined HAVE_E_SMI_E_SMI_H
+#if defined _AMD_
+#if defined HAVE_E_SMI_E_SMI_H
 		uint32_t boostlimit;
 		if (!esmi_core_boostlimit_get(0, &boostlimit))
 		{
-			defaultSettings.defaultCoreFreq = boostlimit*1e6;
+			defaultSettings.defaultCoreFreq = boostlimit * 1e6;
 		}
-	#elif defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
+#elif defined HAVE_MSR_SAFE && defined MSR_PSTATE_CUR_LIM
 		// if using esmi, when restoring default CF we will set turbo frequency
 		else if (!defaultSettings.availableCoreFreq.empty())
 		{
@@ -1636,7 +1634,7 @@ void Environment::readSystemDefaultSettings()
 				defaultSettings.defaultCoreFreq += 1000000;
 			}
 		}
-	#endif
+#endif
 #endif
 	
 		frequencyBounderyFile.open ("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
@@ -1668,10 +1666,10 @@ void Environment::readSystemDefaultSettings()
 // CPU UnCORE freq -----------------------------------------------------------//
 		defaultSettings.defaultUncoreFreq = 0;
 #ifdef _INTEL_
-		if(getPreferredUFSWay() == UFS_WAY_TPMI_SYSFS)
+		if (getPreferredUFSWay() == UFS_WAY_TPMI_SYSFS)
 		{
 			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_min_freq_khz");
-			if(frequencyBounderyFile.is_open())
+			if (frequencyBounderyFile.is_open())
 			{
 				frequencyBounderyFile >> freqBound;
 				frequencyBounderyFile.close();
@@ -1679,16 +1677,16 @@ void Environment::readSystemDefaultSettings()
 			}
 
 			frequencyBounderyFile.open("/sys/devices/system/cpu/intel_uncore_frequency/package_00_die_00/initial_max_freq_khz");
-			if(frequencyBounderyFile.is_open())
+			if (frequencyBounderyFile.is_open())
 			{
 				frequencyBounderyFile >> freqBound;
 				frequencyBounderyFile.close();
 				defaultSettings.maxUncoreFreq = std::stol(freqBound) * 1000;
 			}
 		}
-		else if(getPreferredUFSWay() == UFS_WAY_MSR)
+		else if (getPreferredUFSWay() == UFS_WAY_MSR)
 		{
-	#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
+#if defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H
 			uint64_t MSR_UNCORE_RATIO_LIMIT_bits;
 			read_msr(0, MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
@@ -2367,15 +2365,16 @@ void Environment::frequency(uint64_t freq, int socket)
 	MERIC_INFO << "; using ESMI\n";
 	for (int soc=socket_min; soc<=socket_max; soc++)
 	{
-		if(esmi_socket_boostlimit_set(soc, freq/1e6) != ESMI_SUCCESS)
+		if (esmi_socket_boostlimit_set(soc, freq / 1e6) != ESMI_SUCCESS)
 		{
-			std::cerr << "MERIC ERROR: ESMI failed to set "<< freq/1e3<<"kHz core frequency for socket "<< soc << std::endl;
-/*			for (int cpu : mapCoresToSocket[soc])
+			std::cerr << "MERIC ERROR: ESMI failed to set " << freq / 1e3 << "kHz core frequency for socket " << soc << std::endl;
+			/*
+			for (int cpu : mapCoresToSocket[soc])
 			{
 				//test TODO for (int thrd : mapThreadsToCore[cpu])
 				esmi_core_boostlimit_set(cpu, freq/1e6);
 			}
-*/
+			*/
 		}
 	}
 #elif defined _AMD_ && defined HAVE_MSR_SAFE && defined MSR_PSTATE_CTL && defined MSR_HWCR
@@ -2474,12 +2473,12 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 
 	if (maxFreq == 0 || minFreq == 0)
 		return;
-	
+
 	if (activatedUFS == UFS_WAY_NONE)
 	{
 		return; //UFS not supported
 	}
-		
+
 	if (maxFreq > defaultSettings.maxUncoreFreq || minFreq < defaultSettings.minUncoreFreq || maxFreq < minFreq)
 	{
 		std::cerr << "Uncore frequency has not changed to invalid value: " << maxFreq << std::endl;
@@ -2506,23 +2505,23 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		socket_max = SOCKETS_PER_NODE-1;
 	}
 
-	if(activatedUFS == UFS_WAY_TPMI_SYSFS)
+	if (activatedUFS == UFS_WAY_TPMI_SYSFS)
 	{
 		MERIC_INFO << "; using TPMI SYSFS\n";
 
 		std::ofstream file;
 
-		for(int die=socket_min; die <= socket_max; ++die)
+		for (int die = socket_min; die <= socket_max; ++die)
 		{
 			file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_0" + std::to_string(die) + "_die_00/min_freq_khz");
-			if(file.is_open())
+			if (file.is_open())
 			{
 				file << minFreq / 1000;
 				file.close();
 			}
 
 			file.open("/sys/devices/system/cpu/intel_uncore_frequency/package_0" + std::to_string(die) + "_die_00/max_freq_khz");
-			if(file.is_open())
+			if (file.is_open())
 			{
 				file << maxFreq / 1000;
 				file.close();
@@ -2530,11 +2529,11 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		}
 
 		clock_gettime(CLOCK_REALTIME, &stop_time);
-		MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time)*1000 << " ms\n";
+		MERIC_INFO << "MERIC uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time) * 1000 << " ms\n";
 		return;
 	}
 
-	#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
+#if (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) && defined MSR_UNCORE_RATIO_LIMIT
 	#ifdef HAVE_MSR_CORE_H
 	MERIC_INFO << "; using LIBMSR\n";
 	#else

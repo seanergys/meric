@@ -14,19 +14,19 @@
 #include <fstream>
 #include <ctime>
 #include <iomanip>
-#include <exception> 
+#include <exception>
 
+#include "../basis/sysfsutils.h"
+#include "../basis/utils.h"
+#include "../wrapper/davidewrapper.h"
+#include "../wrapper/e4wrapper.h"
 #include "../wrapper/environmentwrapper.h"
 #include "../wrapper/hdeemwrapper.h"
-#include "../wrapper/jetsonwrapper.h"
-#include "../wrapper/thunderwrapper.h"
-#include "../wrapper/davidewrapper.h"
 #include "../wrapper/hwmonwrapper.h"
-#include "../wrapper/e4wrapper.h"
-#include "../wrapper/raplwrapper.h"
+#include "../wrapper/jetsonwrapper.h"
 #include "../wrapper/nvmlwrapper.h"
-#include "../basis/utils.h"
-#include "../basis/sysfsutils.h"
+#include "../wrapper/raplwrapper.h"
+#include "../wrapper/thunderwrapper.h"
 
 namespace meric {
 

@@ -6,6 +6,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -13,7 +14,6 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
-#include <cstdint>
 
 #ifdef VERBOSE
 #define MERIC_INFO std::cout
@@ -97,10 +97,12 @@ struct mutils
 		}
 	}
 
-	static std::string trimWhitespace(const std::string& s) {
-		const char* ws = " \t\r\n";
+	static std::string trimWhitespace(const std::string &s)
+	{
+		const char *ws = " \t\r\n";
 		const std::size_t start = s.find_first_not_of(ws);
-		if (start == std::string::npos) {
+		if (start == std::string::npos)
+		{
 			return "";
 		}
 		const std::size_t end = s.find_last_not_of(ws);
@@ -121,14 +123,15 @@ struct mutils
 	{
 		char hostname[256];
 
-		if (gethostname(hostname, sizeof(hostname)) != 0) {
+		if (gethostname(hostname, sizeof(hostname)) != 0)
+		{
 			return "UNKNOWN";
 		}
 
 		std::string hostname_str{hostname};
 		return hostname_str.find(".") != std::string::npos ? hostname_str.substr(0, hostname_str.find(".")) : hostname_str;
 	}
-	
+
 	static int countTrailingZeros(unsigned int x)
 	{
 		if (x == 0)
@@ -203,8 +206,7 @@ void explode(const std::string &input, char sep, OutIt output)
 	}
 }
 
-template<typename InputIt, typename T, typename F>
-std::string join(InputIt first, InputIt last, const T &delimiter, F &&f)
+template <typename InputIt, typename T, typename F> std::string join(InputIt first, InputIt last, const T &delimiter, F &&f)
 {
 	if(first == last)
 	{
@@ -212,17 +214,13 @@ std::string join(InputIt first, InputIt last, const T &delimiter, F &&f)
 	}
 
 	return std::accumulate(std::next(first), last, f(*first),
-		[&](const T &a, const typename std::iterator_traits<InputIt>::value_type &b)
-		{
-			return a + delimiter + f(b);
-		});
+						   [&](const T &a, const typename std::iterator_traits<InputIt>::value_type &b) { return a + delimiter + f(b); });
 }
 
-template<typename InputIt, typename T>
-std::string join(InputIt first, InputIt last, const T &delimiter) {
+template <typename InputIt, typename T> std::string join(InputIt first, InputIt last, const T &delimiter)
+{
 	return join(first, last, delimiter, [](const typename std::iterator_traits<InputIt>::value_type &a) { return a; });
 }
-
 }
 
 #include "utils.hpp"

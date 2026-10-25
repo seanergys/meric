@@ -34,16 +34,14 @@
 	#include <x86_adapt.h>
 #endif
 
-#include "../../wrapper/hdeemwrapper.h"
-#include "../../wrapper/raplwrapper.h"
 #include "../../wrapper/counters.h"
 #include "../../wrapper/davidewrapper.h"
-#include "../../wrapper/thunderwrapper.h"
-#include "../../wrapper/jetsonwrapper.h"
+#include "../../wrapper/hdeemwrapper.h"
 #include "../../wrapper/hwmonwrapper.h"
+#include "../../wrapper/jetsonwrapper.h"
 #include "../../wrapper/nvmlwrapper.h"
-
-
+#include "../../wrapper/raplwrapper.h"
+#include "../../wrapper/thunderwrapper.h"
 
 // STRUCTS /////////////////////////////////////////////////////////////////////
 
@@ -124,7 +122,7 @@ struct configuration{	// single HW configuration
 	long powerCapPKG;
 	long powerCapPKGtime;
 	std::string hostname;
-	
+
 	configuration() : 
 		threads(0), coreFreq(0), uncoreFreq(0), powerCapPKG(0), powerCapPKGtime(0) {}
 	configuration(int t, long c, long u, long p, long pt) : 
@@ -350,35 +348,31 @@ void generateDefaultWrapperConfigFile()
 			+ "\t\t}\n"
 			+ "\t},\n";
 
-	content+= std::string("\t\"MERIC\" : {\n")
+	content += std::string("\t\"MERIC\" : {\n")
 #ifdef HAVE_HDEEM_H
-			+ "\t\t\"MEASURE\" : \"HDEEM-S\",\n"
+			   + "\t\t\"MEASURE\" : \"HDEEM-S\",\n"
 #elif defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-			+ "\t\t\"MEASURE\" : \"RAPL\",\n"
+			   + "\t\t\"MEASURE\" : \"RAPL\",\n"
 #elif defined HAVE_RESTCLIENT_CPP_RESTCLIENT_H
-			+ "\t\t\"MEASURE\" : \"DAVIDE\",\n"
+			   + "\t\t\"MEASURE\" : \"DAVIDE\",\n"
 #else //just time measurement
-			+ "\t\t\"MEASURE\" : \"TIME\",\n"
+			   + "\t\t\"MEASURE\" : \"TIME\",\n"
 #endif
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H
-			+ "\t\t\"PWRCAP_POWER\" : 0,\n"
-			+ "\t\t\"PWRCAP_TIME\"  : 0,\n"
+			   + "\t\t\"PWRCAP_POWER\" : 0,\n" + "\t\t\"PWRCAP_TIME\"  : 0,\n"
 #endif
 #ifdef HAVE_PAPI_H
-			+ "\t\t\"COUNTERS\" : \"papi\",\n"
+			   + "\t\t\"COUNTERS\" : \"papi\",\n"
 #elif defined HAVE_PERFEVENT_H
-			+ "\t\t\"COUNTERS\" : \"perfevent\",\n"
+			   + "\t\t\"COUNTERS\" : \"perfevent\",\n"
 #elif defined HAVE_MSR_CORE_H
-			+ "\t\t\"COUNTERS\" : \"msr\",\n"
+			   + "\t\t\"COUNTERS\" : \"msr\",\n"
 #endif
-			+ "\t\t\"AGGREGATE\"          : 1,\n"
-			+ "\t\t\"DETAILED\"           : 1,\n"
-			+ "\t\t\"SAMPLES\"            : 0,\n"
-			+ "\t\t\"SAMPLING_FREQUENCY\" : 0.0,\n"
-			+ "\t\t\"BARRIERS\"   		  : \"all\",\n"
-//			+ "\t\t\"OUTPUT_FILENAME\" : \"\",\n"
-			+ "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n"
-			+ "\t}\n";
+			   + "\t\t\"AGGREGATE\"          : 1,\n" + "\t\t\"DETAILED\"           : 1,\n" + "\t\t\"SAMPLES\"            : 0,\n" +
+			   "\t\t\"SAMPLING_FREQUENCY\" : 0.0,\n" +
+			   "\t\t\"BARRIERS\"   		  : \"all\",\n"
+			   //			+ "\t\t\"OUTPUT_FILENAME\" : \"\",\n"
+			   + "\t\t\"OUTPUT_DIR\" : \"mericMeasurement\"\n" + "\t}\n";
 
 	content+= "}\n";
 
@@ -476,12 +470,12 @@ void recogniseTargetEnergyMeasurementSystem(meric::mode mode)
 	else if (mode == meric::MODE_HWMON)
 	{
 		label_energy = meric::HWMON::SUM_ENERGY_LABEL;
-		dataSourceLabel = std::string("# COUNTERS - ")+meric::HWMON::getSourceLabel()+":";
+		dataSourceLabel = std::string("# COUNTERS - ") + meric::HWMON::getSourceLabel() + ":";
 	}
 	else if (mode == meric::MODE_NVML)
 	{
 		label_energy = meric::NVML::SUM_ENERGY_LABEL;
-		dataSourceLabel = std::string("# COUNTERS - ")+meric::NVML::getSourceLabel()+":";
+		dataSourceLabel = std::string("# COUNTERS - ") + meric::NVML::getSourceLabel() + ":";
 	}
 }
 
@@ -885,7 +879,7 @@ int readParameters(int argc, char **argv)
 						else if (std::string(meric->name->string) == "SAMPLES")
 							setenv("MERIC_SAMPLES", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "SAMPLING_FREQUENCY")
-							setenv("MERIC_SAMPLING_FREQUENCY", ((struct json_string_s*)meric->value->payload)->string, 1);
+							setenv("MERIC_SAMPLING_FREQUENCY", ((struct json_string_s *)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "BARRIERS")
 							setenv("MERIC_BARRIERS", ((struct json_string_s*)meric->value->payload)->string, 1);
 						else if (std::string(meric->name->string) == "OUTPUT_FILENAME")
@@ -1518,7 +1512,7 @@ std::string constructConfigFileName(std::string regName, configuration config)	/
 	if (params.MPI)
 	{
 		std::string hostname = config.hostname.empty() ? meric::mutils::getHostnameShort() : config.hostname;
-		cfgStr = hostname +"_"+ cfgStr;
+		cfgStr = hostname + "_" + cfgStr;
 		//cfgStr = "cn6.barbora.it4i.cz_"+ cfgStr;
 	}
 	

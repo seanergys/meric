@@ -68,7 +68,7 @@ void ROCM::init(bool detailed)
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 bool ROCM::isAvailable()
 {
-	if(rsmi_init(0) != RSMI_STATUS_SUCCESS)
+	if (rsmi_init(0) != RSMI_STATUS_SUCCESS)
 	{
 		return false;
 	}
@@ -86,18 +86,14 @@ bool ROCM::isAvailable()
 	return available;
 }
 #else
-bool ROCM::isAvailable()
-{
-	return false;
-}
+bool ROCM::isAvailable() { return false; }
 #endif // HAVE_ROCM_SMI_ROCM_SMI_H
 
 void ROCM::start(unsigned int sampling_frequency)
 {
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	samples.resize(GPUindices.size(), std::vector<double>());
-	samplingThread = std::thread{[sampling_frequency]()
-								 { collectSamples(sampling_frequency); }};
+	samplingThread = std::thread{[sampling_frequency]() { collectSamples(sampling_frequency); }};
 #endif
 }
 
@@ -224,7 +220,4 @@ std::string ROCM::getSummaryCounterName()
 	return "Energy consumption [J]";
 }
 
-std::string ROCM::getCounterLabel(std::string counter)
-{
-	return "GPU_" + counter + " [J]";
-}
+std::string ROCM::getCounterLabel(std::string counter) { return "GPU_" + counter + " [J]"; }

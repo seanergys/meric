@@ -54,14 +54,28 @@
 
 namespace meric {
 
-enum mode { MODE_RUN, MODE_TIME, MODE_HDEEM_SAMPLES, MODE_HDEEM_COUNTERS, 
-	MODE_RAPL, MODE_JETSON, MODE_THUNDER, MODE_DAVIDE, MODE_NVML, MODE_ROCM, 
-	MODE_OCC, MODE_A64FX, MODE_HWMON, MODE_PDU };
+enum mode
+{
+	MODE_RUN,
+	MODE_TIME,
+	MODE_HDEEM_SAMPLES,
+	MODE_HDEEM_COUNTERS,
+	MODE_RAPL,
+	MODE_JETSON,
+	MODE_THUNDER,
+	MODE_DAVIDE,
+	MODE_NVML,
+	MODE_ROCM,
+	MODE_OCC,
+	MODE_A64FX,
+	MODE_HWMON,
+	MODE_PDU
+};
 
-static std::map <const std::string, mode> modeString = {
+static std::map<const std::string, mode> modeString = {
 	{"NONE", MODE_RUN},
 	{"TIME", MODE_TIME},
-	{"HDEEM", MODE_HDEEM_SAMPLES}, //default HDEEM
+	{"HDEEM", MODE_HDEEM_SAMPLES}, // default HDEEM
 	{"HDEEM-S", MODE_HDEEM_SAMPLES},
 	{"HDEEM-C", MODE_HDEEM_COUNTERS},
 	{"RAPL", MODE_RAPL},
@@ -88,7 +102,8 @@ enum DVFS_WAY {
 	OTHER          // DVFS possible under another (unknown) scaling driver
 };
 
-enum UFS_WAY {
+enum UFS_WAY
+{
 	UFS_WAY_NONE = 0,
 	UFS_WAY_MSR,
 	UFS_WAY_TPMI_SYSFS,
@@ -265,7 +280,7 @@ private:
 	static bool usedGPUDVFS;
 	static bool usedGPUPWRCAP;
 	static DVFS_WAY activatedDVFS;
-	static UFS_WAY  activatedUFS;
+	static UFS_WAY activatedUFS;
 	static bool activatedPWRCAP;
 	static GPU_TUNING_WAY activatedGPUtuning;
 	

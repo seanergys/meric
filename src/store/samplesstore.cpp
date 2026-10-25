@@ -34,14 +34,14 @@ template <class TSystem> void SamplesStore<TSystem>::fillRegionStats(DetailedReg
 
 	if (msg != "")
 	{
-		std::cerr << msg <<  _name[_records[iStarts].region] << std::endl;
+		std::cerr << msg << _name[_records[iStarts].region] << std::endl;
 	}
 
 	stats.totalEnergy = 0.0;
 
-	for(const auto &sampler: samplerRecord)
+	for (const auto &sampler : samplerRecord)
 	{
-		if(sampler.last <= 0 || sampler.last <= sampler.first)
+		if (sampler.last <= 0 || sampler.last <= sampler.first)
 		{
 			stats.energy.push_back(0.0);
 			continue;
@@ -59,7 +59,7 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	clock_gettime(CLOCK_REALTIME, &time1);
 		
     ss << "# CALLTREE;init_" << _initCounter;
-	for (size_t j = 0; j < iStarts.size()-1; j++)
+	for (size_t j = 0; j < iStarts.size() - 1; j++)
 	{
 		ss << ";" <<  _name[_records[iStarts[j]].region] << "_" << _counters[_records[iStarts[j]].region];
 	}
@@ -72,15 +72,16 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 	std::string msg = "";
 	double duration = mutils::timeToDouble(_records[iEnd].time - _records[iStarts.back()].time);
 	msg = TSystem::getData(mutils::timeToDouble(_records[iStarts.back()].time), duration, samplerRecord);
-	
+
 	if (msg != "" && msg.find("detailed") == std::string::npos)
 	{
 		std::cerr << msg <<  _name[_records[iStarts.back()].region]<< std::endl;
 	}
 
-	// MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " << int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl;
-	// MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade << " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
-	
+	// MERIC_INFO << _name[_records[iStarts.back()].region] << " FIRST: " << firstBlade << " in time " <<
+	// int(mutils::timeToDouble(_records[iStarts.back()].time)) << std::endl; MERIC_INFO << _name[_records[iStarts.back()].region] << " LAST:  " << lastBlade <<
+	// " in time " << int(mutils::timeToDouble(_records[iEnd].time))  << std::endl;
+
 	bool staticRegion = false;
 	std::ofstream samplesStream;
 	if (printSamples)
@@ -97,11 +98,11 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 
 	int samplerErrorCount = 0;
 
-	for(const auto &sampler: samplerRecord)
+	for (const auto &sampler : samplerRecord)
 	{
-		if(sampler.last == 0 || sampler.last <= sampler.first)
+		if (sampler.last == 0 || sampler.last <= sampler.first)
 		{
-			if(samplerErrorCount == 0)
+			if (samplerErrorCount == 0)
 			{
 				ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << ") - ERROR\n";
 			}
@@ -110,13 +111,13 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 			continue;
 		}
 
-		if(printSamples && staticRegion)
+		if (printSamples && staticRegion)
 		{
 			samplesStream << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << ") power [W]:\n";
 			std::vector<double> samples;
 			TSystem::getSamplesList(sampler.id, sampler.first, sampler.last, samples);
 
-			for(size_t i = 0; i < samples.size(); ++i)
+			for (size_t i = 0; i < samples.size(); ++i)
 			{
 				samplesStream << (sampler.first + i) << "," << samples[i] << "\n";
 			}
@@ -126,19 +127,19 @@ template <class TSystem> void SamplesStore<TSystem>::saveInterval(std::ofstream 
 		energyConsumption = duration * avgWatts;
 
 		ss << "# SAMPLES - " << TSystem::getSourceLabel() << " (" << sampler.name << "):\n"
-			<< TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision (6) << energyConsumption << '\n'
-		    << "MAX power [W]" << "," << sampler.max << '\n'
-		    << "MIN power [W]" << "," << sampler.min << '\n'
-		    << "AVG power [W]" << "," << avgWatts << '\n'
-		    << "ID of first sample" << "," << sampler.first << '\n'
-		    << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
+		   << TSystem::SUM_ENERGY_LABEL << "," << std::fixed << std::setprecision(6) << energyConsumption << '\n'
+		   << "MAX power [W]" << "," << sampler.max << '\n'
+		   << "MIN power [W]" << "," << sampler.min << '\n'
+		   << "AVG power [W]" << "," << avgWatts << '\n'
+		   << "ID of first sample" << "," << sampler.first << '\n'
+		   << "ID of last sample" << "," << (sampler.last - 1) << std::endl;
 	}
 	
 	if(printSamples && staticRegion)
 	{
 		samplesStream.close();
 	}
-	
+
 	clock_gettime(CLOCK_REALTIME, &time2);
 	MERIC_INFO << "MERIC record saved in: " << mutils::timeToDouble(time2 - time1) <<" s\n";
 }
@@ -148,6 +149,6 @@ template class meric::SamplesStore <JETSON>;
 template class meric::SamplesStore <THUNDER>;
 template class meric::SamplesStore <DAVIDE>;
 template class meric::SamplesStore <HWMON>;
-template class meric::SamplesStore <E4>;
+template class meric::SamplesStore<E4>;
 template class meric::SamplesStore <RAPL>;
-template class meric::SamplesStore <NVML>;
+template class meric::SamplesStore<NVML>;

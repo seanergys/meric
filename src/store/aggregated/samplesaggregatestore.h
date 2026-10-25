@@ -19,17 +19,20 @@ public:
 		MPI_Type_contiguous(3, MPI_DOUBLE, &m_valueType);
 		MPI_Type_commit(&m_valueType);
 
-		MPI_Op_create([](void *pA, void *pB, int *len, MPI_Datatype *pDataType) {
-			const Value_t *pIn = reinterpret_cast<Value_t *>(pA);
-			Value_t *pInOut = reinterpret_cast<Value_t *>(pB);
-
-			for(int i = 0; i < *len; ++i)
+		MPI_Op_create(
+			[](void *pA, void *pB, int *len, MPI_Datatype *pDataType)
 			{
-				pInOut[i].value = pInOut[i].value + pIn[i].value;
-				pInOut[i].min = std::min(pInOut[i].min, pIn[i].min);
-				pInOut[i].max = std::max(pInOut[i].max, pIn[i].max);
-			}
-		}, true, &m_reduceOp);
+				const Value_t *pIn = reinterpret_cast<Value_t *>(pA);
+				Value_t *pInOut = reinterpret_cast<Value_t *>(pB);
+
+				for (int i = 0; i < *len; ++i)
+				{
+					pInOut[i].value = pInOut[i].value + pIn[i].value;
+					pInOut[i].min = std::min(pInOut[i].min, pIn[i].min);
+					pInOut[i].max = std::max(pInOut[i].max, pIn[i].max);
+				}
+			},
+			true, &m_reduceOp);
 	}
 
 	virtual ~SamplesAggregateStore()
@@ -39,10 +42,9 @@ public:
 	}
 
 protected:
-	struct Value_t {
-		Value_t(double val = 0.0)
-			: value(val), min(val), max(val)
-		{}
+	struct Value_t
+	{
+		Value_t(double val = 0.0) : value(val), min(val), max(val) {}
 
 		double value;
 		double min;

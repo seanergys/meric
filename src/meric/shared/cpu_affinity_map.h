@@ -15,8 +15,8 @@
 #include <sys/sysinfo.h>
 #include <sys/syscall.h>
 
-#include "../../basis/cpu_affinity_set.h"
 #include "../../basis/cpu_affinity_map.h"
+#include "../../basis/cpu_affinity_set.h"
 
 namespace meric {
 namespace cpu_affinity_map {

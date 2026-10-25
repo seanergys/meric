@@ -87,7 +87,7 @@ std::string THUNDER::getData(double startTime, double duration, SamplerRecord_t 
 
 	size_t firstBlade = std::ceil((startTime - _samples[0].timestamp) * FREQUENCY);
 	if (_samples.size() <= firstBlade)
-		firstBlade = _samples.size()-1;
+		firstBlade = _samples.size() - 1;
 	while (_samples[firstBlade].timestamp > startTime)
 	{
 		firstBlade -= std::ceil(_samples[firstBlade].timestamp - startTime);
@@ -99,9 +99,9 @@ std::string THUNDER::getData(double startTime, double duration, SamplerRecord_t 
 	}
 	while (_samples[firstBlade].timestamp < startTime)
 		firstBlade += 1;
-	size_t lastBlade  = std::floor(duration * FREQUENCY) + firstBlade;
+	size_t lastBlade = std::floor(duration * FREQUENCY) + firstBlade;
 	if (lastBlade > _samples.size())
-		lastBlade = _samples.size()-1;
+		lastBlade = _samples.size() - 1;
 	const double endTime = startTime + duration;
 	while (_samples[lastBlade].timestamp > endTime)
 		lastBlade -= std::ceil(_samples[lastBlade].timestamp - endTime) * FREQUENCY;
@@ -122,14 +122,14 @@ std::string THUNDER::getData(double startTime, double duration, SamplerRecord_t 
 	sensor.id = 0;
 	sensor.name = vrSensorLabel[0];
 	sensor.first = firstBlade;
-	sensor.last  = lastBlade;
+	sensor.last = lastBlade;
 
-	if(lastBlade > 0 && lastBlade > firstBlade)
+	if (lastBlade > 0 && lastBlade > firstBlade)
 	{
 		for (size_t it = firstBlade; it < lastBlade; it++)
 		{
 			double valTmp = _samples[it].DC;
-			
+
 			if (valTmp > sensor.max)
 				sensor.max = valTmp;
 			else if (valTmp < sensor.min)
@@ -139,15 +139,14 @@ std::string THUNDER::getData(double startTime, double duration, SamplerRecord_t 
 	}else
 	{
 		/*
-		*firstBlade = std::numeric_limits<size_t>::max();
-		*lastBlade  = std::numeric_limits<size_t>::max();
-		*/
+		 *firstBlade = std::numeric_limits<size_t>::max();
+		 *lastBlade  = std::numeric_limits<size_t>::max();
+		 */
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	
 	return "";
 }
-
 
 void THUNDER::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples)
 {
@@ -161,7 +160,4 @@ void THUNDER::getSamplePeriodInfo(SamplePeriodInfo_t &info)
 	info = SamplePeriodInfo_t(period, period, period);
 }
 
-bool THUNDER::isAvailable()
-{
-	return true;
-}
+bool THUNDER::isAvailable() { return true; }

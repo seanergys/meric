@@ -3,25 +3,22 @@
 
 using namespace meric;
 
-int         Meric::MODE                       = mutils::getenv<int>("MERIC_MODE", MODE_RUN);
-bool        Meric::DETAILED                   = mutils::getenv<bool>("MERIC_DETAILED", false);
-bool        Meric::AGGREGATE                  = mutils::getenv<bool>("MERIC_AGGREGATE", true);
-bool        Meric::DEBUG                      = mutils::getenv<bool>("MERIC_DEBUG", false);
-bool        Meric::SAMPLES                    = mutils::getenv<bool>("MERIC_SAMPLES", false);
-double      Meric::SAMPLING_FREQUENCY         = mutils::getenv<double>("MERIC_SAMPLING_FREQUENCY", 0.0);
-bool        Meric::HDF5                       = mutils::getenv<bool>("MERIC_HDF5", true);
-std::string Meric::COUNTERS                   = mutils::getenv<std::string>("MERIC_COUNTERS", "none");
-std::string Meric::BARRIERS                   = mutils::getenv<std::string>("MERIC_BARRIERS", "all");
-std::string Meric::OUTPUT_DIR                 = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
-std::string Meric::REGION_OPTIONS             = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
-std::string Meric::MEASURE                    = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
-std::string Meric::THREAD_PIN_MODE            = mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
-std::string Meric::MERIC_E4MACHINE_TO_MONITOR = mutils::getenv<std::string>("MERIC_E4_TARGET",mutils::getHostnameShort());
+int Meric::MODE = mutils::getenv<int>("MERIC_MODE", MODE_RUN);
+bool Meric::DETAILED = mutils::getenv<bool>("MERIC_DETAILED", false);
+bool Meric::AGGREGATE = mutils::getenv<bool>("MERIC_AGGREGATE", true);
+bool Meric::DEBUG = mutils::getenv<bool>("MERIC_DEBUG", false);
+bool Meric::SAMPLES = mutils::getenv<bool>("MERIC_SAMPLES", false);
+double Meric::SAMPLING_FREQUENCY = mutils::getenv<double>("MERIC_SAMPLING_FREQUENCY", 0.0);
+bool Meric::HDF5 = mutils::getenv<bool>("MERIC_HDF5", true);
+std::string Meric::COUNTERS = mutils::getenv<std::string>("MERIC_COUNTERS", "none");
+std::string Meric::BARRIERS = mutils::getenv<std::string>("MERIC_BARRIERS", "all");
+std::string Meric::OUTPUT_DIR = mutils::getenv<std::string>("MERIC_OUTPUT_DIR", "mericMeasurement");
+std::string Meric::REGION_OPTIONS = mutils::getenv<std::string>("MERIC_REGION_OPTIONS", "");
+std::string Meric::MEASURE = mutils::getenv<std::string>("MERIC_MEASURE", "NONE");
+std::string Meric::THREAD_PIN_MODE = mutils::getenv<std::string>("MERIC_PIN_MODE", "default");
+std::string Meric::MERIC_E4MACHINE_TO_MONITOR = mutils::getenv<std::string>("MERIC_E4_TARGET", mutils::getHostnameShort());
 
-void Meric::refreshConfigFromEnv()
-{
-	MERIC_E4MACHINE_TO_MONITOR = mutils::getenv<std::string>("MERIC_E4_TARGET", mutils::getHostnameShort());
-}
+void Meric::refreshConfigFromEnv() { MERIC_E4MACHINE_TO_MONITOR = mutils::getenv<std::string>("MERIC_E4_TARGET", mutils::getHostnameShort()); }
 
 std::map<std::string, std::map<std::pair<int, int>, struct RegionParameters > > Meric::parameter;
 RegionParameters Meric::ignoreSettings = {};
@@ -94,7 +91,7 @@ int Meric::getDefaultParameters()
 	if (defaultParameter.nthreads < 0)
 	{
 		std::cerr << "MERIC ERROR: set MERIC_NUM_THREADS\n"
-		          << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
+				  << "MERIC INFO: if the application doesn't use openMP, export MERIC_NUM_THREADS=0\n";
 		ret = 1;
 	}
 	else if (defaultParameter.nthreads != 0)
@@ -358,41 +355,41 @@ int Meric::getDefaultParameters()
 					continue;
 				}
 			#endif
-			#ifndef HAVE_E4_PDU
+#ifndef HAVE_E4_PDU
 				if (modeString[token] == MODE_PDU)
 				{
 					std::cerr << "MERIC WARNING: PDU power monitoring not available\n";
 					continue;
 				}
-			#endif
-			#ifndef HAVE_ROCM_SMI_ROCM_SMI_H
+#endif
+#ifndef HAVE_ROCM_SMI_ROCM_SMI_H
 				if (modeString[token] == MODE_ROCM)
 				{
 					std::cerr << "MERIC WARNING: ROCM power monitoring not available\n";
 					continue;
 				}
-			#endif
-			#ifndef HAVE_OCC
+#endif
+#ifndef HAVE_OCC
 				if (modeString[token] == MODE_OCC)
 				{
 					std::cerr << "MERIC WARNING: OCC power monitoring not available\n";
 					continue;
 				}
-			#endif
-			#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
+#endif
+#ifndef HAVE_RESTCLIENT_CPP_RESTCLIENT_H
 				if (modeString[token] == MODE_DAVIDE)
 				{
 					std::cerr << "MERIC WARNING: DAVIDE power monitoring not available\n";
 					continue;
 				}
-			#endif
-			#if !defined (__aarch64__) && !defined(HAVE_LINUX_PERF_EVENT_H)
+#endif
+#if !defined (__aarch64__) && !defined(HAVE_LINUX_PERF_EVENT_H)
 				if (modeString[token] == MODE_A64FX)
 				{
 					std::cerr << "MERIC WARNING: A64FX power monitoring not available\n";
 					continue;
 				}
-			#endif
+#endif
 		}
 	}
 	
@@ -427,7 +424,7 @@ int Meric::getDefaultParameters()
 			Meric::COUNTERS = "none";
 		}
 	}
-	
+
 	if (Meric::AGGREGATE == 1 && Meric::SAMPLES == 1)
 	{
 		std::cerr << "MERIC WARNING: storing samples in aggregate mode not supported\n";
@@ -494,7 +491,8 @@ void Meric::readRegionOptions()
 				}
 				else if (configurationSize != size)
 				{
-					std::cerr << "MERIC ERROR: invalid MERIC configuration file, all regions except the static region must have the same number of parameters specified\n";
+					std::cerr << "MERIC ERROR: invalid MERIC configuration file, all regions except the static region must have the same number of parameters "
+								 "specified\n";
 					free(root);
 					parameter.clear();
 					return;
@@ -514,7 +512,7 @@ void Meric::readRegionOptions()
 					do
 					{
 						MERIC_INFO << "\t" << ((struct json_string_s*)set->value->payload)->string << std::endl;
-						ignoreRegions.insert(std::string(((struct json_string_s*)set->value->payload)->string));
+						ignoreRegions.insert(std::string(((struct json_string_s *)set->value->payload)->string));
 						set = set->next;
 					}while(set != NULL);
 				}
@@ -587,18 +585,18 @@ void Meric::readRegionOptions()
 
 	}while(data != NULL);
 
-/*
-//print the parameters (core frequency only)
-	for ( const auto &regs : parameter )
-	{
-		for(const auto & pair : parameter[regs.first])
+	/*
+	//print the parameters (core frequency only)
+		for ( const auto &regs : parameter )
 		{
-			MERIC_INFO << regs.first << "\n"
-				<< "\t" << pair.first.first << ":" << pair.first.second<< "\n"
-				<< "\t" << pair.second.frequency << "\n\n";
+			for(const auto & pair : parameter[regs.first])
+			{
+				MERIC_INFO << regs.first << "\n"
+					<< "\t" << pair.first.first << ":" << pair.first.second<< "\n"
+					<< "\t" << pair.second.frequency << "\n\n";
+			}
 		}
-	}
-*/
+	*/
 	free(root);
 }
 

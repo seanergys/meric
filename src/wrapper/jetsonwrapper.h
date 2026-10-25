@@ -27,7 +27,8 @@ struct jetsonSample {
 	double CPU;
 };
 
-class JETSON : public BaseWrapper {
+class JETSON : public BaseWrapper
+{
 
 public:
 
@@ -45,18 +46,16 @@ public:
 	static void deleteSamples() {};
 	static std::string getSourceLabel() {	return "JETSON";};
 	static size_t getSamplerCount() { return PROBE_NUMBER; }
-    static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
+	static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
 
 	static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
-    static bool isAvailable();
+	static bool isAvailable();
 
 private:
 	static std::string filename;
 	static std::vector<jetsonSample> _samples;
 };
-
-
 }
 
 

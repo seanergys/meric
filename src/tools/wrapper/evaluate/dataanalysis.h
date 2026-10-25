@@ -6,15 +6,15 @@
 #include "../parameter/parameter.h"
 
 //power monitoring systems
-#include "../../../wrapper/hdeemwrapper.h"
-#include "../../../wrapper/raplwrapper.h"
 #include "../../../wrapper/counters.h"
 #include "../../../wrapper/davidewrapper.h"
-#include "../../../wrapper/thunderwrapper.h"
+#include "../../../wrapper/e4wrapper.h"
+#include "../../../wrapper/hdeemwrapper.h"
 #include "../../../wrapper/jetsonwrapper.h"
 #include "../../../wrapper/nvmlwrapper.h"
 #include "../../../wrapper/occwrapper.h"
-#include "../../../wrapper/e4wrapper.h"
+#include "../../../wrapper/raplwrapper.h"
+#include "../../../wrapper/thunderwrapper.h"
 
 class DataAnalysis {
 
@@ -219,7 +219,7 @@ public:
 		}
 		else if (config.meric.measure.value == meric::MODE_PDU)
 		{
-			label_dataSource = std::string("# COUNTERS - ")+meric::E4::getSourceLabel()+":";
+			label_dataSource = std::string("# COUNTERS - ") + meric::E4::getSourceLabel() + ":";
 		}
 		std::cout << "LABEL = '"<< label_energy << "' SRC = '" << label_dataSource << "'\n";
 	}

@@ -3,8 +3,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <limits>
 
@@ -88,7 +88,7 @@ static void load_oids_from_dcpower_if_present()
 		parse_python_string_assignment(line, "POWER_OID", power);
 		parse_python_string_assignment(line, "VA_OID", va);
 		if (!power.empty() && !va.empty())
-		break;
+			break;
 	}
 	// std::cout << "Parsed from dcpower: POWER_OID='" << power << "', VA_OID='" << va << "'" << std::endl;
 
@@ -107,31 +107,31 @@ static void load_oids_from_dcpower_if_present()
 using PortsByIp = std::unordered_map<std::string, std::vector<int>>;
 static const std::unordered_map<std::string, PortsByIp> DATACENTER_DEFAULT = {
 	// ===============[RACK 4]==============================
-	{"rcnode01", { {"172.18.19.121", {3}}, {"172.18.19.120", {3}} }},
-	{"rcnode02", { {"172.18.19.121", {2}}, {"172.18.19.120", {2}} }},
-	{"ngnode03", { {"172.18.19.121", {5}}, {"172.18.19.120", {5}} }},
-	{"tcnode13", { {"172.18.19.121", {6}}, {"172.18.19.120", {6}} }},
-	{"isnode04", { {"172.18.19.121", {7}}, {"172.18.19.120", {7}} }},
-	{"tcnode14", { {"172.18.19.121", {9}}, {"172.18.19.120", {9}} }},
-	{"ncnode01", { {"172.18.19.121", {11, 13}} }},
-	{"ngnode02", { {"172.18.19.121", {14, 15}} }},
-	{"ncnode02", { {"172.18.19.120", {14, 25}} }},
+	{"rcnode01", {{"172.18.19.121", {3}}, {"172.18.19.120", {3}}}},
+	{"rcnode02", {{"172.18.19.121", {2}}, {"172.18.19.120", {2}}}},
+	{"ngnode03", {{"172.18.19.121", {5}}, {"172.18.19.120", {5}}}},
+	{"tcnode13", {{"172.18.19.121", {6}}, {"172.18.19.120", {6}}}},
+	{"isnode04", {{"172.18.19.121", {7}}, {"172.18.19.120", {7}}}},
+	{"tcnode14", {{"172.18.19.121", {9}}, {"172.18.19.120", {9}}}},
+	{"ncnode01", {{"172.18.19.121", {11, 13}}}},
+	{"ngnode02", {{"172.18.19.121", {14, 15}}}},
+	{"ncnode02", {{"172.18.19.120", {14, 25}}}},
 	// ====================[RACK 5]==========================
-	{"asnode06", { {"172.18.19.116", {1}}, {"172.18.19.115", {1}} }},
-	{"acnode12", { {"172.18.19.116", {2}}, {"172.18.19.115", {2}} }},
-	{"agnode07", { {"172.18.19.115", {3, 10}} }},
-	{"acnode11", { {"172.18.19.116", {3}}, {"172.18.19.115", {7}} }},
-	{"acnode10", { {"172.18.19.116", {5}}, {"172.18.19.115", {5}} }},
-	{"isolde", { {"172.18.19.116", {7, 10}} }},
-	{"iwnode0508", { {"172.18.19.116", {8}}, {"172.18.19.115", {8}} }},
-	{"attract01", { {"172.18.19.116", {9, 11, 15}}, {"172.18.19.115", {9}} }},
-	{"awnode0911", { {"172.18.19.115", {11, 15}} }},
-	{"icnode05", { {"172.18.19.116", {12}}, {"172.18.19.115", {12}} }},
-	{"acnode04", { {"172.18.19.116", {13}}, {"172.18.19.115", {13}} }},
-	{"acnode03", { {"172.18.19.116", {14}}, {"172.18.19.115", {14}} }},
-	{"icnode04", { {"172.18.19.116", {16}}, {"172.18.19.115", {16}} }},
-	{"awnode0508", { {"172.18.19.116", {17}}, {"172.18.19.115", {17}} }},
-	{"qemu01", { {"172.18.19.116", {18}}, {"172.18.19.115", {18}} }},
+	{"asnode06", {{"172.18.19.116", {1}}, {"172.18.19.115", {1}}}},
+	{"acnode12", {{"172.18.19.116", {2}}, {"172.18.19.115", {2}}}},
+	{"agnode07", {{"172.18.19.115", {3, 10}}}},
+	{"acnode11", {{"172.18.19.116", {3}}, {"172.18.19.115", {7}}}},
+	{"acnode10", {{"172.18.19.116", {5}}, {"172.18.19.115", {5}}}},
+	{"isolde", {{"172.18.19.116", {7, 10}}}},
+	{"iwnode0508", {{"172.18.19.116", {8}}, {"172.18.19.115", {8}}}},
+	{"attract01", {{"172.18.19.116", {9, 11, 15}}, {"172.18.19.115", {9}}}},
+	{"awnode0911", {{"172.18.19.115", {11, 15}}}},
+	{"icnode05", {{"172.18.19.116", {12}}, {"172.18.19.115", {12}}}},
+	{"acnode04", {{"172.18.19.116", {13}}, {"172.18.19.115", {13}}}},
+	{"acnode03", {{"172.18.19.116", {14}}, {"172.18.19.115", {14}}}},
+	{"icnode04", {{"172.18.19.116", {16}}, {"172.18.19.115", {16}}}},
+	{"awnode0508", {{"172.18.19.116", {17}}, {"172.18.19.115", {17}}}},
+	{"qemu01", {{"172.18.19.116", {18}}, {"172.18.19.115", {18}}}},
 };
 
 static std::unordered_map<std::string, PortsByIp> g_datacenter = DATACENTER_DEFAULT;
@@ -388,13 +388,14 @@ std::vector<E4::Sampler_t *> E4::samplersById;
 std::map<std::string, E4::Sampler_t> E4::samplers;
 std::string E4::powerDevice;
 
-std::chrono::nanoseconds 		  E4::s_defaultSamplePeriod(std::chrono::seconds(1));
-std::chrono::nanoseconds 		  E4::s_minSamplePeriod(std::chrono::seconds(1));
-std::chrono::nanoseconds 		  E4::s_currentSamplePeriod(0);
-std::atomic<bool> 		 		  E4::s_sampleStoreEnabled(false);
+std::chrono::nanoseconds E4::s_defaultSamplePeriod(std::chrono::seconds(1));
+std::chrono::nanoseconds E4::s_minSamplePeriod(std::chrono::seconds(1));
+std::chrono::nanoseconds E4::s_currentSamplePeriod(0);
+std::atomic<bool> E4::s_sampleStoreEnabled(false);
 AsyncSampler<E4::CounterRecord_t> E4::s_asyncSampler;
 
-double E4::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int &cumulative, std::string counter, std::string regionName)
+double E4::getResultValue(unsigned long long startValue, unsigned long long stopValue, double runtime, int &cumulative, std::string counter,
+						  std::string regionName)
 {
 #if HAVE_E4_PDU
 	(void)runtime;
@@ -422,7 +423,7 @@ void E4::init(std::string label, bool detailed, double sampleFreqHz)
 
 	s_currentSamplePeriod = s_defaultSamplePeriod;
 
-	if(sampleFreqHz > 0.0)
+	if (sampleFreqHz > 0.0)
 	{
 		s_currentSamplePeriod = std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz));
 	}
@@ -449,7 +450,7 @@ void E4::stop()
 void E4::start(timespec &time, bool storeSamples, double sampleFreqHz)
 {
 #if HAVE_E4_PDU
-	if(sampleFreqHz > 0.0)
+	if (sampleFreqHz > 0.0)
 	{
 		s_currentSamplePeriod = std::max(s_minSamplePeriod, std::chrono::nanoseconds(uint64_t(1.0e9 / sampleFreqHz)));
 		s_asyncSampler.SetPeriod(s_currentSamplePeriod);
@@ -477,9 +478,7 @@ void E4::initSamplers(bool detailed)
 	for (auto &sampler : samplers)
 		samplersById.push_back(&sampler.second);
 
-	std::sort(samplersById.begin(), samplersById.end(), [](const Sampler_t *pLeft, const Sampler_t *pRight) {
-		return pLeft->name < pRight->name;
-	});
+	std::sort(samplersById.begin(), samplersById.end(), [](const Sampler_t *pLeft, const Sampler_t *pRight) { return pLeft->name < pRight->name; });
 
 	PROBE_NUMBER = samplersById.size();
 	for (Sampler_t *pSampler : samplersById)
@@ -492,61 +491,61 @@ void E4::initSamplers(bool detailed)
 	const auto mappingIt = g_datacenter.find(nodeName);
 	const PortsByIp *portsByIp = (mappingIt != g_datacenter.end()) ? &mappingIt->second : nullptr;
 
-	s_asyncSampler.Start(s_currentSamplePeriod, [portsByIp, nodeName](bool isSampling, CounterRecord_t *pRequest) {
-		timespec now;
-		clock_gettime(CLOCK_REALTIME, &now);
+	s_asyncSampler.Start(s_currentSamplePeriod,
+						 [portsByIp, nodeName](bool isSampling, CounterRecord_t *pRequest)
+						 {
+							 timespec now;
+							 clock_gettime(CLOCK_REALTIME, &now);
 
-		const uint64_t timestamp = uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec;
+							 const uint64_t timestamp = uint64_t(now.tv_sec) * 1000000000ull + now.tv_nsec;
 
-		if(isSampling)
-		{
-			double totalpower = 0.0;
-			if (portsByIp)
-			{
-				for (const auto &ipEntry : *portsByIp)
-				{
-					const std::string &ip = ipEntry.first;
-					for (int port : ipEntry.second)
-					{
-						const std::string oidPower = g_powerOid + "." + std::to_string(port);
-						totalpower += snmp_get_value(ip, oidPower);
-						(void)g_vaOid;
-					}
-				}
-			}
+							 if (isSampling)
+							 {
+								 double totalpower = 0.0;
+								 if (portsByIp)
+								 {
+									 for (const auto &ipEntry : *portsByIp)
+									 {
+										 const std::string &ip = ipEntry.first;
+										 for (int port : ipEntry.second)
+										 {
+											 const std::string oidPower = g_powerOid + "." + std::to_string(port);
+											 totalpower += snmp_get_value(ip, oidPower);
+											 (void)g_vaOid;
+										 }
+									 }
+								 }
 
-			// Store instantaneous power samples (W) and integrate energy (J).
-			samplers[nodeName].totalpower += totalpower * (double(s_currentSamplePeriod.count() * 1.0e-9));
+								 // Store instantaneous power samples (W) and integrate energy (J).
+								 samplers[nodeName].totalpower += totalpower * (double(s_currentSamplePeriod.count() * 1.0e-9));
 
-			if(s_sampleStoreEnabled)
-			{
-				samplers[nodeName].samples.push_back({ timestamp, totalpower });	
-			}
-		}
+								 if (s_sampleStoreEnabled)
+								 {
+									 samplers[nodeName].samples.push_back({timestamp, totalpower});
+								 }
+							 }
 
-		if(!pRequest)
-			return;
+							 if (!pRequest)
+								 return;
 
-		for(const auto &entry: samplers)
-		{
-			const std::string &title = entry.first;
-			const double &value = entry.second.totalpower;
-			(*pRequest)[title] = static_cast<unsigned long long>(value);
-		}
-	});
+							 for (const auto &entry : samplers)
+							 {
+								 const std::string &title = entry.first;
+								 const double &value = entry.second.totalpower;
+								 (*pRequest)[title] = static_cast<unsigned long long>(value);
+							 }
+						 });
 #endif // HAVE_E4_PDU
 }
 
-void E4::closeSamplers() {
+void E4::closeSamplers()
+{
 #if HAVE_E4_PDU
 	s_asyncSampler.Stop();
 #endif // HAVE_E4_PDU
 }
 
-int E4::getSamples()
-{
-	return 0;
-}
+int E4::getSamples() { return 0; }
 
 void E4::getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples)
 {
@@ -567,8 +566,8 @@ std::string E4::getData(double startTime, double duration, SamplerRecord_t &reco
 
 	SourceInfo_t sourceInfo;
 	sourceInfo.domain = SourceInfo_t::DOMAIN_PER_NODE;
-	sourceInfo.type   = SourceInfo_t::TYPE_POWER;
-	sourceInfo.flags  = SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
+	sourceInfo.type = SourceInfo_t::TYPE_POWER;
+	sourceInfo.flags = SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
 
 	for (size_t i = 0; i < samplersById.size(); ++i)
 	{
@@ -586,23 +585,23 @@ std::string E4::getData(double startTime, double duration, SamplerRecord_t &reco
 		data.max = 0.0;
 
 		auto startIt = std::lower_bound(desc.samples.begin(), desc.samples.end(), intervalStart,
-								[](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
+										[](const Sample_t &sample, uint64_t value) { return sample.timestamp < value; });
 		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
-								[](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
+									  [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
 
 		for (auto it = startIt; it != endIt; ++it)
 		{
 			double power = double(it->value);
-			
+
 			data.energy += power;
 			data.min = std::min(data.min, power);
 			data.max = std::max(data.max, power);
 		}
 
 		data.first = std::distance(desc.samples.begin(), startIt);
-		data.last  = std::distance(desc.samples.begin(), endIt);
+		data.last = std::distance(desc.samples.begin(), endIt);
 
-		if(data.min > data.max)
+		if (data.min > data.max)
 			data.min = data.max;
 	}
 

@@ -27,14 +27,14 @@ void A64FX::init(bool detailed)
 
 	initCountersUnits();
 
-	int coreIdxLength = log10(Environment::CORES_PER_SOCKET*Environment::SOCKETS_PER_NODE) + 1;
+	int coreIdxLength = log10(Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE) + 1;
 	int socketIdxLength = log10(Environment::SOCKETS_PER_NODE) + 1;
 
-	for(int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
+	for (int i = 0; i < Environment::SOCKETS_PER_NODE; i++)
 	{
-		for(int j = 0; j < Environment::CORES_PER_SOCKET; j++)
+		for (int j = 0; j < Environment::CORES_PER_SOCKET; j++)
 		{
-			int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+			int coreIdx = i * Environment::CORES_PER_SOCKET + j;
 
 			std::ostringstream coreIdxFill;
 			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
@@ -69,7 +69,7 @@ void A64FX::init(bool detailed)
 			{
 				for (int j = 0; j < Environment::CORES_PER_SOCKET; j++)
 				{
-					int coreIdx = i*Environment::CORES_PER_SOCKET + j;
+					int coreIdx = i * Environment::CORES_PER_SOCKET + j;
 
 					std::ostringstream coreIdxFill;
 					coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
@@ -140,9 +140,8 @@ long A64FX::openCounter(perf_event_attr attr, int cpu)
 	pid > 0 and cpu >= 0
 		This measures the specified process/thread only when running on the specified CPU.
 	pid == -1 and cpu >= 0
-		This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less than 1.
-	pid == -1 and cpu == -1
-		This setting is invalid and will return an error.
+		This measures all processes/threads on the specified CPU. This requires CAP_SYS_ADMIN capability or a /proc/sys/kernel/perf_event_paranoid value of less
+	than 1. pid == -1 and cpu == -1 This setting is invalid and will return an error.
 	*/
 	if (fd < 0)
 	{
@@ -231,7 +230,8 @@ void A64FX::getCounterValues(std::map<std::string, unsigned long long int> &reco
 /**
  * Solve counter overflow + transforms performance counters to energy [J]
  **/
-double A64FX::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter, std::string regionName)
+double A64FX::getResultValue(unsigned long long int startValue, unsigned long long int stopValue, double runtime, int &cumulative, std::string counter,
+							 std::string regionName)
 {
 	const std::string counterName = counter.substr(0, counter.find_last_of('_'));
 
@@ -260,8 +260,8 @@ double A64FX::getResultValue(unsigned long long int startValue, unsigned long lo
  **/
 void A64FX::initCountersUnits()
 {
-	// nominal frequency of the A64FX is not possible to read from the CPU (it can be measured if a core is under a load from CPU_CYCLES (0x0011) event) so the CPU type identification must be done based on number of cores
-	// A64FX has 4 NUMA domains, while the system identifies each domain as a socket
+	// nominal frequency of the A64FX is not possible to read from the CPU (it can be measured if a core is under a load from CPU_CYCLES (0x0011) event) so the
+	// CPU type identification must be done based on number of cores A64FX has 4 NUMA domains, while the system identifies each domain as a socket
 	if (Environment::CORES_PER_SOCKET * Environment::SOCKETS_PER_NODE == 48) // XXX XXX XXX XXX XXX XXX XXX XXX
 	{
 		units[A64FX_COUNTERS::ENERGY_CORE] = 8e-9;

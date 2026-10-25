@@ -36,13 +36,13 @@ void HDEEM::setTimeAdjustment(timespec start)
 std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &record)
 {
 	std::string errMessage = "";
-	size_t firstBlade = std::ceil((startTime-_startTime) * FREQUENCY) + _timeAdjustment;
-	size_t lastBlade  = std::floor(duration * FREQUENCY) + firstBlade;
+	size_t firstBlade = std::ceil((startTime - _startTime) * FREQUENCY) + _timeAdjustment;
+	size_t lastBlade = std::floor(duration * FREQUENCY) + firstBlade;
 
 	MERIC_INFO << "FIRST " << firstBlade << std::endl;
 	MERIC_INFO << "LAST " << lastBlade << std::endl;
 
-	if (lastBlade > _samples.nb_blade_values)	//TODO
+	if (lastBlade > _samples.nb_blade_values) // TODO
 	{
 		errMessage = "HDEEM ERROR - missing samples\n";
 		lastBlade = -1;
@@ -51,27 +51,27 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 	for (unsigned int sensorID = 0; sensorID < PROBE_NUMBER; sensorID++)
 	{
 		record.push_back(SamplerData_t());
-		record.back().id   = sensorID;
+		record.back().id = sensorID;
 		record.back().name = vrSensorLabel[sensorID];
 
 		record.back().energy = 0.0;
 		record.back().min = 0.0;
 		record.back().max = 0.0;
 		record.back().first = 0;
-		record.back().last  = 0;
+		record.back().last = 0;
 
-		record.back().info.type   = SourceInfo_t::TYPE_POWER;
+		record.back().info.type = SourceInfo_t::TYPE_POWER;
 
-		if(sensorID == 0)
+		if (sensorID == 0)
 		{
 			record.back().info.flags |= SourceInfo_t::FLAG_ACCUMULATIVE_BIT;
 		}
 	}
 
-	auto getEnergySamples = [&] (SamplerData_t &sensor, size_t firstSample, size_t lastSample)
+	auto getEnergySamples = [&](SamplerData_t &sensor, size_t firstSample, size_t lastSample)
 	{
 		sensor.first = firstSample;
-		sensor.last  = lastSample;
+		sensor.last = lastSample;
 
 		if (sensor.id == 0)
 		{
@@ -107,13 +107,13 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 	if (detailedMode)
 	{
 		size_t firstVR = firstBlade / (FREQUENCY / FREQUENCY_VR) + VRDELAY;
-		size_t lastVR  = lastBlade / (FREQUENCY / FREQUENCY_VR)  + VRDELAY;
+		size_t lastVR = lastBlade / (FREQUENCY / FREQUENCY_VR) + VRDELAY;
 		if (lastVR > _samples.nb_vr_values)
 		{
 			lastVR = _samples.nb_vr_values;
 		}
-		
-		if(lastVR > 0 && lastVR > firstVR)
+
+		if (lastVR > 0 && lastVR > firstVR)
 		{
 			for (unsigned int sensorID = 1; sensorID < vrSensorLabel.size(); sensorID++)
 			{
@@ -123,31 +123,31 @@ std::string HDEEM::getData(double startTime, double duration, SamplerRecord_t &r
 		else
 		{
 			/*
-			*firstVR = -1;
-			*lastVR = -1;
-			*/
-			errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region ";
+			 *firstVR = -1;
+			 *lastVR = -1;
+			 */
+			errMessage = "MERIC ERROR: No HDEEM samples, probably too short (" + std::to_string(duration) + "s) region ";
 		}
 	}
 	else
 	{
 		/*
-		*firstVR = 0;
-		*lastVR = 0;
-		*/
+		 *firstVR = 0;
+		 *lastVR = 0;
+		 */
 	}
 
 	//BLADE - error message about missing blade samples is more important than missing VR samples
-	if(lastBlade > 0 && lastBlade > firstBlade)
+	if (lastBlade > 0 && lastBlade > firstBlade)
 	{
 		getEnergySamples(record[0], firstBlade, lastBlade);
 	}
 	else
 	{
 		/*
-		*firstBlade = -1;
-		*lastBlade = -1;
-		*/
+		 *firstBlade = -1;
+		 *lastBlade = -1;
+		 */
 		errMessage = "MERIC ERROR: No HDEEM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	

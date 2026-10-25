@@ -2,37 +2,37 @@
 #ifndef SRC_MERIC_MERIC_H_
 #define SRC_MERIC_MERIC_H_
 
+#include <algorithm>
+#include <cctype>
+#include <cmath>
 #include <cstddef>
-#include <iostream>
+#include <ctime>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <vector>
-#include <algorithm>
-#include <ctime>
-#include <cmath>
-#include <cctype>
 
+#include "../basis/cpu_affinity_map.h"
+#include "../basis/json.h"
 #include "../basis/tokenizer.h"
 #include "../basis/utils.h"
-#include "../basis/json.h"
-#include "../basis/cpu_affinity_map.h"
-#include "../store/samplesstore.h"
-#include "../store/timeenergystore.h"
 #include "../store/countersstore.h"
 #include "../store/infostore.h"
+#include "../store/samplesstore.h"
+#include "../store/timeenergystore.h"
 
-#include "../wrapper/environmentwrapper.h"
-#include "../wrapper/perfeventwrapper.h"
-#include "../wrapper/papiwrapper.h"
-#include "../wrapper/raplwrapper.h"
-#include "../wrapper/nvmlwrapper.h"
-#include "../wrapper/rocmwrapper.h"
-#include "../wrapper/occwrapper.h"
-#include "../wrapper/msrcounterswrapper.h"
 #include "../wrapper/a64fxwrapper.h"
-#include "../wrapper/hwmonwrapper.h"
 #include "../wrapper/e4wrapper.h"
+#include "../wrapper/environmentwrapper.h"
+#include "../wrapper/hwmonwrapper.h"
+#include "../wrapper/msrcounterswrapper.h"
+#include "../wrapper/nvmlwrapper.h"
+#include "../wrapper/occwrapper.h"
+#include "../wrapper/papiwrapper.h"
+#include "../wrapper/perfeventwrapper.h"
+#include "../wrapper/raplwrapper.h"
+#include "../wrapper/rocmwrapper.h"
 
 namespace meric
 {
@@ -42,16 +42,16 @@ public:
 	static void refreshConfigFromEnv();
 	static void readRegionParameters();
 
-		virtual void start(const std::string &region)
+	virtual void start(const std::string &region)
+	{
+		for (unsigned int i = 0; i < _storeList.size(); i++)
 		{
-			for (unsigned int i = 0; i < _storeList.size(); i++)
+			if (_storeList[i]->getMPIWrite())
 			{
-				if (_storeList[i]->getMPIWrite())
-				{
-					_storeList[i]->addStart(getRegionID(region), currentState.socket[0]); // data storing into file with name according socket#0
-				}
+				_storeList[i]->addStart(getRegionID(region), currentState.socket[0]); // data storing into file with name according socket#0
 			}
-			MERIC_INFO << "region '" << region << "' started\n";
+		}
+		MERIC_INFO << "region '" << region << "' started\n";
 		}
 
 		virtual double stop(const std::string region = "")
@@ -162,7 +162,7 @@ public:
 			}
 		}
 
-		virtual ~Meric() {};
+		virtual ~Meric(){};
 
 	protected:
 		static void readRegionOptions();
@@ -172,10 +172,7 @@ public:
 		/**
 		 * searching for region name in a list of regions that should be ignored
 		 **/
-		bool ignoreRegion(const std::string &region)
-		{
-			return ignoreRegions.count(region) > 0;
-		}
+		bool ignoreRegion(const std::string &region) { return ignoreRegions.count(region) > 0; }
 
 		/**
 		 * current settings to test if there is a change in values, updates the settings
@@ -203,7 +200,8 @@ public:
 				// core frequency
 				if (next.frequency)
 				{
-					paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency - next.frequency : next.frequency - prev.socket[socket].frequency;
+					paramChange = prev.socket[socket].frequency > next.frequency ? prev.socket[socket].frequency - next.frequency
+																				 : next.frequency - prev.socket[socket].frequency;
 					if (paramChange > ignoreSettings.frequency)
 					{
 						change.socket[socket].frequency = paramChange;
@@ -212,7 +210,8 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].frequency > defaultParameter.frequency ? prev.socket[socket].frequency - defaultParameter.frequency : defaultParameter.frequency - prev.socket[socket].frequency;
+					paramChange = prev.socket[socket].frequency > defaultParameter.frequency ? prev.socket[socket].frequency - defaultParameter.frequency
+																							 : defaultParameter.frequency - prev.socket[socket].frequency;
 					if (paramChange > ignoreSettings.frequency)
 					{
 						change.socket[socket].frequency = paramChange;
@@ -224,7 +223,8 @@ public:
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || defined __arm__
 				if (next.uncoreFrequency)
 				{
-					paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency - next.uncoreFrequency : next.uncoreFrequency - prev.socket[socket].uncoreFrequency;
+					paramChange = prev.socket[socket].uncoreFrequency > next.uncoreFrequency ? prev.socket[socket].uncoreFrequency - next.uncoreFrequency
+																							 : next.uncoreFrequency - prev.socket[socket].uncoreFrequency;
 					if (paramChange > ignoreSettings.uncoreFrequency)
 					{
 						change.socket[socket].uncoreFrequency = paramChange;
@@ -233,7 +233,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].uncoreFrequency > defaultParameter.uncoreFrequency ? prev.socket[socket].uncoreFrequency - defaultParameter.uncoreFrequency : defaultParameter.uncoreFrequency - prev.socket[socket].uncoreFrequency;
+					paramChange = prev.socket[socket].uncoreFrequency > defaultParameter.uncoreFrequency
+									  ? prev.socket[socket].uncoreFrequency - defaultParameter.uncoreFrequency
+									  : defaultParameter.uncoreFrequency - prev.socket[socket].uncoreFrequency;
 					if (paramChange > ignoreSettings.uncoreFrequency)
 					{
 						change.socket[socket].uncoreFrequency = paramChange;
@@ -246,7 +248,8 @@ public:
 #ifdef HAVE_OMP_H
 				if (next.nthreads)
 				{
-					paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads - next.nthreads : next.nthreads - prev.socket[socket].nthreads;
+					paramChange = prev.socket[socket].nthreads > next.nthreads ? prev.socket[socket].nthreads - next.nthreads
+																			   : next.nthreads - prev.socket[socket].nthreads;
 					if (paramChange > ignoreSettings.nthreads)
 					{
 						change.socket[socket].nthreads = paramChange;
@@ -255,7 +258,8 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].nthreads > defaultParameter.nthreads ? prev.socket[socket].nthreads - defaultParameter.nthreads : defaultParameter.nthreads - prev.socket[socket].nthreads;
+					paramChange = prev.socket[socket].nthreads > defaultParameter.nthreads ? prev.socket[socket].nthreads - defaultParameter.nthreads
+																						   : defaultParameter.nthreads - prev.socket[socket].nthreads;
 					if (paramChange > ignoreSettings.nthreads)
 					{
 						change.socket[socket].nthreads = paramChange;
@@ -268,7 +272,8 @@ public:
 #if defined HAVE_X86_ADAPT_H || defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H || defined HAVE_GEOPM_H || defined HAVE_E_SMI_E_SMI_H
 				if (next.powerCapPKG)
 				{
-					paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG - next.powerCapPKG : next.powerCapPKG - prev.socket[socket].powerCapPKG;
+					paramChange = prev.socket[socket].powerCapPKG > next.powerCapPKG ? prev.socket[socket].powerCapPKG - next.powerCapPKG
+																					 : next.powerCapPKG - prev.socket[socket].powerCapPKG;
 					if (paramChange > ignoreSettings.powerCapPKG)
 					{
 						change.socket[socket].powerCapPKG = paramChange;
@@ -277,7 +282,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].powerCapPKG > defaultParameter.powerCapPKG ? prev.socket[socket].powerCapPKG - defaultParameter.powerCapPKG : defaultParameter.powerCapPKG - prev.socket[socket].powerCapPKG;
+					paramChange = prev.socket[socket].powerCapPKG > defaultParameter.powerCapPKG
+									  ? prev.socket[socket].powerCapPKG - defaultParameter.powerCapPKG
+									  : defaultParameter.powerCapPKG - prev.socket[socket].powerCapPKG;
 					if (paramChange > ignoreSettings.powerCapPKG)
 					{
 						change.socket[socket].powerCapPKG = paramChange;
@@ -287,7 +294,8 @@ public:
 
 				if (next.powerCapPKGtime)
 				{
-					paramChange = prev.socket[socket].powerCapPKGtime > next.powerCapPKGtime ? prev.socket[socket].powerCapPKGtime - next.powerCapPKGtime : next.powerCapPKGtime - prev.socket[socket].powerCapPKGtime;
+					paramChange = prev.socket[socket].powerCapPKGtime > next.powerCapPKGtime ? prev.socket[socket].powerCapPKGtime - next.powerCapPKGtime
+																							 : next.powerCapPKGtime - prev.socket[socket].powerCapPKGtime;
 					if (paramChange > ignoreSettings.powerCapPKGtime)
 					{
 						change.socket[socket].powerCapPKGtime = paramChange;
@@ -296,7 +304,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].powerCapPKGtime > defaultParameter.powerCapPKGtime ? prev.socket[socket].powerCapPKGtime - defaultParameter.powerCapPKGtime : defaultParameter.powerCapPKGtime - prev.socket[socket].powerCapPKGtime;
+					paramChange = prev.socket[socket].powerCapPKGtime > defaultParameter.powerCapPKGtime
+									  ? prev.socket[socket].powerCapPKGtime - defaultParameter.powerCapPKGtime
+									  : defaultParameter.powerCapPKGtime - prev.socket[socket].powerCapPKGtime;
 					if (paramChange > ignoreSettings.powerCapPKGtime)
 					{
 						change.socket[socket].powerCapPKGtime = paramChange;
@@ -309,7 +319,8 @@ public:
 				// GPU SM frequency
 				if (next.frequencyGPU)
 				{
-					paramChange = prev.socket[socket].frequencyGPU > next.frequencyGPU ? prev.socket[socket].frequencyGPU - next.frequencyGPU : next.frequencyGPU - prev.socket[socket].frequencyGPU;
+					paramChange = prev.socket[socket].frequencyGPU > next.frequencyGPU ? prev.socket[socket].frequencyGPU - next.frequencyGPU
+																					   : next.frequencyGPU - prev.socket[socket].frequencyGPU;
 					if (paramChange > ignoreSettings.frequencyGPU)
 					{
 						change.socket[socket].frequencyGPU = paramChange;
@@ -318,7 +329,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].frequencyGPU > defaultParameter.frequencyGPU ? prev.socket[socket].frequencyGPU - defaultParameter.frequencyGPU : defaultParameter.frequencyGPU - prev.socket[socket].frequencyGPU;
+					paramChange = prev.socket[socket].frequencyGPU > defaultParameter.frequencyGPU
+									  ? prev.socket[socket].frequencyGPU - defaultParameter.frequencyGPU
+									  : defaultParameter.frequencyGPU - prev.socket[socket].frequencyGPU;
 					if (paramChange > ignoreSettings.frequencyGPU)
 					{
 						change.socket[socket].frequencyGPU = paramChange;
@@ -329,7 +342,8 @@ public:
 				// GPU memory frequency
 				if (next.frequencyGPUmem)
 				{
-					paramChange = prev.socket[socket].frequencyGPUmem > next.frequencyGPUmem ? prev.socket[socket].frequencyGPUmem - next.frequencyGPUmem : next.frequencyGPUmem - prev.socket[socket].frequencyGPUmem;
+					paramChange = prev.socket[socket].frequencyGPUmem > next.frequencyGPUmem ? prev.socket[socket].frequencyGPUmem - next.frequencyGPUmem
+																							 : next.frequencyGPUmem - prev.socket[socket].frequencyGPUmem;
 					if (paramChange > ignoreSettings.frequencyGPUmem)
 					{
 						change.socket[socket].frequencyGPUmem = paramChange;
@@ -338,7 +352,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].frequencyGPUmem > defaultParameter.frequencyGPUmem ? prev.socket[socket].frequencyGPUmem - defaultParameter.frequencyGPUmem : defaultParameter.frequencyGPUmem - prev.socket[socket].frequencyGPUmem;
+					paramChange = prev.socket[socket].frequencyGPUmem > defaultParameter.frequencyGPUmem
+									  ? prev.socket[socket].frequencyGPUmem - defaultParameter.frequencyGPUmem
+									  : defaultParameter.frequencyGPUmem - prev.socket[socket].frequencyGPUmem;
 					if (paramChange > ignoreSettings.frequencyGPUmem)
 					{
 						change.socket[socket].frequencyGPUmem = paramChange;
@@ -349,7 +365,8 @@ public:
 				// GPU power cap
 				if (next.powerCapGPU)
 				{
-					paramChange = prev.socket[socket].powerCapGPU > next.powerCapGPU ? prev.socket[socket].powerCapGPU - next.powerCapGPU : next.powerCapGPU - prev.socket[socket].powerCapGPU;
+					paramChange = prev.socket[socket].powerCapGPU > next.powerCapGPU ? prev.socket[socket].powerCapGPU - next.powerCapGPU
+																					 : next.powerCapGPU - prev.socket[socket].powerCapGPU;
 					if (paramChange > ignoreSettings.powerCapGPU)
 					{
 						change.socket[socket].powerCapGPU = paramChange;
@@ -358,7 +375,9 @@ public:
 				}
 				else
 				{
-					paramChange = prev.socket[socket].powerCapGPU > defaultParameter.powerCapGPU ? prev.socket[socket].powerCapGPU - defaultParameter.powerCapGPU : defaultParameter.powerCapGPU - prev.socket[socket].powerCapGPU;
+					paramChange = prev.socket[socket].powerCapGPU > defaultParameter.powerCapGPU
+									  ? prev.socket[socket].powerCapGPU - defaultParameter.powerCapGPU
+									  : defaultParameter.powerCapGPU - prev.socket[socket].powerCapGPU;
 					if (paramChange > ignoreSettings.powerCapGPU)
 					{
 						change.socket[socket].powerCapGPU = paramChange;
@@ -513,11 +532,11 @@ public:
 		{
 			bool valid = true;
 			const size_t pos = find(_name.begin(), _name.end(), region) - _name.begin();
-			if (pos >= _name.size()) //1st time executed region
+			if (pos >= _name.size()) // 1st time executed region
 			{
 				const int len = region.length();
-				//contains invalid characters
-				for (const auto &s : { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '@', '#' })
+				// contains invalid characters
+				for (const auto &s : {'/', '\\', ':', '*', '?', '"', '<', '>', '|', '@', '#'})
 				{
 					if (region.find_first_of(s) != std::string::npos)
 					{
@@ -525,31 +544,31 @@ public:
 						break;
 					}
 				}
-				//too long name or reserved name
+				// too long name or reserved name
 				if (valid && (len > 255 || region == "." || region == ".."))
 				{
 					valid = false;
 				}
-				//ends with _static but it is not main application region
+				// ends with _static but it is not main application region
 				if (valid && _stack.size() != 0 && len > 7 && region.substr(len - 7, 7) == "_static")
 				{
 					valid = false;
 				}
 				if (valid == false)
 				{
-					#pragma omp single nowait
+#pragma omp single nowait
 					{
 						ignoreRegions.insert(region);
-						std::cerr << "MERIC WARNING: invalid region name '" << region <<"' - region ignored" << std::endl;
+						std::cerr << "MERIC WARNING: invalid region name '" << region << "' - region ignored" << std::endl;
 					}
 				}
 			}
 			return valid;
 		}
-		
+
 		const std::string &getRegionName(int regionId)
 		{
-			if(regionId < 0 || regionId >= _name.size())
+			if (regionId < 0 || regionId >= _name.size())
 				return _mainRegion;
 
 			return _name[regionId];
@@ -557,14 +576,14 @@ public:
 
 		const std::string &getParentRegionName(bool skipIgnored = true)
 		{
-			if(_stack.size() <= 1)
+			if (_stack.size() <= 1)
 				return _mainRegion;
 
-			for(auto it = std::next(_stack.crbegin()); it != _stack.crend(); ++it)
+			for (auto it = std::next(_stack.crbegin()); it != _stack.crend(); ++it)
 			{
 				const std::string &name = getRegionName(*it);
 
-				if(skipIgnored && ignoreRegion(name))
+				if (skipIgnored && ignoreRegion(name))
 					continue;
 
 				return name;
@@ -627,10 +646,12 @@ public:
 					{
 						candidate = candidate.substr(0, n);
 					}
-					const bool ok = !candidate.empty() && std::all_of(candidate.begin(), candidate.end(), [](char c)
+					const bool ok = !candidate.empty() && std::all_of(candidate.begin(), candidate.end(),
+																	  [](char c)
 																	  {
-												  const unsigned char uc = static_cast<unsigned char>(c);
-												  return std::isalnum(uc) || c == '_' || c == '-'; });
+																		  const unsigned char uc = static_cast<unsigned char>(c);
+																		  return std::isalnum(uc) || c == '_' || c == '-';
+																	  });
 					if (ok)
 					{
 						_mainRegion = candidate;
@@ -689,8 +710,8 @@ public:
 		static std::string THREAD_PIN_MODE;
 
 		std::unique_ptr<meric::cpu_affinity_map::CPUAffinityMap_t> m_pAffinityMap;
-	};
+};
 
-}
+} // namespace meric
 
 #endif /* SRC_MERIC_MERIC_H_ */

@@ -1,11 +1,11 @@
-#include <cstdlib>
-#include <iostream>
-#include <sys/stat.h>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <unistd.h>
 #include "sysfsutils.h"
+#include <algorithm>
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace meric {
 namespace sysfsutils {
@@ -13,7 +13,7 @@ namespace sysfsutils {
 bool CheckDirExists(const std::string &dir)
 {
 	struct stat info;
-	if(stat(dir.c_str(), &info ) != 0)
+	if (stat(dir.c_str(), &info) != 0)
 	{
 		return false;
 	}
@@ -28,23 +28,22 @@ void CreateDir(const std::string &dir)
 		ss << "mkdir -p \"" + dir + "\"";
 		if (std::system(ss.str().c_str()))
 		{
-			std::cerr << "MERIC ERROR: directory '"<<dir<<"' cannot be created\n";
+			std::cerr << "MERIC ERROR: directory '" << dir << "' cannot be created\n";
 		}
 	}
 }
 
-bool CheckFileAccess(const std::vector<std::vector<std::pair<std::string, int> > > &fileGroups, 
-	const std::string &basePath)
+bool CheckFileAccess(const std::vector<std::vector<std::pair<std::string, int>>> &fileGroups, const std::string &basePath)
 {
-	for(const auto &files: fileGroups)
+	for (const auto &files : fileGroups)
 	{
 		size_t count = 0;
-		for(const auto &file: files)
+		for (const auto &file : files)
 		{
 			count += (access((basePath + file.first).c_str(), file.second) == 0 ? 1 : 0);
 		}
 
-		if(count == 0)
+		if (count == 0)
 		{
 			return false;
 		}

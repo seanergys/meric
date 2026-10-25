@@ -17,8 +17,8 @@ const std::string DAVIDE::SUM_ENERGY_LABEL = "Energy consumption [J]";
 RestClient::Connection* DAVIDE::conn_samples;
 void DAVIDE::init()
 {
-   	std::string davideHostname = mutils::getHostnameShort();
-   	std::string::iterator it = davideHostname.begin();
+	std::string davideHostname = mutils::getHostnameShort();
+	std::string::iterator it = davideHostname.begin();
 	while (it != davideHostname.end() && !std::isdigit(*it))
 		++it;
 	if (!davideHostname.empty() || it != davideHostname.end())
@@ -48,7 +48,7 @@ void DAVIDE::init()
 
 //TODO - missing error message return
 std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &record)
-{	
+{
 	MERIC_INFO << " ***************************************************************************\n";
 	std::string errMessage = "";
 
@@ -60,7 +60,6 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 	size_t firstBlade = (size_t)(ts - t0);
 	size_t lastBlade = (size_t)((ts - t0) + dur_t);
 	size_t n_samples = lastBlade - firstBlade;
-
 
 	MERIC_INFO << "StartTime  : " << ts << "\n";
 	if (dur_t == 0 || n_samples == 0)
@@ -75,8 +74,8 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 		MERIC_INFO << "Duration   : " << dur_t << " samples\n";
 	}
 	MERIC_INFO << "firstBlade  : " << firstBlade << "\n"
-	           << "lastBlade   : " << lastBlade  << "\n"
-	           << "# of Samples: " << n_samples << "\n";
+			   << "lastBlade   : " << lastBlade << "\n"
+			   << "# of Samples: " << n_samples << "\n";
 
 	// sub-sampling measurement setup
 	std::vector <double> tmp_t, tmp_w;
@@ -93,27 +92,27 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 	sensor.id = 0;
 	sensor.name = vrSensorLabel[0];
 	sensor.first = firstBlade;
-	sensor.last  = lastBlade;
+	sensor.last = lastBlade;
 
-	if (dur_t < 10 && firstBlade > hallo_size && time_samples.size() >= (firstBlade - hallo_size + buf_size -1))
+	if (dur_t < 10 && firstBlade > hallo_size && time_samples.size() >= (firstBlade - hallo_size + buf_size - 1))
 	{
 		tmp_t.reserve(buf_size);
 		tmp_w.reserve(buf_size);
-		
+
 		MERIC_INFO << "  Subsample energy consumption estimation:\n"
-			       << "  StartTime   : " << (long long)(FREQUENCY*startTime*1000.0) << "\n"
-			       << "  StopTime    : " << (long long)(FREQUENCY*startTime*1000.0 + FREQUENCY*duration*1000.0) << "\n"
-			       << "  Duration    : " << (long long)(FREQUENCY*duration*1000.0) << " us\n"
-			       << "  Start sample: " << firstBlade - hallo_size << std::endl
-			       << "  Stop sample : " << firstBlade - hallo_size + buf_size -1 << std::endl;
+				   << "  StartTime   : " << (long long)(FREQUENCY * startTime * 1000.0) << "\n"
+				   << "  StopTime    : " << (long long)(FREQUENCY * startTime * 1000.0 + FREQUENCY * duration * 1000.0) << "\n"
+				   << "  Duration    : " << (long long)(FREQUENCY * duration * 1000.0) << " us\n"
+				   << "  Start sample: " << firstBlade - hallo_size << std::endl
+				   << "  Stop sample : " << firstBlade - hallo_size + buf_size - 1 << std::endl;
 
 		for (size_t i = 0; i < buf_size; i++ )
 		{
-			tmp_t.push_back((double)  time_samples [firstBlade - hallo_size + i]);
-			tmp_w.push_back(          power_samples[firstBlade - hallo_size + i]);
+			tmp_t.push_back((double)time_samples[firstBlade - hallo_size + i]);
+			tmp_w.push_back(power_samples[firstBlade - hallo_size + i]);
 
-			MERIC_INFO << "    Time: " << time_samples [firstBlade - hallo_size + i] << "    [ms]; power: " 
-				                       << power_samples[firstBlade - hallo_size + i] << " W \n";
+			MERIC_INFO << "    Time: " << time_samples[firstBlade - hallo_size + i] << "    [ms]; power: " << power_samples[firstBlade - hallo_size + i]
+					   << " W \n";
 		}
 
 		tk::spline s;
@@ -142,10 +141,9 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 			}
 			else
 			{
-				sensor.max = std::max(sensor.max, interp_power)
-				sensor.min = std::min(sensor.min, interp_power)
+				sensor.max = std::max(sensor.max, interp_power) sensor.min = std::min(sensor.min, interp_power)
 
-				sensor.energy += interp_power;
+																				 sensor.energy += interp_power;
 			}
  
 			MERIC_INFO << "    Time: " << (long long) (sub_time*1000.0) <<  " [us]; power: " << interp_power << " W (sub-sample)\n"; 
@@ -156,10 +154,9 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 		sensor.min -= GPU_offset;
 
 		MERIC_INFO << "minWatts : " << sensor.min << " W\n"
-			       << "maxWatts : " << sensor.max << " W\n";
+				   << "maxWatts : " << sensor.max << " W\n";
 
-		
-		double avgWatts = sensor.energy / double(n_subsamples+1);
+		double avgWatts = sensor.energy / double(n_subsamples + 1);
 		sensor.energy = (avgWatts - GPU_offset) * n_samples;
 	}
 	else
@@ -175,7 +172,7 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 
 			sensor.max = std::max(sensor.max, valTmp);
 			sensor.min = std::min(sensor.min, valTmp);
-			
+
 			sensor.energy += valTmp;
 		}
 
@@ -183,8 +180,8 @@ std::string DAVIDE::getData(double startTime, double duration, SamplerRecord_t &
 		sensor.min -= GPU_offset;
 
 		MERIC_INFO << "minWatts : " << sensor.min << " W\n"
-			       << "maxWatts : " << sensor.max << " W\n"
-			       << "avgWatts : " << (sensor.energy / ((double)(n_samples)) ) - GPU_offset << " W (subtracted "<<GPU_offset<<"W for GPU idle (4x30W) \n";
+				   << "maxWatts : " << sensor.max << " W\n"
+				   << "avgWatts : " << (sensor.energy / ((double)(n_samples))) - GPU_offset << " W (subtracted " << GPU_offset << "W for GPU idle (4x30W) \n";
 		sensor.energy -= n_samples * GPU_offset;
 	}
 
@@ -316,10 +313,7 @@ void DAVIDE::getSamplesList(size_t sensorId, size_t first, size_t last, std::vec
 
 #endif
 
-void DAVIDE::getSamplePeriodInfo(SamplePeriodInfo_t &info)
-{
-	info = SamplePeriodInfo_t();
-}
+void DAVIDE::getSamplePeriodInfo(SamplePeriodInfo_t &info) { info = SamplePeriodInfo_t(); }
 
 bool DAVIDE::isAvailable()
 {

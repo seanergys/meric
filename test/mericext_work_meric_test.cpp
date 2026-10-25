@@ -1,12 +1,12 @@
 #include <cstdlib>
-#include <iostream>
-#include <unistd.h>
 #include <ctime>
+#include <iostream>
 #include <math.h>
 #include <omp.h>
+#include <unistd.h>
 
-#include <meric.h>
 #include "work.h"
+#include <meric.h>
 
 int main(int argc, char **argv)
 {

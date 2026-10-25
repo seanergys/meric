@@ -77,9 +77,10 @@ public:
 		std::string msg = ":";
 		for (uint64_t t : timer)
 		{
-			msg += " "+std::to_string(t);
+			msg += " " + std::to_string(t);
 		}
-		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] START " + region + msg + " (" + std::to_string(timer.back() - timer[0]) +" ns)\n";
+		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] START " + region + msg + " (" +
+						  std::to_string(timer.back() - timer[0]) + " ns)\n";
 #endif
 	}
 	
@@ -107,7 +108,7 @@ public:
 		clock_gettime(CLOCK_MONOTONIC, &timeStamp);
 		timer.push_back(mutils::timeToNanoSec(timeStamp));
 #endif
-		#pragma omp master	//only master thread is allowed to work with the _stack
+#pragma omp master // only master thread is allowed to work with the _stack
 		{
 			if (!_stack.size() || region != getRegionName(_stack.back()))
 			{
@@ -124,8 +125,8 @@ public:
 		{
 			return regionRuntime;
 		}
-		
-		#pragma omp master
+
+#pragma omp master
 		{
 			if (_storeList.size() && _storeList[0]->getMPIWrite())
 			{
@@ -160,9 +161,10 @@ public:
 		std::string msg = ":";
 		for (uint64_t t : timer)
 		{
-			msg += " "+std::to_string(t);
+			msg += " " + std::to_string(t);
 		}
-		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] STOP " + region + msg + " (" + std::to_string(timer.back() - timer[0]) +" ns)\n";
+		MERIC_INFO << "[" + std::to_string(_MPIglobalRank) + "x" + std::to_string(_MPInodeRank) + "] STOP " + region + msg + " (" +
+						  std::to_string(timer.back() - timer[0]) + " ns)\n";
 #endif
 		return regionRuntime;
 	}
@@ -174,8 +176,8 @@ public:
 		{
 			return 0.0;
 		}
-		
-		#pragma omp master	//only master thread is allowed to work with the _stack
+
+#pragma omp master	//only master thread is allowed to work with the _stack
 		{
 			if (!_stack.size() || stopRegionName != getRegionName(_stack.back()))
 			{
@@ -192,9 +194,9 @@ public:
 		{
 			return regionRuntime;
 		}
-		
+
 		bool validStartRegionName = false;
-		#pragma omp master
+#pragma omp master
 		{
 			validStartRegionName = validateRegionName(startRegionName);
 			if (!ignoreRegion(startRegionName) && validStartRegionName == true)
@@ -326,7 +328,7 @@ public:
 		{
 			nodeNamePrefix = _nodeName;
 		}
-		
+
 		//remove ignored regions from the list of regions
 		for(const std::string reg : ignoreRegions)
 		{

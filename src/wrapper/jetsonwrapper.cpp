@@ -19,7 +19,7 @@ void JETSON::init() //int rank = 0)
 	
 	//get name of the file with measurements
 	std::string hostname = mutils::getHostnameShort();
-	filename = std::string(MERIC_PATH)+"/tools/jetsonMeasurement/"+hostname+".csv";
+	filename = std::string(MERIC_PATH) + "/tools/jetsonMeasurement/" + hostname + ".csv";
 }
 
 
@@ -145,16 +145,15 @@ int JETSON::getSamples()					//TODO rename to loadSamples()
 	return 0;
 }
 
-std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &record)	//TODO getRegionData
+std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &record) // TODO getRegionData
 {
-	
 
 	if (_samples.size() == 0)
 		return "";
 
 	size_t firstBlade = std::ceil((startTime - _samples[0].timestamp) * FREQUENCY);
 	if (_samples.size() <= firstBlade)
-		firstBlade = _samples.size()-1;
+		firstBlade = _samples.size() - 1;
 	while (_samples[firstBlade].timestamp > startTime)
 	{
 		firstBlade -= std::ceil(_samples[firstBlade].timestamp - startTime);
@@ -166,9 +165,9 @@ std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &
 	}
 	while (_samples[firstBlade].timestamp < startTime)
 		firstBlade += 1;
-	size_t lastBlade  = std::floor(duration * FREQUENCY) + firstBlade;
+	size_t lastBlade = std::floor(duration * FREQUENCY) + firstBlade;
 	if (lastBlade > _samples.size())
-		lastBlade = _samples.size()-1;
+		lastBlade = _samples.size() - 1;
 	const double endTime = startTime + duration;
 	while (_samples[lastBlade].timestamp > endTime)
 		lastBlade -= std::ceil(_samples[lastBlade].timestamp - endTime) * FREQUENCY;
@@ -189,10 +188,10 @@ std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &
 		record.back().id = sensorId;
 		record.back().name = vrSensorLabel[sensorId];
 		record.back().first = firstBlade;
-		record.back().last  = lastBlade;
+		record.back().last = lastBlade;
 	}
 
-	if(lastBlade > 0 && lastBlade > firstBlade)
+	if (lastBlade > 0 && lastBlade > firstBlade)
 	{
 		for (size_t it = firstBlade; it < lastBlade; it++)
 		{
@@ -219,7 +218,7 @@ std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &
 						break;
 					}
 				}
-				
+
 				if (valTmp > sensor.max)
 					sensor.max = valTmp;
 				else if (valTmp < sensor.min)
@@ -230,9 +229,9 @@ std::string JETSON::getData(double startTime, double duration, SamplerRecord_t &
 	}else
 	{
 		/*
-		*firstBlade = std::numeric_limits<size_t>::max();
-		*lastBlade  = std::numeric_limits<size_t>::max();
-		*/
+		 *firstBlade = std::numeric_limits<size_t>::max();
+		 *lastBlade  = std::numeric_limits<size_t>::max();
+		 */
 		return "MERIC ERROR: No ARM samples, probably too short ("+std::to_string(duration)+"s) region ";
 	}
 	return "";
@@ -270,7 +269,4 @@ void JETSON::getSamplePeriodInfo(SamplePeriodInfo_t &info)
 	info = SamplePeriodInfo_t(period, period, period);
 }
 
-bool JETSON::isAvailable()
-{
-	return true;
-}
+bool JETSON::isAvailable() { return true; }

@@ -2,8 +2,8 @@
 #ifndef SRC_STORE_INFOSTORE_H_
 #define SRC_STORE_INFOSTORE_H_
 
-#include "store.h"
 #include "../basis/sysfsutils.h"
+#include "store.h"
 
 #ifdef HAVE_MPI_H
 	#include <mpi.h>
@@ -90,7 +90,7 @@ public:
 
 		sysfsutils::CreateDir(outputDir);
 		dataInfoFileName = outputDir + "/measurementInfo.json";
-		
+
 		std::string hostname = mutils::getHostnameShort();
 		time_t now_t = time(0);
 		std::string now_s = std::string(ctime(&now_t));

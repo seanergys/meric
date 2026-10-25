@@ -22,7 +22,8 @@
 
 namespace meric {
 
-class HDEEM : public BaseWrapper {
+class HDEEM : public BaseWrapper
+{
 
 public:
 	static const int FREQUENCY = 1000;
@@ -34,11 +35,10 @@ public:
 	static std::string getSourceLabel() {return "HDEEM";};
 	static const std::string SUM_ENERGY_LABEL;
 
-
 	static bool isAvailable();
 
 	static size_t getSamplerCount() { return PROBE_NUMBER; }
-    static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
+	static std::string getSamplerLabel(size_t id) { return vrSensorLabel[id]; }
 
 #ifdef HAVE_HDEEM_H
 	static void init(bool detailed = false)
@@ -131,7 +131,7 @@ public:
 		clock_gettime(CLOCK_REALTIME, &time2);
 		MERIC_INFO << "MERIC DELETE HDEEM SAMPLES: " << mutils::timeToDouble(time2 - time1)<<" s\n";
 	}
-	
+
 	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> & samples);
 	
@@ -189,10 +189,7 @@ private:
 	static int getSamples() {return 0; };
 	static void deleteSamples() {};
 	static void setTimeAdjustment(timespec start) {};
-	static std::string getData(double startTime, double duration, SamplerRecord_t &record)
-	{
-		return "";
-	}
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record) { return ""; }
 	static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> samples) {};
 
 	static void getRatios(std::map<std::string, double>& start, std::map<std::string, double>& stop, double runtime, std::map <std::string, double> & ratios) {};

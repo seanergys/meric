@@ -27,9 +27,9 @@
     static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
-#include "msrs.h" // FIXME: Propagates "msr_whitelist" into "systemInfo.cpp"
 #include "../basis/async_utils.h"
 #include "basewrapper.h"
+#include "msrs.h" // FIXME: Propagates "msr_whitelist" into "systemInfo.cpp"
 
 namespace meric {
 
@@ -123,8 +123,8 @@ public:
     typedef Base::CounterRecord_t   CounterRecord_t;
 
     // Counters interface
-    static void init(bool detailed = false, double sampleFreqHz = 0.0);
-    static void close();
+	static void init(bool detailed = false, double sampleFreqHz = 0.0);
+	static void close();
 
     static void getCounterValues(CounterRecord_t &record);
     static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
@@ -144,24 +144,22 @@ public:
     // Sampling interface
     static const std::string SUM_ENERGY_LABEL;
 
-    static void start(timespec &time, bool storeSamples = false, double sampleFreqHz = 0.0);
-    static void stop(timespec &time);
+	static void start(timespec &time, bool storeSamples = false, double sampleFreqHz = 0.0);
+	static void stop(timespec &time);
     static void initSamplers();
     static void closeSamplers();
     static int getSamples();
     static void getSamplesList(size_t sensorId, size_t first, size_t last, std::vector<double> &samples);
-    static std::string getData(double startTime, double duration, SamplerRecord_t &record);
-    static void setTimeAdjustment(timespec &time) {}
+	static std::string getData(double startTime, double duration, SamplerRecord_t &record);
+	static void setTimeAdjustment(timespec &time) {}
     static void fillTime(timespec &time) { clock_gettime(CLOCK_REALTIME, &time); }
     static void deleteSamples() {}
-    static size_t getSamplerCount() { return s_samplerById.size(); }
-    static std::string getSamplerLabel(size_t id) { 
-        return s_samplerById[id]->pCounterDesc->fullName; 
-    }
+	static size_t getSamplerCount() { return s_samplerById.size(); }
+	static std::string getSamplerLabel(size_t id) { return s_samplerById[id]->pCounterDesc->fullName; }
 
-    static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
+	static void getSamplePeriodInfo(SamplePeriodInfo_t &info);
 
-    static bool isAvailable();
+	static bool isAvailable();
 
     // RAPL Properties
     static std::string PCKG_POWER_LIMIT;
@@ -189,10 +187,10 @@ protected:
     static std::map<std::string, SamplerDesc_t> s_samplerDesc;
     static std::vector<SamplerDesc_t *>         s_samplerById;
 
-    static std::chrono::nanoseconds      s_defaultSamplePeriod;
-    static std::chrono::nanoseconds      s_minSamplePeriod;
-    static std::chrono::nanoseconds      s_currentSamplePeriod;
-    static std::atomic<bool>             s_sampleStoreEnabled;
+	static std::chrono::nanoseconds s_defaultSamplePeriod;
+	static std::chrono::nanoseconds s_minSamplePeriod;
+	static std::chrono::nanoseconds s_currentSamplePeriod;
+	static std::atomic<bool>             s_sampleStoreEnabled;
     static AsyncSampler<CounterRecord_t> s_asyncSampler;
 };
 

@@ -7,9 +7,9 @@
 #include <vector>
 #include <omp.h>
 
-#include "environmentwrapper.h"
 #include "counters.h"
 #include "countersrates.h"
+#include "environmentwrapper.h"
 #include "hwidsignatures.h"
 
 #ifdef HAVE_MSR_CORE_H

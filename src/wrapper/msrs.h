@@ -1,8 +1,8 @@
 #ifndef SRC_WRAPPER_MSRS_H_
 #define SRC_WRAPPER_MSRS_H_
 
-#include <map>
 #include "hwidsignatures.h"
+#include <map>
 
 /**
  * List of MSRs used in MERIC with official description from documentation
@@ -944,29 +944,29 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 //		#define MSR_UNCORE_CURRENT_RATIO		0x621
 //	#endif
 
-	#ifndef U_MSR_PMON_FIXED_CTR
-		#define U_MSR_PMON_FIXED_CTR		0x704	//since HSW
-	//	#define U_MSR_PMON_FIXED_CTR		0xC09	//IVB EP and SDB EP chips
-	#endif
+#ifndef U_MSR_PMON_FIXED_CTR
+#define U_MSR_PMON_FIXED_CTR 0x704 // since HSW
+//	#define U_MSR_PMON_FIXED_CTR		0xC09	//IVB EP and SDB EP chips
+#endif
 
-	#ifndef U_MSR_PMON_FIXED_CTL
-		#define U_MSR_PMON_FIXED_CTL		0x703	//since HSW
-	//	#define U_MSR_PMON_FIXED_CTL		0xC08	//IVB EP and SDB EP chips
-	#endif
+#ifndef U_MSR_PMON_FIXED_CTL
+#define U_MSR_PMON_FIXED_CTL 0x703 // since HSW
+//	#define U_MSR_PMON_FIXED_CTL		0xC08	//IVB EP and SDB EP chips
+#endif
 #endif
 
 /**
- * 4th Gen Intel Xeon Scalable Processor XCC (Codename Sapphire Rapids) Uncore 
- * Performance Monitoring Guide 
+ * 4th Gen Intel Xeon Scalable Processor XCC (Codename Sapphire Rapids) Uncore
+ * Performance Monitoring Guide
  * (Referece Number: 639667-001), April 2024
  *
  * U_MSR_PMON_GLOBAL_CTL register *********************************************
  * Uncore PMON Global Control Register for 4th Gen Intel Xeon Scalable Processor
  * 0x2FF0 0x00000000E000001F
  * frz_all (bit 0, WO):
- 	Freeze all uncore performance monitors.
+	Freeze all uncore performance monitors.
  * Reserved (bits 63:1)
- * 
+ *
  * U_MSR_CBO_x_PMON_UNIT_CTL register *****************************************
  * PMON Unit Control Register for 4th Gen Intel Xeon Scalable Processor
  * Common to all PMON Blocks (CHA0 - CHA59 with increment of 0x10)
@@ -975,7 +975,7 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
 	Freeze.	If set to 1 the counters in this box will be frozen.
  * Reserved (bits 7:1)
  * rst_ctrl (bit 8, WO):
-	Reset Control. When set to 1, the Counter Control Registers will be reset 
+	Reset Control. When set to 1, the Counter Control Registers will be reset
 	to 0.
  * rst_ctrs (bit 9, WO):
 	Reset Counters.	When set to 1, the Counter Registers will be reset to 0.
@@ -984,63 +984,63 @@ const uint64_t U_MSR_PMON_FIXED_CTL_shift       = 22;
  * U_MSR_CBO_x_PMON_CTLx register *********************************************
  * 0x2002 0x00000000FF96FFFF
  * event select (bits 7:0, RW):
-  	Select event to be counted.
+	Select event to be counted.
  * umask (bits 15:8, RW):
- 	Select subevents to be counted within the selected event.
+	Select subevents to be counted within the selected event.
  * Reserved (bit 16)
  * rst (bit 17, WO):
- 	When set to 1, the corresponding counter will be cleared to 0.
+	When set to 1, the corresponding counter will be cleared to 0.
  * edge_det(ED) (bit 18, RW):
- 	When set to 1, rather than measuring the event in each cycle it is active, 
- 	the corresponding counter will increment when a 0 to 1 transition (that is, 
- 	rising edge) is detected. When 0, the counter will increment in each cycle 
- 	that the event is asserted.
- 	Note: .edge_det is in series following .thresh. Due to this, the .thresh 
- 	field must be set to a non-0 value. For events that increment by no more 
- 	than 1 per cycle, set .thresh to 0x1.
+	When set to 1, rather than measuring the event in each cycle it is active,
+	the corresponding counter will increment when a 0 to 1 transition (that is,
+	rising edge) is detected. When 0, the counter will increment in each cycle
+	that the event is asserted.
+	Note: .edge_det is in series following .thresh. Due to this, the .thresh
+	field must be set to a non-0 value. For events that increment by no more
+	than 1 per cycle, set .thresh to 0x1.
  * Reserved (bit 19)
  * frz_ovf (bit 20, RW/V):
- 	Freeze on Overflow. When an overflow is detected from this register, a PMON 
- 	overflow message is sent to the global control. This bit will tell the 
- 	global control whether it should assert the global freeze for all the 
- 	counters in the same domain.
+	Freeze on Overflow. When an overflow is detected from this register, a PMON
+	overflow message is sent to the global control. This bit will tell the
+	global control whether it should assert the global freeze for all the
+	counters in the same domain.
  * Reserved (bits 22:21)
  * invert(inv) (bit 23, RW):
- 	Invert comparison against Threshold. 
- 	0 - comparison will be 'is event increment >= threshold?'.
- 	1 - comparison is inverted - 'is event increment < threshold?'
+	Invert comparison against Threshold.
+	0 - comparison will be 'is event increment >= threshold?'.
+	1 - comparison is inverted - 'is event increment < threshold?'
  * thresh (bits 31:24, RW):
- 	Threshold is used, along with the invert bit, to compare against the 
- 	counter's incoming increment value. That is, the value that will be added to 
- 	the counter. For events that increment by more than '1' per cycle, if the 
- 	threshold is set to a value greater than 1, the data register will 
- 	accumulate instances in which the event increment is >= threshold.
- 	For example, say you have an event to accumulate the occupancy of a 64-entry 
- 	queue every cycle. By setting the threshold value to 60, the data register 
- 	would count the number of cycles the queue's occupancy was >= 60.
+	Threshold is used, along with the invert bit, to compare against the
+	counter's incoming increment value. That is, the value that will be added to
+	the counter. For events that increment by more than '1' per cycle, if the
+	threshold is set to a value greater than 1, the data register will
+	accumulate instances in which the event increment is >= threshold.
+	For example, say you have an event to accumulate the occupancy of a 64-entry
+	queue every cycle. By setting the threshold value to 60, the data register
+	would count the number of cycles the queue's occupancy was >= 60.
  * Reserved (bits 63:32)
  *
  * U_MSR_CBO_x_PMON_CTRx register *********************************************
  * 0x2008 0x0000FFFFFFFFFFFF
  * event_count	(bits 47:0, RW-V)
- 	Performance event counter.
+	Performance event counter.
  * Reserved (bits 63:48)
  ******************************************************************************
  **/
 
 #ifdef _INTEL_
-	#define U_MSR_PMON_GLOBAL_CTL      0x2FF0
-	#define U_MSR_CBO_0_PMON_UNIT_CTL  0x2000
-	#define U_MSR_CBO_59_PMON_UNIT_CTL 0x23B0
-	#define U_MSR_CBO_0_PMON_CTL0      0x2002
-	#define U_MSR_CBO_59_PMON_CTL0     0x23B2
-  	#define U_MSR_CBO_0_PMON_CTR0      0x2008
-	#define U_MSR_CBO_59_PMON_CTR0     0x23B8
+#define U_MSR_PMON_GLOBAL_CTL 0x2FF0
+#define U_MSR_CBO_0_PMON_UNIT_CTL 0x2000
+#define U_MSR_CBO_59_PMON_UNIT_CTL 0x23B0
+#define U_MSR_CBO_0_PMON_CTL0 0x2002
+#define U_MSR_CBO_59_PMON_CTL0 0x23B2
+#define U_MSR_CBO_0_PMON_CTR0 0x2008
+#define U_MSR_CBO_59_PMON_CTR0 0x23B8
 #endif
 
-const uint64_t U_MSR_CBO_x_PMON_UNIT_CTLx_increment  = 0x10;
-const uint64_t U_MSR_CBO_x_PMON_CTLx_increment  = 0x10;
-const uint64_t U_MSR_CBO_x_PMON_CTRx_increment  = 0x10;
+const uint64_t U_MSR_CBO_x_PMON_UNIT_CTLx_increment = 0x10;
+const uint64_t U_MSR_CBO_x_PMON_CTLx_increment = 0x10;
+const uint64_t U_MSR_CBO_x_PMON_CTRx_increment = 0x10;
 
 const uint64_t U_MSR_CBO_x_PMON_CTRx_mask = 0x0000FFFFFFFFFFFF;
 
@@ -1488,7 +1488,8 @@ const uint64_t MSR_ANYDOMAIN_ENERGY_STATUS_mask = 0xFFFFFFFF;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace detail {
+namespace detail
+{
 const std::map<uint64_t, uint64_t> msr_whitelist = {
 #ifdef IA32_ENERGY_PERF_BIAS
 	{ IA32_ENERGY_PERF_BIAS,       0x000000000000000F },
@@ -1609,14 +1610,13 @@ const std::map<uint64_t, uint64_t> msr_whitelist = {
 #endif
 
 };
-}
+} // namespace detail
 
-inline void getMSRWhitelist(meric::CpuidSignatureValues cpu_signature, 
-	std::map<uint64_t, uint64_t> &outWhitelist)
+inline void getMSRWhitelist(meric::CpuidSignatureValues cpu_signature, std::map<uint64_t, uint64_t> &outWhitelist)
 {
 	outWhitelist = detail::msr_whitelist;
 
-	if(cpu_signature >= meric::CpuidSignatureValues::INTEL_06_AEH) // Granite Rapids
+	if (cpu_signature >= meric::CpuidSignatureValues::INTEL_06_AEH) // Granite Rapids
 	{
 #ifdef MSR_UNCORE_RATIO_LIMIT
 		outWhitelist.erase(MSR_UNCORE_RATIO_LIMIT);
