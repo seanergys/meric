@@ -65,10 +65,10 @@ TEST(MemoryManagerTest, ReservedMemoryManagerIsEnabledAndSizeOfReservedMemoryIsC
 	size_t expected_reserved_memory_size = RESERVED_ELEMENT_SIZE * 2;
 	EXPECT_TRUE(energy_domains.use_reserved_memory) << "use_reserved_memory boolean should be true.";
 	EXPECT_EQ(energy_domains.reserved_memory_size, expected_reserved_memory_size)
-        << "reserved_memory_size variable should be " << expected_reserved_memory_size
-        << " (" << energy_domains.reserved_memory_size << " != " << expected_reserved_memory_size << ").";
+		<< "reserved_memory_size variable should be " << expected_reserved_memory_size << " (" << energy_domains.reserved_memory_size
+		<< " != " << expected_reserved_memory_size << ").";
 
-    enableAllEnergyDomains(energy_domains);
+	enableAllEnergyDomains(energy_domains);
     extlib_init(&energy_domains, true);
 
     EXPECT_TRUE(ReservedMemoryManager::is_enabled)
@@ -123,7 +123,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
 				FAIL() << domain_name << " energy domain exists but pointer to its reserved memory page 0 is NULL/nullptr.";
 				continue;
 			}
-            EXPECT_NE(domain_memory_map->counter_name, nullptr)
+			EXPECT_NE(domain_memory_map->counter_name, nullptr)
                 << domain_name << " energy domain exists but counter_name pointer of its reserved memory page 0 is NULL/nullptr.";
             EXPECT_NE(domain_memory_map->counter_value, nullptr)
                 << domain_name << " energy domain exists but counter_value pointer of its reserved memory page 0 is NULL/nullptr.";
@@ -151,7 +151,7 @@ TEST(MemoryManagerTest, ReservedMemoryPage0IsCreatedForExistingEnergyDomainsAfte
 		}
 	}
 
-    extlib_close(&energy_domains);
+	extlib_close(&energy_domains);
 }
 
 TEST(MemoryManagerTest, ReservedMemoryPage0IsNotCreatedForEnabledNonExistingEnergyDomainsAfterInit)
@@ -1116,9 +1116,8 @@ TEST(MemoryManagerTest, MultipleInitAndCloseHaveNoSideEffects)
 	EXPECT_EQ(ReservedMemoryManager::empty_page_ids.size(), 0) << "Size of empty_page_ids container should be 0 after close.";
 
 	// make sure energy_domains is in reset state.
-	EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION)
-        << "All energy domains should be disabled after close.";
-    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+	EXPECT_EQ(energy_domains.value, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NO_SELECTION) << "All energy domains should be disabled after close.";
+	for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int domain = 1 << domain_idx;
         std::string domain_name = getEnergyDomainName(domain);

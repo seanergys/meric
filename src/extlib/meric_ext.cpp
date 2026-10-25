@@ -194,7 +194,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 		{
 			meric::A64FX::init(is_detailed);
 			int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX); // Get index of the enabled domain
-            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
+			enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::A64FX, unsigned long long int>;
             enabled_domains->closeFns[index] = close<meric::A64FX>;
             MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_A64FX) << " is init [OK]" << std::endl;
 		}
@@ -206,13 +206,13 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 		}
 	}
 	if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL)))
-    {
+	{
 
 		if (meric::RAPL::isAvailable())
 		{
 			meric::RAPL::init(is_detailed);
 			meric::RAPL::initCountersUnits();
-            int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
+			int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL); // Get index of the enabled domain
             enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::RAPL, meric::RAPL::Base::CounterValue_t>;
             enabled_domains->closeFns[index] = close<meric::RAPL>;
             MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_RAPL) << " is init [OK]" << std::endl;
@@ -225,7 +225,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 		}
 	}
 	if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML)))
-    {
+	{
 		if (meric::NVML::isAvailable())
 		{
 			meric::NVML::init(is_detailed);
@@ -245,7 +245,7 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 	}
 
 	if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_ROCM)))
-    {
+	{
 		if (meric::ROCM::isAvailable())
 		{
 			meric::ROCM::init(is_detailed);
@@ -262,12 +262,12 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 		}
 	}
 	if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM)))
-    {
+	{
 		if (meric::HDEEM::isAvailable())
 		{
 			meric::HDEEM::init(is_detailed);
 			int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM); // Get index of the enabled domain
-            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
+			enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HDEEM, double>;
             enabled_domains->closeFns[index] = close<meric::HDEEM>;
             MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM) << " is init [OK]" << std::endl;
 		}
@@ -280,12 +280,12 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 	}
 
 	if (OPT_LIKELY(EXTLIB_ENERGY_HAS_DOMAIN(*enabled_domains, ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON)))
-    {
+	{
 		if (meric::HWMON::isAvailable())
 		{
 			meric::HWMON::init(is_detailed);
 			int index = meric::mutils::countTrailingZeros(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON); // Get index of the enabled domain
-            enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>;
+			enabled_domains->energyMeasurementFns[index] = measureEnergy<meric::HWMON, meric::HWMON::CounterValue_t>;
             enabled_domains->closeFns[index] = close<meric::HWMON>;
             MERIC_INFO << "[INFO]: Domain " << printDomainName(ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON) << " is init [OK]" << std::endl;
 		}
@@ -298,9 +298,9 @@ void extlib_init(ExtlibEnergy *enabled_domains, bool is_detailed)
 	}
 
 	// This executes only once.
-    // It will perform a read as normal (using dynamic memory with malloc) to see how many fields will return
-    // based on the size of the fields, we allocate a chunk of memory based on the user size request to be used.
-    if (enabled_domains->use_reserved_memory)
+	// It will perform a read as normal (using dynamic memory with malloc) to see how many fields will return
+	// based on the size of the fields, we allocate a chunk of memory based on the user size request to be used.
+	if (enabled_domains->use_reserved_memory)
     {
         // make a read to see domain array sizes.
         struct ExtlibEnergyTimeStamp *template_timestamp = extlib_read_energy_measurements(enabled_domains);
@@ -614,7 +614,7 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
 													(end->id - begin->id), cumulative, begin->domain_data[domain_iter].counter_name[j]);
 					break;
 
-                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
+				case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_NVML:
                     cumulative = 0;
                     result->domain_data[domain_iter].energy_per_counter[j] = meric::NVML::getResultValue(
                         begin->domain_data[domain_iter].counter_value[j], end->domain_data[domain_iter].counter_value[j],
@@ -628,14 +628,14 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
 													(end->id - begin->id), cumulative, begin->domain_data[domain_iter].counter_name[j]);
 					break;
 
-                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
+				case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HDEEM:
 					cumulative = 0;
 					result->domain_data[domain_iter].energy_per_counter[j] =
 						meric::HDEEM::getResultValue(begin->domain_data[domain_iter].counter_value[j], end->domain_data[domain_iter].counter_value[j],
 													 (end->id - begin->id), cumulative, begin->domain_data[domain_iter].counter_name[j], "");
 					break;
 
-                case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
+				case ExtlibEnergy::EXTLIB_ENERGY_DOMAIN_HWMON:
                     cumulative = 0;
                     result->domain_data[domain_iter].energy_per_counter[j] = meric::HWMON::getResultValue(
                         begin->domain_data[domain_iter].counter_value[j], end->domain_data[domain_iter].counter_value[j],
@@ -651,7 +651,7 @@ struct ExtlibEnergyTimeStamp *extlib_calc_energy_consumption(struct ExtlibEnergy
 			}
 
 			result->energy_total += result->domain_data[domain_iter].energy_total;
-        }
+		}
     }
 
     return result;

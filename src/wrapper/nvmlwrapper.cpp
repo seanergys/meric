@@ -27,7 +27,7 @@ struct NVML::SourceDesc_t : public SourceDecl_t
 	}
 
 	double unit;
-    std::string label;
+	std::string label;
     std::string fullName;
 
     uint64_t lastValue;
@@ -98,7 +98,7 @@ void NVML::getCounterValues(CounterRecord_t &record)
 
 	for (auto &desc : s_sourceByName)
 	{
-        // List only energy counters
+		// List only energy counters
 		if (desc.second->info.type != SourceInfo_t::TYPE_ENERGY)
 		{
 			continue;
@@ -111,7 +111,7 @@ void NVML::getCounterValues(CounterRecord_t &record)
 		}
 
 		record[desc.second->fullName] = energy;
-    }
+	}
 }
 
 void NVML::initCounters(bool detailed)
@@ -155,7 +155,7 @@ void NVML::initCounters(bool detailed)
 			{"GPU_MEMORY", NVML_FI_DEV_POWER_AVERAGE, 2, {SourceInfo_t::TYPE_POWER, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_NONE_BIT}});
 	}
 	else
-    {
+	{
 		// sourceDecls.push_back({ "DEVICE", 0,                         0, { SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET,
 		// SourceInfo_t::FLAG_NONE_BIT }});
 		sourceDecls.push_back(
@@ -197,7 +197,7 @@ void NVML::initCounters(bool detailed)
 			if (sourceDecl.info.type == SourceInfo_t::TYPE_POWER)
 			{
 				deviceDesc.fieldValues.push_back(nvmlFieldValue_t{});
-                deviceDesc.fieldValues.back().fieldId = sourceDecl.fieldId;
+				deviceDesc.fieldValues.back().fieldId = sourceDecl.fieldId;
                 deviceDesc.fieldValues.back().scopeId = sourceDecl.scopeId;
 				deviceDesc.fieldValuesSources.push_back(&res.first->second);
 			}
@@ -403,7 +403,7 @@ void NVML::getSamplesList(size_t sensorId, size_t first, size_t last, std::vecto
 	}
 
 	const SourceDesc_t &desc = *s_sourceById[sensorId];
-    samples.reserve(last - first);
+	samples.reserve(last - first);
 	for (size_t i = first; i < last; ++i)
 	{
 		if (desc.info.type == SourceInfo_t::TYPE_POWER)

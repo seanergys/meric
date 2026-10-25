@@ -391,7 +391,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsEnergyTimeStampWithCorrectlySe
 	auto *ts2 = extlib_read_energy_measurements(&energy_domains);
 	auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
-    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+	for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int expected_domain_id = 1 << domain_idx;
         std::string domain_name = getEnergyDomainName(expected_domain_id);
@@ -483,7 +483,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsSomeDataForExistingEnergyDomai
 	auto *ts2 = extlib_read_energy_measurements(&energy_domains);
 	auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
-    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+	for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int domain = 1 << domain_idx;
         if (EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
@@ -521,7 +521,7 @@ TEST(MERICExtAPITest, CalcEnergyConsumptionReturnsNoDataForNonExistingEnergyDoma
 	auto *ts2 = extlib_read_energy_measurements(&energy_domains);
 	auto *result = extlib_calc_energy_consumption(ts1, ts2);
 
-    for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
+	for (int domain_idx = 0; domain_idx < EXTLIB_NUM_DOMAINS; domain_idx++)
     {
         unsigned int domain = 1 << domain_idx;
         if (!EXTLIB_ENERGY_HAS_DOMAIN(energy_domains, domain))
