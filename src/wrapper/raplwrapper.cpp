@@ -175,7 +175,7 @@ void RAPL::initSamplers()
 
 			auto res = s_samplerDesc.insert(std::make_pair(pCounterDesc->fullName, SamplerDesc_t()));
 			res.first->second.pCounterDesc = pCounterDesc;
-			res.first->second.lastValue     = 0;
+			res.first->second.lastValue = 0;
             res.first->second.overflowCount = 0;
 
             s_samplerById.push_back(&res.first->second);
@@ -259,7 +259,7 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 
 	for (size_t i = 0; i < s_samplerById.size(); ++i)
 	{
-		if(!s_samplerById[i])
+		if (!s_samplerById[i])
         {
             continue;
         }
@@ -284,7 +284,7 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
 									  [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
 
-		for(auto it = startIt; it != endIt; ++it)
+		for (auto it = startIt; it != endIt; ++it)
         {
 			if (it == desc.samples.begin())
 			{
@@ -533,7 +533,7 @@ void RAPL_MSR::initCountersUnits()
 
 	RAPL::PCKG_POWER_LIMIT = RAPL_PCKG_POWER_LIMIT;
 	RAPL::RAM_POWER_LIMIT = RAPL_RAM_POWER_LIMIT;
-	RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
+	RAPL::PLATFORM_POWER_LIMIT = RAPL_PLATFORM_POWER_LIMIT;
     RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
 
     uint64_t MSR_RAPL_POWER_UNIT_bits = 0;
@@ -831,7 +831,7 @@ void RAPL_GEOPM::initCountersUnits()
 
 	RAPL::PCKG_POWER_LIMIT = RAPL_PCKG_POWER_LIMIT;
 	RAPL::RAM_POWER_LIMIT = RAPL_RAM_POWER_LIMIT;
-	RAPL::PLATFORM_POWER_LIMIT   = RAPL_PLATFORM_POWER_LIMIT;
+	RAPL::PLATFORM_POWER_LIMIT = RAPL_PLATFORM_POWER_LIMIT;
     RAPL::POWER_LIMIT_TIMEWINDOW = RAPL_POWER_LIMIT_TIMEWINDOW;
 
     uint64_t MSR_RAPL_POWER_UNIT_bits = 0;
@@ -1329,7 +1329,7 @@ void RAPL_PERF_EVENT::init(bool detailed)
 		}
 
 		res.first->second.unit = 1.0 / double(uint64_t(1) << 32);
-		res.first->second.label        = fullLabel;
+		res.first->second.label = fullLabel;
         res.first->second.fullName     = fullName;
         res.first->second.rangeMax     = std::numeric_limits<uint64_t>::max();
         res.first->second.isCumulative = (def.flags & CounterDef_t::FLAG_ACCUMULATIVE_BIT) != 0;

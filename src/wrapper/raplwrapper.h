@@ -16,15 +16,15 @@
 #include <mutex>
 
 #ifdef HAVE_X86_ADAPT_H
-	#include <x86_adapt.h>
+#include <x86_adapt.h>
 #elif defined HAVE_MSR_CORE_H
-	#include <msr_rapl.h>
+#include <msr_rapl.h>
 #elif defined HAVE_GEOPM_H
-	#include <geopm/PlatformTopo.hpp>
-	#include <geopm/PlatformIO.hpp>
-	#include <geopm_hash.h>
-	#include <geopm_field.h>
-	static geopm::PlatformIO &pio = geopm::platform_io();
+#include <geopm/PlatformTopo.hpp>
+#include <geopm/PlatformIO.hpp>
+#include <geopm_hash.h>
+#include <geopm_field.h>
+static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
 #include "../basis/async_utils.h"
@@ -36,29 +36,27 @@ namespace meric {
 class RAPL : public BaseWrapper
 {
 public:
-	class Base {
+	class Base
+	{
 	public:
 		typedef unsigned long long int RawCounterValue_t;
-		
-		struct CounterValue_t {
-			CounterValue_t(uint64_t value = 0)
-				: generation(0)
-				, value(value)
+
+		struct CounterValue_t
+		{
+			CounterValue_t(uint64_t value = 0) : generation(0), value(value)
 			{
-				if((value & (uint64_t(1) << 63)) == 0)
+				if ((value & (uint64_t(1) << 63)) == 0)
 					return;
 
 				generation = (value & ~(uint64_t(1) << 63)) >> 32;
-				this->value      = value & 0xFFFFFFFF;
+				this->value = value & 0xFFFFFFFF;
 			}
 
-			CounterValue_t(RawCounterValue_t value, uint64_t generation)
-				: generation(generation)
-				, value(value)
-			{}
+			CounterValue_t(RawCounterValue_t value, uint64_t generation) : generation(generation), value(value) {}
 
-			operator uint64_t() const {
-				if(generation != 0)
+			operator uint64_t() const
+			{
+				if (generation != 0)
 					return (generation << 32) | (value & 0xFFFFFFFF) | (uint64_t(1) << 63);
 				else
 					return value;
@@ -70,20 +68,14 @@ public:
 
 		typedef std::map<std::string, CounterValue_t> CounterRecord_t;
 
-		struct CounterDesc_t {
-			CounterDesc_t()
-				: unit(1.0)
-				, rangeMax(0)
-				, isCumulative(false)
-			{}
+		struct CounterDesc_t
+		{
+			CounterDesc_t() : unit(1.0), rangeMax(0), isCumulative(false) {}
 
 			CounterDesc_t(const CounterDesc_t &other)
-				: unit(other.unit)
-				, label(other.label)
-				, fullName(other.fullName)
-				, rangeMax(other.rangeMax)
-				, isCumulative(other.isCumulative)
-			{}
+				: unit(other.unit), label(other.label), fullName(other.fullName), rangeMax(other.rangeMax), isCumulative(other.isCumulative)
+			{
+			}
 
 			double unit;
 			std::string label;
@@ -98,17 +90,16 @@ public:
 		virtual void close() = 0;
 
 		virtual void getCounterValues(CounterRecord_t &record) = 0; // NOTE: This method is obsolete RAPL class uses "getCounterValue" instead.
-		virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, 
-			double runtime, int &cumulative, std::string counter, std::string regionName = "") = 0;
-	
+		virtual double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, double runtime, int &cumulative, std::string counter,
+									  std::string regionName = "") = 0;
+
 		virtual std::string summaryCounter() = 0;
 		virtual std::string getSummaryCounterName() = 0;
 		virtual std::string getSourceLabel() = 0;
 		virtual std::string getCounterLabel(const std::string counter) = 0;
-	
-		virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop,
-			double runtime, std::map<std::string, double> &ratios) = 0;
-	
+
+		virtual void getRatios(CounterRecord_t &start, CounterRecord_t &stop, double runtime, std::map<std::string, double> &ratios) = 0;
+
 		virtual void initCountersUnits() = 0;
 		virtual double getUnit(std::string counter) = 0;
 
@@ -119,24 +110,23 @@ public:
 	};
 
 	typedef Base::RawCounterValue_t RawCounterValue_t;
-	typedef Base::CounterValue_t    CounterValue_t;
-	typedef Base::CounterRecord_t   CounterRecord_t;
+	typedef Base::CounterValue_t CounterValue_t;
+	typedef Base::CounterRecord_t CounterRecord_t;
 
 	// Counters interface
 	static void init(bool detailed = false, double sampleFreqHz = 0.0);
 	static void close();
 
 	static void getCounterValues(CounterRecord_t &record);
-	static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue,
-		double runtime, int &cumulative, std::string counter, std::string regionName = "");
+	static double getResultValue(CounterValue_t startValue, CounterValue_t stopValue, double runtime, int &cumulative, std::string counter,
+								 std::string regionName = "");
 
 	static std::string summaryCounter();
 	static std::string getSummaryCounterName();
 	static std::string getSourceLabel();
 	static std::string getCounterLabel(const std::string counter);
 
-	static void getRatios(CounterRecord_t &start, CounterRecord_t &stop,
-		double runtime, std::map<std::string, double> &ratios);
+	static void getRatios(CounterRecord_t &start, CounterRecord_t &stop, double runtime, std::map<std::string, double> &ratios);
 
 	static void initCountersUnits();
 	static double getUnit(std::string counter);
@@ -170,12 +160,14 @@ public:
 protected:
 	typedef std::chrono::steady_clock Clock_t;
 
-	struct Sample_t {
+	struct Sample_t
+	{
 		uint64_t timestamp;
 		uint64_t value;
 	};
 
-	struct SamplerDesc_t {
+	struct SamplerDesc_t
+	{
 		Base::CounterDesc_t *pCounterDesc;
 		uint64_t lastValue;
 		uint64_t overflowCount;
@@ -185,7 +177,7 @@ protected:
 	static Base *getImpl();
 
 	static std::map<std::string, SamplerDesc_t> s_samplerDesc;
-	static std::vector<SamplerDesc_t *>         s_samplerById;
+	static std::vector<SamplerDesc_t *> s_samplerById;
 
 	static std::chrono::nanoseconds s_defaultSamplePeriod;
 	static std::chrono::nanoseconds s_minSamplePeriod;
