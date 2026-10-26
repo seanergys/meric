@@ -20,10 +20,10 @@
 #elif defined HAVE_MSR_CORE_H
 #include <msr_rapl.h>
 #elif defined HAVE_GEOPM_H
-#include <geopm/PlatformTopo.hpp>
 #include <geopm/PlatformIO.hpp>
-#include <geopm_hash.h>
+#include <geopm/PlatformTopo.hpp>
 #include <geopm_field.h>
+#include <geopm_hash.h>
 static geopm::PlatformIO &pio = geopm::platform_io();
 #endif
 
