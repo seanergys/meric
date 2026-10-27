@@ -60,6 +60,10 @@ namespace PERFEVENT_COUNTERS {
 const std::string PERFEVENT_CPU_CYCLES = "CPU_CYCLES";
 const std::string PERFEVENT_CPU_INSTS = "CPU_INSTRUCTIONS";
 
+#if defined _AMD_ || defined _INTEL_
+const std::string APERF_CPU_CYCLES = "CPU_CYCLES_APERF";
+const std::string MPERF_CPU_CYCLES = "CPU_CYCLES_MPERF";
+#endif
 #ifdef _AMD_
 const std::string AMD_CPU_FLOPS = "CPU_FLOPS";
 const std::string AMD_CPU_L3_MISSES = "CPU_L3_MISSES";
@@ -88,6 +92,10 @@ const std::string NVIDIA_GRACE_MEM_DRAM_BYTES_WRITE = "MEM_DRAM_BYTES_WRITE";
 #endif
 
 static std::map<const std::string, std::string> counterLabel = {
+#if defined _AMD_ || defined _INTEL_
+	{APERF_CPU_CYCLES, APERF_CPU_CYCLES},
+	{MPERF_CPU_CYCLES, MPERF_CPU_CYCLES},
+#endif
 #ifdef _AMD_
 	{AMD_CPU_FLOPS, AMD_CPU_FLOPS},
 	{AMD_CPU_L3_MISSES, AMD_CPU_L3_MISSES},
@@ -118,8 +126,13 @@ static std::map<const std::string, std::string> counterLabel = {
 	{PERFEVENT_CPU_INSTS, PERFEVENT_CPU_INSTS}};
 
 static std::map<const std::string, uint64_t> counterDefines = {
+#if defined _AMD_ || defined _INTEL_
+	{APERF_CPU_CYCLES, 0x0001},
+	{MPERF_CPU_CYCLES, 0x0002},
+#endif
 #ifdef _AMD_
-	{AMD_CPU_FLOPS, 0x0f03}, {AMD_CPU_L3_MISSES, 0x0104}
+	{AMD_CPU_FLOPS, 0x0f03},
+	{AMD_CPU_L3_MISSES, 0x0104}
 #elif defined _INTEL_
 	{INTEL_CPU_CYCLES_AMX_ACTIVE, 0x02b7},
 	{INTEL_CPU_INSTS_SCALAR_FP_DP, 0x01c7},
@@ -143,12 +156,11 @@ static std::map<const std::string, uint64_t> counterDefines = {
 };
 
 static std::unordered_map<std::string, int> counterMultipliers = {
-	#ifdef _INTEL_
-	{ INTEL_CPU_DRAM_BYTES_READ,     64 },
-	{ INTEL_CPU_DRAM_BYTES_WRITE,    64 }
-	#elif defined _ARM_
-	{ NVIDIA_GRACE_MEM_DRAM_BYTES_READ, 32 }
-	#endif
+#ifdef _INTEL_
+	{INTEL_CPU_DRAM_BYTES_READ, 64}, {INTEL_CPU_DRAM_BYTES_WRITE, 64}
+#elif defined _ARM_
+	{NVIDIA_GRACE_MEM_DRAM_BYTES_READ, 32}
+#endif
 };
 
 }

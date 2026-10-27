@@ -19,6 +19,10 @@ using namespace meric;
 bool PERFEVENT::detailedMode = false;
 unsigned long long int PERFEVENT::COUNTERMAX = LLONG_MAX;
 
+#if defined _AMD_ || defined _INTEL_
+long PERFEVENT::CPUnominalFrequency = 0;
+#endif
+
 #ifdef _AMD_
 int PERFEVENT::L3_CACHES_PER_SOCKET = 1;
 
@@ -51,6 +55,10 @@ void PERFEVENT::init(bool detailed)
 
 	detailedMode = detailed;
 
+#if defined _AMD_ || defined _INTEL_
+	CPUnominalFrequency = Environment::getNominalFrequency();
+#endif
+
 	#ifdef _AMD_
 	initL3CacheSizes();
 	#elif defined _INTEL_
@@ -68,6 +76,10 @@ void PERFEVENT::init(bool detailed)
 	#endif
 
 	std::map<std::string, __u32> PMU_TYPES;
+
+#if defined _AMD_ || defined _INTEL_
+	PMU_TYPES["msr"] = getPMUtype("msr");
+#endif
 
 	#ifdef _AMD_
 	PMU_TYPES["amd_l3"] = getPMUtype("amd_l3");
@@ -144,7 +156,20 @@ void PERFEVENT::init(bool detailed)
 
 			int core = Environment::mapCoresToSocket[i][j];
 			
-			countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffixCoreIdx] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, core);
+#if defined _AMD_ || defined _INTEL_
+			if (CPUnominalFrequency > 0)
+			{
+				__u32 PMU_TYPE = PMU_TYPES["msr"];
+				countersFd[PERFEVENT_COUNTERS::APERF_CPU_CYCLES + suffixCoreIdx] =
+					openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::APERF_CPU_CYCLES], core);
+				countersFd[PERFEVENT_COUNTERS::MPERF_CPU_CYCLES + suffixCoreIdx] =
+					openCounter(PMU_TYPE, PERFEVENT_COUNTERS::counterDefines[PERFEVENT_COUNTERS::MPERF_CPU_CYCLES], core);
+			}
+			else
+#endif
+			{
+				countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES + suffixCoreIdx] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, core);
+			}
 			countersFd[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS + suffixCoreIdx] = openCounter(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS, core);
 		}
 	}
@@ -628,7 +653,17 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 
 	//Initialization and construction of map counterValues
 	std::map<std::string, std::vector<unsigned long long int>> counterValues;
-	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
+#if defined _AMD_ || defined _INTEL_
+	if (CPUnominalFrequency > 0)
+	{
+		counterValues[PERFEVENT_COUNTERS::APERF_CPU_CYCLES].reserve(CORES_PER_NODE);
+		counterValues[PERFEVENT_COUNTERS::MPERF_CPU_CYCLES].reserve(CORES_PER_NODE);
+	}
+	else
+#endif
+	{
+		counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES].reserve(CORES_PER_NODE);
+	}
 	counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_INSTS].reserve(CORES_PER_NODE);
 
 	#ifdef _AMD_
@@ -705,9 +740,22 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 			coreIdxFill << std::setfill('0') << std::setw(coreIdxLength) << coreIdx;
 			std::string suffixCoreIdx = "_" + coreIdxFill.str();
 
-			unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+#if defined _AMD_ || defined _INTEL_
+			if (CPUnominalFrequency > 0)
+			{
+				unsigned long long int cyclesAPERF = counterValues[PERFEVENT_COUNTERS::APERF_CPU_CYCLES][coreIdx];
+				unsigned long long int cyclesMPERF = counterValues[PERFEVENT_COUNTERS::MPERF_CPU_CYCLES][coreIdx];
 
-			ratios["CPU_CORE_FREQUENCY"+suffixCoreIdx+" [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
+				ratios["CPU_CORE_FREQUENCY" + suffixCoreIdx + " [Hz]"] =
+					CountersRates::CPU_FREQUENCY_FROM_Pstate_PERF(cyclesAPERF, cyclesMPERF, CPUnominalFrequency);
+			}
+			else
+#endif
+			{
+				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+
+				ratios["CPU_CORE_FREQUENCY" + suffixCoreIdx + " [Hz]"] = CountersRates::CPU_FREQUENCY_FROM_CYCLES(cycles, runtime);
+			}
 		}
 	}
 
@@ -784,7 +832,15 @@ void PERFEVENT::getRatios(std::map<std::string, unsigned long long int>& start, 
 			if(cpuidSignature >= CpuidSignatureValues::INTEL_06_8FH)
 			{
 				unsigned long long int cyclesAMXActive = counterValues[PERFEVENT_COUNTERS::INTEL_CPU_CYCLES_AMX_ACTIVE][coreIdx];
-				unsigned long long int cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+				unsigned long long int cycles = 0;
+				if (CPUnominalFrequency > 0)
+				{
+					cycles = counterValues[PERFEVENT_COUNTERS::APERF_CPU_CYCLES][coreIdx];
+				}
+				else
+				{
+					cycles = counterValues[PERFEVENT_COUNTERS::PERFEVENT_CPU_CYCLES][coreIdx];
+				}
 		
 				ratios["CPU_AMX_ACTIVE"+suffixCoreIdx+" [%]"] = cycles ? (cyclesAMXActive/cycles)*100 : 0;
 			}
