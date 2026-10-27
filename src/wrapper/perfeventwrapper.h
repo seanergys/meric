@@ -50,6 +50,10 @@ private:
 	static std::map<const std::string, long> countersFd;
 	static unsigned long long int COUNTERMAX;
 
+#if defined _AMD_ || defined _INTEL_
+	static long CPUnominalFrequency;
+#endif
+
 	#ifdef _AMD_
 	static int L3_CACHES_PER_SOCKET;
 
@@ -82,6 +86,10 @@ private:
 
 	static bool detailedMode;
 	static unsigned long long int COUNTERMAX;
+
+#if defined _AMD_ || defined _INTEL_
+	static long CPUnominalFrequency;
+#endif
 
 	#ifdef _AMD_
 	static int L3_CACHES_PER_SOCKET;
