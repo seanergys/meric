@@ -509,29 +509,34 @@ More examples of MERIC configuration files are in [test/config directory](https:
 	* plain_test.cpp
 		* Simple test with no MERIC regions.
 	* test.cpp
-		* One region, with two another regions inside.
+		* OpenMP test with SLEEP, nested NESTED, RUN, and RAII regions.
+		* The `-s`, `-r`, `-n`, and `-a` options set region durations in milliseconds. Defaults are 1000, 1000, 500, and 1000 ms, respectively.
 	* test_mpi.cpp
-		* Same test as test.c, only extended with MPI.
+		* MPI+OpenMP test with SLEEP and RUN regions.
+		* The `-s` and `-r` options set region durations in milliseconds; both default to 1000 ms.
 	* samples_test.cpp
 		* Test with sleep (minimum energy consumption) and compute (much higher energy consumption) regions in a loop. This allows user to see in the list of samples how energy rise when compute region starts and check if MERIC detects this sample as a first one of this region.
 		* Follow the instructions inside to set the test.
 	* sleep_test.cpp
-		* A test with RUN (maximum load) and SLEEP (minimum load) regions, both with the same runtime.
-		* Originally made to control real CPU frequency of the machine.
+		* A test with a single SLEEP region containing a five-second sleep.
 	* overhead_test.cpp
 		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
 	* fort_test.f90
-		* Fortran version of test.cpp to show the MERIC Fortran interface.
-		* It si compiled using `make fortTest`.
-	* blas_test.cpp
+		* Fortran test with SLEEP and RUN regions and an OpenMP workload. The `-s` and `-r` options set region durations in milliseconds, both default to 1000 ms.
+		* Compile the MERIC Fortran module from the repository root using `make fortran`, then compile the test using `make fortTest` from this directory.
+	* python_omp_test.py
+		* Python test with SLEEP and RUN regions and a multiprocessing workload. The `-s` and `-r` options set region durations in milliseconds, both default to 1000 ms.
+	* python_mpi_test.py
+		* MPI Python test with SLEEP and RUN regions. The `-s` and `-r` options set region durations in milliseconds, both default to 1000 ms.
+	* blas_test.c
 		* Test compares DGEMM and DGEMV. There are two possible sizes of matrices (large and small (not) to fit in L3 cache). In both cases, sizes of matrices were set to take approximately the same time for both DGEMM and DGEMV region, when using all available resources.
 		* This test requires [Intel MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) library.
 		* It is compiled using `make blasTest`.
-	* cuda_test.cu
-		* Executes a memory bound and a compute bound kernels in all available GPUs.
+	* test_cuda.cu
+		* Executes memory-bound and compute-bound kernels in all available GPUs.
 		* It is compiled using `make cudaTest`.
 * Makefile
-	* Command `make` compiles all test codes except the ones which explicitly lists its compilation command.
+	* Command `make` builds the default test targets. Fortran, BLAS, and CUDA tests have separate build instructions.
 * environment_default.source
 	* Basic script that sets chosen MERIC environment variables and informs you which variables are set.
 	* When run with argument `-t`, the script just prints list of set variables.
@@ -550,7 +555,7 @@ More examples of MERIC configuration files are in [test/config directory](https:
 	* Template script to submit a job on BSC ARM Jetson platform.
 	
 
-Specify the mandatory MERIC's parameters and run you instrumented application or one from the test directory. Good starting point is running `test` application from test directory. To understand well MERIC's output, explore the source file **test.cpp** to see that this test contains regions A, B and C (inside A are two regions B and one region C). For each region you can set CPU core and uncore frequencies and number of threads.
+Specify the mandatory MERIC parameters and run your instrumented application or one from the test directory. A good starting point is the `test` application built from test.cpp. Its regions are SLEEP, NESTED, RUN, and RAII. For each region, you can set CPU core and uncore frequencies and the number of threads.
 ```
 export MERIC_FREQUENCY=0         # no CPU core frequency tuning
 export MERIC_UNCORE_FREQUENCY=0  # no CPU uncore frequency tuning
@@ -622,9 +627,9 @@ To allow MERIC manual instrumentation in your Fortran application, add `use meri
 
 ### Python binding
 
-There is Python module in the `lib` directory named libmericpy.so and libmericmpipy.so.
+There are two Python binding modules in the `lib` directory: `libmericpy.so` and `libmericmpipy.so`.
 
-To allow MERIC manual instrumentation in your Python application, `include libmericpy` to your code. Usual `MERIC_*` calls replaced to camelCase version `libmeric.*`, i.e `MERIC_MeasureStart(..)` to `libmeric.measureStart(..)`. Provided API functions given below. MERIC repository contains a code example `test/sleep_test.py` to show how the API can be used.
+To instrument a Python application, import `libmericpy`. For an MPI Python application, import `libmericmpipy`. MERIC API functions are exposed using camelCase names. For example, `MERIC_MeasureStart(...)` corresponds to `libmericpy.measureStart(...)`, or `libmericmpipy.measureStart(...)` for MPI. The API functions are listed below. The `test/sleep_test.py` file demonstrates basic use of the Python binding.
 
 ```
 Help on module libmericpy:

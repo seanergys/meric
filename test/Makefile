@@ -87,7 +87,7 @@ blasTestInfo:
 	$(info )
 
 fortTest:
-	$(FC) fort_test.f90 -cpp -lmeric $(LIBS) -o fortTest
+	$(FC) fort_test.f90 -cpp -lmeric $(LIBS) $(OPENMP) -o fortTest
 
 fortTestInfo:
 	$(info )
@@ -111,5 +111,3 @@ clean:
 cleanAll:
 	make clean
 	rm -rf $(MeasurementDIRS) *.tmp
-
-
