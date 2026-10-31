@@ -95,20 +95,18 @@ Using OpenMP API.
 
 
 ## NVIDIA GPU streaming multiprocessors frequency ##
-Some NVIDIA GPUs provide possibility to tune frequency of streaming multiprocessors. The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
-To tune the SM frequency, MERIC requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
-
+Some NVIDIA GPUs provide possibility to tune frequency of streaming multiprocessors (SM). The frequencies are much more finegrain then frequencies of server processors, while only specific values are possible to set. Also, the available SM frequencies may depend on frequency of the GPU memory, if the memory frequency is possible to tune. User may specify any frequency from the minimum - maximum frequency range, while MERIC will find the closest available frequency and will set it.
+To tune the SM frequency, MERIC requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, root must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *`, `nvidia-smi -rac` (depricated from driver version 590), `nvidia-smi -lgc *`, and `nvidia-smi -rgc` commands using `/etc/sudoers`.
 
 ## NVIDIA GPU memory frequency ##
-NVIDIA GPUs with GDDR memory provides possibility to tune its frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, superuser must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *` and `nvidia-smi -rac` commands using `/etc/sudoers`.
-
+Some NVIDIA GPUs provide possibility to tune memory frequency. As well as in case of the SMs, MERIC sets the closest available frequency, which is possible to set. Requires [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml). To tune GPU frequencies without sudo rights, root must execute command `sudo nvidia-smi -acp UNRESTRICTED` (feature removed from driver 465.xx). Alternatively, it is also possible to raise sudo rights to `nvidia-smi -ac *`, `nvidia-smi -rac` (depricated from driver version 590), `nvidia-smi -lmc *`, and `nvidia-smi -rmc` commands using `/etc/sudoers`.
 
 ## NVIDIA GPU power capping ##
 Using [NVIDIA Management Library (NVML)](https://developer.nvidia.com/nvidia-management-library-nvml) to set power limit of NVIDIA GPUs. Requires sudo rights. Alternatively, it is also possible to raise sudo rights to `nvidia-smi -pl *` command using `/etc/sudoers`.
 
 
 ## ARM Jetson memory frequency ##
-To simplify MERIC's interface, the memory frequency is set the same way as Intel CPU uncore frequency using MERIC_UNCORE_FREQUENCY environment variable.
+To simplify MERIC's interface, the memory frequency is set the same way as Intel CPU uncore frequency using `MERIC_UNCORE_FREQUENCY` environment variable.
 
 
 --------------------------------------------------------------------------------

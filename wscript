@@ -145,7 +145,14 @@ def configure(ctx):
 			ctx.env.append_unique("DEFINES", [ "HAVE_GEOPM_H=1"])
 			ctx.env.append_unique("LINKFLAGS", [ "-lgeopmd" ])
 		if ctx.check_cxx(lib="nvidia-ml", mandatory=False, execute=True):
-			ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False)
+			if ctx.check_cxx(header_name="nvml.h", lib="nvidia-ml", uselib_store="nvml", mandatory=False):
+				# nvmlDeviceSetApplicationsClocks is deprecated and removed in CUDA 14.0, locked clocks API requires Volta or newer
+				ctx.check_cxx(fragment='#include <nvml.h>\nint main() { volatile void *f[] = { (void*)nvmlDeviceSetGpuLockedClocks, (void*)nvmlDeviceSetMemoryLockedClocks, (void*)nvmlDeviceResetGpuLockedClocks, (void*)nvmlDeviceResetMemoryLockedClocks }; return f[0] == 0; }\n',
+					define_name="HAVE_NVML_LOCKED_CLOCKS", lib="nvidia-ml", execute=False, mandatory=False,
+					msg="Checking for NVML locked clocks API", errmsg="not found")
+				ctx.check_cxx(fragment='#include <nvml.h>\nint main() { volatile void *f[] = { (void*)nvmlDeviceSetApplicationsClocks, (void*)nvmlDeviceResetApplicationsClocks }; return f[0] == 0; }\n',
+					define_name="HAVE_NVML_APPLICATIONS_CLOCKS", lib="nvidia-ml", execute=False, mandatory=False,
+					msg="Checking for NVML applications clocks API", errmsg="not found")
 		if ctx.check_cxx(header_name="rocm_smi/rocm_smi.h", lib="rocm_smi64", uselib_store="rocm", execute=False, mandatory=False):
 			ctx.env.append_unique("LINKFLAGS", [ "-lrocm_smi64" ])
 

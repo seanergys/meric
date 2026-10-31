@@ -1021,6 +1021,55 @@ UFS_WAY Environment::getPreferredUFSWay()
  * drivers prior 465.xxx had a posibility to raise the rights via `sudo nvidia-smi -acp UNRESTRICTED`
  **/
 #ifdef HAVE_NVML_H
+/**
+ * Locks GPU memory and SM clocks [MHz] using the NVML locked clocks API (Volta or newer).
+ * If it fails (e.g., older architecture), falls back to the deprecated applications
+ * clocks API (removed in CUDA 14.0), if the NVML header still provides it.
+ **/
+static void nvmlSetGPUClocks(nvmlDevice_t device, unsigned int memMHz, unsigned int smMHz)
+{
+#ifdef HAVE_NVML_LOCKED_CLOCKS
+	if (nvmlDeviceSetGpuLockedClocks(device, smMHz, smMHz) == NVML_SUCCESS)
+	{
+		if (nvmlDeviceSetMemoryLockedClocks(device, memMHz, memMHz) != NVML_SUCCESS)
+		{
+			std::cerr << "MERIC ERROR: NVML failed to set GPU memory frequency\n";
+		}
+		return;
+	}
+	// not supported (pre-Volta) or no permission, try the applications clocks API
+#endif
+#ifdef HAVE_NVML_APPLICATIONS_CLOCKS
+	if (nvmlDeviceSetApplicationsClocks(device, memMHz, smMHz) != NVML_SUCCESS)
+	{
+		std::cerr << "MERIC ERROR: NVML failed to set GPU frequency\n";
+	}
+#elif defined HAVE_NVML_LOCKED_CLOCKS
+	std::cerr << "MERIC ERROR: NVML failed to set GPU SM frequency\n";
+#else
+	std::cerr << "MERIC ERROR: NVML does not provide API to set GPU frequency\n";
+#endif
+}
+
+/**
+ * both APIs are reset, because it is not known which one was used to set the frequency
+ **/
+static void nvmlResetGPUClocks(nvmlDevice_t device)
+{
+	bool reset = false;
+#ifdef HAVE_NVML_LOCKED_CLOCKS
+	reset |= nvmlDeviceResetGpuLockedClocks(device) == NVML_SUCCESS;
+	reset |= nvmlDeviceResetMemoryLockedClocks(device) == NVML_SUCCESS;
+#endif
+#ifdef HAVE_NVML_APPLICATIONS_CLOCKS
+	reset |= nvmlDeviceResetApplicationsClocks(device) == NVML_SUCCESS;
+#endif
+	if (!reset)
+	{
+		std::cerr << "MERIC ERROR: NVML failed to reset GPU frequency\n";
+	}
+}
+
 void Environment::getGPUTuningMethod()
 {
 	if (activatedGPUtuning != NO_TUNING)
@@ -2885,18 +2934,25 @@ void Environment::GPUfrequency(uint freqMEM, uint freqSM, int gpu)
 	{
 		for (int id=min; id<max; id++)
 		{
-			if (nvmlDeviceSetApplicationsClocks(NVML::getGPUHandle(id), freqMEM/1e6, freqSM/1e6) != NVML_SUCCESS)
-			{
-				std::cerr << "MERIC ERROR: NVML failed to set GPU frequency\n";
-			}
+			nvmlSetGPUClocks(NVML::getGPUHandle(id), freqMEM / 1e6, freqSM / 1e6);
 		}
 	}
 	else if (activatedGPUtuning == NVIDIA_SMI)
 	{
-		const std::string command = "sudo nvidia-smi -ac "+std::to_string(freqMEM/1000000)+","+std::to_string(freqSM/1000000);
+		const std::string memMHz = std::to_string(freqMEM / 1000000);
+		const std::string smMHz = std::to_string(freqSM / 1000000);
 		for (int id=min; id<max; id++)
 		{
-			system((command+" -i "+std::to_string(id)+" 2> /dev/null > /dev/null \n").c_str());
+			const std::string device = " -i " + std::to_string(id) + " 2> /dev/null > /dev/null \n";
+			// locked clocks (Volta or newer), applications clocks as a fallback for older GPUs
+			if (system(("sudo nvidia-smi -lgc " + smMHz + "," + smMHz + device).c_str()) == 0)
+			{
+				system(("sudo nvidia-smi -lmc " + memMHz + "," + memMHz + device).c_str());
+			}
+			else
+			{
+				system(("sudo nvidia-smi -ac " + memMHz + "," + smMHz + device).c_str());
+			}
 		}
 	}
 	#endif
@@ -3234,14 +3290,14 @@ void Environment::restoreSystemSettings(bool hardReset)
 		{
 			for (int id=0; id<NVML::getGPUsPerNode(); id++)
 			{
-				if (nvmlDeviceResetApplicationsClocks(NVML::getGPUHandle(id)) != NVML_SUCCESS)
-				{
-					std::cerr << "MERIC ERROR: NVML failed to reset GPU frequency\n";
-				}
+				nvmlResetGPUClocks(NVML::getGPUHandle(id));
 			}
 		}
 		else if (activatedGPUtuning == NVIDIA_SMI)
 		{
+			// not known which one was used to set the frequency
+			system("sudo nvidia-smi -rgc 2> /dev/null > /dev/null \n");
+			system("sudo nvidia-smi -rmc 2> /dev/null > /dev/null \n");
 			system("sudo nvidia-smi -rac 2> /dev/null > /dev/null \n");
 		}
 	}

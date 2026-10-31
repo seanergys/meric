@@ -1,4 +1,4 @@
-### 31.09.2026 #################################################################
+### 27.10.2026 #################################################################
   - change in usage MERIC_SAMPLES [boolean] (false), and new input parameter MERIC_SAMPLING_FREQUENCY [Hz] (0)
   - MERIC Python module generation if pybind is detected at the MERIC configure stage
   - fixed MPI support in Python
@@ -21,6 +21,7 @@
   - ignores region if its name is not valid directory name or its suffix is '_static'
   - linked libraries are no longer required to be linked by the instrumented application
   - support for NVIDIA Grace Blackwell energy and power sampling using HWMON
+  - NVIDIA GPU frequency tuning uses new NVML API (nvmlDeviceSetGpuLockedClocks, nvmlDeviceSetMemoryLockedClock), old NVML API maintained
   - improved Intel/AMD CPU core frequency monitoring when using perf
 
 ### 17.12.2025 #################################################################
