@@ -22,6 +22,7 @@
   - linked libraries are no longer required to be linked by the instrumented application
   - support for NVIDIA Grace Blackwell energy and power sampling using HWMON
   - improved Intel/AMD CPU core frequency monitoring when using perf
+  - reduced overhead when repeatedly accessing MSRs or fs
 
 ### 17.12.2025 #################################################################
   - MERIC_TMP_PATH should be defined in configuration stage to specify where to store temporary files

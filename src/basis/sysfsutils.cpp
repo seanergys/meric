@@ -114,5 +114,20 @@ std::string NormalizeLabel(const std::string &str)
 	return out;
 }
 
+UniqueFdHandle::~UniqueFdHandle()
+{
+	if (m_handle < 0)
+		return;
+
+	close(m_handle);
+}
+
+FdCache::FdCache(FdCache &&other) { std::swap(m_fds, other.m_fds); }
+
+FdCache &FdCache::operator=(FdCache &other)
+{
+	std::swap(m_fds, other.m_fds);
+	return *this;
+}
 }
 }
