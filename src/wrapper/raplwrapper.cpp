@@ -284,12 +284,13 @@ std::string RAPL::getData(double startTime, double duration, SamplerRecord_t &re
 		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
 									  [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
 
+		if (startIt == desc.samples.begin() && startIt != endIt)
+		{
+			++startIt;
+		}
+
 		for (auto it = startIt; it != endIt; ++it)
-        {
-			if (it == desc.samples.begin())
-			{
-				continue;
-			}
+		{
 			double power = SampleEnergyToPower(*it, desc.pCounterDesc->rangeMax, (it - 1).base()) * desc.pCounterDesc->unit;
 			data.energy += power;
 			data.min = std::min(data.min, power);
