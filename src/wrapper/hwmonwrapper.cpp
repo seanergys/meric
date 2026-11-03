@@ -524,6 +524,11 @@ std::string HWMON::getData(double startTime, double duration, SamplerRecord_t &r
 		auto endIt = std::upper_bound(desc.samples.begin(), desc.samples.end(), intervalEnd,
 									  [](uint64_t value, const Sample_t &sample) { return value < sample.timestamp; });
 
+		if (desc.info.type == SourceInfo_t::TYPE_ENERGY && startIt == desc.samples.begin() && startIt != endIt)
+		{
+			++startIt;
+		}
+
 		for (auto it = startIt; it != endIt; ++it)
 		{
 			double power = (double(it->value) * desc.unit);
