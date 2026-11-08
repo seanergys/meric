@@ -336,7 +336,7 @@ The Static Binary Instrumentation tools use Dyninst library for binary analysis 
 
 The compilation mechanism detects the compiler type, however if the detection fails, the default is GNU C++ compiler. Export `CXX` and `MPICXX` environment variables to specify the compiler. The compilation compiles MERIC, TIMEPROF and all the tools, except the SBI tools when GNU compiler is not used, or any of the dependencies is missing. If MPI compiler is available, than compilation will produce both MPI and non-MPI versions of the libraries, both using OpenMP. If an MPI application without OpenMP should be analyzed, use `make noopenmp` command. Accordingly, link your application with `-lmeric`/`-ltimeprof` or `-lmericmpi`/`-ltimeprofmpi` for your OpenMP+MPI application or`-lmericmpionly`/`-ltimeprofmpionly` for pure MPI application.
 
-To use MERIC for Fortran application analysis a Fortran module is provided. The module is being compiled separately from MERIC, use `make fortran` command.
+To use MERIC for Fortran application analysis a Fortran module is provided. Waf detects an optional GNU/Intel/OneAPI Fortran compiler during configuration, builds `meric.mod` during the normal build, and installs it into `<prefix>/include`. Set `FC` to select the compiler. Additional Fortran compilers (pgfortran, nvfortran, nagfor) are supported using additional compilation command `make fortran`.
 
 --------------------------------------------------------------------------------
 #     7] MERIC input parameters                                                #
@@ -521,7 +521,7 @@ More examples of MERIC configuration files are in [test/config directory](https:
 		* Test to measure MERIC overhead and overhead of libraries to change environment parameters.
 	* fort_test.f90
 		* Fortran test with SLEEP and RUN regions and an OpenMP workload. The `-s` and `-r` options set region durations in milliseconds, both default to 1000 ms.
-		* Compile the MERIC Fortran module from the repository root using `make fortran`, then compile the test using `make fortTest` from this directory.
+		* Fortran compiler is optional. Thus, compation of this test requires standalone complation using `make fortTest` from the `test` directory.
 	* python_omp_test.py
 		* Python test with SLEEP and RUN regions and a multiprocessing workload. The `-s` and `-r` options set region durations in milliseconds, both default to 1000 ms.
 	* python_mpi_test.py
