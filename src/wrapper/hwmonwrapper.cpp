@@ -45,7 +45,13 @@ int HWMON::PROBE_NUMBER;
 std::vector<std::string> HWMON::vrSensorLabel;
 
 const std::string HWMON::s_rootPath = "/sys/class/hwmon";
-const std::vector<std::string> HWMON::s_checkFiles{ "^energy([0-9]+)_label$", "^power([0-9]+)_oem_info$" };
+const std::vector<std::string> HWMON::s_checkLabelFiles{"^energy([0-9]+)_label$", "^power([0-9]+)_oem_info$"};
+const std::regex HWMON::s_labelRegex("^([a-zA-Z ]+)([0-9]+)$");
+const std::set<std::string> HWMON::s_checkLabels{
+#ifdef _AMD_
+	HWMON_PCKG_ENERGY,	HWMON_CORE_ENERGY,
+#endif
+	"CPU_Power_Socket", "Module_Power_Socket", "SysIO_Power_Socket", "Grace_Power_Socket", "GPU_Power_Socket"};
 
 HWMON::SourceDescMap_t HWMON::s_sourceDesc;
 HWMON::SourceNameMap_t HWMON::s_sourceByName;
@@ -145,7 +151,7 @@ void HWMON::initCounters(bool detailed)
 		CollectSources_t collectDesc;
 		collectDesc.prefixes = {""};
 		collectDesc.counterFileRegex = "^energy([0-9]+)_input$";
-		collectDesc.labelRegex = "^([a-zA-Z ]+)([0-9]+)$";
+		collectDesc.labelRegex = s_labelRegex;
 		collectDesc.labelFilename = {"energy", "_label"};
 		sourcesDecl[HWMON_PCKG_ENERGY] = {{SourceInfo_t::TYPE_ENERGY, SourceInfo_t::DOMAIN_PER_SOCKET, SourceInfo_t::FLAG_ACCUMULATIVE_BIT}, {}};
 
@@ -190,7 +196,7 @@ void HWMON::initCounters(bool detailed)
 		CollectSources_t collectDesc;
 		collectDesc.prefixes = {"", "/device"};
 		collectDesc.counterFileRegex = "^power([0-9]+)_average$";
-		collectDesc.labelRegex = "^([a-zA-Z ]+)([0-9]+)$";
+		collectDesc.labelRegex = s_labelRegex;
 		collectDesc.labelFilename = {"power", "_oem_info"};
 
 		sourcesDecl.insert(std::make_pair<std::string, SourceDecl_t>(
@@ -570,7 +576,7 @@ bool HWMON::isAvailable()
 
 	std::vector<std::pair<std::regex, int>> searchFiles;
 
-	for (const auto &name : s_checkFiles)
+	for (const auto &name : s_checkLabelFiles)
 	{
 		searchFiles.push_back(std::make_pair(std::regex(name), 0));
 	}
@@ -585,7 +591,21 @@ bool HWMON::isAvailable()
 									 continue;
 								 }
 
-								 searchFile.second += (access((path).c_str(), R_OK) == 0 ? 1 : 0);
+								 std::string hwmonSourceLabel;
+								 if (!sysfsutils::ReadValue(path, hwmonSourceLabel))
+								 {
+									 continue;
+								 }
+
+								 std::smatch hwmonSourceLabelMatch;
+								 if (!std::regex_match(hwmonSourceLabel, hwmonSourceLabelMatch, s_labelRegex))
+								 {
+									 continue;
+								 }
+
+								 std::string baseLabel = sysfsutils::NormalizeLabel(hwmonSourceLabelMatch[1]);
+
+								 searchFile.second += s_checkLabels.count(baseLabel) > 0 ? 1 : 0;
 							 }
 						 });
 

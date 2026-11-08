@@ -137,7 +137,9 @@ protected:
 	static std::vector<std::string> vrSensorLabel;
 
 	static const std::string s_rootPath;
-	static const std::vector<std::string> s_checkFiles;
+	static const std::vector<std::string> s_checkLabelFiles;
+	static const std::set<std::string> s_checkLabels;
+	static const std::regex s_labelRegex;
 
 	static SourceDescMap_t s_sourceDesc;
 	static SourceNameMap_t s_sourceByName;
