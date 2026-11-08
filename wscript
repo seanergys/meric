@@ -1,5 +1,5 @@
 
-from waflib import Logs
+from waflib import Logs, Errors
 import os, shutil, copy, re, platform
 import subprocess
 from subprocess import DEVNULL
@@ -52,6 +52,18 @@ def configure(ctx):
 		else:
 			ctx.fatal("C++ compiler not foud, set a correct one by '--cpp=' parameter")
 	
+	# Optional Fortran bindings. Keep failed detection out of the C++ environment.
+	ctx.env.HAVE_FORTRAN = False
+	if not ctx.options.no_fortran and not ctx.options.sbi:
+		ctx.env.stash()
+		try:
+			ctx.load('compiler_fc')
+		except Errors.ConfigurationError:
+			ctx.env.revert()
+		else:
+			ctx.env.commit()
+			ctx.env.HAVE_FORTRAN = True
+
 	# MPI compiler
 	if (ctx.options.mpi == ""):
 		ctx.add_os_flags('MPICXX')
@@ -236,7 +248,9 @@ def configure(ctx):
 	
 	ctx.msg("Compiler flags", " ".join(ctx.env["CXXFLAGS"]))
 	if not ctx.env.MPICXX:
-		Logs.warn("MPI compiler not found. Only shared memory parallelization is supported")
+		Logs.warn("MPI compiler not found. Only shared memory parallelization is supported.")
+	if not ctx.env.HAVE_FORTRAN:
+		Logs.warn('Fortran compiler not found or unusable. Fortran module will not be built. After MERIC compilation execute `make fortran` to generate Fortran module.')
 
 #	print(ctx.env.CXX)
 #	print(ctx.options)
@@ -264,6 +278,17 @@ def build(ctx):
 	if "SBI_ONLY" in ctx.env.SBI:
 		return
 	
+	# Waf tracks the module output and the included interface as dependencies.
+	if ctx.env.HAVE_FORTRAN:
+		ctx(
+			features = 'fc',
+			source = 'include/meric_mod.F90',
+			includes = 'include',
+			name = 'meric_fortran'
+		)
+		ctx.install_files('${PREFIX}/include',
+			ctx.bldnode.make_node(ctx.modfile('meric')), chmod=0o664)
+
 	ctx.objects(
 		source =
 			ctx.path.ant_glob('src/basis/*.cpp') +
@@ -355,7 +380,7 @@ def build(ctx):
 		#INCLUDE
 		ctx.install_files(
 			dest         = "${PREFIX}/include",
-			files        = ctx.path.ant_glob('include/*'),
+			files        = ctx.path.ant_glob('include/*', excl='include/*.mod include/*.MOD'),
 			chmod        = 0o664
 		)
 
@@ -491,6 +516,14 @@ def build(ctx):
 
 ################################################################################
 def options(opt):
+	opt.load('compiler_fc')
+	opt.add_option(
+		"--no-fortran",
+		action="store_true",
+		default=False,
+		help="Disable Fortran compiler detection and module generation"
+	)
+
 	opt.add_option(
 		"--prefix",
 		dest='prefix',

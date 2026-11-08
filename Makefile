@@ -23,6 +23,7 @@ configure:
 	./waf configure --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)"
 
 install:
+	./waf build
 	./waf install
 
 i:
@@ -35,11 +36,13 @@ noopenmp:
 debug:
 	make love
 	./waf configure --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
+	./waf build -v
 	./waf install -v
 
 scorep:
 	make love
 	./waf configure  --flag="-g" --scorep --includes="$(INCLUDES_MERIC)" --libpaths="$(LIBPATH_MERIC)" --verbose
+	./waf build -j 1 -v
 	./waf install -j 1 -v
 
 fortran:
