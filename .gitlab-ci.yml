@@ -5,19 +5,8 @@ variables:
   CI_MERIC_PIPELINE_REPO_PATH: "energy-efficiency/meric-suite/MERIC-RS-CICD"
   CI_MERIC_PIPELINE_REPO_REF: "main"
 
-  # Nightly schedules are accepted only when they target this branch.
-  CI_MERIC_NIGHTLY_BRANCH: "dev"
-  CI_MERIC_TEST_PROFILE: "full"
-
 workflow:
   rules:
-    # Scheduled pipeline for the integration branch.
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == $CI_MERIC_NIGHTLY_BRANCH'
-      variables:
-        CI_MERIC_PIPELINE_LEVEL: "scheduled"
-        CI_MERIC_TEST_PROFILE: "nightly"
-      when: always
-
     # Merge requests targeting the dev branch.
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
       changes:
@@ -25,7 +14,6 @@ workflow:
         regexp: &pipeline_relevant_change
           '\A(?!(?:(?:.*/)?README\.md|CHANGELOG|LICENSE|REUSE\.toml|LICENSES/.*|\.gitlab/.*|\.git(?!lab-ci\.yml\z)[^/]*)\z).+\z'
       variables:
-        CI_MERIC_PIPELINE_LEVEL: "dev"
         CI_MERIC_TEST_PROFILE: "full"
       when: always
 
@@ -34,35 +22,20 @@ workflow:
       changes:
         regexp: *pipeline_relevant_change
       variables:
-        CI_MERIC_PIPELINE_LEVEL: "master"
         CI_MERIC_TEST_PROFILE: "full"
       when: always
 
-    # Do not create a second branch pipeline when an MR pipeline is available.
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
-      when: never
-
-    # Automatic push pipelines only for dev and master.
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "dev"'
+    # Merge requests targeting the seanergys branch.
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "seanergys"'
       changes:
         regexp: *pipeline_relevant_change
       variables:
-        CI_MERIC_PIPELINE_LEVEL: "dev"
-        CI_MERIC_TEST_PROFILE: "full"
-      when: always
-
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "vys0053/meric" && $CI_COMMIT_BRANCH == "master"'
-      changes:
-        regexp: *pipeline_relevant_change
-      variables:
-        CI_MERIC_PIPELINE_LEVEL: "master"
-        CI_MERIC_TEST_PROFILE: "full"
+        CI_MERIC_TEST_PROFILE: "seanergys-only"
       when: always
 
     # Any branch can be tested manually from the GitLab UI.
     - if: '$CI_PIPELINE_SOURCE == "web"'
       variables:
-        CI_MERIC_PIPELINE_LEVEL: "web"
         CI_MERIC_TEST_PROFILE: "full"
       when: always
 
