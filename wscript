@@ -77,7 +77,7 @@ def configure(ctx):
 	if ctx.options.flags:
 		ctx.env.CXXFLAGS[:] = [item for item in ctx.env.CXXFLAGS if not item.startswith("-O")]
 		ctx.env.append_unique("CXXFLAGS", ctx.options.flags.split( ))
-	ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-fPIC"])
+	ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-fPIC"])
 	if (ctx.options.includes):
 		for path in ctx.options.includes.split():
 			if path[0] == '-':
@@ -235,6 +235,9 @@ def configure(ctx):
 		ctx.env.CXXFLAGS.insert(0, ctx.env.CXX[0])
 		ctx.env.LINKFLAGS.insert(0, ctx.env.CXX[0])
 		ctx.env.CXX[0] = "scorep"
+
+	if(ctx.check_cfg(package='seanerbus', args='--cflags --libs', uselib_store='seanerbus', mandatory=True)): #TODO change the dependency to optional when upstreaming
+		ctx.env.append_unique("DEFINES", ["HAVE_SEANERBUS"])
 	
 	if ctx.env.MPICXX:
 		ctx.setenv("mpi", ctx.env.derive())
@@ -294,7 +297,8 @@ def build(ctx):
 			ctx.path.ant_glob('src/basis/*.cpp') +
 			ctx.path.ant_glob('src/meric/*.cpp') +
 			ctx.path.ant_glob('src/wrapper/*.cpp'),
-		target = "basis"
+		target = "basis",
+		use = "seanerbus"
 	)
 	
 	# STATIC MERIC TOOL
@@ -309,12 +313,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/e4wrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/seanerbuswrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="mericStatic",
-		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp",
+		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp seanerbus",
 		install_path = "${PREFIX}/bin"
 	)
 	
@@ -333,12 +338,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/e4wrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/seanerbuswrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="wrapper",
-		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower netsnmp",
+		use="msr x86_adapt numa geopm nvml rocm hdeem freeipmi esmi cpufreq cpupower netsnmp seanerbus",
 		install_path = "${PREFIX}/bin"
 	)
 	
@@ -357,12 +363,13 @@ def build(ctx):
 			ctx.path.ant_glob('src/wrapper/a64fxwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/hwmonwrapper.cpp') +
 			ctx.path.ant_glob('src/wrapper/occwrapper.cpp') +
+			ctx.path.ant_glob('src/wrapper/seanerbuswrapper.cpp') +
 			ctx.path.ant_glob('src/basis/sysfsutils.cpp') +
 			ctx.path.ant_glob('src/basis/statistics_utils.cpp') +
 			ctx.path.ant_glob('src/basis/msrutil.cpp') +
 			ctx.path.ant_glob('src/basis/json.cpp'),
 		target="systemInfo",
-		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+		use="msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower seanerbus",
 		install_path = "${PREFIX}/bin"
 	)
 
@@ -400,7 +407,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = "meric",
-			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi seanerbus",
 			install_path = "${PREFIX}/lib"
 		)
 
@@ -415,7 +422,7 @@ def build(ctx):
 		ctx.shlib(
 			source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprof",
-			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi seanerbus",
 			install_path = "${PREFIX}/lib"
 		)
 		
@@ -428,7 +435,7 @@ def build(ctx):
 					ctx.path.ant_glob('src/meric/shared/*.cpp') + 
 					ctx.path.ant_glob('src/store/*.cpp'),
 				target       = 'mericpy',
-				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower seanerbus",
 				install_path = "${PREFIX}/lib"
 			)
 
@@ -438,7 +445,7 @@ def build(ctx):
 					ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
 					ctx.path.ant_glob('src/timeprof/*.cpp'),
 				target       = "timeprofpy",
-				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+				use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower seanerbus",
 				install_path = "${PREFIX}/lib"
 			)
 		suffix=""
@@ -466,7 +473,7 @@ def build(ctx):
 			ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 			ctx.path.ant_glob('src/store/*.cpp'),
 		target       = "mericmpi"+suffix,
-		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi seanerbus",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -483,7 +490,7 @@ def build(ctx):
 	ctx.shlib(
 		source       = ctx.path.ant_glob('src/timeprof/*.cpp'),
 		target       = "timeprofmpi"+suffix,
-		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi",
+		use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower netsnmp papi seanerbus",
 		install_path = "${PREFIX}/lib",
 		env          = ctx.all_envs["mpi"]
 	)
@@ -497,7 +504,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/meric/distributed/*.cpp') + 
 				ctx.path.ant_glob('src/store/*.cpp'),
 			target       = 'mericmpipy',
-			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower seanerbus",
 			install_path = "${PREFIX}/lib",
 			env          = ctx.all_envs["mpi"]
 		)
@@ -508,7 +515,7 @@ def build(ctx):
 				ctx.path.ant_glob('src/python/timeprof_pybind.cpp') + 
 				ctx.path.ant_glob('src/timeprof/*.cpp'),
 			target       = "timeprofmpipy",
-			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower",
+			use          = "basis msr x86_adapt numa geopm nvml rocm esmi cpufreq cpupower seanerbus",
 			install_path = "${PREFIX}/lib",
 			env          = ctx.all_envs["mpi"]
 		)
