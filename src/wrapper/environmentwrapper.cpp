@@ -3,6 +3,7 @@
 #include "nvmlwrapper.h"
 #include "raplwrapper.h"
 #include "rocmwrapper.h"
+#include "seanerbuswrapper.h"
 
 using namespace meric;
 
@@ -2077,6 +2078,10 @@ void Environment::init(SYSTEM_TYPE system, RegionParameters defaultParameter, in
 #ifdef HAVE_ROCM_SMI_ROCM_SMI_H
 	ROCM::init();
 #endif
+
+#ifdef HAVE_SEANERBUS
+	SeanerBusWrapper::init();
+#endif
 	
 	initHWSizes();
 	RAPL::initCountersUnits();
@@ -2236,6 +2241,15 @@ void Environment::frequency(uint64_t freq, int socket)
 		socket_min = 0;
 		socket_max = SOCKETS_PER_NODE-1;
 	}
+
+#ifdef HAVE_SEANERBUS
+	{
+		SeanerBusWrapper::frequency(freq, socket);
+		clock_gettime(CLOCK_REALTIME, &stop_time);
+		MERIC_INFO << "MERIC CPU core frequency changed in " << mutils::timeToDouble(stop_time - start_time) * 1000 << " ms\n";
+		return;
+	}
+#endif // HAVE_SEANERBUS
 
 #if defined _INTEL_ && (defined HAVE_MSR_SAFE || defined HAVE_MSR_CORE_H) //only when having MSR_SAFE the Environment::isHWPactive() method may return true
 	if (activatedDVFS == HWP)
@@ -2552,6 +2566,15 @@ void Environment::uncoreFrequency(uint64_t maxFreq, uint64_t minFreq, int socket
 		socket_min = 0;
 		socket_max = SOCKETS_PER_NODE-1;
 	}
+
+#ifdef HAVE_SEANERBUS
+	{
+		SeanerBusWrapper::uncoreFrequency(maxFreq, minFreq, socket);
+		clock_gettime(CLOCK_REALTIME, &stop_time);
+		MERIC_INFO << "MERIC CPU uncore frequency changed in " << mutils::timeToDouble(stop_time - start_time) * 1000 << " ms\n";
+		return;
+	}
+#endif // HAVE_SEANERBUS
 
 	if (activatedUFS == UFS_WAY_TPMI_SYSFS)
 	{
@@ -3343,6 +3366,9 @@ void Environment::restoreSystemSettings(bool hardReset)
  **/
 void Environment::close()
 {
+#ifdef HAVE_SEANERBUS
+	SeanerBusWrapper::close();
+#endif
 // NOTE: "nvmlShutdown()" is now called as part of NVML::close()
 /*
 #ifdef HAVE_NVML_H
